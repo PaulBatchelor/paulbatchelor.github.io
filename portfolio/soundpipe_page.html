@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+	<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' />
+    <title>Paul Batchelor : SoundPipe</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="This is the homepage of Paul Batchelor">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/u/4886742/css/main.css">
+	<link rel="stylesheet" href="/u/4886742/css/menu.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+<div id='cssmenu'>
+<ul>
+   <li><a href="/u/4886742/">
+   <span>Home</span></a></li>
+   <li><a href="/u/4886742/about">
+   <span>About</span></a></li>
+   <li><a href="/u/4886742/portfolio">
+   <span>Portfolio</span></a></li>
+   <li><a href="/u/4886742/contact">
+   <span>Contact</span></a></li>
+</ul>
+</div>
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <header class="post-header">
+    <h1>SoundPipe</h1>
+  </header>
+
+  <article class="post-content">
+  <p><a href="https://github.com/zebproj/soundpipe">SoundPipe</a> is a Lua library that is capable of processing audio. SoundPipe has the distinction of reading and writing audio on a per-sample basis, which allows for sample-accurate and granular processing. Needing only libsndfile and Lua 5.2, one can very quickly download code from the <a href="https://github.com/zebproj/soundpipe">github</a> page and run the examples to see how SoundPipe works!</p>
+
+<p>Lua has always been a very charming language to me. With the source code under 8mb, Lua is very lightweight and does not need many dependencies. It also happens to be a very fast scripting language. One can achieve speeds near C using the LuaJIT compiler. For these reasons, I decided to look into learning the language for my algorithmic compositional work with Csound. As I figured out during this project, it is a trivial task to design functions in C that could be brought into Lua. </p>
+
+<p>Sample accuracy is an important concept in this library. All audio processing is done inside of some sort of for loop that iterates sample by sample. This bit of SoundPipe Lua code writes 10 seconds of silence to the file “out.wav.”:</p>
+
+<div class="highlight"><pre><code class="lua"><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">soundpipe&quot;</span><span class="p">)</span>
+<span class="n">sp_init</span><span class="p">(</span><span class="mi">44100</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">out.wav&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sp_len</span><span class="p">(),</span> <span class="mi">1</span> <span class="k">do</span>
+<span class="n">sp_write_sample</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="n">sp_close</span><span class="p">()</span></code></pre></div>
+
+<p>In addition to writing audio files, Soundpipe has the capability of reading them as well. This is done by opening files before the loop begins. In this example, SP is doing a basic mix of two files:</p>
+
+<div class="highlight"><pre><code class="lua"><span class="n">sp_init</span><span class="p">(</span><span class="mi">44100</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">out.wav&quot;</span><span class="p">)</span>
+
+<span class="n">file1</span> <span class="o">=</span> <span class="n">sp_open_file</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">in1.wav&quot;</span><span class="p">)</span>
+<span class="n">file2</span> <span class="o">=</span> <span class="n">sp_open_file</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">in2.wav&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sp_len</span><span class="p">(),</span> <span class="mi">1</span> <span class="k">do</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="n">sp_read_sample</span><span class="p">(</span><span class="n">file1</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">sp_read_sample</span><span class="p">(</span><span class="n">file2</span><span class="p">)</span>
+
+<span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="n">s1</span> <span class="o">+</span> <span class="n">s2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span>
+
+<span class="n">sp_write_sample</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="n">sp_close_file</span><span class="p">(</span><span class="n">file1</span><span class="p">)</span>
+<span class="n">sp_close_file</span><span class="p">(</span><span class="n">file2</span><span class="p">)</span>
+<span class="n">sp_close</span><span class="p">()</span></code></pre></div>
+
+<p>Taking advantage of tables in Lua, one could conceivably write a script that can flexibly open any number of files. Here is one such example (this one uses the #tbl shortcut in 5.2):</p>
+
+<div class="highlight"><pre><code class="lua"><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">soundpipe&quot;</span><span class="p">)</span>
+
+<span class="n">sp_init</span><span class="p">(</span><span class="mi">44100</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">multifile.wav&quot;</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">files</span> <span class="o">=</span> <span class="p">{</span>
+<span class="s2">&quot;</span><span class="s">file1.wav&quot;</span><span class="p">,</span>
+<span class="s2">&quot;</span><span class="s">file2.wav&quot;</span><span class="p">,</span>
+<span class="s2">&quot;</span><span class="s">file3.wav&quot;</span><span class="p">,</span>
+<span class="s2">&quot;</span><span class="s">file4.wav&quot;</span>
+<span class="p">}</span>
+<span class="n">f</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="k">in</span> <span class="nb">pairs</span><span class="p">(</span><span class="n">files</span><span class="p">)</span> <span class="k">do</span>
+<span class="n">f</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sp_open_file</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sp_len</span><span class="p">(),</span> <span class="mi">1</span> <span class="k">do</span>
+<span class="n">s</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="o">#</span><span class="n">f</span><span class="p">,</span> <span class="mi">1</span> <span class="k">do</span>
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">sp_read_sample</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">s</span> <span class="o">+</span> <span class="n">tmp</span><span class="o">/#</span><span class="n">f</span>
+<span class="k">end</span>
+<span class="n">sp_write_sample</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="k">in</span> <span class="nb">pairs</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">do</span>
+<span class="n">sp_close_file</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="n">sp_close</span><span class="p">()</span></code></pre></div>
+
+<p>Finally, in current version of soundpipe, there is the ability to do apply DSP processing to a signal. Effects are initialized before the loop, and then used on a sample by sample basis using one sp_fx() function. This, for instance, would be a feedback delay:</p>
+
+<div class="highlight"><pre><code class="lua"><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">soundpipe&quot;</span><span class="p">)</span>
+<span class="n">sp_init</span><span class="p">(</span><span class="mi">44100</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">delay.wav&quot;</span><span class="p">)</span>
+<span class="n">w</span> <span class="o">=</span> <span class="n">sp_open_file</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">oneart.wav&quot;</span><span class="p">)</span>
+<span class="n">del</span> <span class="o">=</span> <span class="n">sp_delay</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sp_len</span><span class="p">(),</span><span class="mi">1</span>
+<span class="k">do</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">sp_read_sample</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">sp_fx</span><span class="p">(</span><span class="n">del</span><span class="p">,</span> <span class="n">s</span> <span class="o">+</span> <span class="n">d</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">sp_write_sample</span><span class="p">(</span><span class="n">s</span> <span class="o">+</span> <span class="n">d</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="n">sp_close_file</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">sp_close</span><span class="p">()</span></code></pre></div>
+
+<p>Implementing effects using a generic sp_fx() function has interesting sonic potential, as one could swap out effects on a sample-by-sample basis. However, at the present moment, the stable version of SP only has two effects: a one-pole low-pass filter and a static delay line. In future releases, more built-in dsp effects will be included. Many effects will be taken from the<a title="Csound" href="http://www.csounds.com" target="_blank"> Csound </a>synthesis language, an industrial synthesis and signal processing composition environment.</p>
+
+<h2 id="musical-examples">Musical examples</h2>
+
+<center>
+<iframe width="300" height="300" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/42263807&amp;auto_play=false&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;visual=true"></iframe>
+</center>
+
+  </article>
+  <div align="center">
+  <a href = "/portfolio" style="align:center;">Return</a>
+  </div>
+</div>
+
+      </div>
+    </div>
+
+    <div class = "site-footer">
+
+    Copyright 2014 Paul Batchelor
+
+</div>
+
+
+    </body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+	<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' />
+    <title>Paul Batchelor : XMT</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="This is the homepage of Paul Batchelor">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/u/4886742/css/main.css">
+	<link rel="stylesheet" href="/u/4886742/css/menu.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+<div id='cssmenu'>
+<ul>
+   <li><a href="/u/4886742/">
+   <span>Home</span></a></li>
+   <li><a href="/u/4886742/about">
+   <span>About</span></a></li>
+   <li><a href="/u/4886742/portfolio">
+   <span>Portfolio</span></a></li>
+   <li><a href="/u/4886742/contact">
+   <span>Contact</span></a></li>
+</ul>
+</div>
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <header class="post-header">
+    <h1>XMT</h1>
+  </header>
+
+  <article class="post-content">
+  <h2 id="description">Description</h2>
+
+<p>XM tools (abbreviated XMT) is a library written in C that enables the creation of XM files. </p>
+
+<p>The <a href="http://en.wikipedia.org/wiki/XM_(file_format)">XM Module format</a> was originally created in 1999 with creation of the popular music tracker FastTracker 2 for DOS. Today it is a file format commonly associated with the music tracker known as Milkytracker, which tries to emulate the look and and feel of FT2. It is a monolithic format: all note information, instruments, effects, and samples are contained in one file. Module formats are known for being able to store many minutes of music into a very small filesize, and are frequently used in the demoscene community for this reason. </p>
+
+<p>XMT was written in C, and currently designed to be used with the Lua scripting language.</p>
+
+<h2 id="example-code">Example Code</h2>
+
+<p>The Lua language bindings of XMT are implemented with an object-oriented approach in design.</p>
+
+<p>The following lua code writes a blank file called “out.xm”:</p>
+
+<div class="highlight"><pre><code class="lua"><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">xmt&quot;</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">XMT</span><span class="p">:</span><span class="n">create</span><span class="p">()</span>
+<span class="n">x</span><span class="p">:</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">out.xm&quot;</span><span class="p">)</span></code></pre></div>
+
+<p>Instruments, patterns, and samples are easy to add and can be saved to variables for further clarity in code. This example loads up two instruments and samples and writes them to a pattern:</p>
+
+<div class="highlight"><pre><code class="lua"><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">xmt&quot;</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">XMT</span><span class="p">:</span><span class="n">create</span><span class="p">({</span><span class="n">nchan</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">bpm</span> <span class="o">=</span> <span class="mi">96</span><span class="p">})</span>
+
+<span class="n">pad</span> <span class="o">=</span> <span class="n">x</span><span class="p">:</span><span class="n">addins</span><span class="p">()</span>
+<span class="n">kick</span> <span class="o">=</span> <span class="n">x</span><span class="p">:</span><span class="n">addins</span><span class="p">()</span>
+
+<span class="n">padsamp</span> <span class="o">=</span> <span class="n">x</span><span class="p">:</span><span class="n">addsamp</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">pad.wav&quot;</span><span class="p">)</span>
+<span class="n">kicksamp</span> <span class="o">=</span> <span class="n">x</span><span class="p">:</span><span class="n">addsamp</span><span class="p">(</span><span class="n">kick</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">kick.wav&quot;</span><span class="p">)</span>
+
+<span class="c1">--Set loop mode of pad sample to &quot;forward&quot;</span>
+<span class="n">x</span><span class="p">:</span><span class="n">set_loop_mode</span><span class="p">(</span><span class="n">padsamp</span><span class="p">,</span> <span class="n">XMT</span><span class="p">.</span><span class="n">FORWARD</span><span class="p">)</span>
+<span class="c1">--Transpose kick down up a whole step</span>
+<span class="n">x</span><span class="p">:</span><span class="n">transpose</span><span class="p">(</span><span class="n">kicksamp</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">pat</span> <span class="o">=</span> <span class="n">x</span><span class="p">:</span><span class="n">addpat</span><span class="p">()</span>
+
+<span class="c1">--add pad at C-4 to channel 0, row 0 to pattern 0 that lasts for 16 rows</span>
+<span class="n">x</span><span class="p">:</span><span class="n">addnote</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">makenote</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="n">pad</span><span class="p">))</span>
+<span class="n">x</span><span class="p">:</span><span class="n">addnote</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">makenote</span><span class="p">(</span><span class="n">XMT</span><span class="p">.</span><span class="n">NOTEOFF</span><span class="p">))</span>
+
+<span class="c1">--add kick at D-4 to channel 1, row 4 to pattern 0 </span>
+<span class="n">x</span><span class="p">:</span><span class="n">addnote</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">makenote</span><span class="p">(</span><span class="mi">62</span><span class="p">,</span> <span class="n">kick</span> <span class="p">))</span>
+
+<span class="n">x</span><span class="p">:</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">out.xm&quot;</span><span class="p">)</span></code></pre></div>
+
+<p>In addition to loading samples from files, XMT can also create samples from Lua tables. In the future, this will have compatibility with <a href="soundpipe_page.html">SoundPipe</a> to create samples without needing to load audio files. </p>
+
+<p>Using techniques like randomness and iteration, one can quickly create xm files that would be otherwise be long and tedious to make. Note the use of nested functions to do many things at once with one line of code:</p>
+
+<div class="highlight"><pre><code class="lua"><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">xmt&quot;</span><span class="p">)</span>
+
+<span class="nb">math.randomseed</span><span class="p">(</span><span class="nb">os.time</span><span class="p">())</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">XMT</span><span class="p">:</span><span class="n">create</span><span class="p">({</span><span class="n">nchan</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="mi">1</span><span class="p">})</span>
+
+<span class="k">function</span> <span class="nf">create_square</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">pw</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">tbl</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="mi">1</span> <span class="k">do</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span> <span class="o">*</span> <span class="n">pw</span><span class="p">)</span> <span class="k">then</span>
+            <span class="nb">table.insert</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span>
+            <span class="nb">table.insert</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="k">return</span> <span class="n">tbl</span>
+<span class="k">end</span>
+
+<span class="n">numpats</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">patlen</span> <span class="o">=</span> <span class="mh">0x80</span>
+
+<span class="c1">--Nested XMT functions which create a new square wave instrument</span>
+<span class="n">square</span> <span class="o">=</span> <span class="n">x</span><span class="p">:</span><span class="n">set_loop_mode</span><span class="p">(</span><span class="n">x</span><span class="p">:</span><span class="n">addbuf</span><span class="p">(</span><span class="n">x</span><span class="p">:</span><span class="n">addins</span><span class="p">(),</span> <span class="n">create_square</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)),</span> <span class="n">XMT</span><span class="p">.</span><span class="n">FORWARD</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">numpats</span><span class="p">,</span> <span class="mi">1</span> <span class="k">do</span>
+<span class="c1">--Create a new pattern</span>
+    <span class="n">pat</span> <span class="o">=</span> <span class="n">x</span><span class="p">:</span><span class="n">addpat</span><span class="p">(</span><span class="n">patlen</span><span class="p">)</span>
+<span class="c1">--Add new pattern to the end of the song</span>
+    <span class="n">x</span><span class="p">:</span><span class="n">update_ptable</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">pat</span><span class="p">)</span>
+<span class="c1">--Add random notes between 60 (C-4) and 84 (C-6) on new pattern</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">patlen</span><span class="p">,</span> <span class="mi">1</span> <span class="k">do</span>
+        <span class="n">x</span><span class="p">:</span><span class="n">addnote</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">r</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> 
+        <span class="n">makenote</span><span class="p">(</span><span class="mi">60</span> <span class="o">+</span> <span class="nb">math.random</span><span class="p">(</span><span class="mi">24</span><span class="p">),</span> <span class="n">square</span><span class="p">.</span><span class="n">ins</span><span class="p">,</span> <span class="mh">0x10</span> <span class="o">+</span> <span class="nb">math.random</span><span class="p">(</span><span class="mh">0x40</span><span class="p">)))</span>
+    <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">x</span><span class="p">:</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">out.xm&quot;</span><span class="p">)</span></code></pre></div>
+
+<h2 id="example-music">Example Music</h2>
+
+<p>The following soundcloud playlist features rendered audio of generated XM files. The corresponding XM and Lua files  can be found in the source tree of XMT in the “examples” folder. </p>
+<center>
+<iframe width="300" height="300" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/42231321&amp;auto_play=false&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;visual=true"></iframe>
+</center>
+
+<h2 id="download">Download</h2>
+
+<p>You can find the latest code off of github found <a href="http://www.github.com/zebproj/XMT">here</a>.</p>
+
+  </article>
+  <div align="center">
+  <a href = "/portfolio" style="align:center;">Return</a>
+  </div>
+</div>
+
+      </div>
+    </div>
+
+    <div class = "site-footer">
+
+    Copyright 2014 Paul Batchelor
+
+</div>
+
+
+    </body>
+</html>
