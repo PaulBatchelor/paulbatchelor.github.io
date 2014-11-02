@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+	<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' />
+    <title>Paul Batchelor : The NRT musical microlanguage: a quick tutorial</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="This is the homepage of Paul Batchelor">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+	<link rel="stylesheet" href="/css/menu.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+<div id='cssmenu'>
+<ul>
+   <li><a href="/">
+   <span>Home</span></a></li>
+   <li><a href="/about">
+   <span>About</span></a></li>
+   <li><a href="/portfolio">
+   <span>Portfolio</span></a></li>
+   <li><a href="/blog">
+   <span>Blog</span></a></li>
+   <li><a href="/contact">
+   <span>Contact</span></a></li>
+</ul>
+</div>
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+        <header class="post-header">
+    <h1>The NRT musical microlanguage: a quick tutorial</h1>
+    <p class="meta">Nov 12, 2014</p>
+  </header>
+
+  <article class="post-content">
+  <p>Today I want to quickly demonstrate the musical language I wrote last week called NRT.</p>
+
+<p>NRT (pronounced “nert”) stands for Notes, Rhythm, and Timing. Musical phrases can be written in 
+NRT and then converted to computer-readable data for use in algorithms.</p>
+
+<p>NRT looks a bit like ABC notation and Lilypond syntax, but instead of writing
+sheet music, NRT writes Csound Scores and JSON data.</p>
+
+<p>Let’s get started and make some phrases with NRT!</p>
+
+<ol>
+  <li>
+    <p>Download the latest sourcecode on github.</p>
+  </li>
+  <li>
+    <p>Go into the directory. From the commandline run “make” and “sudo make install”.
+You are going to need Flex and Bison installed. </p>
+  </li>
+  <li>
+    <p>run this command: </p>
+  </li>
+</ol>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">nrt -j -s <span class="s2">&quot;drmfs&quot;</span></code></pre></div>
+
+<p>If you see JSON data, it worked! We are going to use variations of this command 
+a lot.</p>
+
+<h2 id="some-nrt-code">Some NRT code</h2>
+<p>NRT does not use note names. Instead, it uses solfege and the concept of movable do.</p>
+
+<p>To generate a two octave scale, run:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">nrt -j -s <span class="s2">&quot;drmfslt DRMFSLT&quot;</span></code></pre></div>
+
+<p>Accidentals and octave transpositions are placed after the note. (+-=) are sharp,
+flat, and natural. (,’) are octave down and up. octaves can be stacked to do multiple
+octave transitions. Here is a 2-octave natural minor scale:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">nrt -j -s <span class="s2">&quot;drm-fsl-t- d&#39;r&#39;m-&#39;f&#39;s&#39;l-&#39;t-d&#39;&#39;&quot;</span></code></pre></div>
+
+<p>Rhythms are placed after the note and accidentals as numbers. 1 is whole, 2 is half,
+4 is quarter, 8 is eigth, and 16 is sixteenth, and so on:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">nrt -j -s <span class="s2">&quot;d1 d2 d4 d8 d16&quot;</span></code></pre></div>
+
+<p>Dotted rhythms are allowed as well:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">nrt -j -s <span class="s2">&quot;d4. d8 d8. d16 d4 &quot;</span></code></pre></div>
+
+<p>If no rhythm is supplied, it defaults to the last declared rhythm. If no rhythm has
+been declared at all, it defaults to a quarter note:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">nrt -j -s <span class="s2">&quot;d r m8 f s2. &quot;</span></code></pre></div>
+
+<h2 id="using-nrt-in-projects">Using NRT in projects</h2>
+
+<p>At the moment, the easiest way to get NRT into programs is through JSON.
+In our examples, we have been doing this already with the “-j” flag.</p>
+
+<p>As an example, we can write a major arpeggio to a file “scale.json”</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">nrt -j -s <span class="s2">&quot;d m s D&quot;</span> &gt; scale.json</code></pre></div>
+
+<p>From here, parsing NRT’s information is as simple as 4 lines of
+Python code:</p>
+
+<p>import json
+from pprint import pprint
+data = json.load(open(“scale.json”, “r”))
+pprint(data)</p>
+
+<p>The data returned is an array of notes. Each note contains its solfege syllable (represented as an integer), the duration of the note, and when in time to play the note. </p>
+
+<p>One of the main things I use NRT for is to create Csound Score files. Here is one way you could write it in Python:</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s">&quot;scale.json&quot;</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">))</span>
+<span class="n">notes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&quot;notes&quot;</span><span class="p">]</span>
+
+<span class="c">#set root to be c-4</span>
+<span class="n">base</span> <span class="o">=</span> <span class="mi">60</span> 
+
+<span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">notes</span><span class="p">:</span>
+    <span class="k">print</span> <span class="p">(</span><span class="s">&quot;i1 </span><span class="si">%g</span><span class="s"> </span><span class="si">%g</span><span class="s"> </span><span class="si">%i</span><span class="s">&quot;</span> <span class="o">%</span> 
+        <span class="p">(</span><span class="n">note</span><span class="p">[</span><span class="s">&quot;time&quot;</span><span class="p">],</span> <span class="n">note</span><span class="p">[</span><span class="s">&quot;dur&quot;</span><span class="p">],</span> <span class="n">note</span><span class="p">[</span><span class="s">&quot;solf&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">base</span><span class="p">))</span></code></pre></div>
+
+<p>And that is NRT, in a nutshell.</p>
+
+  </article>
+
+      </div>
+    </div>
+
+    <div class = "site-footer">
+
+    Copyright 2014 Paul Batchelor
+
+</div>
+
+
+    </body>
+</html>
