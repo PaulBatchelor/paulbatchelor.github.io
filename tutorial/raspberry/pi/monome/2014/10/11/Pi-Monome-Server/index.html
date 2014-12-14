@@ -79,13 +79,13 @@ have an image from 6-20-2014 laying around, so I used that. There are several tu
 how to properly flash Raspian from the commandline, so I won’t bother explaining. 
 But here is the command I used:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">dd <span class="k">if</span><span class="o">=</span>2014-6-20-wheezy-raspian.img <span class="nv">of</span><span class="o">=</span>/dev/sdd <span class="nv">bs</span><span class="o">=</span>1m</code></pre></div>
+<div class="highlight"><pre><code class="bash">dd <span class="k">if</span><span class="o">=</span>2014-6-20-wheezy-raspian.img <span class="nv">of</span><span class="o">=</span>/dev/sdd <span class="nv">bs</span><span class="o">=</span>1m</code></pre></div>
 
 <p>Boot up the Pi. Expand the filesystem if you’d like, and change the keyboard settings
 if you don’t use a UK keyboard. After logging in (name:pi/pw:raspberry), update the system, 
 and install liblo.</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">sudo apt-get update
+<div class="highlight"><pre><code class="bash">sudo apt-get update
 sudo apt-get install liblo-dev</code></pre></div>
 
 <p>The next thing we are going to do is make sure the program automatically logs in.
@@ -93,11 +93,11 @@ This is going to require editing “/etc/init.d”.</p>
 
 <p>In your text editor of choice, find this line:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">1:2345:respawn:/sbin/getty <span class="m">115200</span> tty1</code></pre></div>
+<div class="highlight"><pre><code class="bash">1:2345:respawn:/sbin/getty 115200 tty1</code></pre></div>
 
 <p>And replace it with this one:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">1:2345:respawn /bin/login -f pi tty1 &lt; /dev/tty1 &gt; /dev/tty1 2&gt;<span class="p">&amp;</span>1</code></pre></div>
+<div class="highlight"><pre><code class="bash">1:2345:respawn /bin/login -f pi tty1 &lt; /dev/tty1 &gt; /dev/tty1 2&gt;<span class="p">&amp;</span>1</code></pre></div>
 
 <p>If you reboot your machine, your pi should automatically login as “pi.”</p>
 
@@ -107,7 +107,7 @@ This is going to require editing “/etc/init.d”.</p>
 source code and tests needed for MonomePi. This file needs to end up extracted on your Pi
 somehow. What I did was copy it from a flashdrive that I put it on:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">sudo mkdir /mnt/memory
+<div class="highlight"><pre><code class="bash">sudo mkdir /mnt/memory
 sudo mount /dev/sda1 /mnt/memory
 sudo cp -r /mnt/memory/monome_pi.tar.gz .</code></pre></div>
 
@@ -117,13 +117,13 @@ it doesn’t take too long.</p>
 
 <p>First, extract the file and cd into it…</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">tar zxvf monome_pi.tar.gz
+<div class="highlight"><pre><code class="bash">tar zxvf monome_pi.tar.gz
 <span class="nb">cd </span>monome_pi</code></pre></div>
 
 <p>…then go into the libmonome_pi directy, compile, and install it. This will install monomeserial,
 which will detect the Monome and send OSC messages.</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">cd </span>libmonome_rpi
+<div class="highlight"><pre><code class="bash"><span class="nb">cd </span>libmonome_rpi
 ./configure
 make
 sudo make install</code></pre></div>
@@ -132,7 +132,7 @@ sudo make install</code></pre></div>
 This is a simple program I wrote in C that will handle the OSC message forwarding. There is no need to be 
 run sudo with these commands. Running these commands will wipe out any previous incarnation of ~/.bash_profile:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">cd</span> ../
+<div class="highlight"><pre><code class="bash"><span class="nb">cd</span> ../
 <span class="nb">cd </span>monome_wrapper
 make
 make install</code></pre></div>
@@ -149,11 +149,11 @@ static IP addresses.</p>
 
 <p>Computers talking to the Pi need to know what the IP address of it is. Edit the file /etc/network/interfaces and comment out the following line like so:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#iface eth0 inet dhcp</span></code></pre></div>
+<div class="highlight"><pre><code class="bash"><span class="c">#iface eth0 inet dhcp</span></code></pre></div>
 
 <p>Then add these lines underneath…</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#iface eth0 inet dhcp</span>
+<div class="highlight"><pre><code class="bash"><span class="c">#iface eth0 inet dhcp</span>
 iface eth0 inet static
 address 169.254.0.3</code></pre></div>
 
@@ -161,7 +161,7 @@ address 169.254.0.3</code></pre></div>
 
 <p>The Pi needs to know which IP address to send OSC messages to. To configure this, we add a line in “/etc/hosts”:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">sudo <span class="nb">echo </span>169.254.0.4 monomedest &gt;&gt; /etc/hosts</code></pre></div>
+<div class="highlight"><pre><code class="bash">sudo <span class="nb">echo </span>169.254.0.4 monomedest &gt;&gt; /etc/hosts</code></pre></div>
 
 <p>MonomePi will now send OSC messages to any computer with the IP address 169.254.0.4</p>
 
@@ -179,11 +179,11 @@ test programs written in ChucK or Csound. </p>
 
 <p>If you have ChucK, run the chuck program with:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">chuck monome.ck</code></pre></div>
+<div class="highlight"><pre><code class="bash">chuck monome.ck</code></pre></div>
 
 <p>If you have Csound installed with the OSC opcodes, you can also run the Csound program with:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">csound monome.csd</code></pre></div>
+<div class="highlight"><pre><code class="bash">csound monome.csd</code></pre></div>
 
 <p>When either program is run, press the buttons on the Monome. If they light up, congratulations! Everything is working!</p>
 
