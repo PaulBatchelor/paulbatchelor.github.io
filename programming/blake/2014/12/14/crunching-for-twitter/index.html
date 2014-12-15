@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+	<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' />
+    <title>Paul Batchelor : Number Crunching for Twitter</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="This is the homepage of Paul Batchelor">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+	<link rel="stylesheet" href="/css/menu.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+<div id='cssmenu'>
+<ul>
+   <li><a href="/">
+   <span>Home</span></a></li>
+   <li><a href="/about">
+   <span>About</span></a></li>
+   <li><a href="/portfolio">
+   <span>Portfolio</span></a></li>
+   <li><a href="/blog">
+   <span>Blog</span></a></li>
+   <li><a href="/contact">
+   <span>Contact</span></a></li>
+</ul>
+</div>
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+        <header class="post-header">
+    <h1>Number Crunching for Twitter</h1>
+    <p class="meta">Dec 14, 2014</p>
+  </header>
+
+  <article class="post-content">
+  <p>I’ve always found the 140-character limit on twitter to be an intriguing creative
+coding challenge. How expressive can you be in 140 bytes? Twitter projects like
+sc140, (processing), and LSystemsBot, demonstrate this well, but cramming art in
+small virtual spaces has existed long before twitter with the demoscene movement. </p>
+
+<p>Anyways, one of my projects (codename: Blake) is all about creating tweetable compositions.
+Part of this project involves a synthesizer whose preset can be stored in a tweet. 
+I need many parameters to be stored in small space. If resolution is sacrificed, 
+it is possible to reduce three values between 0 and 15 (4-bit) into two tweetable 
+ascii characters, saving up to %50 of tweet-space for other things. </p>
+
+<p>Using this algorithm, a 16-character string could store a synth preset with 24 
+parameters. 32 characters could store a whopping 48 parameters!</p>
+
+<p>I quickly implemented this algorithm in Perl, but rewrote it in C.</p>
+
+<h2 id="part-1-the-base64-endecoder">Part 1: The Base64 (en|de)coder</h2>
+
+<p>Our number crunching algorithm relies on base 64 encoding to get our three values merged
+into two ascii characters, and base 64 decoding to retrieve our three values.</p>
+
+<p>A simple implementation of a base 64 en/decoder can be written in C with the little
+help of some perl scripting.</p>
+
+<p>We don’t need to follow the standard base 64 numbers, but we will anyways.</p>
+
+<p>Here is the perl script I used to generate the files “base64.c” and “base64.h.”</p>
+
+<div class="highlight"><pre><code class="perl"><span class="k">use</span> <span class="mf">5.010</span><span class="p">;</span>
+
+<span class="nb">open</span> <span class="n">FILE</span><span class="p">,</span> <span class="s">&quot;&gt;base64.c&quot;</span><span class="p">;</span>
+<span class="nb">open</span> <span class="n">HEADER</span><span class="p">,</span> <span class="s">&quot;&gt;base64.h&quot;</span><span class="p">;</span>
+<span class="nb">select</span> <span class="n">FILE</span><span class="p">;</span>
+<span class="k">my</span> <span class="nv">@baseVals</span> <span class="o">=</span> <span class="p">(</span><span class="n">A</span><span class="o">..</span><span class="n">Z</span><span class="p">,</span><span class="n">a</span><span class="o">..</span><span class="n">z</span><span class="p">,</span><span class="mi">0</span><span class="o">..</span><span class="mi">9</span><span class="p">,</span><span class="sx">qw(+ /)</span><span class="p">);</span>
+
+<span class="k">print</span> <span class="s">&quot;char base64_encode(char n) {\n&quot;</span><span class="p">;</span>
+
+<span class="k">print</span> <span class="s">&quot;const char encoder[]=\n{&quot;</span><span class="p">;</span>
+
+<span class="k">my</span> <span class="nv">$c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="k">foreach</span><span class="p">(</span><span class="mi">0</span><span class="o">..</span><span class="mi">62</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">print</span> <span class="p">(</span><span class="s">&quot;&#39;$baseVals[$_]&#39;, &quot;</span><span class="p">);</span>
+    <span class="nv">$c</span><span class="o">++</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="nv">$c</span> <span class="o">&gt;</span> <span class="mi">15</span><span class="p">){</span>
+        <span class="k">print</span> <span class="p">(</span><span class="s">&quot;\n&quot;</span><span class="p">);</span>
+        <span class="nv">$c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="k">print</span> <span class="s">&quot;&#39;$baseVals[63]&#39;};\n&quot;</span><span class="p">;</span>
+
+<span class="k">print</span> <span class="s">&quot;return encoder[n];</span>
+<span class="s">};\n&quot;</span><span class="p">;</span>
+
+
+<span class="k">print</span> <span class="s">&quot;char base64_decode(char n) {\n&quot;</span><span class="p">;</span>
+<span class="k">print</span> <span class="s">&quot;switch(n) {\n&quot;</span><span class="p">;</span>
+
+<span class="k">foreach</span><span class="p">(</span><span class="mi">0</span><span class="o">..</span><span class="mi">63</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">print</span> <span class="p">(</span><span class="s">&quot;    case &#39;$baseVals[$_]&#39;: return $_; break;\n&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">print</span> <span class="s">&quot;    default: return 0;\n}\n}&quot;</span><span class="p">;</span>
+<span class="nb">close</span> <span class="n">FILE</span><span class="p">;</span>
+
+<span class="nb">select</span> <span class="n">HEADER</span><span class="p">;</span>
+
+<span class="k">print</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;END&quot;</span><span class="p">;</span>
+<span class="n">char</span> <span class="n">base64_encode</span><span class="p">(</span><span class="n">char</span> <span class="n">n</span><span class="p">);</span>
+<span class="n">char</span> <span class="n">base64_decode</span><span class="p">(</span><span class="n">char</span> <span class="n">n</span><span class="p">);</span>
+<span class="k">END</span>
+
+<span class="nb">close</span> <span class="n">HEADER</span><span class="p">;</span></code></pre></div>
+
+<p>Note that the perl script is not in strict mode. This is to take advantage of
+some of the perl shortcuts for generated the base 64 character set. </p>
+
+<h2 id="part-2-bitwise-operations">part 2: Bitwise operations</h2>
+
+<p>Now that we have our base 64 en/decoder, we can get to work shoving three values
+into two. This is done by using a series of bitwise operations to split the bits
+on one of the values and attach them to the other values. </p>
+
+<p>The code itself is pretty obfuscated at first glance, but it all makes sense if 
+you can visualize how the bits are moving. </p>
+
+<p>Here is our C program of our number cruncher implementation. It encodes 3 values, then 
+decodes them:</p>
+
+<div class="highlight"><pre><code class="c"><span class="cp">#include &lt;stdio.h&gt;</span>
+<span class="cp">#include &quot;base64.h&quot;</span>
+<span class="kt">void</span> <span class="nf">twit_crunch</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">in</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">out</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">twit_uncrunch</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">in</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">out</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kt">char</span> <span class="n">crunched</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+    <span class="kt">char</span> <span class="n">fourbit</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">10</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
+
+    <span class="n">twit_crunch</span><span class="p">(</span><span class="n">fourbit</span><span class="p">,</span> <span class="n">crunched</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The three 4-bit values are %d, %d, and %d.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> 
+            <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">fourbit</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">fourbit</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">fourbit</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Crunched together, they are </span><span class="se">\&quot;</span><span class="s">%c%c</span><span class="se">\&quot;</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> 
+            <span class="n">crunched</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">crunched</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+
+    <span class="n">twit_uncrunch</span><span class="p">(</span><span class="n">crunched</span><span class="p">,</span> <span class="n">fourbit</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">%c%c</span><span class="se">\&quot;</span><span class="s"> decoded yields %d, %d, and %d (as expected).</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+            <span class="n">crunched</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">crunched</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">fourbit</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fourbit</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">fourbit</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="kt">void</span> <span class="nf">twit_crunch</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">in</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">out</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">char</span> <span class="n">val1</span><span class="p">,</span> <span class="n">val2_a</span><span class="p">,</span> <span class="n">val2_b</span><span class="p">,</span> <span class="n">val3</span><span class="p">;</span>
+    
+    <span class="n">val1</span> <span class="o">=</span> <span class="n">in</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="n">val2_a</span> <span class="o">=</span> <span class="n">in</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="n">val2_b</span> <span class="o">=</span> <span class="p">(</span><span class="n">in</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">val2_a</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">))</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">;</span>
+    <span class="n">val3</span> <span class="o">=</span> <span class="n">in</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+
+    <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">base64_encode</span><span class="p">(</span><span class="n">val1</span> <span class="o">+</span> <span class="n">val2_a</span><span class="p">);</span>
+    <span class="n">out</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">base64_encode</span><span class="p">(</span><span class="n">val3</span> <span class="o">+</span> <span class="n">val2_b</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="kt">void</span> <span class="nf">twit_uncrunch</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">in</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">out</span><span class="p">)</span> 
+<span class="p">{</span>
+    <span class="kt">char</span> <span class="n">val1</span><span class="p">,</span> <span class="n">val2_a</span><span class="p">,</span> <span class="n">val2_b</span><span class="p">,</span> <span class="n">val2</span><span class="p">,</span> <span class="n">val3</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="n">i1</span><span class="p">,</span> <span class="n">i2</span><span class="p">;</span>
+    
+    <span class="n">i1</span> <span class="o">=</span> <span class="n">base64_decode</span><span class="p">(</span><span class="n">in</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+    <span class="n">i2</span> <span class="o">=</span> <span class="n">base64_decode</span><span class="p">(</span><span class="n">in</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+    <span class="n">val1</span> <span class="o">=</span> <span class="n">i1</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="n">val2_a</span> <span class="o">=</span> <span class="n">i1</span> <span class="o">-</span> <span class="p">(</span><span class="n">val1</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">);</span>
+    <span class="n">val2_b</span> <span class="o">=</span> <span class="n">i2</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">;</span>
+    <span class="n">val2</span> <span class="o">=</span> <span class="p">(</span><span class="n">val2_a</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">val2_b</span><span class="p">;</span>
+    <span class="n">val3</span> <span class="o">=</span> <span class="n">i2</span> <span class="o">-</span> <span class="p">(</span><span class="n">val2_b</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">);</span>
+
+    <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">val1</span><span class="p">;</span>
+    <span class="n">out</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">val2</span><span class="p">;</span>
+    <span class="n">out</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">val3</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
+
+<h2 id="part-3-compiling-and-running-the-code">Part 3: Compiling and Running the code</h2>
+
+<p>Compiliation of our program can be done with the following commands:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="nv">$ </span>gcc -c base64.c
+<span class="nv">$ </span>gcc twitcrunch.c base64.0</code></pre></div>
+
+<p>When run, the program should produce the following output:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="nv">$ </span>./a.out
+
+The three 4-bit values are 10, 7, and 1.
+Crunched together, they are <span class="s2">&quot;px&quot;</span>.
+<span class="s2">&quot;px&quot;</span> decoded yields 10, 7, and 1 <span class="o">(</span>as expected<span class="o">)</span>.</code></pre></div>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>While the C code itself could stand to be tweaked to be safer, I am very excited to 
+utilize this algorithm in my upcoming project.</p>
+
+<p>More on said project in the future (muahaha)…</p>
+
+  </article>
+
+      </div>
+    </div>
+
+    <div class = "site-footer">
+
+    Copyright 2014 Paul Batchelor
+
+</div>
+
+
+    </body>
+</html>
