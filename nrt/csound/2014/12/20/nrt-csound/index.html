@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+	<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' />
+    <title>Paul Batchelor : 9 ways to NRT, part 2: NRT and Csound</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="This is the homepage of Paul Batchelor">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+	<link rel="stylesheet" href="/css/menu.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+<div id='cssmenu'>
+<ul>
+   <li><a href="/">
+   <span>Home</span></a></li>
+   <li><a href="/about">
+   <span>About</span></a></li>
+   <li><a href="/portfolio">
+   <span>Portfolio</span></a></li>
+   <li><a href="/blog">
+   <span>Blog</span></a></li>
+   <li><a href="/contact">
+   <span>Contact</span></a></li>
+</ul>
+</div>
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+        <header class="post-header">
+    <h1>9 ways to NRT, part 2: NRT and Csound</h1>
+    <p class="meta">Dec 20, 2014</p>
+  </header>
+
+  <article class="post-content">
+  <p>Welcome to Part 2 of <a href="/nrt/2014/12/19/nrt-syntax/">9 Ways to NRT</a></p>
+
+<p>Today, I’m going to show how <a href="http://www.github.com/paulbatchelor/nrt">NRT</a>
+can be used to play a synthesizer in Csound.</p>
+
+<p>Recently, I discovered that the ‘-Lstdin’ flag lets Csound read from standard input.
+This means that NRT can pipe stuff to Csound without ever needing to write anything to file. </p>
+
+<p>NRT can’t do this directly; it needs an intermediate filter to convert NRT output to a
+Csound score. Luckilly, this couldn’t be easier with a little help from our old pal Awk.</p>
+
+<h2 id="introducing-awk">Introducing Awk</h2>
+
+<p>Awk is a scripting language designed to extract data from text files, one line 
+at a time. From there, Awk can do stuff to those values. Awk can either read 
+from a text file or from stuff piped from standard input; we will use the 
+latter to directly send NRT’s output to Awk.</p>
+
+<p>NRT output is designed to be fed to Awk, so it is a good practice to use Awk 
+as an encoder before piping NRT data to external programs.</p>
+
+<h2 id="creating-a-csound-score-with-awk">Creating a Csound Score with Awk</h2>
+
+<p>Here is an example of NRT creating a Csound score with Awk:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">&quot;drm&quot;</span> <span class="p">|</span> nrt <span class="p">|</span> awk -F<span class="s1">&#39;,&#39;</span> <span class="s1">&#39;{print &quot;i1&quot;,$1,$2,$3 + 60}&#39;</span>
+
+i1 0 1 60
+i1 1 1 62
+i1 2 1 64</code></pre></div>
+
+<p>We are piping NRT notation into <em>nrt</em> using <em>echo</em>. Then we are piping the 
+output of <em>nrt</em> into the input of awk. Awk then prints the formatted Csound 
+score, adding 60 (C4 in midi) to the note number, which puts everything in 
+the key of C.</p>
+
+<p>This is a valid Csound score, but this program will only write melodies at 60bpm in
+the key of C. We can modify our program to have variable tempo and key (note offset).
+The program is still technically a “one-liner”, but it has been broken up into 2
+lines:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">&quot;drm&quot;</span> <span class="p">|</span> nrt <span class="p">|</span> awk -F<span class="s1">&#39;,&#39;</span> -vTEMPO<span class="o">=</span>120 -vBASE<span class="o">=</span>60 <span class="se">\</span>
+    <span class="s1">&#39;BEGIN{ts=60/TEMPO} {print &quot;i1&quot;,$1*ts,$2*ts,$3 + BASE}&#39;</span>
+
+i1 0 0.5 60
+i1 0.5 0.5 62
+i1 1 0.5 64</code></pre></div>
+
+<h2 id="the-csound-orchestra">The Csound Orchestra</h2>
+
+<p>To match the generate score, the Csound orchestra needs an instrument with an 
+ID of “1” that reads in a midi note number (the 4th p-field). </p>
+
+<p>The instrument below in a simple karplus-strong instrument being sent to a
+reverb. You can copy and paste this into a file called “pluckrev.csd” or you can
+download the file <a href="/res/nineways/pluckrev.csd">here</a>.</p>
+
+<p>File <em>pluckrev.csd</em>:</p>
+<pre>
+<code>
+&lt;CsoundSynthesizer&gt;
+&lt;CsInstruments&gt;
+sr	=	96000
+ksmps	=	1
+nchnls	=	2
+0dbfs	=	1
+
+alwayson "reverb"
+
+gaRev init 0
+
+instr 1	
+icps = cpsmidinn(p4)
+a1 pluck 0.1, icps, icps, 0, 1
+a1 *= linsegr(1, 1, 0)
+outs a1, a1
+gaRev += a1 * 0.3
+endin
+
+instr reverb
+aL, aR reverbsc gaRev, gaRev, 0.97, 10000
+clear gaRev
+outs aL, aR
+endin
+&lt;/CsInstruments&gt;
+&lt;/CsoundSynthesizer&gt;
+</code>
+</pre>
+
+<h2 id="piping-it-all-together">Piping it all together</h2>
+
+<p>Everything can now be piped together in a single bash command. I’ve changed the
+melody here to make it more interesting:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">&quot;drm2tsd&quot;</span> <span class="p">|</span> nrt <span class="p">|</span> awk -F<span class="s1">&#39;,&#39;</span> -vTEMPO<span class="o">=</span>120 -vBASE<span class="o">=</span>60 <span class="se">\</span>
+    <span class="s1">&#39;BEGIN{ts=60/TEMPO} {print &quot;i1&quot;,$1*ts,$2*ts,$3 + BASE} &#39;</span> <span class="p">|</span><span class="se">\</span>
+    Csound -Lstdin -odac pluckrev.csd</code></pre></div>
+
+<p>The output of Awk is being piped into the input of Csound. Depending on your 
+operating system and driver setup, your Csound command line flags may vary. 
+For instance, this is what I had to put in to get to get Csound to run on my 
+Linux machine running Jack:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">&quot;drm2tsd&quot;</span> <span class="p">|</span> nrt <span class="p">|</span> awk -F<span class="s1">&#39;,&#39;</span> -vTEMPO<span class="o">=</span>120 -vBASE<span class="o">=</span>60 <span class="se">\</span>
+    <span class="s1">&#39;BEGIN{ts=60/TEMPO} {print &quot;i1&quot;,$1*ts,$2*ts,$3 + BASE} &#39;</span> <span class="p">|</span><span class="se">\</span>
+    Csound -Lstdin -odac:system:playback_ -+rtaudio<span class="o">=</span><span class="s2">&quot;jack&quot;</span> -b 2048 pluckrev.csd</code></pre></div>
+
+
+  </article>
+
+      </div>
+    </div>
+
+    <div class = "site-footer">
+
+    Copyright 2014 Paul Batchelor
+
+</div>
+
+
+    </body>
+</html>
