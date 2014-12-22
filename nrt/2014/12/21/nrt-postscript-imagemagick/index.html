@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+	<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' />
+    <title>Paul Batchelor : 9 Ways to NRT, part 3: Generating piano rolls with NRT, PostScript, and ImageMagick</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="This is the homepage of Paul Batchelor">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+	<link rel="stylesheet" href="/css/menu.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+<div id='cssmenu'>
+<ul>
+   <li><a href="/">
+   <span>Home</span></a></li>
+   <li><a href="/about">
+   <span>About</span></a></li>
+   <li><a href="/portfolio">
+   <span>Portfolio</span></a></li>
+   <li><a href="/blog">
+   <span>Blog</span></a></li>
+   <li><a href="/contact">
+   <span>Contact</span></a></li>
+</ul>
+</div>
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+        <header class="post-header">
+    <h1>9 Ways to NRT, part 3: Generating piano rolls with NRT, PostScript, and ImageMagick</h1>
+    <p class="meta">Dec 21, 2014</p>
+  </header>
+
+  <article class="post-content">
+  <p>Welcome to Part 3 of <a href="/nrt/2014/12/19/nrt-syntax/">9 Ways to NRT</a></p>
+
+<p>Today, I’ll be explaining how NRT notation can be used to generate piano rolls.</p>
+
+<p>In other words, </p>
+
+<p>this:</p>
+
+<p><code>"d4. r8 m s t4 s m r2 m4 d2." </code></p>
+
+<p>will output this:</p>
+
+<p><img src="/res/nineways/notes.png" /></p>
+
+<h2 id="a-few-words-on-postscript">A few words on PostScript</h2>
+
+<p>PostScript is something I’ve known about for quite a while, but I never thought
+much about the file format until I read this guy’s <a href="http://blog.whatfettle.com/2014/10/17/one-csv-thirty-stories-4-scattering/">blog post</a>
+ in which he created
+generated scatterplot graphs using postscript. </p>
+
+<p>Postscript files are easy to generate because it’s just text, and the format is 
+pretty standard. I liked the fact that I didn’t need to install any special 
+libraries or software to view postscript files that I generated. </p>
+
+<p>Because PostScript is just text, just about <em>any</em> programming language could be used
+to generate PostScript files. For consistency, I decided to use Awk, but the language
+is pretty arbitrary (while writing this in Awk, I realized I could have done a cleaner job 
+in Perl).</p>
+
+<h2 id="the-awk-script">The Awk Script</h2>
+
+<p>Here is the Awk script that generates the PostScript:</p>
+
+<p>File <em>gen_ps.awk</em>:</p>
+
+<div class="highlight"><pre><code class="awk"><span class="nx">BEGIN</span><span class="p">{</span>
+<span class="kr">printf</span> <span class="s2">&quot;%!PS\n%%BoundingBox: 0 0 %d %d\n\</span>
+<span class="s2">\n\</span>
+<span class="s2">/box\n\</span>
+<span class="s2">{\n\</span>
+<span class="s2">1 dict begin\n\</span>
+<span class="s2">/y1 exch def\n\</span>
+<span class="s2">/x1 exch def\n\</span>
+<span class="s2">/width exch def\n\</span>
+<span class="s2">/height 1 def\n\</span>
+<span class="s2">/x2 x1 width add def\n\</span>
+<span class="s2">/y2 y1 height add def\n\</span>
+<span class="s2">newpath \n\</span>
+<span class="s2">x1 y1 moveto\n\</span>
+<span class="s2">x1 y2 lineto\n\</span>
+<span class="s2">x2 y2 lineto\n\</span>
+<span class="s2">x2 y1 lineto\n\</span>
+<span class="s2">closepath\n\</span>
+<span class="s2">} def\n\</span>
+<span class="s2">0.176470588235294 0.243137254901961 0.282352941176471 setrgbcolor\n\</span>
+<span class="s2">gsave\n\</span>
+<span class="s2">%d %d scale\n\</span>
+<span class="s2">newpath\n\</span>
+<span class="s2">0 0 moveto\n\</span>
+<span class="s2">0 1 lineto\n\</span>
+<span class="s2">1 1 lineto\n\</span>
+<span class="s2">1 0 lineto\n\</span>
+<span class="s2">closepath\n\</span>
+<span class="s2">fill\n\</span>
+<span class="s2">grestore\n\</span>
+<span class="s2">gsave\n\</span>
+<span class="s2">0.666666666666667 0.847058823529412 0.694117647058824 setrgbcolor \n\</span>
+<span class="s2">%d %d scale\n&quot;</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">,</span> <span class="nx">scaleX</span><span class="p">,</span> <span class="nx">scaleY</span>
+<span class="p">}</span>
+
+<span class="p">{</span> 
+    <span class="kr">printf</span> <span class="s2">&quot;%g %g %g box fill\n&quot;</span><span class="p">,</span> <span class="o">$</span><span class="mi">2</span><span class="p">,</span> <span class="o">$</span><span class="mi">1</span><span class="p">,</span> <span class="o">$</span><span class="mi">3</span> <span class="o">+</span> <span class="nx">offset</span>
+<span class="p">}</span>
+
+<span class="nx">END</span><span class="p">{</span>
+<span class="kr">print</span> <span class="s2">&quot;grestore showpage&quot;</span>
+<span class="p">}</span></code></pre></div>
+
+<p>The awk script consists of writing the header, drawing the rectangles from NRT output, 
+and writing the footer.</p>
+
+<h2 id="using-imagemagick">Using ImageMagick</h2>
+
+<p>Different postscript viewers will read the files in slightly different ways, so 
+ImageMagick commandline utility <em>convert</em> is used to convert PostScript data to 
+a png file. <em>Convert</em> can read from standard input, which makes it possible to send
+the output of AWK directly to it without the need to write an intermediary file.</p>
+
+<h2 id="piping-it-all-together">Piping it all together</h2>
+
+<p>Here is what the entire program looks like:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="nb">echo</span> <span class="s2">&quot;d4. r8 m s t4 s m r2 m4 d2.&quot;</span> <span class="p">|</span> nrt <span class="p">|</span> awk -F <span class="s1">&#39;,&#39;</span> <span class="se">\</span>
+-v <span class="nv">scaleX</span><span class="o">=</span>30 -v <span class="nv">scaleY</span><span class="o">=</span>10 -v <span class="nv">offset</span><span class="o">=</span>12 -v <span class="nv">width</span><span class="o">=</span>400 -v <span class="nv">height</span><span class="o">=</span>300 <span class="se">\</span>
+-f gen_ps.awk <span class="se">\</span>
+<span class="p">|</span> convert - output.png</code></pre></div>
+
+<p>The flow of the program reads like this:</p>
+
+<ol>
+  <li>NRT notation is piped into NRT</li>
+  <li>NRT outputs a text table which is piped to Awk</li>
+  <li>Awk creates postscript, which is then piped to ImageMagick</li>
+  <li>ImageMagick reads the postscript and converts it to a PNG file. </li>
+</ol>
+
+<p>The Awk script takes in a few arguments, which can be used to tweak the output.
+<em>width</em> and <em>height</em> are used to define the image dimensions. <em>scaleX</em> and <em>scaleY</em>
+are used to change the size of piano roll notes in relation to the size of the picture,
+and <em>offset</em> shifts the piano roll up N notes (negative numbers work fine too).</p>
+
+<p>And that’s about all there is to it! You can find this code (along with code with other
+ways to NRT) on <a href="http://www.github.com/paulbatchelor/ninewaystonrt/">github</a></p>
+
+  </article>
+
+      </div>
+    </div>
+
+    <div class = "site-footer">
+
+    Copyright 2014 Paul Batchelor
+
+</div>
+
+
+    </body>
+</html>
