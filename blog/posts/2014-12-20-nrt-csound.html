@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <title>9 ways to NRT, part 2: NRT and Csound</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+  <link rel="stylesheet" href="/css/normalize.css">
+  <link rel="stylesheet" href="/css/skeleton.css">
+
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+        <div class="one-half column" style="margin-top: 5%;">
+<h3><strong>9 ways to NRT, part 2: NRT and Csound</strong></h3>
+<p>2014-12-20</p>
+<p>Welcome to Part 2 of <a href="{% post_url 2014-12-19-nrt-syntax %}">9 Ways to NRT</a></p>
+<p>Today, I'm going to show how <a href="http://www.github.com/paulbatchelor/nrt">NRT</a>
+can be used to play a synthesizer in Csound.</p>
+<p>Recently, I discovered that the '-Lstdin' flag lets Csound read from standard input.
+This means that NRT can pipe stuff to Csound without ever needing to write anything to file. </p>
+<p>NRT can't do this directly; it needs an intermediate filter to convert NRT output to a
+Csound score. Luckilly, this couldn't be easier with a little help from our old pal Awk.</p>
+<h4>Introducing Awk</h4>
+<p>Awk is a scripting language designed to extract data from text files, one line 
+at a time. From there, Awk can do stuff to those values. Awk can either read 
+from a text file or from stuff piped from standard input; we will use the 
+latter to directly send NRT's output to Awk.</p>
+<p>NRT output is designed to be fed to Awk, so it is a good practice to use Awk 
+as an encoder before piping NRT data to external programs.</p>
+<h4>Creating a Csound Score with Awk</h4>
+<p>Here is an example of NRT creating a Csound score with Awk:</p>
+<pre><code>$ echo "drm" | nrt | awk -F',' '{print "i1",$1,$2,$3 + 60}'
+
+i1 0 1 60
+i1 1 1 62
+i1 2 1 64
+</code>
+</pre>
+
+We are piping NRT notation into <em>nrt</em> using <em>echo</em>. Then we are piping the 
+output of <em>nrt</em> into the input of awk. Awk then prints the formatted Csound 
+score, adding 60 (C4 in midi) to the note number, which puts everything in 
+the key of C.<p>This is a valid Csound score, but this program will only write melodies at 60bpm in
+the key of C. We can modify our program to have variable tempo and key (note offset).
+The program is still technically a "one-liner", but it has been broken up into 2
+lines:</p>
+<pre><code>
+$ echo "drm" | nrt | awk -F',' -vTEMPO=120 -vBASE=60 \
+    'BEGIN{ts=60/TEMPO} {print "i1",$1*ts,$2*ts,$3 + BASE}'
+
+i1 0 0.5 60
+i1 0.5 0.5 62
+i1 1 0.5 64
+</code></pre>
+<h3>The Csound Orchestra </h3>
+<p>To match the generate score, the Csound orchestra needs an instrument with an 
+ID of "1" that reads in a midi note number (the 4th p-field). </p>
+<p>The instrument below in a simple karplus-strong instrument being sent to a
+reverb. You can copy and paste this into a file called "pluckrev.csd" or you can
+download the file <a href="/res/nineways/pluckrev.csd">here</a>.</p>
+<p>File <em>pluckrev.csd</em>:</p>
+<pre><code>&lt;CsoundSynthesizer&gt;
+&lt;CsInstruments&gt;
+sr	=	96000
+ksmps	=	1
+nchnls	=	2
+0dbfs	=	1
+
+alwayson "reverb"
+
+gaRev init 0
+
+instr 1	
+icps = cpsmidinn(p4)
+a1 pluck 0.1, icps, icps, 0, 1
+a1 *= linsegr(1, 1, 0)
+outs a1, a1
+gaRev += a1 * 0.3
+endin
+
+instr reverb
+aL, aR reverbsc gaRev, gaRev, 0.97, 10000
+clear gaRev
+outs aL, aR
+endin
+&lt;/CsInstruments&gt;
+&lt;/CsoundSynthesizer&gt;
+</code></pre>
+
+<h3>Piping it all together</h3>
+<p>Everything can now be piped together in a single bash command. I've changed the
+melody here to make it more interesting:</p>
+<pre><code>$ echo "drm2tsd" | nrt | awk -F',' -vTEMPO=120 -vBASE=60 \
+    'BEGIN{ts=60/TEMPO} {print "i1",$1*ts,$2*ts,$3 + BASE} ' |\
+    Csound -Lstdin -odac pluckrev.csd
+</code></pre>
+
+The output of Awk is being piped into the input of Csound. Depending on your 
+operating system and driver setup, your Csound command line flags may vary. 
+For instance, this is what I had to put in to get to get Csound to run on my 
+Linux machine running Jack:<pre><code>$ echo "drm2tsd" | nrt | awk -F',' -vTEMPO=120 -vBASE=60 \
+    'BEGIN{ts=60/TEMPO} {print "i1",$1*ts,$2*ts,$3 + BASE} ' |\
+    Csound -Lstdin -odac:system:playback_ -+rtaudio="jack" -b 2048 pluckrev.csd
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
