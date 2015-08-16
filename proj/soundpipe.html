@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <title>Soundpipe</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+  <link rel="stylesheet" href="/css/normalize.css">
+  <link rel="stylesheet" href="/css/skeleton.css">
+
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+        <div class="one-half column" style="margin-top: 5%;">
+<h1>Soundpipe</h1>
+<p>Soundpipe is a lightweight music DSP library for musicians and creative coders. It exists
+to bring beautiful sounds to your projects. The Soundpipe library is built up of
+over 50 (and counting!) high quality modules, many of which have been ported directly from the
+time-honored Csound synthesis language. These modules can be combined together to build
+unique sounds.</p>
+<p>Features:</p>
+<ul>
+<li>Small codebase</li>
+<li>Sample-accurate timing</li>
+<li>Modular design</li>
+<li>Very fast</li>
+<li>Well documented</li>
+<li>Minimal dependencies</li>
+</ul>
+<p>The source code for Soundpipe can be found on
+<a href="http://www.github.com/PaulBatchelor/Soundpipe.git">github</a>.</p>
+<h2>Using Soundpipe</h2>
+<p>The Soundpipe library is simple and straight forward to use. Every Soundpipe module
+has documentation with at least one short C example. By default, the only library Soundpipe
+needs is libsndfile, and compiles to a single static library, making it ideal for embedding.</p>
+<p>Soundpipe is built so that it is easy to extend and hack on. It is easy to add and take away
+modules in Soundpipe for specific project needs.</p>
+<p>Here is a example of Soundpipe code. In this example, a 5-second 500hz sine wave (generated
+via a table lookup oscillator)
+is written to disk:</p>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc;
+    sp_ftbl *ft;
+} UserData;
+
+void write_osc(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    sp_osc_compute(data, udp-&gt;osc, NULL, &sp-&gt;out[0]);
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_osc_create(&ud.osc);
+
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft);
+    ud.osc-&gt;freq = 500;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_osc);
+
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre>
+
+<h2>What Soundpipe is not</h2>
+<p>In an effort to keep Soundpipe simple, Soundpipe tries to follow the Unix philosphy
+of doing one thing well, and consequently, doing a lot of other things not as well.</p>
+<p>Soundpipe is C library and <em>not</em> a language. For this reason, it lacks some of the niceties and
+expressiveness found in music languages like Csound, ChucK, or Supercollider. If you are a composer
+looking for another musical language, this is not the place.  That being said, it is quite possible
+to build a <a href="sporth.html">language</a> on top of Soundpipe.</p>
+<p>Soundpipe by itself doesn't really handle realtime audio, although it can perform quite well it realtime.
+Realtime audio is very OS specific, and faithfully maintaining them for every platform would
+complicate the codebase tremendously. Developers familiar with callback driven audio APIs like
+Portaudio or JACK should have no problem making Soundpipe work in realtime.</p>
+<hr />
+<a href="/proj">Projects</a><p><a href="/">Home</a></p>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
