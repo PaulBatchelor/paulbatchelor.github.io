@@ -1,0 +1,97 @@
+<html>
+<title>in</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>in</h1></i>
+<div class="row">
+Files: <i>in.h, in.c</i></div>
+<div class="row"><br></div>
+Reads from standard input. Expects type of SPFLOAT, which by default is a float. If the input data is larger than the number of samples, you will get a complaint about a broken pipe (but it will still work). If there is no input data from STDIN, it will hang. 
+<br><br>
+The expected use case of sp_in is to utilize pipes from the commandline, like so:
+<br><br>
+cat /dev/urandom | ./my_program 
+<br><br>
+Assuming <i>my_program</i> is using sp_in, this will write /dev/urandom (essentially white noise) to an audio file. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_in_create(sp_in **in)
+</div>
+<div class="row">
+sp_in_init(sp_data *sp, sp_in *in)
+</div>
+<div class="row">
+sp_in_compute(sp_data *sp, sp_in *in, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_in_destroy(sp_in **in)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> This doesn't do anything.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>/*
+ * This module reads from standard input, and writes it to a wave file.
+ * 
+ * To write 5 seconds of white noise:
+ *
+ * cat /dev/urandom | ./ex_in.bin
+ *
+ */
+
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_in *in;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT in = 0;
+    sp_in_compute(sp, ud-&gt;in, NULL, &in);
+    sp-&gt;out[0] = in;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_in_create(&ud.in);
+
+    sp_in_init(sp, ud.in);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_in_destroy(&ud.in);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

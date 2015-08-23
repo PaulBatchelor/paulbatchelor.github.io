@@ -1,0 +1,129 @@
+<html>
+<title>fosc</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>fosc</h1></i>
+<div class="row">
+Files: <i>fosc.h, fosc.c</i></div>
+<div class="row"><br></div>
+ FM oscilator pair with linear interpolation. 
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_fosc_create(sp_fosc **fosc)
+</div>
+<div class="row">
+sp_fosc_init(sp_data *sp, sp_fosc *fosc, sp_ftbl *tbl)
+</div>
+<div class="row">
+sp_fosc_compute(sp_data *sp, sp_fosc *fosc, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_fosc_destroy(sp_fosc **fosc)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>tbl:</i> Wavetable to read from. <B>Note:</B> the size of this table must be a power of 2.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>freq:</i> Frequency (in Hz)</div>
+<div class="row">
+
+(Default value: 440)
+</div>
+<div class="row">
+<i>amp:</i> Amplitude (typically a value between 0 and 1).</div>
+<div class="row">
+
+(Default value: 0.4)
+</div>
+<div class="row">
+<i>car:</i> Carrier frequency, expressed as a ratio number in C:M ratio. Typically an integer.</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>mod:</i> Modulator frequency, expressed as a ratio number in C:M ratio. Typically an integer.</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>indx:</i> Modulation index. Most commercial synthesizers have a range from 0-8, but there's nothing stopping you from going beyond that.</div>
+<div class="row">
+
+(Default value: 8)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> This does nothing.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_fosc *osc;
+    sp_ftbl *ft; 
+    int counter;
+} udata;
+
+void process(sp_data *data, void *ud) {
+    udata *udp = ud;
+    if(udp-&gt;counter == 0){
+        udp-&gt;osc-&gt;freq = 500 + rand() % 2000;
+    }
+    sp_fosc_compute(data, udp-&gt;osc, NULL, &data-&gt;out[0]);
+    udp-&gt;counter = (udp-&gt;counter + 1) % 4410;
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    ud.counter = 0;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_fosc_create(&ud.osc);
+
+    sp_gen_sine(sp, ud.ft);
+    sp_fosc_init(sp, ud.osc, ud.ft);
+    ud.osc-&gt;freq = 500;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_ftbl_destroy(&ud.ft);
+    sp_fosc_destroy(&ud.osc);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

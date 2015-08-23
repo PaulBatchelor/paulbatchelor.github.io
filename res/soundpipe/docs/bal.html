@@ -1,0 +1,120 @@
+<html>
+<title>bal</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>bal</h1></i>
+<div class="row">
+Files: <i>bal.h, bal.c</i></div>
+<div class="row"><br></div>
+Balance the gain of one signal based on another signal. Often this is used to restore gain lost in the output of a filter. 
+    
+In the source code, the value "ihp" is set to a static 10hz. This is the default value in Csound, and you probably won't need to touch this. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_bal_create(sp_bal **bal)
+</div>
+<div class="row">
+sp_bal_init(sp_data *sp, sp_bal *bal)
+</div>
+<div class="row">
+sp_bal_compute(sp_data *sp, sp_bal *bal, SPFLOAT *comp, SPFLOAT *sig, SPFLOAT *out)
+</div>
+<div class="row">
+sp_bal_destroy(sp_bal **bal)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>comp:</i> The signal to compare it to.
+</div>
+<div class="row">
+<i>sig:</i> The signal whose gain will be changed.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> The output signal with applied gain.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc[3];
+    sp_ftbl *ft;
+    sp_moogladder *filt;
+    sp_bal *bal;
+    sp_tenv *env;
+} udata;
+
+void process(sp_data *sp, void *ud) {
+    udata *udp = ud;
+    int i;
+    SPFLOAT out = 0, osc = 0, filt = 0, bal = 0, env = 0, tick;
+    for(i = 0; i &lt; 3; i++) {
+       sp_osc_compute(sp, udp-&gt;osc[i], NULL, &osc);
+       out += osc * 0.5;
+    }
+    tick = (sp-&gt;pos == 0) ? 1.0 : 0.0;
+    sp_tenv_compute(sp, udp-&gt;env, &tick, &env);
+    udp-&gt;filt-&gt;freq = 300 + 3000 * env;
+    sp_moogladder_compute(sp, udp-&gt;filt, &out, &filt);
+    sp_bal_compute(sp, udp-&gt;bal, &osc, &filt, &bal);
+    sp-&gt;out[0] = bal * env;
+}
+
+int main() {
+    srand(time(NULL));
+    int i;
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_ftbl_create(sp, &ud.ft, 4096);
+    for(i = 0; i &lt; 3; i++) {
+        sp_osc_create(&ud.osc[i]);
+        ud.osc[i]-&gt;amp = 0.5;
+    }
+    sp_bal_create(&ud.bal);
+    sp_moogladder_create(&ud.filt);
+    ud.filt-&gt;res = 0.8;
+    sp_tenv_create(&ud.env);
+
+    sp_gen_line(sp, ud.ft, "0 1 4096 -1");
+    sp_osc_init(sp, ud.osc[0], ud.ft, 0);
+    ud.osc[0]-&gt;freq = sp_midi2cps(41 - 0.05);
+    sp_osc_init(sp, ud.osc[1], ud.ft, 0);
+    ud.osc[1]-&gt;freq = sp_midi2cps(41 - 12);
+    sp_osc_init(sp, ud.osc[2], ud.ft, 0);
+    ud.osc[2]-&gt;freq = sp_midi2cps(41 + 0.05);
+    sp-&gt;len = 44100 * 5;
+    sp_bal_init(sp, ud.bal);
+    sp_moogladder_init(sp, ud.filt);
+    sp_tenv_init(sp, ud.env, 2.25, 0.5, 2.25);
+
+    sp_process(sp, &ud, process);
+
+    sp_ftbl_destroy(&ud.ft);
+    for(i = 0; i &lt; 3; i++) sp_osc_destroy(&ud.osc[i]);
+    sp_bal_destroy(&ud.bal);
+    sp_moogladder_destroy(&ud.filt);
+    sp_tenv_destroy(&ud.env);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

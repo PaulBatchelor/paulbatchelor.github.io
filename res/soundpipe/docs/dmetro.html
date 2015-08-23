@@ -1,0 +1,115 @@
+<html>
+<title>dmetro</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>dmetro</h1></i>
+<div class="row">
+Files: <i>dmetro.h, dmetro.c</i></div>
+<div class="row"><br></div>
+Delta Metro. Produce a set of triggers spaced apart by  . 
+time.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_dmetro_create(sp_dmetro **dmetro)
+</div>
+<div class="row">
+sp_dmetro_init(sp_data *sp, sp_dmetro *dmetro)
+</div>
+<div class="row">
+sp_dmetro_compute(sp_data *sp, sp_dmetro *dmetro, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_dmetro_destroy(sp_dmetro **dmetro)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>time:</i> Time between triggers (in seconds). This will update at the start of each trigger.</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> this doesn't do anything.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Trigger output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_dmetro *dmetro;
+    sp_osc *osc;
+    sp_osc *lfo;
+    sp_ftbl *ft; 
+    sp_tenv *tenv;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, dmetro = 0, tenv = 0, lfo = 0;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp_osc_compute(sp, ud-&gt;lfo, NULL, &lfo);
+    lfo += 0.5;
+    ud-&gt;dmetro-&gt;time = 0.05 + 0.3 * lfo;
+    sp_dmetro_compute(sp, ud-&gt;dmetro, NULL, &dmetro);
+    sp_tenv_compute(sp, ud-&gt;tenv, &dmetro, &tenv);
+    sp-&gt;out[0] = tenv * osc;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_dmetro_create(&ud.dmetro);
+    sp_osc_create(&ud.osc);
+    sp_osc_create(&ud.lfo);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_tenv_create(&ud.tenv);
+
+    sp_dmetro_init(sp, ud.dmetro);
+    ud.dmetro-&gt;time = 0.05;
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    sp_osc_init(sp, ud.lfo, ud.ft, 0);
+    ud.lfo-&gt;freq = 0.3;
+    ud.lfo-&gt;amp = 0.5;
+    sp_tenv_init(sp, ud.tenv, 0.001, 0.03, 0.001);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_dmetro_destroy(&ud.dmetro);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_osc_destroy(&ud.lfo);
+    sp_tenv_destroy(&ud.tenv);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

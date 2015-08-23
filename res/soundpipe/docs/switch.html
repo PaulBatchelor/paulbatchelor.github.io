@@ -1,0 +1,115 @@
+<html>
+<title>switch</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>switch</h1></i>
+<div class="row">
+Files: <i>switch.h, switch.c</i></div>
+<div class="row"><br></div>
+Switch between two signals. By default the incoming first signal is selected. When triggered, the output signal will switch to the other signal.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_switch_create(sp_switch **switch)
+</div>
+<div class="row">
+sp_switch_init(sp_data *sp, sp_switch *switch)
+</div>
+<div class="row">
+sp_switch_compute(sp_data *sp, sp_switch *switch, SPFLOAT *trig, SPFLOAT *input_1, SPFLOAT *input_2, SPFLOAT *out)
+</div>
+<div class="row">
+sp_switch_destroy(sp_switch **switch)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trig:</i> When non-zero, will switch to the other signal.
+</div>
+<div class="row">
+<i>input_1:</i> Signal input 1. This is the default signal.
+</div>
+<div class="row">
+<i>input_2:</i> Signal input 2.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_switch *sw;
+    sp_osc *osc;
+    sp_ftbl *ft;
+    sp_metro *met;
+    sp_osc *lfo;
+    sp_fosc *fosc;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, sw = 0, met = 0, fosc = 0, lfo = 0;
+    sp_osc_compute(sp, ud-&gt;lfo, NULL, &lfo);
+    ud-&gt;osc-&gt;freq = 550 + lfo;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp_fosc_compute(sp, ud-&gt;fosc, NULL, &fosc);
+    sp_metro_compute(sp, ud-&gt;met, NULL, &met);
+
+    sp_switch_compute(sp, ud-&gt;sw, &met, &osc, &fosc, &sw);
+    sp-&gt;out[0] = sw;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_switch_create(&ud.sw);
+    sp_osc_create(&ud.osc);
+    sp_osc_create(&ud.lfo);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_metro_create(&ud.met);
+    sp_fosc_create(&ud.fosc);
+
+    sp_switch_init(sp, ud.sw);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    sp_osc_init(sp, ud.lfo, ud.ft, 0);
+    ud.lfo-&gt;amp = 100;
+    ud.lfo-&gt;freq = 6;
+    sp_fosc_init(sp, ud.fosc, ud.ft);
+    sp_metro_init(sp, ud.met, 2.5);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_switch_destroy(&ud.sw);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_osc_destroy(&ud.lfo);
+    sp_fosc_destroy(&ud.fosc);
+    sp_metro_destroy(&ud.met);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

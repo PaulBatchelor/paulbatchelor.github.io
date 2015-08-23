@@ -1,0 +1,102 @@
+<html>
+<title>moogladder</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>moogladder</h1></i>
+<div class="row">
+Files: <i>moogladder.h, moogladder.c</i></div>
+<div class="row"><br></div>
+Low pass resonant filter based on the moog ladder filter.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_moogladder_create(sp_moogladder **moogladder)
+</div>
+<div class="row">
+sp_moogladder_init(sp_data *sp, sp_moogladder *moogladder)
+</div>
+<div class="row">
+sp_moogladder_compute(sp_data *sp, sp_moogladder *moogladder, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_moogladder_destroy(sp_moogladder **moogladder)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>freq:</i> Filter cutoff frequency.</div>
+<div class="row">
+
+(Default value: 1000)
+</div>
+<div class="row">
+<i>res:</i> Filter resonance</div>
+<div class="row">
+
+(Default value: 0.4)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> this is the clock source for a made up plugin.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Stereo left output for moogladder.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_noise *ns;
+    sp_moogladder *moog;
+    int counter;
+} udata;
+
+void write_noise(sp_data *data, void *ud) {
+    udata *udata = ud;
+    SPFLOAT in = 0;
+    SPFLOAT out = 0;
+    if(udata-&gt;counter == 0) {
+        udata-&gt;moog-&gt;res = 0.8;
+        udata-&gt;moog-&gt;freq = 500 + rand() % 4000;
+    }
+    sp_noise_compute(data, udata-&gt;ns, NULL, &in);
+    sp_moogladder_compute(data, udata-&gt;moog, &in, &data-&gt;out[0]); 
+    udata-&gt;counter = (udata-&gt;counter + 1) % 5000;
+}
+int main() {
+    srand(time(NULL));
+    udata ud;
+    ud.counter = 0;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_noise_create(&ud.ns);
+    sp_moogladder_create(&ud.moog);
+    sp_noise_init(sp, ud.ns);
+    sp_moogladder_init(sp, ud.moog);
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_noise);
+    sp_noise_destroy(&ud.ns);
+    sp_moogladder_destroy(&ud.moog);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

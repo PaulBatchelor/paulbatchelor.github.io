@@ -1,0 +1,111 @@
+<html>
+<title>allpass</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>allpass</h1></i>
+<div class="row">
+Files: <i>allpass.h, allpass.c</i></div>
+<div class="row"><br></div>
+Allpass filter, often used for the creation of reverb modules.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_allpass_create(sp_allpass **allpass)
+</div>
+<div class="row">
+sp_allpass_init(sp_data *sp, sp_allpass *allpass, SPFLOAT looptime)
+</div>
+<div class="row">
+sp_allpass_compute(sp_data *sp, sp_allpass *allpass, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_allpass_destroy(sp_allpass **allpass)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>looptime:</i> The loop time of the filter, in seconds. This can also be thought of as the delay time.</div>
+<div class="row">
+
+(Recommended value: 0.1)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>revtime:</i> The reverberation time, in seconds (aka RT-60).</div>
+<div class="row">
+
+(Default value: 3.5)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include "soundpipe.h"
+
+typedef struct {
+    sp_allpass *ap;
+    sp_tenv *env;
+    sp_noise *nz;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT tick = 0, env = 0, noise = 0, allpass = 0;
+
+    tick = (sp-&gt;pos == 0) ? 1 : 0;
+    sp_tenv_compute(sp, ud-&gt;env, &tick, &env);
+    sp_noise_compute(sp, ud-&gt;nz, NULL, &noise);
+    noise *= env * 0.5;
+    sp_allpass_compute(sp, ud-&gt;ap, &noise, &allpass);
+
+    sp-&gt;out[0] = allpass;
+}
+
+
+int main()
+{
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+   
+    sp_allpass_create(&ud.ap);
+    sp_tenv_create(&ud.env);
+    sp_noise_create(&ud.nz);
+
+    sp_allpass_init(sp, ud.ap, 0.1);
+    sp_tenv_init(sp, ud.env, 0.001, 0.00, 0.1);
+    sp_noise_init(sp, ud.nz);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_noise_destroy(&ud.nz);
+    sp_tenv_destroy(&ud.env);
+    sp_allpass_destroy(&ud.ap);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

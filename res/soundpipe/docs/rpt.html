@@ -1,0 +1,138 @@
+<html>
+<title>rpt</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>rpt</h1></i>
+<div class="row">
+Files: <i>rpt.h, rpt.c</i></div>
+<div class="row"><br></div>
+"rpt" is a trigger based beat-repeat stuttering effect. When the input is a non-zero value, rpt will load up the buffer and loop a certain number of times. Speed and repeat amounts can be set with the sp_rpt_set function.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_rpt_create(sp_rpt **rpt)
+</div>
+<div class="row">
+sp_rpt_init(sp_data *sp, sp_rpt *rpt, SPFLOAT maxdur)
+</div>
+<div class="row">
+sp_rpt_compute(sp_data *sp, sp_rpt *rpt, SPFLOAT *trig, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_rpt_destroy(sp_rpt **rpt)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>maxdur:</i> Maximum delay duration in seconds. This will set the buffer size.</div>
+<div class="row">
+
+(Recommended value: 0.7)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>bpm:</i> Beats per minute.</div>
+<div class="row">
+
+(Default value: 130)
+</div>
+<div class="row">
+<i>div:</i> Division amount of the beat. 1 = quarter, 2 = eight, 4 = sixteenth, 8 = thirty-second, etc. Any whole number integer is acceptable.</div>
+<div class="row">
+
+(Default value: 8)
+</div>
+<div class="row">
+<i>rep:</i> Number of times to repeat.</div>
+<div class="row">
+
+(Default value: 4)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trig:</i> When this value is non-zero, it will start the repeater.
+</div>
+<div class="row">
+<i>input:</i> The signal to be repeated.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal out. This is passive unless explicity triggered in the input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include "soundpipe.h"
+
+typedef struct{
+    sp_osc *osc;
+    sp_ftbl *ft;
+    sp_metro *mt;
+    sp_tenv *te;
+    sp_rpt *rpt;
+    sp_maygate *mg;
+}UserData;
+
+void compute(sp_data *sp, void *user_data){
+    UserData *ud = user_data;
+    SPFLOAT met, osc, env, rpt, maygate, trig, dry;
+    sp_metro_compute(sp, ud-&gt;mt, NULL, &met);
+    sp_tenv_compute(sp, ud-&gt;te, &met, &env);
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    dry = osc * env;
+    sp_maygate_compute(sp, ud-&gt;mg, &met, &maygate);
+    trig = met * maygate;
+    sp_rpt_compute(sp, ud-&gt;rpt, &trig, &dry, &rpt);
+    sp-&gt;out[0] = rpt;
+}
+
+int main(){
+    sp_data *sp;
+    UserData ud;
+    sp_create(&sp);
+    int tempo = 120;
+    sp_rpt_create(&ud.rpt);
+    sp_maygate_create(&ud.mg);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 4096);
+    sp_metro_create(&ud.mt);
+    sp_tenv_create(&ud.te);
+
+
+    sp_maygate_init(sp, ud.mg);
+    ud.mg-&gt;prob = 0.5;
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    sp_metro_init(sp, ud.mt, tempo / 60.0);
+    sp_rpt_init(sp, ud.rpt, 1.0);
+    ud.rpt-&gt;bpm = tempo;
+    ud.rpt-&gt;div = 8;
+    ud.rpt-&gt;rep = 4;
+    sp_tenv_init(sp, ud.te, 0.001, 0.1, 0.1);
+    sp_process(sp, &ud, compute);
+
+    sp_tenv_destroy(&ud.te);
+    sp_metro_destroy(&ud.mt);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_rpt_destroy(&ud.rpt);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

@@ -1,0 +1,139 @@
+<html>
+<title>nsmp</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>nsmp</h1></i>
+<div class="row">
+Files: <i>nsmp.h, nsmp.c</i></div>
+<div class="row"><br></div>
+Nanosamp: a tiny sampler built for Soundpipe. A nanosamp file is comprised of a mono audio file and an ini file. Nanosamp is geared towards percussive and found sound sample players, and is intended to be combined with soundpipe modules. 
+<br>    
+The ini file contains mappings that correspond to the audio file. Such an entry would look like this:
+<br><pre>
+[keyword]
+pos = 2.3
+size = 3
+</pre>
+In this instance, an entry called "keyword" has been made, starting at 2.3 seconds in the 
+audio file, with a length of 3 seconds. An example file oneart.ini has been created in the 
+examples folder.
+
+The SoundPipe implementation of nanosamp will automatically index the entries
+in the order they appear in the INI file and must be selected this way by changing the index
+parameter. Soundpipe will only select the new entry when the trigger input is a non-zero value.
+
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_nsmp_create(sp_nsmp **nsmp)
+</div>
+<div class="row">
+sp_nsmp_init(sp_data *sp, sp_nsmp *nsmp, const char *wav, const char *ini)
+</div>
+<div class="row">
+sp_nsmp_compute(sp_data *sp, sp_nsmp *nsmp, SPFLOAT *trigger, SPFLOAT *signal out)
+</div>
+<div class="row">
+sp_nsmp_destroy(sp_nsmp **nsmp)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>wav:</i> The filepath of the audio file. It should be mono and matching the samplerate of the project, as no resampling is done.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row">
+<i>ini:</i> The filepath of the INI file. See oneart.ini in the examples folder for an example of an INI file.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>index:</i> This is an optional parameter. These values are always set to a value by default, and can be set after the init function has been called.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trigger:</i> Trigger input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>signal out:</i> Signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Other Functions:</h2></div>
+<div class="row">
+sp_nsmp_print_index(sp_data *sp, sp_nsmp *nsmp)
+</div>
+<div class="row">
+Prints the index and their corresponding keyword</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_metro *met;
+    sp_nsmp *nsmp;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT met = 0, nsmp = 0;
+    sp_metro_compute(sp, ud-&gt;met, NULL, &met);
+    if(met) {
+        ud-&gt;nsmp-&gt;index = rand() % 3;
+    }
+    sp_nsmp_compute(sp, ud-&gt;nsmp, &met, &nsmp);
+    sp-&gt;out[0] = nsmp;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_nsmp_create(&ud.nsmp);
+    sp_metro_create(&ud.met);
+
+    sp_metro_init(sp, ud.met, 2);
+    sp_nsmp_init(sp, ud.nsmp, "oneart.wav", "oneart.ini");
+    
+    sp_nsmp_print_index(sp, ud.nsmp);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_nsmp_destroy(&ud.nsmp);
+    sp_metro_destroy(&ud.met);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

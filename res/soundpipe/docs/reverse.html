@@ -1,0 +1,115 @@
+<html>
+<title>reverse</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>reverse</h1></i>
+<div class="row">
+Files: <i>reverse.h, reverse.c</i></div>
+<div class="row"><br></div>
+Reverse will store a signal inside a buffer and play it back reversed.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_reverse_create(sp_reverse **reverse)
+</div>
+<div class="row">
+sp_reverse_init(sp_data *sp, sp_reverse *reverse, SPFLOAT delay)
+</div>
+<div class="row">
+sp_reverse_compute(sp_data *sp, sp_reverse *reverse, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_reverse_destroy(sp_reverse **reverse)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>delay:</i> Delay time in seconds.</div>
+<div class="row">
+
+(Recommended value: 1.0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc;
+    sp_ftbl *ft; 
+    sp_tenv *tenv;
+    sp_reverse *rv;
+} udata;
+
+void write_osc(sp_data *data, void *ud) {
+    udata *udp = ud;
+    SPFLOAT env = 0;
+    SPFLOAT osc = 0;
+    SPFLOAT rv = 0;
+    SPFLOAT dry = 0;
+    SPFLOAT trig;
+    if(data-&gt;pos == 0){
+        trig = 1.0;
+    }else{
+        trig = 0.0;
+    }
+    sp_tenv_compute(data, udp-&gt;tenv, &trig, &env);
+    sp_osc_compute(data, udp-&gt;osc, NULL, &osc);
+    dry = osc * env;
+    sp_reverse_compute(data, udp-&gt;rv, &dry, &rv);
+    data-&gt;out[0] = dry + rv;
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    uint32_t bufsize;
+    sp_data *sp;
+    sp_create(&sp);
+    
+    sp_reverse_create(&ud.rv);
+    sp_tenv_create(&ud.tenv);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_osc_create(&ud.osc);
+
+    sp_reverse_init(sp, ud.rv, 1.0);
+    sp_tenv_init(sp, ud.tenv, 0.03, 0.01, 0.3);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    ud.osc-&gt;freq = 1000;
+    ud.osc-&gt;amp = 0.5;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_osc);
+
+    sp_reverse_destroy(&ud.rv);
+    sp_tenv_destroy(&ud.tenv);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

@@ -1,0 +1,115 @@
+<html>
+<title>port</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>port</h1></i>
+<div class="row">
+Files: <i>port.h, port.c</i></div>
+<div class="row"><br></div>
+This applies portamento to a control signal. Useful for smoothing out low-resolution signals and applying glissando to filters.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_port_create(sp_port **port)
+</div>
+<div class="row">
+sp_port_init(sp_data *sp, sp_port *port, SPFLOAT htime)
+</div>
+<div class="row">
+sp_port_compute(sp_data *sp, sp_port *port, SPFLOAT *in, SPFLOAT *out)
+</div>
+<div class="row">
+sp_port_destroy(sp_port **port)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>htime:</i> </div>
+<div class="row">
+
+(Recommended value: 0.02)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>in:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc;
+    sp_metro *mt;
+    sp_ftbl *sine, *nn;
+    sp_tseq *seq;
+    sp_port *prt;
+} udata;
+
+void process(sp_data *sp, void *userdata) {
+    udata *ud = userdata;
+    SPFLOAT osc, mt, nn, freq, pfreq;
+    sp_metro_compute(sp, ud-&gt;mt, NULL, &mt);
+    sp_tseq_compute(sp, ud-&gt;seq, &mt, &nn);
+    freq = sp_midi2cps(nn);
+    sp_port_compute(sp, ud-&gt;prt, &freq, &pfreq);
+    ud-&gt;osc-&gt;freq = pfreq;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp-&gt;out[0] = osc;
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_metro_create(&ud.mt);
+    sp_ftbl_create(sp, &ud.sine, 2048);
+    sp_ftbl_create(sp, &ud.nn, 1);
+    sp_osc_create(&ud.osc);
+    sp_port_create(&ud.prt);
+
+    sp_gen_vals(sp, ud.nn, "60 63 65 60 63 67");
+    sp_tseq_create(&ud.seq);
+    sp_tseq_init(sp, ud.seq, ud.nn);
+
+    sp_port_init(sp, ud.prt, 0.02);
+    sp_metro_init(sp, ud.mt, 4.0);
+    sp_gen_sine(sp, ud.sine);
+    sp_osc_init(sp, ud.osc, ud.sine, 0);
+    sp-&gt;len = 44100 * 5;
+
+    sp_process(sp, &ud, process);
+
+    sp_port_destroy(&ud.prt);
+    sp_tseq_destroy(&ud.seq);
+    sp_metro_destroy(&ud.mt);
+    sp_ftbl_destroy(&ud.sine);
+    sp_ftbl_destroy(&ud.nn);
+    sp_osc_destroy(&ud.osc);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

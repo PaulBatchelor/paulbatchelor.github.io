@@ -1,0 +1,124 @@
+<html>
+<title>dist</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>dist</h1></i>
+<div class="row">
+Files: <i>dist.h, dist.c</i></div>
+<div class="row"><br></div>
+Distortion using a modified hyperbolic tangent function.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_dist_create(sp_dist **dist)
+</div>
+<div class="row">
+sp_dist_init(sp_data *sp, sp_dist *dist)
+</div>
+<div class="row">
+sp_dist_compute(sp_data *sp, sp_dist *dist, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_dist_destroy(sp_dist **dist)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>pregrain:</i> Gain applied before waveshaping.</div>
+<div class="row">
+
+(Default value: 2)
+</div>
+<div class="row">
+<i>postgain:</i> Gain applied after waveshaping</div>
+<div class="row">
+
+(Default value: 0.5)
+</div>
+<div class="row">
+<i>shape1:</i> Shape of the positive part of the signal. A value of 0 gets a flat clip.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>shape2:</i> Like shape1, only for the negative part.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_fosc *osc;
+    sp_ftbl *ft;
+    sp_dist *ds;
+    sp_osc *lfo;
+} udata;
+
+void process(sp_data *sp, void *ud) {
+    udata *udp = ud;
+    SPFLOAT osc = 0, lfo = 0;
+    sp_osc_compute(sp, udp-&gt;lfo, NULL, &lfo);
+    lfo = 7 * (0.5 * (lfo + 1));
+    udp-&gt;osc-&gt;indx = lfo;
+    sp_fosc_compute(sp, udp-&gt;osc, NULL, &osc);
+    sp_dist_compute(sp, udp-&gt;ds, &osc, &sp-&gt;out[0]);
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_fosc_create(&ud.osc);
+    sp_dist_create(&ud.ds);
+    sp_osc_create(&ud.lfo);
+
+    sp_gen_sine(sp, ud.ft);
+    sp_fosc_init(sp, ud.osc, ud.ft);
+    ud.osc-&gt;freq = 60;
+    sp_dist_init(sp, ud.ds);
+    ud.ds-&gt;pregain = 10;
+    sp_osc_init(sp, ud.lfo, ud.ft, 0);
+    ud.lfo-&gt;freq = 0.5;
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_ftbl_destroy(&ud.ft);
+    sp_fosc_destroy(&ud.osc);
+    sp_dist_destroy(&ud.ds);
+    sp_osc_destroy(&ud.lfo);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

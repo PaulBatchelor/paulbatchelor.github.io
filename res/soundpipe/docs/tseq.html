@@ -1,0 +1,139 @@
+<html>
+<title>tseq</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>tseq</h1></i>
+<div class="row">
+Files: <i>tseq.h, tseq.c</i></div>
+<div class="row"><br></div>
+TSeq runs through values in an ftable. It will change values when the trigger input is a non-zero value, and wrap around when it reaches the end.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_tseq_create(sp_tseq **tseq)
+</div>
+<div class="row">
+sp_tseq_init(sp_data *sp, sp_tseq *tseq, sp_ftbl *ft)
+</div>
+<div class="row">
+sp_tseq_compute(sp_data *sp, sp_tseq *tseq, SPFLOAT *trig, SPFLOAT *val)
+</div>
+<div class="row">
+sp_tseq_destroy(sp_tseq **tseq)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>ft:</i> An ftable of values</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>shuf:</i> When shuf is non-zero, randomly pick a value rather than go through sequentially.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trig:</i> Trigger.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>val:</i> Value from current position in ftable.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc;
+    sp_ftbl *ft, *delta, *nn; 
+    sp_tenv *tenv;
+    sp_dtrig *dt;
+    sp_tseq *seq;
+} udata;
+
+void write_osc(sp_data *data, void *ud) {
+    udata *udp = ud;
+    SPFLOAT env = 0;
+    SPFLOAT osc = 0;
+    SPFLOAT dry = 0;
+    SPFLOAT trig;
+    SPFLOAT dtrig = 0;
+    SPFLOAT note = 0;
+    if(data-&gt;pos == 0){
+        trig = 1.0;
+    }else{
+        trig = 0.0;
+    }
+    sp_dtrig_compute(data, udp-&gt;dt, &trig, &dtrig);
+    sp_tseq_compute(data, udp-&gt;seq, &dtrig, &note);
+    udp-&gt;osc-&gt;freq = sp_midi2cps(note + 24);
+    env = 1.0;
+    sp_tenv_compute(data, udp-&gt;tenv, &dtrig, &env);
+    sp_osc_compute(data, udp-&gt;osc, NULL, &osc);
+    data-&gt;out[0] = osc * env;
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    uint32_t bufsize;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_auxdata rvaux;
+    sp_dtrig_create(&ud.dt);
+    sp_tenv_create(&ud.tenv);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_ftbl_create(sp, &ud.delta, 4);
+    sp_ftbl_create(sp, &ud.nn, 1);
+    sp_osc_create(&ud.osc);
+
+    sp_gen_vals(sp, ud.delta, "0.2 0.2 0.2 0.1");
+    sp_gen_vals(sp, ud.nn, "60 62 64 67");
+    sp_tseq_create(&ud.seq); 
+    sp_tseq_init(sp, ud.seq, ud.nn);
+    
+    sp_dtrig_init(sp, ud.dt, ud.delta);
+    ud.dt-&gt;loop = 1.0;
+    sp_tenv_init(sp, ud.tenv, 0.01, 0.01, 0.05);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    ud.osc-&gt;freq = 1000;
+    ud.osc-&gt;amp = 0.5;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_osc);
+
+    sp_dtrig_destroy(&ud.dt);
+    sp_tseq_destroy(&ud.seq); 
+    sp_tenv_destroy(&ud.tenv);
+    sp_ftbl_destroy(&ud.ft);
+    sp_ftbl_destroy(&ud.nn);
+    sp_ftbl_destroy(&ud.delta);
+    sp_osc_destroy(&ud.osc);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

@@ -1,0 +1,104 @@
+<html>
+<title>samphold</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>samphold</h1></i>
+<div class="row">
+Files: <i>samphold.h, samphold.c</i></div>
+<div class="row"><br></div>
+Classic sample and hold.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_samphold_create(sp_samphold **samphold)
+</div>
+<div class="row">
+sp_samphold_init(sp_data *sp, sp_samphold *samphold)
+</div>
+<div class="row">
+sp_samphold_compute(sp_data *sp, sp_samphold *samphold, SPFLOAT *trig, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_samphold_destroy(sp_samphold **samphold)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trig:</i> Will hold the current input value when non-zero.
+</div>
+<div class="row">
+<i>input:</i> Audio input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_samphold *samphold;
+    sp_osc *osc;
+    sp_ftbl *ft;
+    sp_metro *met;
+    sp_noise *noise;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, samphold = 0, met = 0, noise = 0;
+    sp_metro_compute(sp, ud-&gt;met, NULL, &met);
+    sp_noise_compute(sp, ud-&gt;noise, NULL, &noise);
+    sp_samphold_compute(sp, ud-&gt;samphold, &met, &noise, &samphold);
+    ud-&gt;osc-&gt;freq = 200 + (samphold + 1) * 300;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp-&gt;out[0] = osc;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_samphold_create(&ud.samphold);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_metro_create(&ud.met);
+    sp_noise_create(&ud.noise);
+
+    sp_samphold_init(sp, ud.samphold);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    sp_metro_init(sp, ud.met, 5);
+    sp_noise_init(sp, ud.noise);
+    ud.noise-&gt;gain = 1;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_samphold_destroy(&ud.samphold);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_metro_destroy(&ud.met);
+    sp_noise_destroy(&ud.noise);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

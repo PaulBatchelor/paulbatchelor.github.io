@@ -1,0 +1,119 @@
+<html>
+<title>vdelay</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>vdelay</h1></i>
+<div class="row">
+Files: <i>vdelay.h, vdelay.c</i></div>
+<div class="row"><br></div>
+A delay line with cubic interpolation.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_vdelay_create(sp_vdelay **vdelay)
+</div>
+<div class="row">
+sp_vdelay_init(sp_data *sp, sp_vdelay *vdelay, SPFLOAT maxdel)
+</div>
+<div class="row">
+sp_vdelay_compute(sp_data *sp, sp_vdelay *vdelay, SPFLOAT *in, SPFLOAT *out)
+</div>
+<div class="row">
+sp_vdelay_destroy(sp_vdelay **vdelay)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>maxdel:</i> The maximum delay time, in seconds.</div>
+<div class="row">
+
+(Recommended value: 1)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>del:</i> Delay time (in seconds) that can be changed during performance. This value must not exceed the maximum delay time.</div>
+<div class="row">
+
+(Default value: maxdel * 0.5)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>in:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc, *lfo;
+    sp_ftbl *ft, *sine;
+    sp_vdelay *del;
+} udata;
+
+void process(sp_data *sp, void *data) {
+    udata *ud = data;
+    SPFLOAT freq = 0.0, del = 0.0, osc = 0.0;
+    sp_osc_compute(sp, ud-&gt;lfo, NULL, &freq);
+    freq = 1.0 + (freq * 0.5);
+    freq = 0.02 + (freq * 0.02);
+    ud-&gt;del-&gt;del = freq;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp_vdelay_compute(sp, ud-&gt;del, &osc, &del);
+    sp-&gt;out[0] = del * 0.5 + osc * 0.5;
+}
+
+int main() {
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_vdelay_create(&ud.del);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.sine, 4096);
+    sp_osc_create(&ud.lfo);
+
+    sp_vdelay_init(sp, ud.del, 0.5);
+    sp_gen_file(sp, ud.ft, "Formant04.wav");
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    ud.osc-&gt;freq = sp_midi2cps(50);
+
+    sp_gen_sine(sp, ud.sine);
+    sp_osc_init(sp, ud.lfo, ud.sine, 0);
+    ud.lfo-&gt;freq = 0.2;
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_vdelay_destroy(&ud.del);
+    sp_ftbl_destroy(&ud.ft);
+    sp_ftbl_destroy(&ud.sine);
+    sp_osc_destroy(&ud.osc);
+    sp_osc_destroy(&ud.lfo);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

@@ -1,0 +1,136 @@
+<html>
+<title>maygate</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>maygate</h1></i>
+<div class="row">
+Files: <i>maygate.h, maygate.c</i></div>
+<div class="row"><br></div>
+Maygate is a "maybe gate". It takes in a trigger, and then it will randomly decide to turn the gate on or not. One particular application for maygate is to arbitrarily turn on/off sends to effects. One specific example of this could be a randomized reverb throw on a snare.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_maygate_create(sp_maygate **maygate)
+</div>
+<div class="row">
+sp_maygate_init(sp_data *sp, sp_maygate *maygate)
+</div>
+<div class="row">
+sp_maygate_compute(sp_data *sp, sp_maygate *maygate, SPFLOAT *trig, SPFLOAT *out)
+</div>
+<div class="row">
+sp_maygate_destroy(sp_maygate **maygate)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>prob:</i> Probability of maygate. This is a value between 0-1. The closer to 1, the more likely the maygate will let a signal through.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>mode:</i> If mode is nonzero, maygate will output one sample triggers instead of a gate signal.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trig:</i> This expects a trigger signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc;
+    sp_ftbl *ft;
+    sp_tevent *te;
+    sp_metro *met;
+    sp_tenv *tenv;
+    sp_maygate *mg;
+    SPFLOAT freq;
+} udata;
+
+void write_osc(sp_data *data, void *ud) {
+    udata *udp = ud;
+    SPFLOAT trig = 0;
+    SPFLOAT env = 0;
+    SPFLOAT osc = 0;
+    SPFLOAT mgate = 0;
+    sp_metro_compute(data, udp-&gt;met, NULL, &trig);
+    sp_maygate_compute(data, udp-&gt;mg, &trig, &mgate);
+    sp_tevent_compute(data, udp-&gt;te, &trig, &udp-&gt;osc-&gt;freq);
+    sp_tenv_compute(data, udp-&gt;tenv, &trig, &env);
+    sp_osc_compute(data, udp-&gt;osc, NULL, &osc);
+    data-&gt;out[0] = osc * env * mgate;
+}
+
+void freq_reinit(void *ud){
+    SPFLOAT *freq = ud;
+    *freq = 500 + rand() % 2000;
+}
+
+void freq_compute(void *ud, SPFLOAT *out){
+    SPFLOAT *freq = ud;
+    *out = *freq;
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    SPFLOAT *freqp = &ud.freq;
+    ud.freq = 400;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_maygate_create(&ud.mg);
+    sp_tenv_create(&ud.tenv);
+    sp_metro_create(&ud.met);
+    sp_tevent_create(&ud.te);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_osc_create(&ud.osc);
+
+    sp_maygate_init(sp, ud.mg);
+    ud.mg-&gt;prob = 0.2;
+    sp_tenv_init(sp, ud.tenv, 0.01, 0.01, 0.2);
+    sp_metro_init(sp, ud.met, 12);
+    sp_tevent_init(sp, ud.te, freq_reinit, freq_compute, freqp);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    ud.osc-&gt;freq = *freqp;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_osc);
+
+    sp_maygate_destroy(&ud.mg);
+    sp_tenv_destroy(&ud.tenv);
+    sp_metro_destroy(&ud.met);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_tevent_destroy(&ud.te);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

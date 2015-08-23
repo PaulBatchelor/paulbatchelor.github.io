@@ -1,0 +1,102 @@
+<html>
+<title>tabread</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>tabread</h1></i>
+<div class="row">
+Files: <i>tabread.h, tabread.c</i></div>
+<div class="row"><br></div>
+Read through a table at audio-rate with varispeed. No interpolation is implemented yet, so this works very quickly.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_tabread_create(sp_tabread **tabread)
+</div>
+<div class="row">
+sp_tabread_init(sp_data *sp, sp_tabread *tabread, sp_ftbl *bar)
+</div>
+<div class="row">
+sp_tabread_compute(sp_data *sp, sp_tabread *tabread, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_tabread_destroy(sp_tabread **tabread)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>bar:</i> A properly allocated table (using a function like sp_gen_file).</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>speed:</i> Playback speed. 1.0 = normal. 2.0 = doublespeed, 0.5 = halfspeed, etc...</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> This doesn't do anything. Can be set to NULL.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_tabread *tr;
+    sp_ftbl *ft;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT tab = 0.0;
+    sp_tabread_compute(sp, ud-&gt;tr, NULL, &tab);
+    sp-&gt;out[0] = tab;
+}
+
+int main() {
+    srand(time(NULL));
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_tabread_create(&ud.tr);
+
+    sp_ftbl_create(sp, &ud.ft, 395393);
+    sp_gen_file(sp, ud.ft, "oneart.wav");
+
+    sp_tabread_init(sp, ud.tr, ud.ft);
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_tabread_destroy(&ud.tr);
+    sp_ftbl_destroy(&ud.ft);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

@@ -1,0 +1,128 @@
+<html>
+<title>randi</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>randi</h1></i>
+<div class="row">
+Files: <i>randi.h, randi.c</i></div>
+<div class="row"><br></div>
+Produces line of interpolated values within a range.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_randi_create(sp_randi **randi)
+</div>
+<div class="row">
+sp_randi_init(sp_data *sp, sp_randi *randi, int seed)
+</div>
+<div class="row">
+sp_randi_compute(sp_data *sp, sp_randi *randi, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_randi_destroy(sp_randi **randi)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>seed:</i> Seed to use. Use time(NULL) to generate seed.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>min:</i> Minimum value</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>max:</i> Maximum value</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>cps:</i> Frequency to change values.</div>
+<div class="row">
+
+(Default value: 3)
+</div>
+<div class="row">
+<i>mode:</i> Randi mode (not yet implemented yet.)</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> This doesn't do anything.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc;
+    sp_ftbl *ft; 
+    sp_randi *rnd;
+} udata;
+
+void write_osc(sp_data *data, void *ud) {
+    udata *udp = ud;
+    SPFLOAT freq;
+    sp_randi_compute(data, udp-&gt;rnd, NULL, &freq);
+    udp-&gt;osc-&gt;freq = freq;
+    sp_osc_compute(data, udp-&gt;osc, NULL, &data-&gt;out[0]);
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_ftbl_create(sp, &ud.ft, 1024);
+    sp_osc_create(&ud.osc);
+    sp_randi_create(&ud.rnd);
+
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    sp_randi_init(sp, ud.rnd, 12345);
+    
+    ud.rnd-&gt;min = 300;  
+    ud.rnd-&gt;max = 3000;  
+
+    sp-&gt;len = 44100 * 5;
+
+    sp_process(sp, &ud, write_osc);
+
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_randi_destroy(&ud.rnd);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

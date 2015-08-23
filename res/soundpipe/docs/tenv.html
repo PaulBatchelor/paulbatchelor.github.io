@@ -1,0 +1,151 @@
+<html>
+<title>tenv</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>tenv</h1></i>
+<div class="row">
+Files: <i>tenv.h, tenv.c</i></div>
+<div class="row"><br></div>
+TEnv is a trigger based linear AHD envelope generator.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_tenv_create(sp_tenv **tenv)
+</div>
+<div class="row">
+sp_tenv_init(sp_data *sp, sp_tenv *tenv, SPFLOAT atk, SPFLOAT hold, SPFLOAT rel)
+</div>
+<div class="row">
+sp_tenv_compute(sp_data *sp, sp_tenv *tenv, SPFLOAT *trig, SPFLOAT *out)
+</div>
+<div class="row">
+sp_tenv_destroy(sp_tenv **tenv)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>atk:</i> Attack time, in seconds.</div>
+<div class="row">
+
+(Recommended value: 0.1)
+</div>
+<div class="row">
+<i>hold:</i> Hold time, in seconds.</div>
+<div class="row">
+
+(Recommended value: 0.3)
+</div>
+<div class="row">
+<i>rel:</i> Release time, in seconds.</div>
+<div class="row">
+
+(Recommended value: 0.2)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>sigmode:</i> If set to non-zero value, tenv will multiply the envelope with an internal signal instead of just returning an enveloped signal.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>in:</i> Internal input signal. If sigmode variable is set, it will multiply the envelope by this variable. Most of the time, this should be updated at audiorate.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trig:</i> Trigger input. When non-zero, the envelope will (re)trigger.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_osc *osc;
+    sp_ftbl *ft; 
+    sp_tevent *te;
+    sp_metro *met;
+    sp_tenv *tenv;
+    SPFLOAT freq;
+} udata;
+
+void write_osc(sp_data *data, void *ud) {
+    udata *udp = ud;
+    SPFLOAT trig = 0;
+    SPFLOAT env = 0;
+    SPFLOAT osc = 0;
+    sp_metro_compute(data, udp-&gt;met, NULL, &trig);
+    sp_tevent_compute(data, udp-&gt;te, &trig, &udp-&gt;osc-&gt;freq);
+    sp_osc_compute(data, udp-&gt;osc, NULL, &osc);
+    sp_tenv_compute(data, udp-&gt;tenv, &trig, &env);
+
+    data-&gt;out[0] = osc * env;
+}
+
+void freq_reinit(void *ud){
+    SPFLOAT *freq = ud;
+    *freq = 500 + rand() % 2000;
+}
+
+void freq_compute(void *ud, SPFLOAT *out){
+    SPFLOAT *freq = ud;
+    *out = *freq;
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    SPFLOAT *freqp = &ud.freq;
+    ud.freq = 400;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_tenv_create(&ud.tenv);
+    sp_metro_create(&ud.met);
+    sp_tevent_create(&ud.te);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_osc_create(&ud.osc);
+
+    sp_tenv_init(sp, ud.tenv, 0.03, 0.01, 0.1);
+    sp_metro_init(sp, ud.met, 3);
+    sp_tevent_init(sp, ud.te, freq_reinit, freq_compute, freqp);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    ud.osc-&gt;freq = *freqp;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_osc);
+
+    sp_tenv_destroy(&ud.tenv);
+    sp_metro_destroy(&ud.met);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_tevent_destroy(&ud.te);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

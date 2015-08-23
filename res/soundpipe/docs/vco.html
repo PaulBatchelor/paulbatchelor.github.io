@@ -1,0 +1,126 @@
+<html>
+<title>vco</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>vco</h1></i>
+<div class="row">
+Files: <i>vco.h, vco.c</i></div>
+<div class="row"><br></div>
+Band-limited analogue modelled oscillator with a selection of traditional oscillators to choose from.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_vco_create(sp_vco **vco)
+</div>
+<div class="row">
+sp_vco_init(sp_data *sp, sp_vco *vco)
+</div>
+<div class="row">
+sp_vco_compute(sp_data *sp, sp_vco *vco, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_vco_destroy(sp_vco **vco)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>amp:</i> Amplitude</div>
+<div class="row">
+
+(Default value: 0.3)
+</div>
+<div class="row">
+<i>freq:</i> Frequency</div>
+<div class="row">
+
+(Default value: 440)
+</div>
+<div class="row">
+<i>wave:</i> Wave type. 1 = sawtooth, 2 = square/PWM, 3 = triangle/saw/ramp</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>pw:</i> Pulse width. Should be a value between 0 and 1.</div>
+<div class="row">
+
+(Default value: 0.5)
+</div>
+<div class="row">
+<i>maxd:</i> (not yet implemented) maximum delay time. Used for PWM and triangle waveform.</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>iphs:</i> (not yet implemented) set initial phase. Must be a value between 0 and 1.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>ileak:</i> (not eyet implemented) Leaky integrator value, that expects a value in the range of 0 and 1. If set to .9999, can help with the sound of saw waves and low frequencies. Can also give a hollower sounding square wave.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>inyq:</i> (not yet implemented) Used to determine the number of harmonics in the band limited pulse. All overtimes inyq * sr will be used.</div>
+<div class="row">
+
+(Default value: 0.5)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> This doesn't do anything. set to NULL.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_vco *vco;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    sp_vco_compute(sp, ud-&gt;vco, NULL, &sp-&gt;out[0]);
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_vco_create(&ud.vco);
+
+    sp_vco_init(sp, ud.vco);
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_vco_destroy(&ud.vco);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

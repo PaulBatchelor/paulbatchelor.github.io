@@ -1,0 +1,111 @@
+<html>
+<title>posc3</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>posc3</h1></i>
+<div class="row">
+Files: <i>posc3.h, posc3.c</i></div>
+<div class="row"><br></div>
+ "posc3" is a high-precision table-lookup posc3ilator with cubic interpolation. 
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_posc3_create(sp_posc3 **posc3)
+</div>
+<div class="row">
+sp_posc3_init(sp_data *sp, sp_posc3 *posc3, sp_ftbl *tbl)
+</div>
+<div class="row">
+sp_posc3_compute(sp_data *sp, sp_posc3 *posc3, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_posc3_destroy(sp_posc3 **posc3)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>tbl:</i> Wavetable to read from. <B>Note:</B> the size of this table must be a power of 2.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>freq:</i> Frequency (in Hz)</div>
+<div class="row">
+
+(Default value: 440)
+</div>
+<div class="row">
+<i>amp:</i> Amplitude (typically a value between 0 and 1).</div>
+<div class="row">
+
+(Default value: 0.2)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> This does nothing.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_posc3 *posc3;
+    sp_ftbl *ft; 
+    int counter;
+} udata;
+
+void write_posc3(sp_data *data, void *ud) {
+    udata *udp = ud;
+    //if(udp-&gt;counter == 0){
+    //    udp-&gt;posc3-&gt;freq = 500 + rand() % 2000;
+    //}
+    sp_posc3_compute(data, udp-&gt;posc3, NULL, &data-&gt;out[0]);
+    udp-&gt;counter = (udp-&gt;counter + 1) % 4410;
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    ud.counter = 0;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_ftbl_create(sp, &ud.ft, 1024);
+    sp_posc3_create(&ud.posc3);
+
+    sp_gen_sine(sp, ud.ft);
+    sp_posc3_init(sp, ud.posc3, ud.ft);
+    ud.posc3-&gt;freq = 500;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_posc3);
+
+    sp_ftbl_destroy(&ud.ft);
+    sp_posc3_destroy(&ud.posc3);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

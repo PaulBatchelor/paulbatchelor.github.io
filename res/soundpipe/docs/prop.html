@@ -1,0 +1,128 @@
+<html>
+<title>prop</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>prop</h1></i>
+<div class="row">
+Files: <i>prop.h, prop.c</i></div>
+<div class="row"><br></div>
+Creates a gate using a simple rhythmic notation system called prop. When it reaches the end of the prop string, it will loop back to the beginning.<br>
+<br>
+Prop has a few basic rules:
+<br>
+1. A '+' denotes a on. A '-' denotes an off (rest). They each have an equal duration of a quarter note.
+<br>
+2. On and off values can be strung together to create equally spaced gates: +-+--
+<br>
+3. When notes are enclosed in parantheses following an positive integer N, their duration is reduced N times: ++2(+-)
+<br>
+4. Parenthesis can be nested: +- 3(+2(++)+)
+<br>
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_prop_create(sp_prop **prop)
+</div>
+<div class="row">
+sp_prop_init(sp_data *sp, sp_prop *prop, const char *str)
+</div>
+<div class="row">
+sp_prop_compute(sp_data *sp, sp_prop *prop, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_prop_destroy(sp_prop **prop)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>str:</i> Prop string to be parsed.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>bpm:</i> Beats per minute of the prop string.</div>
+<div class="row">
+
+(Default value: 60)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> This is doesn't do anything.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Gate output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_prop *prop;
+    sp_osc *osc;
+    sp_ftbl *ft;
+    sp_tenv *tenv;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, prop = 0, tenv = 0;
+    ud-&gt;prop-&gt;bpm = 80;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp_prop_compute(sp, ud-&gt;prop, NULL, &prop);
+    sp_tenv_compute(sp, ud-&gt;tenv, &prop, &tenv);
+    sp-&gt;out[0] = osc * tenv;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_prop_create(&ud.prop);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_tenv_create(&ud.tenv);
+
+    sp_prop_init(sp, ud.prop, "2(++)3(+++)-2(-2(++))+5(+++++)");
+    ud.prop-&gt;bpm = 80;
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    sp_tenv_init(sp, ud.tenv, 0.01, 0.01, 0.2);
+    ud.osc-&gt;freq = 500;
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_prop_destroy(&ud.prop);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_tenv_destroy(&ud.tenv);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

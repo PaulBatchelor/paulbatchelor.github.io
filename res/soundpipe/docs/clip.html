@@ -1,0 +1,133 @@
+<html>
+<title>clip</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>clip</h1></i>
+<div class="row">
+Files: <i>clip.h, clip.c</i></div>
+<div class="row"><br></div>
+Applies clip limiting to a signal.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_clip_create(sp_clip **clip)
+</div>
+<div class="row">
+sp_clip_init(sp_data *sp, sp_clip *clip, int meth, SPFLOAT lim)
+</div>
+<div class="row">
+sp_clip_compute(sp_data *sp, sp_clip *clip, SPFLOAT *in, SPFLOAT *out)
+</div>
+<div class="row">
+sp_clip_destroy(sp_clip **clip)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>meth:</i> Method of clipping. 0 = Bram de Jong, 1 = Sine, 2 = tanh.</div>
+<div class="row">
+
+(Recommended value: 0)
+</div>
+<div class="row">
+<i>lim:</i> threshold / limiting value.</div>
+<div class="row">
+
+(Recommended value: 1)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>arg:</i> When meth is 0 (Bram De Jong), indicates point at which clipping starts in the range 0-1.</div>
+<div class="row">
+
+(Default value: 0.5)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>in:</i> Input signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Output signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdio.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+   sp_ftbl *ft;
+   sp_osc *osc;
+   sp_clip *clp;
+   sp_moogladder *filt;
+} udata;
+
+void write_clip(sp_data *sp, void *ud) {
+    udata *udp = ud;
+    SPFLOAT out, osc, filt;
+
+    if(sp-&gt;pos &lt; (44100 * 2)) {
+        sp_osc_compute(sp, udp-&gt;osc, NULL, &osc);
+        sp_moogladder_compute(sp, udp-&gt;filt, &osc, &filt);
+        sp-&gt;out[0] = filt;
+        return;
+    } else if(sp-&gt;pos &gt;= (44100 * 2) && sp-&gt;pos &lt; (44100 * 3)) {
+        udp-&gt;clp-&gt;meth = 0;
+    } else if(sp-&gt;pos &gt;= (44100 * 3) && sp-&gt;pos &lt; (44100 * 4)) {
+        udp-&gt;clp-&gt;meth = 1;
+        udp-&gt;clp-&gt;lim = 0.2;
+    } else {
+        udp-&gt;clp-&gt;meth = 2;
+        udp-&gt;clp-&gt;lim = 0.03;
+    }
+
+    sp_osc_compute(sp, udp-&gt;osc, NULL, &osc);
+    sp_moogladder_compute(sp, udp-&gt;filt, &osc, &filt);
+    sp_clip_compute(sp, udp-&gt;clp, &filt, &out);
+    sp-&gt;out[0] = out;
+}
+
+int main() {
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_clip_create(&ud.clp);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 4096);
+    sp_moogladder_create(&ud.filt);
+
+    sp_gen_line(sp, ud.ft, "0 1 4096 -1");
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+    ud.osc-&gt;freq = sp_midi2cps(48);
+    sp_clip_init(sp, ud.clp, 0, 0.5);
+    sp_moogladder_init(sp, ud.filt);
+    ud.filt-&gt;freq = 1000; 
+    ud.filt-&gt;res = 0.8;
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_clip);
+
+    sp_osc_destroy(&ud.osc);
+    sp_clip_destroy(&ud.clp);
+    sp_ftbl_destroy(&ud.ft);
+    sp_moogladder_destroy(&ud.filt);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

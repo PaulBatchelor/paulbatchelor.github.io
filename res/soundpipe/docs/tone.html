@@ -1,0 +1,89 @@
+<html>
+<title>tone</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>tone</h1></i>
+<div class="row">
+Files: <i>tone.h, tone.c</i></div>
+<div class="row"><br></div>
+Tone is a first-order recursive lowpass filter.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_tone_create(sp_tone **tone)
+</div>
+<div class="row">
+sp_tone_init(sp_data *sp, sp_tone *tone, SPFLOAT *hp)
+</div>
+<div class="row">
+sp_tone_compute(sp_data *sp, sp_tone *tone, SPFLOAT *in, SPFLOAT *out)
+</div>
+<div class="row">
+sp_tone_destroy(sp_tone **tone)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>hp:</i> This is the response curve's half power point (aka cutoff).</div>
+<div class="row">
+
+(Recommended value: 1000)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>in:</i> Audio signal in.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Audio signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_noise *ns;
+    sp_tone *tn;
+} udata;
+
+void write_noise(sp_data *data, void *ud) {
+    udata *udata = ud;
+    SPFLOAT in = 0;
+    SPFLOAT out = 0;
+    sp_noise_compute(data, udata-&gt;ns, NULL, &in);
+    sp_tone_compute(data, udata-&gt;tn, &in, &data-&gt;out[0]); 
+}
+int main() {
+    srand(time(NULL));
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_noise_create(&ud.ns);
+    sp_tone_create(&ud.tn);
+    sp_noise_init(sp, ud.ns);
+    sp_tone_init(sp, ud.tn);
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_noise);
+    sp_noise_destroy(&ud.ns);
+    sp_tone_destroy(&ud.tn);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

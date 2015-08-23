@@ -1,0 +1,110 @@
+<html>
+<title>eqfil</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>eqfil</h1></i>
+<div class="row">
+Files: <i>eqfil.h, eqfil.c</i></div>
+<div class="row"><br></div>
+A 2nd order tunable equalization filter that provides a peak/notch filter for building parametric/graphic equalizers. With gain above 1, there will be a peak at the center frequency with a width dependent on bw. If gain is less than 1, a notch is formed around the center frequency (freq).
+    
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_eqfil_create(sp_eqfil **eqfil)
+</div>
+<div class="row">
+sp_eqfil_init(sp_data *sp, sp_eqfil *eqfil)
+</div>
+<div class="row">
+sp_eqfil_compute(sp_data *sp, sp_eqfil *eqfil, SPFLOAT *input, SPFLOAT *output)
+</div>
+<div class="row">
+sp_eqfil_destroy(sp_eqfil **eqfil)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>freq:</i> The center frequency of the filter</div>
+<div class="row">
+
+(Default value: 1000)
+</div>
+<div class="row">
+<i>bw:</i> The peak/notch bandwidth in Hertz</div>
+<div class="row">
+
+(Default value: 125)
+</div>
+<div class="row">
+<i>gain:</i> The peak/notch gain</div>
+<div class="row">
+
+(Default value: 2)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>output:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include &lt;math.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_noise *ns;
+    sp_eqfil *eqfil;
+    int counter;
+} udata;
+
+void write_noise(sp_data *data, void *ud) {
+    udata *udata = ud;
+    SPFLOAT in = 0;
+    SPFLOAT out = 0;
+    if(udata-&gt;counter == 0) {
+        udata-&gt;eqfil-&gt;freq = 500 + rand() % 4000;
+        udata-&gt;eqfil-&gt;bw = fabs(udata-&gt;eqfil-&gt;freq * 0.5);
+    }
+    sp_noise_compute(data, udata-&gt;ns, NULL, &in);
+    sp_eqfil_compute(data, udata-&gt;eqfil, &in, &data-&gt;out[0]); 
+    udata-&gt;counter = (udata-&gt;counter + 1) % 5000;
+}
+int main() {
+    srand(time(NULL));
+    udata ud;
+    ud.counter = 0;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_noise_create(&ud.ns);
+    sp_eqfil_create(&ud.eqfil);
+    sp_noise_init(sp, ud.ns);
+    sp_eqfil_init(sp, ud.eqfil);
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, write_noise);
+    sp_noise_destroy(&ud.ns);
+    sp_eqfil_destroy(&ud.eqfil);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

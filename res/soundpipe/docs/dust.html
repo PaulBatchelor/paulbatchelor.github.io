@@ -1,0 +1,99 @@
+<html>
+<title>dust</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>dust</h1></i>
+<div class="row">
+Files: <i>dust.h, dust.c</i></div>
+<div class="row"><br></div>
+Dust creates a series of random impulses.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_dust_create(sp_dust **dust)
+</div>
+<div class="row">
+sp_dust_init(sp_data *sp, sp_dust *dust, SPFLOAT amp, SPFLOAT density)
+</div>
+<div class="row">
+sp_dust_compute(sp_data *sp, sp_dust *dust, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_dust_destroy(sp_dust **dust)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>amp:</i> </div>
+<div class="row">
+
+(Recommended value: 0.3)
+</div>
+<div class="row">
+<i>density:</i> </div>
+<div class="row">
+
+(Recommended value: 10)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>bipolar:</i> Bipolar flag. A non-zero makes the signal bipolar as opposed to unipolar. </div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>dummy:</i> This doesn't do anything.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal out.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_dust *dst;
+} udata;
+
+void write_dust(sp_data *data, void *ud) {
+    udata *udata = ud;
+    SPFLOAT in = 0;
+    sp_dust_compute(data, udata-&gt;dst, NULL, &data-&gt;out[0]);
+}
+int main() {
+    srand(time(NULL));
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_dust_create(&ud.dst);
+    sp_dust_init(sp, ud.dst, 0.3, 10);
+    sp-&gt;len = 44100 * 5;
+    ud.dst-&gt;bipolar = 1.0;
+    sp_process(sp, &ud, write_dust);
+    sp_dust_destroy(&ud.dst);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

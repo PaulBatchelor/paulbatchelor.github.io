@@ -1,0 +1,129 @@
+<html>
+<title>gbuzz</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>gbuzz</h1></i>
+<div class="row">
+Files: <i>gbuzz.h, gbuzz.c</i></div>
+<div class="row"><br></div>
+"Gbuzz" is used to generate a series of partials from the harmonic series. GBuzz comes from the "buzz" family of Csound opcodes, and is capable of producing a rich spectrum of harmonic content, possibly ideal for subtractive synthesis techniques.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_gbuzz_create(sp_gbuzz **gbuzz)
+</div>
+<div class="row">
+sp_gbuzz_init(sp_data *sp, sp_gbuzz *gbuzz, sp_ftbl *ft)
+</div>
+<div class="row">
+sp_gbuzz_compute(sp_data *sp, sp_gbuzz *gbuzz, SPFLOAT *in, SPFLOAT *out)
+</div>
+<div class="row">
+sp_gbuzz_destroy(sp_gbuzz **gbuzz)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>ft:</i> Soundpipe function table used internally. This should be a sine wave.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>freq:</i> Frequency, in Hertz.</div>
+<div class="row">
+
+(Default value: 440)
+</div>
+<div class="row">
+<i>amp:</i> Amplitude (Typically a value between 0 and 1).</div>
+<div class="row">
+
+(Default value: 0.4)
+</div>
+<div class="row">
+<i>nharm:</i> Number of harmonics.</div>
+<div class="row">
+
+(Default value: 4)
+</div>
+<div class="row">
+<i>lharm:</i> Lowest harmonic present. This should be a whole number integer.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>mul:</i> Multiplier. This determines the relative strength of each harmonic.</div>
+<div class="row">
+
+(Default value: 0.1)
+</div>
+<div class="row">
+<i>iphs:</i> Not yet implemented. Phase to start on (in the range 0-1)</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>in:</i> Signal input
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_gbuzz *buzz;
+    sp_ftbl *ft; 
+    int counter;
+} udata;
+
+void process(sp_data *sp, void *ud) {
+    udata *udp = ud;
+    sp_gbuzz_compute(sp, udp-&gt;buzz, NULL, &sp-&gt;out[0]);
+}
+
+int main() {
+    srand(time(NULL));
+    udata ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_gbuzz_create(&ud.buzz);
+
+    sp_gen_sine(sp, ud.ft);
+    sp_gbuzz_init(sp, ud.buzz, ud.ft);
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_ftbl_destroy(&ud.ft);
+    sp_gbuzz_destroy(&ud.buzz);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

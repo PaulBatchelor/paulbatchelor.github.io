@@ -1,0 +1,170 @@
+<html>
+<title>foo</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>foo</h1></i>
+<div class="row">
+Files: <i>foo.h, foo.c</i></div>
+<div class="row"><br></div>
+This is a description of the entire module. This is not a real module. This description should be a comprehensive sumary of what this function does. 
+    
+Inside the Lua table, this is expressed as a multiline string, however it does not adhere to the tradtional 80 column rule found in programming. 
+
+Write as much text as needed here...
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_foo_create(sp_foo **foo)
+</div>
+<div class="row">
+sp_foo_init(sp_data *sp, sp_foo *foo, sp_ftbl *bar, SPFLOAT bar2)
+</div>
+<div class="row">
+sp_foo_compute(sp_data *sp, sp_foo *foo, SPFLOAT *clock, SPFLOAT *input, SPFLOAT *out_left, SPFLOAT *out_right)
+</div>
+<div class="row">
+sp_foo_destroy(sp_foo **foo)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>bar:</i> This is a mandatory table value. It does not have a default value, so we set it to 'N/A'. Any that does not or cannot have a default value should set this default value to 'N/A'.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row">
+<i>bar2:</i> This is a mandatory parameter. In soundpipe, users will always need to specify this value, but a default value has been giving in case it is needed to write more complicated engines in the future.</div>
+<div class="row">
+
+(Recommended value: 123)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>blah_1:</i> This is an optional parameter. These values are always set to a value by default, and can be set after the init function has been called.</div>
+<div class="row">
+
+(Default value: 1.5)
+</div>
+<div class="row">
+<i>blah_2:</i> This is yet another optional parameter...</div>
+<div class="row">
+
+(Default value: 456.7)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>clock:</i> this is the clock source for a made up plugin.
+</div>
+<div class="row">
+<i>input:</i> this is the audio input for a made up plugin.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out_left:</i> Stereo left output for foo.
+</div>
+<div class="row">
+<i>out_right:</i> Stereo right output for foo.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Other Functions:</h2></div>
+<div class="row">
+sp_foo_set(sp_data *sp, sp_foo *foo, SPFLOAT var1, SPFLOAT var2)
+</div>
+<div class="row">
+foo_set description goes here.</div>
+<div class="row">
+<div class="one column"></div>
+<div class="elevent columns">
+<i>var1:</i> This is the first parameter
+</div></div>
+<div class="row">
+<div class="one column"></div>
+<div class="elevent columns">
+(Suggested default: 1.5)
+
+</div></div>
+<div class="row">
+<div class="one column"></div>
+<div class="elevent columns">
+<i>var2:</i> This is the second parameter
+</div></div>
+<div class="row">
+<div class="one column"></div>
+<div class="elevent columns">
+(Suggested default: 1.5)
+
+</div></div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>/*
+ * This is a dummy example.
+ * Please implement a small and simple working example of your module, and then
+ * remove this header.
+ * Don't be clever.
+ * Bonus points for musicality. 
+ *
+ */
+
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_foo *foo;
+    sp_osc *osc;
+    sp_ftbl *ft; 
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, foo = 0;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp_foo_compute(sp, ud-&gt;foo, &osc, &foo);
+    sp-&gt;out[0] = foo;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_foo_create(&ud.foo);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+
+    sp_foo_init(sp, ud.foo);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_foo_destroy(&ud.foo);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>
