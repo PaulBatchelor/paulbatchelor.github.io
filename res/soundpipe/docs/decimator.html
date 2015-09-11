@@ -1,63 +1,60 @@
 <html>
-<title>phasor</title>
+<title>decimator</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>phasor</h1></i>
+<i><h1>decimator</h1></i>
 <div class="row">
-Files: <i>phasor.h, phasor.c</i></div>
+Files: <i>decimator.h, decimator.c</i></div>
 <div class="row"><br></div>
-Produces a normalized sawtooth wave between the values of 0 and 1. Phasors are often used when building table-lookup oscillators.
+Otherwise known as a "bitcrusher", Decimator will digitially degrade a signal. 
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_phasor_create(sp_phasor **phasor)
+sp_decimator_create(sp_decimator **decimator)
 </div>
 <div class="row">
-sp_phasor_init(sp_data *sp, sp_phasor *phasor, SPFLOAT iphs)
+sp_decimator_init(sp_data *sp, sp_decimator *decimator)
 </div>
 <div class="row">
-sp_phasor_compute(sp_data *sp, sp_phasor *phasor, SPFLOAT *dummy, SPFLOAT *out)
+sp_decimator_compute(sp_data *sp, sp_decimator *decimator, SPFLOAT *input, SPFLOAT *out)
 </div>
 <div class="row">
-sp_phasor_destroy(sp_phasor **phasor)
-</div>
-<div class="row"><br></div>
-<div class="row">
-<h2>Mandatory Parameters</h2></div>
-<div class="row">
-<i>iphs:</i> initial phase</div>
-<div class="row">
-
-(Recommended value: 0)
+sp_decimator_destroy(sp_decimator **decimator)
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>freq:</i> Frequency.</div>
+<i>bit:</i> Bitdepth</div>
 <div class="row">
 
-(Default value: 1.5)
+(Default value: 8)
+</div>
+<div class="row">
+<i>srate:</i> Sampling rate.</div>
+<div class="row">
+
+(Default value: 10000)
 </div>
 <div class="row"><br></div>
 
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>dummy:</i> this doesn't do anything.
+<i>input:</i> Signal input.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Signal out.
+<i>out:</i> Signal output
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -68,25 +65,36 @@ sp_phasor_destroy(sp_phasor **phasor)
 #include "soundpipe.h"
 
 typedef struct {
-    sp_phasor *phs;
+    sp_decimator *decimator;
+    sp_diskin *file;
+    sp_ftbl *ft; 
 } UserData;
 
 void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
-    sp_phasor_compute(sp, ud-&gt;phs, NULL, &sp-&gt;out[0]);
+    SPFLOAT disk = 0, decimator = 0;
+    sp_diskin_compute(sp, ud-&gt;file, NULL, &disk);
+    sp_decimator_compute(sp, ud-&gt;decimator, &disk, &decimator);
+    sp-&gt;out[0] = decimator;
 }
 
 int main() {
+    srand(1234567);
     UserData ud;
     sp_data *sp;
     sp_create(&sp);
-    sp_phasor_create(&ud.phs);
 
-    sp_phasor_init(sp, ud.phs);
+    sp_decimator_create(&ud.decimator);
+    sp_diskin_create(&ud.file);
+
+    sp_diskin_init(sp, ud.file, "oneart.wav");
+    sp_decimator_init(sp, ud.decimator);
     sp-&gt;len = 44100 * 5;
     sp_process(sp, &ud, process);
 
-    sp_phasor_destroy(&ud.phs);
+    sp_decimator_destroy(&ud.decimator);
+    sp_diskin_destroy(&ud.file);
+
     sp_destroy(&sp);
     return 0;
 }

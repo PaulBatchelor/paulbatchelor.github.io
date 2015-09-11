@@ -1,0 +1,87 @@
+<html>
+<title>jcrev</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>jcrev</h1></i>
+<div class="row">
+Files: <i>jcrev.h, jcrev.c</i></div>
+<div class="row"><br></div>
+John Chowning reverberator. This is was built using the JC reverb 
+implentation found in FAUST. According to the source code, the specifications for 
+this implementation were found on an old SAIL DART backup tape.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_jcrev_create(sp_jcrev **jcrev)
+</div>
+<div class="row">
+sp_jcrev_init(sp_data *sp, sp_jcrev *jcrev)
+</div>
+<div class="row">
+sp_jcrev_compute(sp_data *sp, sp_jcrev *jcrev, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_jcrev_destroy(sp_jcrev **jcrev)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal Output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include "soundpipe.h"
+
+typedef struct {
+
+sp_diskin *file;
+sp_jcrev *dsp;
+
+} UserData;
+
+void process(sp_data *sp, void *udata)
+{
+    UserData *ud = udata;
+    SPFLOAT in = 0, out = 0;
+
+    sp_diskin_compute(sp, ud-&gt;file, NULL, &in);
+    sp_jcrev_compute(sp, ud-&gt;dsp, &in, &out);
+
+    sp-&gt;out[0] = out;
+}
+
+int main()
+{
+    sp_data *sp;
+    UserData ud;
+
+    sp_create(&sp);
+    sp_jcrev_create(&ud.dsp);
+    sp_diskin_create(&ud.file);
+
+    sp_jcrev_init(sp, ud.dsp);
+    sp_diskin_init(sp, ud.file, "oneart.wav");
+
+    sp_process(sp, &ud, process);
+
+    sp_jcrev_destroy(&ud.dsp);
+    sp_diskin_destroy(&ud.file);
+    sp_destroy(&sp);
+}
+</code></pre></div></body></html>

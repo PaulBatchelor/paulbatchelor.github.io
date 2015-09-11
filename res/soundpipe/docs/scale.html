@@ -1,63 +1,62 @@
 <html>
-<title>delay</title>
+<title>scale</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>delay</h1></i>
+<i><h1>scale</h1></i>
 <div class="row">
-Files: <i>delay.h, delay.c</i></div>
+Files: <i>scale.h, scale.c</i></div>
 <div class="row"><br></div>
-Add a delay to an incoming signal with optional feedback.
+This module scales an incoming signal (in the range of -1, and 1),
+and scales it to an arbitrary range.
+
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_delay_create(sp_delay **delay)
+sp_scale_create(sp_scale **scale)
 </div>
 <div class="row">
-sp_delay_init(sp_data *sp, sp_delay *delay, SPFLOAT time)
+sp_scale_init(sp_data *sp, sp_scale *scale)
 </div>
 <div class="row">
-sp_delay_compute(sp_data *sp, sp_delay *delay, SPFLOAT *input, SPFLOAT *out)
+sp_scale_compute(sp_data *sp, sp_scale *scale, SPFLOAT *in, SPFLOAT *out)
 </div>
 <div class="row">
-sp_delay_destroy(sp_delay **delay)
-</div>
-<div class="row"><br></div>
-<div class="row">
-<h2>Mandatory Parameters</h2></div>
-<div class="row">
-<i>time:</i> Delay time, in seconds.</div>
-<div class="row">
-
-(Recommended value: 1.0)
+sp_scale_destroy(sp_scale **scale)
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>feedback:</i> Feedback amount. Should be a value between 0-1.</div>
+<i>min:</i> Minimum value to scale to.</div>
 <div class="row">
 
-(Default value: 0.0)
+(Default value: 0)
+</div>
+<div class="row">
+<i>max:</i> Maximum value to scale to.</div>
+<div class="row">
+
+(Default value: 1)
 </div>
 <div class="row"><br></div>
 
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>input:</i> Signal input.
+<i>in:</i> Signal to be scaled, expected to be in the range of +/-1.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Signal output.
+<i>out:</i> Signal out
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -68,25 +67,20 @@ sp_delay_destroy(sp_delay **delay)
 #include "soundpipe.h"
 
 typedef struct {
-    sp_delay *delay;
+    sp_scale *scale;
     sp_osc *osc;
-    sp_metro *met;
-    sp_tenv *tenv;
-    sp_ftbl *ft;
+    sp_ftbl *ft; 
 } UserData;
 
 void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
-    SPFLOAT osc = 0, delay = 0, met = 0, tenv = 0;
-    sp_metro_compute(sp, ud-&gt;met, NULL, &met);
-    sp_tenv_compute(sp, ud-&gt;tenv, &met, &tenv);
-    if(met) {
-        ud-&gt;osc-&gt;freq = 100 + rand() % 500;
-    }
+    SPFLOAT osc = 0, scale = 0;
+    /* constant set to 1, when scaled, it becomes 440 */
+    SPFLOAT val = 1;
+    sp_scale_compute(sp, ud-&gt;scale, &val, &scale);
+    ud-&gt;osc-&gt;freq = scale;
     sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    osc *= tenv;
-    sp_delay_compute(sp, ud-&gt;delay, &osc, &delay);
-    sp-&gt;out[0] = osc + delay;
+    sp-&gt;out[0] = osc;
 }
 
 int main() {
@@ -95,28 +89,23 @@ int main() {
     sp_data *sp;
     sp_create(&sp);
 
-    sp_delay_create(&ud.delay);
+    sp_scale_create(&ud.scale);
     sp_osc_create(&ud.osc);
     sp_ftbl_create(sp, &ud.ft, 2048);
-    sp_metro_create(&ud.met);
-    sp_tenv_create(&ud.tenv);
 
-    sp_delay_init(sp, ud.delay, 0.75 * 0.5);
-    ud.delay-&gt;feedback = 0.5;
+    sp_scale_init(sp, ud.scale);
+    ud.scale-&gt;min = 0;
+    ud.scale-&gt;max = 440;
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
-    ud.osc-&gt;amp = 0.5;
-    sp_metro_init(sp, ud.met, 1);
-    sp_tenv_init(sp, ud.tenv, 0.005, 0.1, 0.1);
+    ud.osc-&gt;amp = 0.1;
 
     sp-&gt;len = 44100 * 5;
     sp_process(sp, &ud, process);
 
-    sp_delay_destroy(&ud.delay);
+    sp_scale_destroy(&ud.scale);
     sp_ftbl_destroy(&ud.ft);
     sp_osc_destroy(&ud.osc);
-    sp_metro_destroy(&ud.met);
-    sp_tenv_destroy(&ud.tenv);
 
     sp_destroy(&sp);
     return 0;

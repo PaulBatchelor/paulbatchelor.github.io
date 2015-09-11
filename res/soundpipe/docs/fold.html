@@ -1,38 +1,38 @@
 <html>
-<title>tone</title>
+<title>fold</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>tone</h1></i>
+<i><h1>fold</h1></i>
 <div class="row">
-Files: <i>tone.h, tone.c</i></div>
+Files: <i>fold.h, fold.c</i></div>
 <div class="row"><br></div>
-Tone is a first-order recursive lowpass filter.
+Adds artificial foldover to an audio signal. Primarily created for use with Decimator.
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_tone_create(sp_tone **tone)
+sp_fold_create(sp_fold **fold)
 </div>
 <div class="row">
-sp_tone_init(sp_data *sp, sp_tone *tone)
+sp_fold_init(sp_data *sp, sp_fold *fold)
 </div>
 <div class="row">
-sp_tone_compute(sp_data *sp, sp_tone *tone, SPFLOAT *in, SPFLOAT *out)
+sp_fold_compute(sp_data *sp, sp_fold *fold, SPFLOAT *input, SPFLOAT *out)
 </div>
 <div class="row">
-sp_tone_destroy(sp_tone **tone)
+sp_fold_destroy(sp_fold **fold)
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>hp:</i> This is the response curve's half power point (aka cutoff).</div>
+<i>incr:</i> Increment</div>
 <div class="row">
 
 (Default value: 1000)
@@ -42,13 +42,13 @@ sp_tone_destroy(sp_tone **tone)
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>in:</i> Audio signal in.
+<i>input:</i> Signal input.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Audio signal out.
+<i>out:</i> Signal output.
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -59,30 +59,40 @@ sp_tone_destroy(sp_tone **tone)
 #include "soundpipe.h"
 
 typedef struct {
-    sp_noise *ns;
-    sp_tone *tn;
-} udata;
+    sp_fold *fold;
+    sp_osc *osc;
+    sp_ftbl *ft; 
+} UserData;
 
-void write_noise(sp_data *data, void *ud) {
-    udata *udata = ud;
-    SPFLOAT in = 0;
-    SPFLOAT out = 0;
-    sp_noise_compute(data, udata-&gt;ns, NULL, &in);
-    sp_tone_compute(data, udata-&gt;tn, &in, &data-&gt;out[0]); 
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, fold = 0;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp_fold_compute(sp, ud-&gt;fold, &osc, &fold);
+    sp-&gt;out[0] = fold;
 }
+
 int main() {
-    srand(time(NULL));
-    udata ud;
+    srand(1234567);
+    UserData ud;
     sp_data *sp;
     sp_create(&sp);
-    sp_noise_create(&ud.ns);
-    sp_tone_create(&ud.tn);
-    sp_noise_init(sp, ud.ns);
-    sp_tone_init(sp, ud.tn);
+
+    sp_fold_create(&ud.fold);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+
+    sp_fold_init(sp, ud.fold);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+
     sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, write_noise);
-    sp_noise_destroy(&ud.ns);
-    sp_tone_destroy(&ud.tn);
+    sp_process(sp, &ud, process);
+
+    sp_fold_destroy(&ud.fold);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+
     sp_destroy(&sp);
     return 0;
 }
