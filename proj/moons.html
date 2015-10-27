@@ -57,6 +57,27 @@ from, each color coded.</p>
 <p>'u' - remove last moon created</p>
 <p>'space' - starts/stops the sound (the reverb still stays on)</p>
 <p>'1-4' - change the scale/chord</p>
+<h2>Architecture of System</h2>
+<p>Moons divides up into an audio component, and a visual component, with 
+a shared data struct between the two. Time-related things are done at audio-rate. 
+In many ways, the video component is subordinate to the audio component.</p>
+<p>When a new moon appears on-screen, a new voice is added to the synthesis engine. These
+active voices are then computed and summed together (this brute-force approach is preferred over a realtime scheduler). 
+These voices are then patched into additional DSP objects in Sporth code. This is easy enough to do because 
+Sporth supports arbitrary callback functions. Sporth code is also in charge
+of the non-diegetic generative musical accompaniment. </p>
+<p>A single <em>voice</em> consists of a single FM operator pair being modulated by two 
+triggerable envelopes (one for amplitude, the other for timbre). When a full
+rotation is made, the envelopes are triggered and there is audible sound. Since
+the envelopes have a fixed attack, hold, and decay pattern, they will only need
+to be triggered to turn on, and they will shut off by themselves. There is a maximum
+number of voices that can be played at once, and that number can be controlled
+via a macro in the source code.</p>
+<p>The white "ripples" that you see are an interesting algorithm. To prevent
+memory overloading, there are only a finite number of ripples that can be created.
+Since their decay time never changes, I implemented a circular FIFO around an array
+of ripple data structures. At any given point in time, openGL knows how many 
+ripples to draw, and where in the array of ripples to start drawing. </p>
 <h2>Initial Design </h2>
 <p>Much time was put into articulating what the sequencer should feel and 
 look like before writing a single line of code. A semi-formal write-up can 
