@@ -10,7 +10,9 @@
 <div class="row">
 Files: <i>ftbl.h, ftbl.c</i></div>
 <div class="row"><br></div>
-An implementation of the Padsynth Algorithm by Paul Nasca. This gen routine requires libfftw, and is not compiled by default. See config.mk for more info.
+An implementation of the Padsynth Algorithm by Paul Nasca. <br>This is a basic implemenation of the padsynth algorithm. More information can be found here:<br>http://zynaddsubfx.sourceforge.net/doc/PADsynth/PADsynth.htm<br>This gen routine requires libfftw, and is not compiled by default. See config.mk for more info.
+    
+    
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -55,7 +57,7 @@ typedef struct user_data {
 void process(sp_data *sp, void *userdata) {
     user_data *ud = userdata;
     //sp-&gt;out = ud-&gt;ft-&gt;tbl[sp-&gt;pos % ud-&gt;ft-&gt;size];
-    sp_osc_compute(sp, ud-&gt;osc, NULL, &sp-&gt;out);
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &sp-&gt;out[0]);
 }
 
 int main() {
@@ -80,7 +82,7 @@ int main() {
     ud.fc = 1 / (6.0 * 440); 
     sp_gen_padsynth(sp, ud.ft, ud.amps, 440, 40.0);
 
-    sp_osc_init(sp, ud.osc, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
     ud.osc-&gt;freq = sp_midi2cps(70) * ud.fc;
     ud.osc-&gt;amp = 1.0;
     sp_process(sp, &ud, process);

@@ -10,8 +10,7 @@
 <div class="row">
 Files: <i>scale.h, scale.c</i></div>
 <div class="row"><br></div>
-This module scales an incoming signal (in the range of -1, and 1),
-and scales it to an arbitrary range.
+Linear transformation<br>    This module scales from one range to another defined by a minimum and maximum point in the input and output domain.
 
 <div class="row"><br></div>
 <div class="row">
@@ -34,13 +33,25 @@ sp_scale_destroy(sp_scale **scale)
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>min:</i> Minimum value to scale to.</div>
+<i>inmin:</i> Minimum value to scale from.</div>
+<div class="row">
+
+(Default value: -1)
+</div>
+<div class="row">
+<i>inmax:</i> Maximum value to scale from.</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>outmin:</i> Minimum value to scale to.</div>
 <div class="row">
 
 (Default value: 0)
 </div>
 <div class="row">
-<i>max:</i> Maximum value to scale to.</div>
+<i>outmax:</i> Maximum value to scale to.</div>
 <div class="row">
 
 (Default value: 1)
@@ -50,13 +61,13 @@ sp_scale_destroy(sp_scale **scale)
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>in:</i> Signal to be scaled, expected to be in the range of +/-1.
+<i>in:</i> Signal to be scaled.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Signal out
+<i>out:</i> Scaled signal out
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -69,7 +80,7 @@ sp_scale_destroy(sp_scale **scale)
 typedef struct {
     sp_scale *scale;
     sp_osc *osc;
-    sp_ftbl *ft; 
+    sp_ftbl *ft;
 } UserData;
 
 void process(sp_data *sp, void *udata) {
@@ -94,8 +105,10 @@ int main() {
     sp_ftbl_create(sp, &ud.ft, 2048);
 
     sp_scale_init(sp, ud.scale);
-    ud.scale-&gt;min = 0;
-    ud.scale-&gt;max = 440;
+    ud.scale-&gt;inmin = 0;
+    ud.scale-&gt;inmax = 2;
+    ud.scale-&gt;outmin = 0;
+    ud.scale-&gt;outmax = 880;
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
     ud.osc-&gt;amp = 0.1;

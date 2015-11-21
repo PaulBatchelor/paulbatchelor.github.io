@@ -10,9 +10,11 @@
 <div class="row">
 Files: <i>jcrev.h, jcrev.c</i></div>
 <div class="row"><br></div>
-John Chowning reverberator. This is was built using the JC reverb 
-implentation found in FAUST. According to the source code, the specifications for 
-this implementation were found on an old SAIL DART backup tape.
+John Chowning reverberator<br>    This is was built using the JC reverb implentation found in FAUST. According to the source code, the specifications for
+this implementation were found on an old SAIL DART backup tape.<br>  This class is derived from the CLM JCRev function, which is based on the use of
+  networks of simple allpass and comb delay filters.  This class implements three series
+  allpass units, followed by four parallel comb filters, and two decorrelation delay lines in
+  parallel at the output.
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -49,10 +51,10 @@ sp_jcrev_destroy(sp_jcrev **jcrev)
 <pre><code>#include "soundpipe.h"
 
 typedef struct {
-
-sp_diskin *file;
-sp_jcrev *dsp;
-
+    sp_fosc *osc;
+    sp_ftbl *ft; 
+    sp_jcrev *dsp;
+    int counter;
 } UserData;
 
 void process(sp_data *sp, void *udata)
@@ -60,10 +62,16 @@ void process(sp_data *sp, void *udata)
     UserData *ud = udata;
     SPFLOAT in = 0, out = 0;
 
-    sp_diskin_compute(sp, ud-&gt;file, NULL, &in);
+    
+    if(ud-&gt;counter == 0){
+        ud-&gt;osc-&gt;freq = 500 + sp_rand(sp) % 2000;
+    }
+
+    sp_fosc_compute(sp, ud-&gt;osc, NULL, &in);
     sp_jcrev_compute(sp, ud-&gt;dsp, &in, &out);
 
     sp-&gt;out[0] = out;
+    ud-&gt;counter = (ud-&gt;counter + 1) % 4410;
 }
 
 int main()
@@ -72,16 +80,23 @@ int main()
     UserData ud;
 
     sp_create(&sp);
+    sp_srand(sp, 123456);
     sp_jcrev_create(&ud.dsp);
-    sp_diskin_create(&ud.file);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_fosc_create(&ud.osc);
 
     sp_jcrev_init(sp, ud.dsp);
-    sp_diskin_init(sp, ud.file, "oneart.wav");
+    ud.counter = 0;
+    sp_gen_sine(sp, ud.ft);
+    sp_fosc_init(sp, ud.osc, ud.ft);
+    ud.osc-&gt;freq = 500;
 
     sp_process(sp, &ud, process);
 
     sp_jcrev_destroy(&ud.dsp);
-    sp_diskin_destroy(&ud.file);
+    sp_ftbl_destroy(&ud.ft);
+    sp_fosc_destroy(&ud.osc);
+    
     sp_destroy(&sp);
 }
 </code></pre></div></body></html>

@@ -10,19 +10,7 @@
 <div class="row">
 Files: <i>prop.h, prop.c</i></div>
 <div class="row"><br></div>
-Creates a gate using a simple rhythmic notation system called prop. When it reaches the end of the prop string, it will loop back to the beginning.<br>
-<br>
-Prop has a few basic rules:
-<br>
-1. A '+' denotes a on. A '-' denotes an off (rest). They each have an equal duration of a quarter note.
-<br>
-2. On and off values can be strung together to create equally spaced gates: +-+--
-<br>
-3. When notes are enclosed in parantheses following an positive integer N, their duration is reduced N times: ++2(+-)
-<br>
-4. Parenthesis can be nested: +- 3(+2(++)+)
-<br>
-
+Simple rhythmic notation gate generator<br>    Creates a gate using a simple rhythmic notation system called prop. When it reaches the end of the prop string, it will loop back to the beginning.<br>Prop has a few basic rules:<br>1. A '+' denotes a on. A '-' denotes an off (rest). They each have an equal duration of a quarter note.<br>2. On and off values can be strung together to create equally spaced gates: +-+--<br>3. When notes are enclosed in parantheses following an positive integer N, their duration is reduced N times: ++2(+-)<br>4. Parenthesis can be nested: +- 3(+2(++)+)<br>
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -60,12 +48,6 @@ sp_prop_destroy(sp_prop **prop)
 </div>
 <div class="row"><br></div>
 
-<div class="row">
-<h2>Inputs</h2></div>
-<div class="row">
-<i>dummy:</i> This is doesn't do anything.
-</div>
-<div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
@@ -111,7 +93,11 @@ int main() {
     ud.prop-&gt;bpm = 80;
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
-    sp_tenv_init(sp, ud.tenv, 0.01, 0.01, 0.2);
+    sp_tenv_init(sp, ud.tenv);
+    ud.tenv-&gt;atk = 0.01;
+    ud.tenv-&gt;hold = 0.01;
+    ud.tenv-&gt;rel =  0.2;
+
     ud.osc-&gt;freq = 500;
 
     sp-&gt;len = 44100 * 5;

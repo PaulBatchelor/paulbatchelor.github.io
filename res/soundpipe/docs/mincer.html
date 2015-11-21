@@ -1,0 +1,126 @@
+<html>
+<title>mincer</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>mincer</h1></i>
+<div class="row">
+Files: <i>mincer.h, mincer.c</i></div>
+<div class="row"><br></div>
+Phase-locked vocoder.<br>    Mincer is a phase-locked vocoder. It has the ability to play back an audio 
+file loaded into an ftable like a sampler would. Unlike a typical sampler, mincer allows
+time and pitch to be controlled separately. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_mincer_create(sp_mincer **mincer)
+</div>
+<div class="row">
+sp_mincer_init(sp_data *sp, sp_mincer *mincer, sp_ftbl *ft)
+</div>
+<div class="row">
+sp_mincer_compute(sp_data *sp, sp_mincer *mincer, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_mincer_destroy(sp_mincer **mincer)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>ft:</i> ftable containing an audio file.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>time:</i> Position in time. When non-changing it will do a spectral freeze of a the current point in time.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>amp:</i> Amplitude.</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>pitch:</i> Pitch ratio. A value of. 1  normal, 2 is double speed, 0.5 is halfspeed, etc.</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_mincer *mincer;
+    sp_ftbl *ft; 
+    sp_randi *randi;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, mincer = 0, randi = 0;
+   
+    
+    sp_randi_compute(sp, ud-&gt;randi, NULL, &randi);
+    ud-&gt;mincer-&gt;time = randi;
+    ud-&gt;mincer-&gt;amp = 1;
+    ud-&gt;mincer-&gt;pitch = 1;
+    sp_mincer_compute(sp, ud-&gt;mincer, NULL, &mincer);
+    sp-&gt;out[0] = mincer;
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_srand(sp, 1234567);
+
+    sp_mincer_create(&ud.mincer);
+    /* allocates loads an audio file into a ftable */
+    sp_ftbl_loadfile(sp, &ud.ft, "oneart.wav");
+
+    sp_randi_create(&ud.randi);
+
+    sp_mincer_init(sp, ud.mincer, ud.ft);
+    sp_randi_init(sp, ud.randi);
+    ud.randi-&gt;min = 0;
+    ud.randi-&gt;max = 5;
+    ud.randi-&gt;cps = 1;
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_mincer_destroy(&ud.mincer);
+    sp_ftbl_destroy(&ud.ft);
+    sp_randi_destroy(&ud.randi);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

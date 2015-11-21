@@ -1,0 +1,109 @@
+<html>
+<title>line</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>line</h1></i>
+<div class="row">
+Files: <i>line.h, line.c</i></div>
+<div class="row"><br></div>
+Produce a line segment with linear slope
+This will generate a line from value A to value B in given amount of time. 
+When it reaches it's target, it will stay at that value. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_line_create(sp_line **line)
+</div>
+<div class="row">
+sp_line_init(sp_data *sp, sp_line *line, sp_ftbl *ia, SPFLOAT idur, SPFLOAT ib)
+</div>
+<div class="row">
+sp_line_compute(sp_data *sp, sp_line *line, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_line_destroy(sp_line **line)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>ia:</i> Inital point.</div>
+<div class="row">
+
+(Recommended value: 1.0)
+</div>
+<div class="row">
+<i>idur:</i> Duration (in seconds)</div>
+<div class="row">
+
+(Recommended value: 1.0)
+</div>
+<div class="row">
+<i>ib:</i> End point</div>
+<div class="row">
+
+(Recommended value: 1.0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_line *line;
+    sp_osc *osc;
+    sp_ftbl *ft; 
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, line = 0;
+    sp_line_compute(sp, ud-&gt;line, NULL, &line);
+    ud-&gt;osc-&gt;freq = line;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp-&gt;out[0] = osc;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_line_create(&ud.line);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+
+    sp_line_init(sp, ud.line, 100, 3, 400);
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_line_destroy(&ud.line);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

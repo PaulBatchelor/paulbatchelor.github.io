@@ -10,9 +10,7 @@
 <div class="row">
 Files: <i>bal.h, bal.c</i></div>
 <div class="row"><br></div>
-Balance the gain of one signal based on another signal. Often this is used to restore gain lost in the output of a filter. 
-    
-In the source code, the value "ihp" is set to a static 10hz. This is the default value in Csound, and you probably won't need to touch this. 
+Balance the gain of one signal based on another signal<br>    This is often used to restore gain lost in the output of a filter.<br>In the source code, the value "ihp" is set to a static 10hz. This is the default value in Csound, and should not often need to be changed.
 
 <div class="row"><br></div>
 <div class="row">
@@ -26,7 +24,7 @@ sp_bal_create(sp_bal **bal)
 sp_bal_init(sp_data *sp, sp_bal *bal)
 </div>
 <div class="row">
-sp_bal_compute(sp_data *sp, sp_bal *bal, SPFLOAT *comp, SPFLOAT *sig, SPFLOAT *out)
+sp_bal_compute(sp_data *sp, sp_bal *bal, SPFLOAT *sig, SPFLOAT *comp, SPFLOAT *out)
 </div>
 <div class="row">
 sp_bal_destroy(sp_bal **bal)
@@ -36,10 +34,10 @@ sp_bal_destroy(sp_bal **bal)
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>comp:</i> The signal to compare it to.
+<i>sig:</i> Input signal whose gain will be changed.
 </div>
 <div class="row">
-<i>sig:</i> The signal whose gain will be changed.
+<i>comp:</i> Secondary signal to compare the input signal to.
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -75,7 +73,7 @@ void process(sp_data *sp, void *ud) {
     sp_tenv_compute(sp, udp-&gt;env, &tick, &env);
     udp-&gt;filt-&gt;freq = 300 + 3000 * env;
     sp_moogladder_compute(sp, udp-&gt;filt, &out, &filt);
-    sp_bal_compute(sp, udp-&gt;bal, &osc, &filt, &bal);
+    sp_bal_compute(sp, udp-&gt;bal, &filt, &osc, &bal);
     sp-&gt;out[0] = bal * env;
 }
 
@@ -105,7 +103,11 @@ int main() {
     sp-&gt;len = 44100 * 5;
     sp_bal_init(sp, ud.bal);
     sp_moogladder_init(sp, ud.filt);
-    sp_tenv_init(sp, ud.env, 2.25, 0.5, 2.25);
+    sp_tenv_init(sp, ud.env);
+    ud.env-&gt;atk = 2.25;
+    ud.env-&gt;hold = 0.5;
+    ud.env-&gt;rel =  2.25;
+
 
     sp_process(sp, &ud, process);
 

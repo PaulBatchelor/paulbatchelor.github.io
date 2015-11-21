@@ -10,7 +10,7 @@
 <div class="row">
 Files: <i>mode.h, mode.c</i></div>
 <div class="row"><br></div>
-A modal resonance filter used for modal synthesis. Plucked and bell sounds can be created using  passing an impulse through a combination of modal filters. 
+Resonance filter used for modal synthesis<br>    Plucked and bell sounds can be created by passing an impulse through a combination of modal filters. 
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -78,32 +78,30 @@ typedef struct {
     sp_tseq *seq;
 } UserData;
 
-
-
-int modal_create(modal **md) 
+int modal_create(modal **md)
 {
     *md = malloc(sizeof(modal));
     return SP_OK;
 }
 
-int modal_init(sp_data *sp, modal *md) 
+int modal_init(sp_data *sp, modal *md)
 {
     int i;
     md-&gt;amp = 0.5;
-    
-    
+
+
     for(i = 0; i &lt; 4; i++) {
         sp_mode_create(&md-&gt;mode[i]);
         sp_mode_init(sp, md-&gt;mode[i]);
         md-&gt;mfreq[i] = &md-&gt;mode[i]-&gt;freq;
         md-&gt;Q[i] = &md-&gt;mode[i]-&gt;q;
     }
-    
+
     *md-&gt;mfreq[0] = 1000;
     *md-&gt;mfreq[1] = 3000;
     *md-&gt;Q[0] = 12;
     *md-&gt;Q[1] = 8;
-    
+
     *md-&gt;mfreq[2] = 440;
     *md-&gt;mfreq[3] = *md-&gt;mfreq[2] * 2.01081;
     *md-&gt;Q[2] = 500;
@@ -114,33 +112,33 @@ int modal_init(sp_data *sp, modal *md)
     return SP_OK;
 }
 
-int modal_compute(sp_data *sp, modal *md, SPFLOAT *in, SPFLOAT *out) 
+int modal_compute(sp_data *sp, modal *md, SPFLOAT *in, SPFLOAT *out)
 {
     SPFLOAT exc1, exc2, exc;
     SPFLOAT res1, res2, res;
-    
+
     if(*md-&gt;freq != md-&gt;lfreq) {
         *md-&gt;mfreq[3] = *md-&gt;freq * 2.01081;
         md-&gt;lfreq = *md-&gt;freq;
     }
-    
+
     sp_mode_compute(sp, md-&gt;mode[0], in, &exc1);
     sp_mode_compute(sp, md-&gt;mode[1], in, &exc2);
     exc = (exc1 + exc2) * 0.5;
-    
+
     if(exc &gt; md-&gt;amp) {
         exc = md-&gt;amp;
     } else if (exc &lt; 0 ) {
         exc = 0;
     }
-    
+
     sp_mode_compute(sp, md-&gt;mode[2], &exc, &res1);
     sp_mode_compute(sp, md-&gt;mode[3], &exc, &res2);
     res = (res1 + res2) * 0.5;
-    
-    
+
+
     *out = (exc + res) * md-&gt;amp;
-    
+
     return SP_OK;
 }
 
@@ -151,14 +149,12 @@ int modal_destroy(modal **md)
     for(i = 0; i &lt; 4; i++) {
         sp_mode_destroy(&mdp-&gt;mode[i]);
     }
-  
+
     free(*md);
     return SP_OK;
 }
 
-
-
-void process(sp_data *sp, void *udata) 
+void process(sp_data *sp, void *udata)
 {
     UserData *ud = udata;
     SPFLOAT met = 0, mod = 0, nn;
@@ -169,33 +165,34 @@ void process(sp_data *sp, void *udata)
     sp-&gt;out[0] = mod;
 }
 
-int main() 
+int main()
 {
     UserData ud;
     sp_data *sp;
-    
+
     sp_create(&sp);
     sp-&gt;len = sp-&gt;sr * 10;
-    
-    modal_create(&ud.mod);   
+
+    modal_create(&ud.mod);
     modal_init(sp, ud.mod);
-    
+
     sp_metro_create(&ud.met);
-    sp_metro_init(sp, ud.met, 3.0);
+    sp_metro_init(sp, ud.met);
+    ud.met-&gt;freq = 3.0;
 
     sp_ftbl_create(sp, &ud.notes, 1);
     sp_gen_vals(sp, ud.notes, "60 67 62 69 76");
-    
+
     sp_tseq_create(&ud.seq);
     sp_tseq_init(sp, ud.seq, ud.notes);
-       
+
     sp_process(sp, &ud, process);
- 
+
     modal_destroy(&ud.mod);
     sp_metro_destroy(&ud.met);
     sp_ftbl_destroy(&ud.notes);
     sp_tseq_destroy(&ud.seq);
-    
+
     sp_destroy(&sp);
     return 0;
 }

@@ -10,7 +10,7 @@
 <div class="row">
 Files: <i>maygate.h, maygate.c</i></div>
 <div class="row"><br></div>
-Maygate is a "maybe gate". It takes in a trigger, and then it will randomly decide to turn the gate on or not. One particular application for maygate is to arbitrarily turn on/off sends to effects. One specific example of this could be a randomized reverb throw on a snare.
+A randomly open or closed "maybe gate"<br>    It takes in a trigger, and then it will randomly decide to turn the gate on or not. One particular application for maygate is to arbitrarily turn on/off sends to effects. One specific example of this could be a randomized reverb throw on a snare.
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -72,10 +72,10 @@ typedef struct {
     sp_tenv *tenv;
     sp_maygate *mg;
     SPFLOAT freq;
-} udata;
+} UserData;
 
 void write_osc(sp_data *data, void *ud) {
-    udata *udp = ud;
+    UserData *udp = ud;
     SPFLOAT trig = 0;
     SPFLOAT env = 0;
     SPFLOAT osc = 0;
@@ -100,7 +100,7 @@ void freq_compute(void *ud, SPFLOAT *out){
 
 int main() {
     srand(time(NULL));
-    udata ud;
+    UserData ud;
     SPFLOAT *freqp = &ud.freq;
     ud.freq = 400;
     sp_data *sp;
@@ -115,13 +115,19 @@ int main() {
 
     sp_maygate_init(sp, ud.mg);
     ud.mg-&gt;prob = 0.2;
-    sp_tenv_init(sp, ud.tenv, 0.01, 0.01, 0.2);
-    sp_metro_init(sp, ud.met, 12);
+    sp_tenv_init(sp, ud.tenv);
+    ud.tenv-&gt;atk = 0.01;
+    ud.tenv-&gt;hold = 0.01;
+    ud.tenv-&gt;rel =  0.2;
+
+    sp_metro_init(sp, ud.met);
+    ud.met-&gt;freq = 12;
     sp_tevent_init(sp, ud.te, freq_reinit, freq_compute, freqp);
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
     ud.osc-&gt;freq = *freqp;
     sp-&gt;len = 44100 * 5;
+
     sp_process(sp, &ud, write_osc);
 
     sp_maygate_destroy(&ud.mg);

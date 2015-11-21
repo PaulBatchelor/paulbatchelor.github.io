@@ -10,12 +10,7 @@
 <div class="row">
 Files: <i>pan2.h, pan2.c</i></div>
 <div class="row"><br></div>
-This is a description of the entire module. This is not a real module. This description should be a comprehensive sumary of what this function does. 
-    
-Inside the Lua table, this is expressed as a multiline string, however it does not adhere to the tradtional 80 column rule found in programming. 
-
-Write as much text as needed here...
-
+Panner
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -28,7 +23,7 @@ sp_pan2_create(sp_pan2 **pan2)
 sp_pan2_init(sp_data *sp, sp_pan2 *pan2)
 </div>
 <div class="row">
-sp_pan2_compute(sp_data *sp, sp_pan2 *pan2, SPFLOAT *clock, SPFLOAT *input, SPFLOAT *out_left, SPFLOAT *out_right)
+sp_pan2_compute(sp_data *sp, sp_pan2 *pan2, SPFLOAT *in, SPFLOAT *out_left, SPFLOAT *out_right)
 </div>
 <div class="row">
 sp_pan2_destroy(sp_pan2 **pan2)
@@ -40,36 +35,33 @@ sp_pan2_destroy(sp_pan2 **pan2)
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>type:</i> Panning type. 0 = equal power, 1 = square root, 2 = linear, 
+<i>type:</i> Panning type. 0 = equal power, 1 = square root, 2 = linear,
 3 = alternative equal power. Values outside this range will wrap. </div>
 <div class="row">
 
 (Default value: 0)
 </div>
 <div class="row">
-<i>pan:</i> Panning. A value of zero is hard left, and a value of 1 is hard right.</div>
+<i>pan:</i> Panning. A value of -1 is hard left, and a value of 1 is hard right, and 0 is center.</div>
 <div class="row">
 
-(Default value: 0.5)
+(Default value: 0)
 </div>
 <div class="row"><br></div>
 
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>clock:</i> this is the clock source for a made up plugin.
-</div>
-<div class="row">
-<i>input:</i> this is the audio input for a made up plugin.
+<i>in:</i> Mono input signal to be panned.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out_left:</i> Stereo left output for pan2.
+<i>out_left:</i> Stereo left output.
 </div>
 <div class="row">
-<i>out_right:</i> Stereo right output for pan2.
+<i>out_right:</i> Stereo right output.
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -100,8 +92,7 @@ void process(sp_data *sp, void *udata) {
     SPFLOAT osc = 0, outL = 0, outR = 0, lfo = 0;
     sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
     sp_osc_compute(sp, ud-&gt;lfo, NULL, &lfo);
-    //ud-&gt;pan2-&gt;pan = 0.5 * (lfo + 1);
-    ud-&gt;pan2-&gt;pan = 3;
+    ud-&gt;pan2-&gt;pan = lfo;
     sp_pan2_compute(sp, ud-&gt;pan2, &osc, &outL, &outR);
     sp_out(sp, 0, outL);
     sp_out(sp, 1, outR);
@@ -123,7 +114,7 @@ int main() {
     sp_osc_init(sp, ud.osc, ud.ft, 0);
     sp_osc_init(sp, ud.lfo, ud.ft, 0);
     ud.lfo-&gt;amp = 1;
-    ud.lfo-&gt;freq = 0.5;
+    ud.lfo-&gt;freq = 1;
 
     sp-&gt;len = 44100 * 5;
     sp_process(sp, &ud, process);

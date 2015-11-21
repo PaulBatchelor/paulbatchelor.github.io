@@ -1,0 +1,149 @@
+<html>
+<title>bar</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>bar</h1></i>
+<div class="row">
+Files: <i>bar.h, bar.c</i></div>
+<div class="row"><br></div>
+Physical model approximating the sound of a struck metal bar
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_bar_create(sp_bar **bar)
+</div>
+<div class="row">
+sp_bar_init(sp_data *sp, sp_bar *bar, SPFLOAT iK, SPFLOAT ib)
+</div>
+<div class="row">
+sp_bar_compute(sp_data *sp, sp_bar *bar, SPFLOAT *trig, SPFLOAT *out)
+</div>
+<div class="row">
+sp_bar_destroy(sp_bar **bar)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>iK:</i> Dimensionless stiffness parameter</div>
+<div class="row">
+
+(Recommended value: 3)
+</div>
+<div class="row">
+<i>ib:</i> High-frequency loss parameter. Keep this small</div>
+<div class="row">
+
+(Recommended value: 0.001)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>bcL:</i> Boundary condition at left end of bar. 1 = clamped, 2 = pivoting, 3 = free</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>bcR:</i> Boundary condition at right end of bar. 1 = clamped, 2 = pivoting, 3 = free</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>T30:</i> 30db decay time (in seconds).</div>
+<div class="row">
+
+(Default value: 3)
+</div>
+<div class="row">
+<i>scan:</i> Speed of scanning the output location.</div>
+<div class="row">
+
+(Default value: 0.25)
+</div>
+<div class="row">
+<i>pos:</i> Position along bar that strike occurs.</div>
+<div class="row">
+
+(Default value: 0.2)
+</div>
+<div class="row">
+<i>vel:</i> Normalized strike velocity</div>
+<div class="row">
+
+(Default value: 500)
+</div>
+<div class="row">
+<i>wid:</i> Spatial width of strike.</div>
+<div class="row">
+
+(Default value: 0.05)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trig:</i> Non-zero values will strike the bar.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_bar *bar;
+    sp_metro *met;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT bar = 0, met = 0;
+    sp_metro_compute(sp, ud-&gt;met, NULL, &met);
+    sp_bar_compute(sp, ud-&gt;bar, &met, &bar);
+    sp-&gt;out[0] = bar;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_bar_create(&ud.bar);
+    sp_metro_create(&ud.met);
+
+    sp_bar_init(sp, ud.bar, 3, 0.0001);
+    ud.bar-&gt;T30 = 1;
+
+    sp_metro_init(sp, ud.met);
+    ud.met-&gt;freq = 1;
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_bar_destroy(&ud.bar);
+    sp_metro_destroy(&ud.met);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

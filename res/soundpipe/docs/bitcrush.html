@@ -1,0 +1,104 @@
+<html>
+<title>bitcrush</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>bitcrush</h1></i>
+<div class="row">
+Files: <i>bitcrush.h, bitcrush.c</i></div>
+<div class="row"><br></div>
+Digital signal degradation<br>    Bitcrusher will digitally degrade a signal by altering the bitdepth and sampling-rate. 
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_bitcrush_create(sp_bitcrush **bitcrush)
+</div>
+<div class="row">
+sp_bitcrush_init(sp_data *sp, sp_bitcrush *bitcrush)
+</div>
+<div class="row">
+sp_bitcrush_compute(sp_data *sp, sp_bitcrush *bitcrush, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_bitcrush_destroy(sp_bitcrush **bitcrush)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>bitdepth:</i> Bit depth. Expects an integer in the range of 1-16. Fractional values will be truncated.</div>
+<div class="row">
+
+(Default value: 8)
+</div>
+<div class="row">
+<i>srate:</i> Sampling rate.</div>
+<div class="row">
+
+(Default value: 10000)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_bitcrush *bitcrush;
+    sp_diskin *file;
+    sp_ftbl *ft;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT disk = 0, bitcrush = 0;
+    sp_diskin_compute(sp, ud-&gt;file, NULL, &disk);
+    sp_bitcrush_compute(sp, ud-&gt;bitcrush, &disk, &bitcrush);
+    sp-&gt;out[0] = bitcrush;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_bitcrush_create(&ud.bitcrush);
+    sp_diskin_create(&ud.file);
+
+    sp_diskin_init(sp, ud.file, "oneart.wav");
+    sp_bitcrush_init(sp, ud.bitcrush);
+    ud.bitcrush-&gt;bitdepth = 8;
+    ud.bitcrush-&gt;srate = 10000;
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_bitcrush_destroy(&ud.bitcrush);
+    sp_diskin_destroy(&ud.file);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

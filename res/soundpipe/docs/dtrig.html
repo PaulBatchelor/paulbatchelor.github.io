@@ -10,7 +10,7 @@
 <div class="row">
 Files: <i>dtrig.h, dtrig.c</i></div>
 <div class="row"><br></div>
- "dtrig" is a a delta dtrigger that is able to create spaced out triggers. It is set off by a single trigger.
+ Delta trigger<br>    This is able to create spaced out triggers. It is set off by a single trigger.
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -75,7 +75,7 @@ sp_dtrig_destroy(sp_dtrig **dtrig)
 
 typedef struct {
     sp_osc *osc;
-    sp_ftbl *ft, *delta; 
+    sp_ftbl *ft, *delta;
     sp_tenv *tenv;
     sp_dtrig *dt;
 } udata;
@@ -112,12 +112,16 @@ int main() {
     sp_ftbl_create(sp, &ud.delta, 4);
     sp_osc_create(&ud.osc);
 
-    ud.delta-&gt;tbl[0] = 1.0; 
-    ud.delta-&gt;tbl[1] = 1.0; 
-    ud.delta-&gt;tbl[2] = 0.5; 
-    ud.delta-&gt;tbl[3] = 0.5; 
+    ud.delta-&gt;tbl[0] = 1.0;
+    ud.delta-&gt;tbl[1] = 1.0;
+    ud.delta-&gt;tbl[2] = 0.5;
+    ud.delta-&gt;tbl[3] = 0.5;
     sp_dtrig_init(sp, ud.dt, ud.delta);
-    sp_tenv_init(sp, ud.tenv, 0.03, 0.01, 0.3);
+    sp_tenv_init(sp, ud.tenv);
+    ud.tenv-&gt;atk = 0.03;
+    ud.tenv-&gt;hold = 0.01;
+    ud.tenv-&gt;rel =  0.3;
+
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
     ud.osc-&gt;freq = 1000;

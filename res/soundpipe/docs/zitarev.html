@@ -1,0 +1,165 @@
+<html>
+<title>zitarev</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>zitarev</h1></i>
+<div class="row">
+Files: <i>zitarev.h, zitarev.c</i></div>
+<div class="row"><br></div>
+8 FDN stereo zitareverb algorithm, imported from Faust.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_zitarev_create(sp_zitarev **zitarev)
+</div>
+<div class="row">
+sp_zitarev_init(sp_data *sp, sp_zitarev *zitarev)
+</div>
+<div class="row">
+sp_zitarev_compute(sp_data *sp, sp_zitarev *zitarev, SPFLOAT *input_1, SPFLOAT *input_2, SPFLOAT *out_1, SPFLOAT *out_2)
+</div>
+<div class="row">
+sp_zitarev_destroy(sp_zitarev **zitarev)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>in_delay:</i> Delay in ms before reverberation begins.</div>
+<div class="row">
+
+(Default value: 60)
+</div>
+<div class="row">
+<i>lf_x:</i> Crossover frequency separating low and middle frequencies (Hz).</div>
+<div class="row">
+
+(Default value: 200)
+</div>
+<div class="row">
+<i>rt60_low:</i> Time (in seconds) to decay 60db in low-frequency band.</div>
+<div class="row">
+
+(Default value: 3.0)
+</div>
+<div class="row">
+<i>rt60_mid:</i> Time (in seconds) to decay 60db in mid-frequency band.</div>
+<div class="row">
+
+(Default value: 2.0)
+</div>
+<div class="row">
+<i>hf_damping:</i> Frequency (Hz) at which the high-frequency T60 is half the middle-band's T60.</div>
+<div class="row">
+
+(Default value: 6000.0)
+</div>
+<div class="row">
+<i>eq1_freq:</i> Center frequency of second-order Regalia Mitra peaking equalizer section 1.</div>
+<div class="row">
+
+(Default value: 315.0)
+</div>
+<div class="row">
+<i>eq1_level:</i> Peak level in dB of second-order Regalia-Mitra peaking equalizer section 1</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>eq2_freq:</i> Center frequency of second-order Regalia Mitra peaking equalizer section 2.</div>
+<div class="row">
+
+(Default value: 1500.0)
+</div>
+<div class="row">
+<i>eq2_level:</i> Peak level in dB of second-order Regalia-Mitra peaking equalizer section 2</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>mix:</i> -1 = all dry, 1 = all wet</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>level:</i> Output scale factor (in dB).</div>
+<div class="row">
+
+(Default value: -20)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input_1:</i> First input.
+</div>
+<div class="row">
+<i>input_2:</i> Second input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out_1:</i> Channel 1 output. Most likely for the left channel.
+</div>
+<div class="row">
+<i>out_2:</i> Channel 2 output. Mose likely for the right channel.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_diskin *disk;
+    sp_zitarev *rev;
+    int counter;
+} UserData;
+
+void process(sp_data *sp , void *udata) {
+    UserData *ud = udata;
+    SPFLOAT in = 0;
+    SPFLOAT out = 0;
+    SPFLOAT foo = 0;
+
+    sp_diskin_compute(sp, ud-&gt;disk, NULL, &in);
+    sp_zitarev_compute(sp, ud-&gt;rev, &in, &in, &sp-&gt;out[0], &foo);
+}
+
+int main() {
+    srand(time(NULL));
+    UserData ud;
+    ud.counter = 0;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_diskin_create(&ud.disk);
+    sp_zitarev_create(&ud.rev);
+
+    sp_diskin_init(sp, ud.disk, "oneart.wav");
+    sp_zitarev_init(sp, ud.rev);
+    *ud.rev-&gt;level = 0;
+    *ud.rev-&gt;in_delay = 20;
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_diskin_destroy(&ud.disk);
+    sp_zitarev_destroy(&ud.rev);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

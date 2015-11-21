@@ -10,7 +10,7 @@
 <div class="row">
 Files: <i>tenv.h, tenv.c</i></div>
 <div class="row"><br></div>
-TEnv is a trigger based linear AHD envelope generator.
+Trigger based linear AHD envelope generator
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -59,7 +59,7 @@ sp_tenv_destroy(sp_tenv **tenv)
 (Default value: 0)
 </div>
 <div class="row">
-<i>in:</i> Internal input signal. If sigmode variable is set, it will multiply the envelope by this variable. Most of the time, this should be updated at audiorate.</div>
+<i>input:</i> Internal input signal. If sigmode variable is set, it will multiply the envelope by this variable. Most of the time, this should be updated at audiorate.</div>
 <div class="row">
 
 (Default value: 0)
@@ -87,53 +87,44 @@ sp_tenv_destroy(sp_tenv **tenv)
 
 typedef struct {
     sp_osc *osc;
-    sp_ftbl *ft; 
-    sp_tevent *te;
+    sp_ftbl *ft;
     sp_metro *met;
     sp_tenv *tenv;
     SPFLOAT freq;
-} udata;
+} UserData;
 
-void write_osc(sp_data *data, void *ud) {
-    udata *udp = ud;
+void write_osc(sp_data *sp, void *ud) {
+    UserData *udp = ud;
     SPFLOAT trig = 0;
     SPFLOAT env = 0;
     SPFLOAT osc = 0;
-    sp_metro_compute(data, udp-&gt;met, NULL, &trig);
-    sp_tevent_compute(data, udp-&gt;te, &trig, &udp-&gt;osc-&gt;freq);
-    sp_osc_compute(data, udp-&gt;osc, NULL, &osc);
-    sp_tenv_compute(data, udp-&gt;tenv, &trig, &env);
+    sp_metro_compute(sp, udp-&gt;met, NULL, &trig);
+    if(trig) udp-&gt;osc-&gt;freq = 500 + sp_rand(sp) % 2000;
+    sp_osc_compute(sp, udp-&gt;osc, NULL, &osc);
+    sp_tenv_compute(sp, udp-&gt;tenv, &trig, &env);
 
-    data-&gt;out[0] = osc * env;
-}
-
-void freq_reinit(void *ud){
-    SPFLOAT *freq = ud;
-    *freq = 500 + rand() % 2000;
-}
-
-void freq_compute(void *ud, SPFLOAT *out){
-    SPFLOAT *freq = ud;
-    *out = *freq;
+    sp-&gt;out[0] = osc * env;
 }
 
 int main() {
-    srand(time(NULL));
-    udata ud;
+    UserData ud;
     SPFLOAT *freqp = &ud.freq;
     ud.freq = 400;
     sp_data *sp;
     sp_create(&sp);
+    sp_srand(sp, 123456);
 
     sp_tenv_create(&ud.tenv);
     sp_metro_create(&ud.met);
-    sp_tevent_create(&ud.te);
     sp_ftbl_create(sp, &ud.ft, 2048);
     sp_osc_create(&ud.osc);
 
-    sp_tenv_init(sp, ud.tenv, 0.03, 0.01, 0.1);
-    sp_metro_init(sp, ud.met, 3);
-    sp_tevent_init(sp, ud.te, freq_reinit, freq_compute, freqp);
+    sp_tenv_init(sp, ud.tenv);
+    ud.tenv-&gt;atk = 0.03;
+    ud.tenv-&gt;hold = 0.01;
+    ud.tenv-&gt;rel = 0.1;
+    sp_metro_init(sp, ud.met);
+    ud.met-&gt;freq = 3;
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
     ud.osc-&gt;freq = *freqp;
@@ -144,7 +135,6 @@ int main() {
     sp_metro_destroy(&ud.met);
     sp_ftbl_destroy(&ud.ft);
     sp_osc_destroy(&ud.osc);
-    sp_tevent_destroy(&ud.te);
     sp_destroy(&sp);
     return 0;
 }
