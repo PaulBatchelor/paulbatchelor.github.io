@@ -1,0 +1,109 @@
+<html>
+<title>conv</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>conv</h1></i>
+<div class="row">
+Files: <i>conv.h, conv.c</i></div>
+<div class="row"><br></div>
+Partioned convolution. 
+This module will perform partitioned convolution on an input signal using
+an ftable as an impulse response.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_conv_create(sp_conv **conv)
+</div>
+<div class="row">
+sp_conv_init(sp_data *sp, sp_conv *conv, sp_ftbl *ft, SPFLOAT iPartLen)
+</div>
+<div class="row">
+sp_conv_compute(sp_data *sp, sp_conv *conv, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_conv_destroy(sp_conv **conv)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>ft:</i> Ftable used as the impulse response. </div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row">
+<i>iPartLen:</i> Partition length (in samples). 
+Must be a power of 2. Lower values will add less latency, at the cost 
+of requiring more CPU power. 
+</div>
+<div class="row">
+
+(Recommended value: 2048)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input to be convolved.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_diskin *diskin;
+    sp_conv *conv;
+    sp_ftbl *ft; 
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT conv = 0, diskin = 0, bal = 0;
+    sp_diskin_compute(sp, ud-&gt;diskin, NULL, &diskin);
+    sp_conv_compute(sp, ud-&gt;conv, &diskin, &conv);
+    sp-&gt;out[0] = conv * 0.05;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_diskin_create(&ud.diskin);
+    sp_conv_create(&ud.conv);
+    sp_ftbl_loadfile(sp, &ud.ft, "imp.wav");
+
+    sp_diskin_init(sp, ud.diskin, "oneart.wav");
+    sp_conv_init(sp, ud.conv, ud.ft, 8192);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_conv_destroy(&ud.conv);
+    sp_ftbl_destroy(&ud.ft);
+    sp_diskin_destroy(&ud.diskin);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

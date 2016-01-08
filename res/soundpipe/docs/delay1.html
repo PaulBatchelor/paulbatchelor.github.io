@@ -1,16 +1,17 @@
 <html>
-<title>scale</title>
+<title>delay1</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>scale</h1></i>
+<i><h1>delay1</h1></i>
 <div class="row">
-Files: <i>scale.h, scale.c</i></div>
+Files: <i>delay1.h, delay1.c</i></div>
 <div class="row"><br></div>
-Bipolar Scale<br>    This module scales from unipolar [0, 1] to another range defined by min and max.
+Delays signal by a single sample.
+There's not much more to say on this. Mostly useful for filters and hacks.
 
 <div class="row"><br></div>
 <div class="row">
@@ -18,68 +19,59 @@ Bipolar Scale<br>    This module scales from unipolar [0, 1] to another range de
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_scale_create(sp_scale **scale)
+sp_delay1_create(sp_delay1 **delay1)
 </div>
 <div class="row">
-sp_scale_init(sp_data *sp, sp_scale *scale)
+sp_delay1_init(sp_data *sp, sp_delay1 *delay1)
 </div>
 <div class="row">
-sp_scale_compute(sp_data *sp, sp_scale *scale, SPFLOAT *in, SPFLOAT *out)
+sp_delay1_compute(sp_data *sp, sp_delay1 *delay1, SPFLOAT *input, SPFLOAT *out)
 </div>
 <div class="row">
-sp_scale_destroy(sp_scale **scale)
-</div>
-<div class="row"><br></div>
-<div class="row">
-<h2>Optional Parameters</h2></div>
-<div class="row">
-<i>min:</i> Minimum value to scale to.</div>
-<div class="row">
-
-(Default value: 0)
-</div>
-<div class="row">
-<i>max:</i> Maximum value to scale to.</div>
-<div class="row">
-
-(Default value: 1)
+sp_delay1_destroy(sp_delay1 **delay1)
 </div>
 <div class="row"><br></div>
 
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>in:</i> Signal to be scaled.
+<i>input:</i> this is the audio input for a made up plugin.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Scaled signal out
+<i>out:</i> signal output for delay1.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
+<pre><code>/*
+ * This is a dummy example.
+ * Please implement a small and simple working example of your module, and then
+ * remove this header.
+ * Don't be clever.
+ * Bonus points for musicality. 
+ *
+ */
+
+#include &lt;stdlib.h&gt;
 #include &lt;stdio.h&gt;
 #include &lt;time.h&gt;
 #include "soundpipe.h"
 
 typedef struct {
-    sp_scale *scale;
+    sp_delay1 *delay1;
     sp_osc *osc;
-    sp_ftbl *ft;
+    sp_ftbl *ft; 
 } UserData;
 
 void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
-    SPFLOAT osc = 0, scale = 0;
-    /* constant set to 1, when scaled, it becomes 440 */
-    SPFLOAT val = 1;
-    sp_scale_compute(sp, ud-&gt;scale, &val, &scale);
-    ud-&gt;osc-&gt;freq = scale;
+    SPFLOAT osc = 0, delay1 = 0;
     sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    sp-&gt;out[0] = osc;
+    sp_delay1_compute(sp, ud-&gt;delay1, &osc, &delay1);
+    sp-&gt;out[0] = delay1;
 }
 
 int main() {
@@ -88,21 +80,18 @@ int main() {
     sp_data *sp;
     sp_create(&sp);
 
-    sp_scale_create(&ud.scale);
+    sp_delay1_create(&ud.delay1);
     sp_osc_create(&ud.osc);
     sp_ftbl_create(sp, &ud.ft, 2048);
 
-    sp_scale_init(sp, ud.scale);
-    ud.scale-&gt;min = 0;
-    ud.scale-&gt;max = 880;
+    sp_delay1_init(sp, ud.delay1);
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
-    ud.osc-&gt;amp = 0.1;
 
     sp-&gt;len = 44100 * 5;
     sp_process(sp, &ud, process);
 
-    sp_scale_destroy(&ud.scale);
+    sp_delay1_destroy(&ud.delay1);
     sp_ftbl_destroy(&ud.ft);
     sp_osc_destroy(&ud.osc);
 

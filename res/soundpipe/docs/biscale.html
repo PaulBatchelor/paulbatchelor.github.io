@@ -1,69 +1,61 @@
 <html>
-<title>osc</title>
+<title>biscale</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>osc</h1></i>
+<i><h1>biscale</h1></i>
 <div class="row">
-Files: <i>osc.h, osc.c</i></div>
+Files: <i>biscale.h, biscale.c</i></div>
 <div class="row"><br></div>
- Table-lookup oscilator with linear interpolation
+Bipolar Scale<br>    This module scales from bipolar [-1, 1] to another range defined by min and max.
+
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_osc_create(sp_osc **osc)
+sp_biscale_create(sp_biscale **biscale)
 </div>
 <div class="row">
-sp_osc_init(sp_data *sp, sp_osc *osc, sp_ftbl *tbl, SPFLOAT phase)
+sp_biscale_init(sp_data *sp, sp_biscale *biscale)
 </div>
 <div class="row">
-sp_osc_compute(sp_data *sp, sp_osc *osc, SPFLOAT *dummy, SPFLOAT *out)
+sp_biscale_compute(sp_data *sp, sp_biscale *biscale, SPFLOAT *in, SPFLOAT *out)
 </div>
 <div class="row">
-sp_osc_destroy(sp_osc **osc)
-</div>
-<div class="row"><br></div>
-<div class="row">
-<h2>Mandatory Parameters</h2></div>
-<div class="row">
-<i>tbl:</i> Wavetable to read from. Note: the size of this table must be a power of 2.</div>
-<div class="row">
-
-(Recommended value: N/A)
-</div>
-<div class="row">
-<i>phase:</i> Initial phase of waveform, expects a value 0-1</div>
-<div class="row">
-
-(Recommended value: 0)
+sp_biscale_destroy(sp_biscale **biscale)
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>freq:</i> Frequency (in Hz)</div>
+<i>min:</i> Minimum value to scale to.</div>
 <div class="row">
 
-(Default value: 440)
+(Default value: 0)
 </div>
 <div class="row">
-<i>amp:</i> Amplitude (typically a value between 0 and 1).</div>
+<i>max:</i> Maximum value to scale to.</div>
 <div class="row">
 
-(Default value: 0.2)
+(Default value: 1)
 </div>
 <div class="row"><br></div>
 
 <div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>in:</i> Signal to be scaled.
+</div>
+<div class="row"><br></div>
+<div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Signal output.
+<i>out:</i> Scaled signal out
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -74,40 +66,46 @@ sp_osc_destroy(sp_osc **osc)
 #include "soundpipe.h"
 
 typedef struct {
+    sp_biscale *biscale;
     sp_osc *osc;
-    sp_ftbl *ft; 
-    int counter;
+    sp_ftbl *ft;
 } UserData;
 
-void write_osc(sp_data *sp, void *udata) {
+void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
-    SPFLOAT osc = 0;
-    sp-&gt;k = !(sp-&gt;pos % 4);
-    if(ud-&gt;counter == 0){
-        ud-&gt;osc-&gt;freq = 500 + rand() % 2000;
-    }
+    SPFLOAT osc = 0, biscale = 0;
+    /* constant set to 1, when scaled, it becomes 440 */
+    SPFLOAT val = 1;
+    sp_biscale_compute(sp, ud-&gt;biscale, &val, &biscale);
+    ud-&gt;osc-&gt;freq = biscale;
     sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    ud-&gt;counter = (ud-&gt;counter + 1) % 4410;
-    sp_out(sp, 0, osc);
+    sp-&gt;out[0] = osc;
 }
 
 int main() {
-    srand(time(NULL));
+    srand(1234567);
     UserData ud;
-    ud.counter = 0;
     sp_data *sp;
     sp_create(&sp);
-    sp_ftbl_create(sp, &ud.ft, 2048);
+
+    sp_biscale_create(&ud.biscale);
     sp_osc_create(&ud.osc);
-    
+    sp_ftbl_create(sp, &ud.ft, 2048);
+
+    sp_biscale_init(sp, ud.biscale);
+    ud.biscale-&gt;min = 0;
+    ud.biscale-&gt;max = 880;
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
-    ud.osc-&gt;freq = 500;
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, write_osc);
+    ud.osc-&gt;amp = 0.1;
 
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_biscale_destroy(&ud.biscale);
     sp_ftbl_destroy(&ud.ft);
     sp_osc_destroy(&ud.osc);
+
     sp_destroy(&sp);
     return 0;
 }

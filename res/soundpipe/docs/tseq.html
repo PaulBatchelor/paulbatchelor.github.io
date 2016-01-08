@@ -73,33 +73,33 @@ typedef struct {
     sp_tenv *tenv;
     sp_dtrig *dt;
     sp_tseq *seq;
-} udata;
+} UserData;
 
-void write_osc(sp_data *data, void *ud) {
-    udata *udp = ud;
+void write_osc(sp_data *sp, void *udata) {
+    UserData *ud = udata;
     SPFLOAT env = 0;
     SPFLOAT osc = 0;
     SPFLOAT dry = 0;
     SPFLOAT trig;
     SPFLOAT dtrig = 0;
     SPFLOAT note = 0;
-    if(data-&gt;pos == 0){
+    if(sp-&gt;pos == 0){
         trig = 1.0;
     }else{
         trig = 0.0;
     }
-    sp_dtrig_compute(data, udp-&gt;dt, &trig, &dtrig);
-    sp_tseq_compute(data, udp-&gt;seq, &dtrig, &note);
-    udp-&gt;osc-&gt;freq = sp_midi2cps(note + 24);
+    sp_dtrig_compute(sp, ud-&gt;dt, &trig, &dtrig);
+    sp_tseq_compute(sp, ud-&gt;seq, &dtrig, &note);
+    ud-&gt;osc-&gt;freq = sp_midi2cps(note + 24);
     env = 1.0;
-    sp_tenv_compute(data, udp-&gt;tenv, &dtrig, &env);
-    sp_osc_compute(data, udp-&gt;osc, NULL, &osc);
-    data-&gt;out[0] = osc * env;
+    sp_tenv_compute(sp, ud-&gt;tenv, &dtrig, &env);
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp-&gt;out[0] = osc * env;
 }
 
 int main() {
     srand(time(NULL));
-    udata ud;
+    UserData ud;
     uint32_t bufsize;
     sp_data *sp;
     sp_create(&sp);

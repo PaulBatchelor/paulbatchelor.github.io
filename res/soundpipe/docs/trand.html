@@ -1,65 +1,57 @@
 <html>
-<title>osc</title>
+<title>trand</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>osc</h1></i>
+<i><h1>trand</h1></i>
 <div class="row">
-Files: <i>osc.h, osc.c</i></div>
+Files: <i>trand.h, trand.c</i></div>
 <div class="row"><br></div>
- Table-lookup oscilator with linear interpolation
+Triggered random number generator.
+
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_osc_create(sp_osc **osc)
+sp_trand_create(sp_trand **trand)
 </div>
 <div class="row">
-sp_osc_init(sp_data *sp, sp_osc *osc, sp_ftbl *tbl, SPFLOAT phase)
+sp_trand_init(sp_data *sp, sp_trand *trand)
 </div>
 <div class="row">
-sp_osc_compute(sp_data *sp, sp_osc *osc, SPFLOAT *dummy, SPFLOAT *out)
+sp_trand_compute(sp_data *sp, sp_trand *trand, SPFLOAT *trig, SPFLOAT *out)
 </div>
 <div class="row">
-sp_osc_destroy(sp_osc **osc)
-</div>
-<div class="row"><br></div>
-<div class="row">
-<h2>Mandatory Parameters</h2></div>
-<div class="row">
-<i>tbl:</i> Wavetable to read from. Note: the size of this table must be a power of 2.</div>
-<div class="row">
-
-(Recommended value: N/A)
-</div>
-<div class="row">
-<i>phase:</i> Initial phase of waveform, expects a value 0-1</div>
-<div class="row">
-
-(Recommended value: 0)
+sp_trand_destroy(sp_trand **trand)
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>freq:</i> Frequency (in Hz)</div>
+<i>min:</i> Minimum value to use.</div>
 <div class="row">
 
-(Default value: 440)
+(Default value: 0)
 </div>
 <div class="row">
-<i>amp:</i> Amplitude (typically a value between 0 and 1).</div>
+<i>max:</i> Maximum value to use.</div>
 <div class="row">
 
-(Default value: 0.2)
+(Default value: 1)
 </div>
 <div class="row"><br></div>
 
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>trig:</i> When non-zero, will create a new random value.
+</div>
+<div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
@@ -68,46 +60,57 @@ sp_osc_destroy(sp_osc **osc)
 <div class="row"><br></div>
 <div class="row">
 <h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
+<pre><code>
+#include &lt;stdlib.h&gt;
 #include &lt;stdio.h&gt;
 #include &lt;time.h&gt;
 #include "soundpipe.h"
 
 typedef struct {
+    sp_metro *met;
+    sp_trand *trand;
     sp_osc *osc;
     sp_ftbl *ft; 
-    int counter;
 } UserData;
 
-void write_osc(sp_data *sp, void *udata) {
+void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
-    SPFLOAT osc = 0;
-    sp-&gt;k = !(sp-&gt;pos % 4);
-    if(ud-&gt;counter == 0){
-        ud-&gt;osc-&gt;freq = 500 + rand() % 2000;
-    }
+    SPFLOAT osc = 0, trand = 0, met = 0;
+    sp_metro_compute(sp, ud-&gt;met, NULL, &met);
+    sp_trand_compute(sp, ud-&gt;trand, &met, &trand);
+    ud-&gt;osc-&gt;freq = trand;
     sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    ud-&gt;counter = (ud-&gt;counter + 1) % 4410;
-    sp_out(sp, 0, osc);
+    sp-&gt;out[0] = osc;
 }
 
 int main() {
-    srand(time(NULL));
     UserData ud;
-    ud.counter = 0;
     sp_data *sp;
     sp_create(&sp);
-    sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_srand(sp, 1234567);
+
+    sp_metro_create(&ud.met);
+    sp_trand_create(&ud.trand);
     sp_osc_create(&ud.osc);
-    
+    sp_ftbl_create(sp, &ud.ft, 2048);
+
+    sp_metro_init(sp, ud.met);
+    ud.met-&gt;freq = 20;
+    sp_trand_init(sp, ud.trand);
+    ud.trand-&gt;min = 40;
+    ud.trand-&gt;max = 1000;
+
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
-    ud.osc-&gt;freq = 500;
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, write_osc);
 
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_trand_destroy(&ud.trand);
     sp_ftbl_destroy(&ud.ft);
     sp_osc_destroy(&ud.osc);
+    sp_metro_destroy(&ud.met);
+
     sp_destroy(&sp);
     return 0;
 }

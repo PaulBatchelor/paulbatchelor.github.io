@@ -68,23 +68,23 @@ typedef struct {
     sp_noise *ns;
     sp_moogladder *moog;
     int counter;
-} udata;
+} UserData;
 
-void write_noise(sp_data *data, void *ud) {
-    udata *udata = ud;
+void write_noise(sp_data *sp, void *udata) {
+    UserData *ud = udata;
     SPFLOAT in = 0;
     SPFLOAT out = 0;
-    if(udata-&gt;counter == 0) {
-        udata-&gt;moog-&gt;res = 0.8;
-        udata-&gt;moog-&gt;freq = 500 + rand() % 4000;
+    if(ud-&gt;counter == 0) {
+        ud-&gt;moog-&gt;res = 0.8;
+        ud-&gt;moog-&gt;freq = 500 + rand() % 4000;
     }
-    sp_noise_compute(data, udata-&gt;ns, NULL, &in);
-    sp_moogladder_compute(data, udata-&gt;moog, &in, &data-&gt;out[0]); 
-    udata-&gt;counter = (udata-&gt;counter + 1) % 5000;
+    sp_noise_compute(sp, ud-&gt;ns, NULL, &in);
+    sp_moogladder_compute(sp, ud-&gt;moog, &in, &sp-&gt;out[0]); 
+    ud-&gt;counter = (ud-&gt;counter + 1) % 5000;
 }
 int main() {
     srand(time(NULL));
-    udata ud;
+    UserData ud;
     ud.counter = 0;
     sp_data *sp;
     sp_create(&sp);

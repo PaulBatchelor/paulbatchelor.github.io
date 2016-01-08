@@ -1,103 +1,108 @@
 <html>
-<title>comb</title>
+<title>autowah</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>comb</h1></i>
+<i><h1>autowah</h1></i>
 <div class="row">
-Files: <i>comb.h, comb.c</i></div>
+Files: <i>autowah.h, autowah.c</i></div>
 <div class="row"><br></div>
-Comb filter
+Automatic wah pedal
+	An automatic wah effect, ported from Guitarix via Faust. 
+
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_comb_create(sp_comb **comb)
+sp_autowah_create(sp_autowah **autowah)
 </div>
 <div class="row">
-sp_comb_init(sp_data *sp, sp_comb *comb, SPFLOAT looptime)
+sp_autowah_init(sp_data *sp, sp_autowah *autowah)
 </div>
 <div class="row">
-sp_comb_compute(sp_data *sp, sp_comb *comb, SPFLOAT *input, SPFLOAT *out)
+sp_autowah_compute(sp_data *sp, sp_autowah *autowah, SPFLOAT *input, SPFLOAT *output)
 </div>
 <div class="row">
-sp_comb_destroy(sp_comb **comb)
-</div>
-<div class="row"><br></div>
-<div class="row">
-<h2>Mandatory Parameters</h2></div>
-<div class="row">
-<i>looptime:</i> The loop time of the filter, in seconds. This can also be thought of as the delay time.</div>
-<div class="row">
-
-(Recommended value: 0.1)
+sp_autowah_destroy(sp_autowah **autowah)
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>revtime:</i> Reverberation time, in seconds (RT-60).</div>
+<i>level:</i> Overall level (between 0 and 1)</div>
 <div class="row">
 
-(Default value: 3.5)
+(Default value: 0.1)
+</div>
+<div class="row">
+<i>wah:</i> wah amount</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>mix:</i> Wet/dry amount (100 = wet, 0 = dry)</div>
+<div class="row">
+
+(Default value: 100)
 </div>
 <div class="row"><br></div>
 
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>input:</i> Signal input.
+<i>input:</i> Audio input
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Signal output.
+<i>output:</i> Audio output.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Example Code</h2></div>
-<pre><code>#include "soundpipe.h"
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
 
 typedef struct {
-    sp_comb *comb;
+    sp_autowah *autowah;
     sp_diskin *disk;
 } UserData;
 
 void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
-    SPFLOAT comb = 0, disk = 0;
+    SPFLOAT disk = 0, autowah = 0;
     sp_diskin_compute(sp, ud-&gt;disk, NULL, &disk);
-    disk *= 0.5;
-    sp_comb_compute(sp, ud-&gt;comb, &disk, &comb);
-
-    sp-&gt;out[0] = comb;
+    sp_autowah_compute(sp, ud-&gt;autowah, &disk, &autowah);
+    sp-&gt;out[0] = autowah;
 }
 
-
-int main()
-{
+int main() {
     UserData ud;
     sp_data *sp;
     sp_create(&sp);
 
-    sp_comb_create(&ud.comb);
-
+    sp_autowah_create(&ud.autowah);
     sp_diskin_create(&ud.disk);
 
-    sp_comb_init(sp, ud.comb, 0.01);
-    sp_diskin_init(sp, ud.disk, "oneart.wav");
+    sp_diskin_init(sp, ud.disk, "riff.wav");
+    sp_autowah_init(sp, ud.autowah);
+    *ud.autowah-&gt;wah = 1.0;
     
     sp-&gt;len = 44100 * 5;
     sp_process(sp, &ud, process);
 
-    sp_comb_destroy(&ud.comb);
+    sp_autowah_destroy(&ud.autowah);
     sp_diskin_destroy(&ud.disk);
+
     sp_destroy(&sp);
     return 0;
 }

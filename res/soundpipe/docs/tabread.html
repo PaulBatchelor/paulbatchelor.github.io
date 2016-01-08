@@ -10,7 +10,9 @@
 <div class="row">
 Files: <i>tabread.h, tabread.c</i></div>
 <div class="row"><br></div>
-Table reader<br>    Read through a table at audio-rate with varispeed. No interpolation is implemented yet, so this works very quickly.
+Table 
+        Read through an sp_ftbl with linear interpolation.
+    
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
@@ -20,10 +22,10 @@ Table reader<br>    Read through a table at audio-rate with varispeed. No interp
 sp_tabread_create(sp_tabread **tabread)
 </div>
 <div class="row">
-sp_tabread_init(sp_data *sp, sp_tabread *tabread, sp_ftbl *bar)
+sp_tabread_init(sp_data *sp, sp_tabread *tabread, sp_ftbl *ft)
 </div>
 <div class="row">
-sp_tabread_compute(sp_data *sp, sp_tabread *tabread, SPFLOAT *dummy, SPFLOAT *out)
+sp_tabread_compute(sp_data *sp, sp_tabread *tabread, SPFLOAT *out)
 </div>
 <div class="row">
 sp_tabread_destroy(sp_tabread **tabread)
@@ -32,7 +34,7 @@ sp_tabread_destroy(sp_tabread **tabread)
 <div class="row">
 <h2>Mandatory Parameters</h2></div>
 <div class="row">
-<i>bar:</i> A properly allocated table (using a function like sp_gen_file).</div>
+<i>ft:</i> A properly allocated table (using a function like sp_gen_file).</div>
 <div class="row">
 
 (Recommended value: N/A)
@@ -41,7 +43,25 @@ sp_tabread_destroy(sp_tabread **tabread)
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>speed:</i> Playback speed. 1.0 = normal. 2.0 = doublespeed, 0.5 = halfspeed, etc...</div>
+<i>index:</i> index position, either scaled or unscaled with mode parameter</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>mode:</i> 1 = scaled index, 0 = unscaled index</div>
+<div class="row">
+
+(Default value: 1.0)
+</div>
+<div class="row">
+<i>offset:</i> Offset from beginning of ftable. If the mode is scaled, then it is in range 0-1, other wise it is the index position.</div>
+<div class="row">
+
+(Default value: 1.0)
+</div>
+<div class="row">
+<i>wrap:</i> Enable wraparound. 1 = on; 0 = 0ff.</div>
 <div class="row">
 
 (Default value: 1.0)
@@ -64,11 +84,14 @@ sp_tabread_destroy(sp_tabread **tabread)
 typedef struct {
     sp_tabread *tr;
     sp_ftbl *ft;
+    sp_phasor *phasor;
 } UserData;
 
 void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
-    SPFLOAT tab = 0.0;
+    SPFLOAT tab = 0.0, phasor = 0.0;
+    sp_phasor_compute(sp, ud-&gt;phasor, NULL, &phasor);
+    ud-&gt;tr-&gt;index = phasor;
     sp_tabread_compute(sp, ud-&gt;tr, NULL, &tab);
     sp-&gt;out[0] = tab;
 }
@@ -81,13 +104,27 @@ int main() {
 
     sp_tabread_create(&ud.tr);
 
+    sp_phasor_create(&ud.phasor);
+
     sp_ftbl_create(sp, &ud.ft, 395393);
     sp_gen_file(sp, ud.ft, "oneart.wav");
 
     sp_tabread_init(sp, ud.tr, ud.ft);
+
+    /* mode 1: indexing scaled 0-1; mode 0: unscaled direct indexing */
+    ud.tr-&gt;mode = 1;
+    /* since mode = 1, offset 5% into file */
+    ud.tr-&gt;offset = 0.05;
+    /* no wraparound */
+    ud.tr-&gt;wrap = 0;
+
+    sp_phasor_init(sp, ud.phasor, 0);
+    /* set playback rate to half speed, or 1/(t * 2) */
+    ud.phasor-&gt;freq = 1 / (8.97 * 2);
     sp-&gt;len = 44100 * 5;
     sp_process(sp, &ud, process);
 
+    sp_phasor_destroy(&ud.phasor);
     sp_tabread_destroy(&ud.tr);
     sp_ftbl_destroy(&ud.ft);
     sp_destroy(&sp);

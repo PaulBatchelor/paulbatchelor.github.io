@@ -1,38 +1,38 @@
 <html>
-<title>tenv</title>
+<title>tenvx</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>tenv</h1></i>
+<i><h1>tenvx</h1></i>
 <div class="row">
-Files: <i>tenv.h, tenv.c</i></div>
+Files: <i>tenvx.h, tenvx.c</i></div>
 <div class="row"><br></div>
-Trigger based linear AHD envelope generator
+Trigger based exponential AHD envelope generator
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_tenv_create(sp_tenv **tenv)
+sp_tenvx_create(sp_tenvx **tenvx)
 </div>
 <div class="row">
-sp_tenv_init(sp_data *sp, sp_tenv *tenv)
+sp_tenvx_init(sp_data *sp, sp_tenvx *tenvx)
 </div>
 <div class="row">
-sp_tenv_compute(sp_data *sp, sp_tenv *tenv, SPFLOAT *trig, SPFLOAT *out)
+sp_tenvx_compute(sp_data *sp, sp_tenvx *tenvx, SPFLOAT *trig, SPFLOAT *out)
 </div>
 <div class="row">
-sp_tenv_destroy(sp_tenv **tenv)
+sp_tenvx_destroy(sp_tenvx **tenvx)
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>atk:</i> Attack time, in seconds.</div>
+<i>atk:</i> Attack time, in seconds. Must be non-zero.</div>
 <div class="row">
 
 (Default value: 0.1)
@@ -44,13 +44,13 @@ sp_tenv_destroy(sp_tenv **tenv)
 (Default value: 0.3)
 </div>
 <div class="row">
-<i>rel:</i> Release time, in seconds.</div>
+<i>rel:</i> Release time, in seconds. Must be non-zero.</div>
 <div class="row">
 
 (Default value: 0.2)
 </div>
 <div class="row">
-<i>sigmode:</i> If set to non-zero value, tenv will multiply the envelope with an internal signal instead of just returning an enveloped signal.</div>
+<i>sigmode:</i> If set to non-zero value, tenvx will multiply the envelope with an internal signal instead of just returning an enveloped signal.</div>
 <div class="row">
 
 (Default value: 0)
@@ -86,7 +86,7 @@ typedef struct {
     sp_osc *osc;
     sp_ftbl *ft;
     sp_metro *met;
-    sp_tenv *tenv;
+    sp_tenvx *tenvx;
     SPFLOAT freq;
 } UserData;
 
@@ -98,7 +98,7 @@ void write_osc(sp_data *sp, void *udata) {
     sp_metro_compute(sp, ud-&gt;met, NULL, &trig);
     if(trig) ud-&gt;osc-&gt;freq = 500 + sp_rand(sp) % 2000;
     sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    sp_tenv_compute(sp, ud-&gt;tenv, &trig, &env);
+    sp_tenvx_compute(sp, ud-&gt;tenvx, &trig, &env);
 
     sp-&gt;out[0] = osc * env;
 }
@@ -111,15 +111,15 @@ int main() {
     sp_create(&sp);
     sp_srand(sp, 123456);
 
-    sp_tenv_create(&ud.tenv);
+    sp_tenvx_create(&ud.tenvx);
     sp_metro_create(&ud.met);
     sp_ftbl_create(sp, &ud.ft, 2048);
     sp_osc_create(&ud.osc);
 
-    sp_tenv_init(sp, ud.tenv);
-    ud.tenv-&gt;atk = 0.03;
-    ud.tenv-&gt;hold = 0.01;
-    ud.tenv-&gt;rel = 0.1;
+    sp_tenvx_init(sp, ud.tenvx);
+    ud.tenvx-&gt;atk = 0.03;
+    ud.tenvx-&gt;hold = 0.01;
+    ud.tenvx-&gt;rel = 0.1;
     sp_metro_init(sp, ud.met);
     ud.met-&gt;freq = 3;
     sp_gen_sine(sp, ud.ft);
@@ -128,7 +128,7 @@ int main() {
     sp-&gt;len = 44100 * 5;
     sp_process(sp, &ud, write_osc);
 
-    sp_tenv_destroy(&ud.tenv);
+    sp_tenvx_destroy(&ud.tenvx);
     sp_metro_destroy(&ud.met);
     sp_ftbl_destroy(&ud.ft);
     sp_osc_destroy(&ud.osc);

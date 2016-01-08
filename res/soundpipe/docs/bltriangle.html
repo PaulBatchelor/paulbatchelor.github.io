@@ -1,63 +1,57 @@
 <html>
-<title>posc3</title>
+<title>bltriangle</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>posc3</h1></i>
+<i><h1>bltriangle</h1></i>
 <div class="row">
-Files: <i>posc3.h, posc3.c</i></div>
+Files: <i>bltriangle.h, bltriangle.c</i></div>
 <div class="row"><br></div>
- High-precision table-lookup posc3ilator with cubic interpolation
+Bandlimited triangle oscillator
+This is a bandlimited triangle oscillator ported from the "triangletooth" function from the Faust
+programming language.
+
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_posc3_create(sp_posc3 **posc3)
+sp_bltriangle_create(sp_bltriangle **bltriangle)
 </div>
 <div class="row">
-sp_posc3_init(sp_data *sp, sp_posc3 *posc3, sp_ftbl *tbl)
+sp_bltriangle_init(sp_data *sp, sp_bltriangle *bltriangle)
 </div>
 <div class="row">
-sp_posc3_compute(sp_data *sp, sp_posc3 *posc3, SPFLOAT *dummy, SPFLOAT *out)
+sp_bltriangle_compute(sp_data *sp, sp_bltriangle *bltriangle, SPFLOAT *dummy, SPFLOAT *out)
 </div>
 <div class="row">
-sp_posc3_destroy(sp_posc3 **posc3)
-</div>
-<div class="row"><br></div>
-<div class="row">
-<h2>Mandatory Parameters</h2></div>
-<div class="row">
-<i>tbl:</i> Wavetable to read from. Note: the size of this table must be a power of 2.</div>
-<div class="row">
-
-(Recommended value: N/A)
+sp_bltriangle_destroy(sp_bltriangle **bltriangle)
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>freq:</i> Frequency (in Hz)</div>
+<i>freq:</i> Frequency, (range 0-20000)</div>
 <div class="row">
 
 (Default value: 440)
 </div>
 <div class="row">
-<i>amp:</i> Amplitude (typically a value between 0 and 1).</div>
+<i>amp:</i> Amplitude (range 0-1).</div>
 <div class="row">
 
-(Default value: 0.2)
+(Default value: 1.0)
 </div>
 <div class="row"><br></div>
 
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Signal out.
+<i>out:</i> Signal output.
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -68,17 +62,16 @@ sp_posc3_destroy(sp_posc3 **posc3)
 #include "soundpipe.h"
 
 typedef struct {
-    sp_posc3 *posc3;
-    sp_ftbl *ft; 
+    sp_bltriangle *bltriangle;
     int counter;
 } UserData;
 
-void write_posc3(sp_data *sp, void *udata) {
+void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
     if(ud-&gt;counter == 0){
-        ud-&gt;posc3-&gt;freq = 500 + rand() % 2000;
+        *ud-&gt;bltriangle-&gt;freq = 500 + rand() % 2000;
     }
-    sp_posc3_compute(sp, ud-&gt;posc3, NULL, &sp-&gt;out[0]);
+    sp_bltriangle_compute(sp, ud-&gt;bltriangle, NULL, &sp-&gt;out[0]);
     ud-&gt;counter = (ud-&gt;counter + 1) % 4410;
 }
 
@@ -88,17 +81,16 @@ int main() {
     ud.counter = 0;
     sp_data *sp;
     sp_create(&sp);
-    sp_ftbl_create(sp, &ud.ft, 1024);
-    sp_posc3_create(&ud.posc3);
 
-    sp_gen_sine(sp, ud.ft);
-    sp_posc3_init(sp, ud.posc3, ud.ft);
-    ud.posc3-&gt;freq = 500;
+    sp_bltriangle_create(&ud.bltriangle);
+
+    sp_bltriangle_init(sp, ud.bltriangle);
+    *ud.bltriangle-&gt;freq = 500.0;
+    *ud.bltriangle-&gt;amp = 0.9;
     sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, write_posc3);
+    sp_process(sp, &ud, process);
 
-    sp_ftbl_destroy(&ud.ft);
-    sp_posc3_destroy(&ud.posc3);
+    sp_bltriangle_destroy(&ud.bltriangle);
     sp_destroy(&sp);
     return 0;
 }
