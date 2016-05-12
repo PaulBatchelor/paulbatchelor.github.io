@@ -32,22 +32,10 @@ sp_clip_destroy(sp_clip **clip)
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>meth:</i> Method of clipping. 0 = Bram de Jong, 1 = Sine, 2 = tanh.</div>
-<div class="row">
-
-(Default value: 1)
-</div>
-<div class="row">
 <i>lim:</i> threshold / limiting value.</div>
 <div class="row">
 
 (Default value: 1.0)
-</div>
-<div class="row">
-<i>arg:</i> When meth is 0 (Bram De Jong), indicates point at which clipping starts in the range 0-1.</div>
-<div class="row">
-
-(Default value: 0.5)
 </div>
 <div class="row"><br></div>
 
@@ -78,22 +66,6 @@ typedef struct {
 void write_clip(sp_data *sp, void *ud) {
     UserData *udp = ud;
     SPFLOAT out, osc, filt;
-
-    if(sp-&gt;pos &lt; (44100 * 2)) {
-        sp_osc_compute(sp, udp-&gt;osc, NULL, &osc);
-        sp_moogladder_compute(sp, udp-&gt;filt, &osc, &filt);
-        sp-&gt;out[0] = filt;
-        return;
-    } else if(sp-&gt;pos &gt;= (44100 * 2) && sp-&gt;pos &lt; (44100 * 3)) {
-        udp-&gt;clp-&gt;meth = 0;
-    } else if(sp-&gt;pos &gt;= (44100 * 3) && sp-&gt;pos &lt; (44100 * 4)) {
-        udp-&gt;clp-&gt;meth = 1;
-        udp-&gt;clp-&gt;lim = 0.2;
-    } else {
-        udp-&gt;clp-&gt;meth = 2;
-        udp-&gt;clp-&gt;lim = 0.03;
-    }
-
     sp_osc_compute(sp, udp-&gt;osc, NULL, &osc);
     sp_moogladder_compute(sp, udp-&gt;filt, &osc, &filt);
     sp_clip_compute(sp, udp-&gt;clp, &filt, &out);

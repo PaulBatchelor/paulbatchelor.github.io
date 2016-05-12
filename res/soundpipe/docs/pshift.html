@@ -1,0 +1,119 @@
+<html>
+<title>pshift</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>pshift</h1></i>
+<div class="row">
+Files: <i>pshift.h, pshift.c</i></div>
+<div class="row"><br></div>
+Time-domain pitch shifter.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_pshift_create(sp_pshift **pshift)
+</div>
+<div class="row">
+sp_pshift_init(sp_data *sp, sp_pshift *pshift)
+</div>
+<div class="row">
+sp_pshift_compute(sp_data *sp, sp_pshift *pshift, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_pshift_destroy(sp_pshift **pshift)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>shift:</i> Pitch shift (in semitones), range -24/24.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>window:</i> Window size (in samples), max 10000</div>
+<div class="row">
+
+(Default value: 1000)
+</div>
+<div class="row">
+<i>xfade:</i> Crossfade (in samples), max 10000</div>
+<div class="row">
+
+(Default value: 10)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>/*
+ * This is a dummy example.
+ * Please implement a small and simple working example of your module, and then
+ * remove this header.
+ * Don't be clever.
+ * Bonus points for musicality. 
+ *
+ */
+
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_pshift *pshift;
+    sp_diskin *diskin;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT diskin = 0, pshift = 0;
+    sp_diskin_compute(sp, ud-&gt;diskin, NULL, &diskin);
+    sp_pshift_compute(sp, ud-&gt;pshift, &diskin, &pshift);
+    sp-&gt;out[0] = pshift;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_pshift_create(&ud.pshift);
+    sp_diskin_create(&ud.diskin);    
+
+    sp_pshift_init(sp, ud.pshift);
+    *ud.pshift-&gt;shift = 7;
+    *ud.pshift-&gt;window = 500;
+    *ud.pshift-&gt;xfade = 100;
+    sp_diskin_init(sp, ud.diskin, "oneart.wav");
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_pshift_destroy(&ud.pshift);
+    sp_diskin_destroy(&ud.diskin);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

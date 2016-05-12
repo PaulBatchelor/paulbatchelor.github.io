@@ -1,72 +1,47 @@
 <html>
-<title>tadsr</title>
+<title>timer</title>
 <head>
 <link rel="stylesheet" href="css/skeleton.css">
 <link rel="stylesheet" href="css/normalize.css">
 </head>
 <body>
 <div class="container">
-<i><h1>tadsr</h1></i>
+<i><h1>timer</h1></i>
 <div class="row">
-Files: <i>tadsr.h, tadsr.c</i></div>
+Files: <i>timer.h, timer.c</i></div>
 <div class="row"><br></div>
-Triggerable classic ADSR envelope
+Tap-tempo like timer<br>When triggered, timer will begin an internal stopwatch until it is triggered again.
+The output of the timer will be the time elapsed in seconds.
+
 <div class="row"><br></div>
 <div class="row">
 <div class="row">
 <h2>Functions</h2></div>
 </div>
 <div class="row">
-sp_tadsr_create(sp_tadsr **tadsr)
+sp_timer_create(sp_timer **timer)
 </div>
 <div class="row">
-sp_tadsr_init(sp_data *sp, sp_tadsr *tadsr)
+sp_timer_init(sp_data *sp, sp_timer *timer)
 </div>
 <div class="row">
-sp_tadsr_compute(sp_data *sp, sp_tadsr *tadsr, SPFLOAT *trig, SPFLOAT *out)
+sp_timer_compute(sp_data *sp, sp_timer *timer, SPFLOAT *clock, SPFLOAT *out)
 </div>
 <div class="row">
-sp_tadsr_destroy(sp_tadsr **tadsr)
-</div>
-<div class="row"><br></div>
-<div class="row">
-<h2>Optional Parameters</h2></div>
-<div class="row">
-<i>atk:</i> Attack time</div>
-<div class="row">
-
-(Default value: 0.1)
-</div>
-<div class="row">
-<i>dec:</i> Decay time</div>
-<div class="row">
-
-(Default value: 0.1)
-</div>
-<div class="row">
-<i>sus:</i> Sustain Level</div>
-<div class="row">
-
-(Default value: 0.5)
-</div>
-<div class="row">
-<i>rel:</i> release</div>
-<div class="row">
-
-(Default value: 0.5)
+sp_timer_destroy(sp_timer **timer)
 </div>
 <div class="row"><br></div>
 
 <div class="row">
 <h2>Inputs</h2></div>
 <div class="row">
-<i>trig:</i> Expects trigger signal.
+<i>clock:</i> When non-zero, will start/stop the timer.
 </div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Outputs</h2></div>
 <div class="row">
-<i>out:</i> Envelope signal output.
+<i>out:</i> Outputs the time of the last timer (in seconds).
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -77,18 +52,26 @@ sp_tadsr_destroy(sp_tadsr **tadsr)
 #include "soundpipe.h"
 
 typedef struct {
-    sp_tadsr *tadsr;
+    sp_timer *timer;
     sp_osc *osc;
     sp_ftbl *ft; 
+    sp_tenv *tenv;
+    sp_dmetro *dmetro;
 } UserData;
 
 void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
-    SPFLOAT osc = 0, tadsr = 0, trig = 0;
-    if(sp-&gt;pos == 0 || sp-&gt;pos == sp-&gt;sr * 2) trig = 1;
-    sp_tadsr_compute(sp, ud-&gt;tadsr, &trig, &tadsr);
+    SPFLOAT osc = 0, timer = 0, clock = 0, tenv = 0;
+
+    if(sp-&gt;pos % 20000 == 0) {
+        clock = 1;
+    }
+    sp_timer_compute(sp, ud-&gt;timer, &clock, &timer);
+    ud-&gt;dmetro-&gt;time = timer;
+    sp_dmetro_compute(sp, ud-&gt;dmetro, NULL, &timer);
+    sp_tenv_compute(sp, ud-&gt;tenv, &timer, &tenv);
     sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    sp-&gt;out[0] = osc * tadsr;
+    sp-&gt;out[0] = osc * tenv;
 }
 
 int main() {
@@ -97,24 +80,29 @@ int main() {
     sp_data *sp;
     sp_create(&sp);
 
-    sp_tadsr_create(&ud.tadsr);
+    sp_timer_create(&ud.timer);
     sp_osc_create(&ud.osc);
     sp_ftbl_create(sp, &ud.ft, 2048);
+    sp_tenv_create(&ud.tenv);
+    sp_dmetro_create(&ud.dmetro);
 
-    sp_tadsr_init(sp, ud.tadsr);
-    ud.tadsr-&gt;atk = 0.1;
-    ud.tadsr-&gt;dec = 0.2;
-    ud.tadsr-&gt;sus = 0.3;
-    ud.tadsr-&gt;rel = 0.1;
+    sp_timer_init(sp, ud.timer);
     sp_gen_sine(sp, ud.ft);
     sp_osc_init(sp, ud.osc, ud.ft, 0);
+    sp_tenv_init(sp, ud.tenv);
+    ud.tenv-&gt;atk = 0.1;
+    ud.tenv-&gt;hold= 0.1;
+    ud.tenv-&gt;rel = 0.1;
+    sp_dmetro_init(sp, ud.dmetro);
 
     sp-&gt;len = 44100 * 5;
     sp_process(sp, &ud, process);
 
-    sp_tadsr_destroy(&ud.tadsr);
+    sp_timer_destroy(&ud.timer);
     sp_ftbl_destroy(&ud.ft);
     sp_osc_destroy(&ud.osc);
+    sp_tenv_destroy(&ud.tenv);
+    sp_dmetro_destroy(&ud.dmetro);
 
     sp_destroy(&sp);
     return 0;

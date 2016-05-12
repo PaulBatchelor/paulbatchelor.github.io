@@ -1,0 +1,162 @@
+<html>
+<title>fof</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>fof</h1></i>
+<div class="row">
+Files: <i>fof.h, fof.c</i></div>
+<div class="row"><br></div>
+Produces sinusoid bursts for granular and formant synthesis<br>
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_fof_create(sp_fof **fof)
+</div>
+<div class="row">
+sp_fof_init(sp_data *sp, sp_fof *fof, sp_ftbl *sine, sp_ftbl *win, int iolaps, SPFLOAT iphs)
+</div>
+<div class="row">
+sp_fof_compute(sp_data *sp, sp_fof *fof, SPFLOAT *out)
+</div>
+<div class="row">
+sp_fof_destroy(sp_fof **fof)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>sine:</i> ftable for sine wave.</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row">
+<i>win:</i> Ftable for envelope function (use either gen_line or gen_sinecomp)</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row">
+<i>iolaps:</i> Maximum number of foflet overlaps.</div>
+<div class="row">
+
+(Recommended value: 100)
+</div>
+<div class="row">
+<i>iphs:</i> Phase</div>
+<div class="row">
+
+(Recommended value: 0)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>amp:</i> Overall amplitude</div>
+<div class="row">
+
+(Default value: 0.5)
+</div>
+<div class="row">
+<i>fund:</i> Fundamental frequency</div>
+<div class="row">
+
+(Default value: 100)
+</div>
+<div class="row">
+<i>form:</i> Formant frequency.</div>
+<div class="row">
+
+(Default value: 500)
+</div>
+<div class="row">
+<i>oct:</i> Octaviation index, if greater than zero, lowers the effective fund frequency by attenuating odd-numbered sine bursts. whole numbers are full octaves. fractions transpositional.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>band:</i> Bandwidth (in -6db) expressed in Hz. The bandwidth determines the rate of exponential decay throughout the sineburst, before the enveloping is applied.</div>
+<div class="row">
+
+(Default value: 50)
+</div>
+<div class="row">
+<i>ris:</i> Rise of sinusoid burst (in seconds)</div>
+<div class="row">
+
+(Default value: 0.003)
+</div>
+<div class="row">
+<i>dec:</i> Decay of the sinusoid burst (in seconds).</div>
+<div class="row">
+
+(Default value: 0.0007)
+</div>
+<div class="row">
+<i>dur:</i> OVerall duration of sinusoid burst (in seconds).</div>
+<div class="row">
+
+(Default value: 0.02)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_fof *fof;
+    sp_ftbl *sine;
+    sp_ftbl *win;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, fof = 0;
+    sp_fof_compute(sp, ud-&gt;fof, &osc, &fof);
+    sp-&gt;out[0] = fof;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_ftbl_create(sp, &ud.sine, 2048);
+    sp_ftbl_create(sp, &ud.win, 1024);
+    sp_fof_create(&ud.fof);
+
+    sp_gen_sine(sp, ud.sine);
+    sp_gen_composite(sp, ud.win, "0.5 0.5 270 0.5");
+
+    sp_fof_init(sp, ud.fof, ud.sine, ud.win, 100, 0);
+
+    sp-&gt;len = 44100 * 10;
+    sp_process(sp, &ud, process);
+
+    sp_fof_destroy(&ud.fof);
+    sp_ftbl_destroy(&ud.sine);
+    sp_ftbl_destroy(&ud.win);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

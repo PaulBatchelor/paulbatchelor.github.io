@@ -22,10 +22,10 @@ Table
 sp_tabread_create(sp_tabread **tabread)
 </div>
 <div class="row">
-sp_tabread_init(sp_data *sp, sp_tabread *tabread, sp_ftbl *ft)
+sp_tabread_init(sp_data *sp, sp_tabread *tabread, sp_ftbl *ft, SPFLOAT mode)
 </div>
 <div class="row">
-sp_tabread_compute(sp_data *sp, sp_tabread *tabread, SPFLOAT *out)
+sp_tabread_compute(sp_data *sp, sp_tabread *tabread, SPFLOAT *in, SPFLOAT *out)
 </div>
 <div class="row">
 sp_tabread_destroy(sp_tabread **tabread)
@@ -39,6 +39,12 @@ sp_tabread_destroy(sp_tabread **tabread)
 
 (Recommended value: N/A)
 </div>
+<div class="row">
+<i>mode:</i> 1 = scaled index, 0 = unscaled index</div>
+<div class="row">
+
+(Recommended value: 1.0)
+</div>
 <div class="row"><br></div>
 <div class="row">
 <h2>Optional Parameters</h2></div>
@@ -47,12 +53,6 @@ sp_tabread_destroy(sp_tabread **tabread)
 <div class="row">
 
 (Default value: 0)
-</div>
-<div class="row">
-<i>mode:</i> 1 = scaled index, 0 = unscaled index</div>
-<div class="row">
-
-(Default value: 1.0)
 </div>
 <div class="row">
 <i>offset:</i> Offset from beginning of ftable. If the mode is scaled, then it is in range 0-1, other wise it is the index position.</div>
@@ -109,10 +109,8 @@ int main() {
     sp_ftbl_create(sp, &ud.ft, 395393);
     sp_gen_file(sp, ud.ft, "oneart.wav");
 
-    sp_tabread_init(sp, ud.tr, ud.ft);
+    sp_tabread_init(sp, ud.tr, ud.ft, 1);
 
-    /* mode 1: indexing scaled 0-1; mode 0: unscaled direct indexing */
-    ud.tr-&gt;mode = 1;
     /* since mode = 1, offset 5% into file */
     ud.tr-&gt;offset = 0.05;
     /* no wraparound */

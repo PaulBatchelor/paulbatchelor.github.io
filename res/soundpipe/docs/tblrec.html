@@ -1,0 +1,129 @@
+<html>
+<title>tblrec</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>tblrec</h1></i>
+<div class="row">
+Files: <i>tblrec.h, tblrec.c</i></div>
+<div class="row"><br></div>
+Record a signal to an ftable.
+This module will write audio-rate signals to a preallocated soundpipe ftable. 
+Every time record is enabled, it will got back to index 0 overwrite any
+previous information that was on it. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_tblrec_create(sp_tblrec **tblrec)
+</div>
+<div class="row">
+sp_tblrec_init(sp_data *sp, sp_tblrec *tblrec, sp_ftbl *bar)
+</div>
+<div class="row">
+sp_tblrec_compute(sp_data *sp, sp_tblrec *tblrec, SPFLOAT *in, SPFLOAT *trig, SPFLOAT *out)
+</div>
+<div class="row">
+sp_tblrec_destroy(sp_tblrec **tblrec)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>bar:</i> </div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>in:</i> Input signal.
+</div>
+<div class="row">
+<i>trig:</i> When non-zero, will toggle recording on/off. Recording will set the playhead back to zero
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> This doesn't do anything. should be NULL
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_tblrec *tblrec;
+    sp_ftbl *ft; 
+    sp_metro *met;
+    sp_pluck *plk;
+    sp_randi *randi;
+    sp_tabread *tr;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT trig, pluck, rand, tr;
+    SPFLOAT tick = (sp-&gt;pos == 0 ? 1 : 0);
+    sp_metro_compute(sp, ud-&gt;met, NULL, &trig);
+    sp_pluck_compute(sp, ud-&gt;plk, &trig, &pluck);
+    sp_tblrec_compute(sp, ud-&gt;tblrec, &pluck, &tick, NULL);
+    sp_randi_compute(sp, ud-&gt;randi, NULL, &rand);
+    ud-&gt;tr-&gt;index = rand;
+    sp_tabread_compute(sp, ud-&gt;tr, NULL, &tr);
+
+    sp-&gt;out[0] = tr;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp-&gt;len = 44100 * 5;
+
+    /* create */
+    sp_tblrec_create(&ud.tblrec);
+    sp_ftbl_create(sp, &ud.ft, sp-&gt;sr * 0.5);
+
+    sp_metro_create(&ud.met);
+    sp_pluck_create(&ud.plk); 
+    sp_randi_create(&ud.randi);
+    sp_tabread_create(&ud.tr);
+
+    /* init */
+    sp_tblrec_init(sp, ud.tblrec, ud.ft);
+    sp_metro_init(sp, ud.met);
+    ud.met-&gt;freq = 2.5;
+    sp_pluck_init(sp, ud.plk, 110);
+    ud.plk-&gt;freq = 440;
+    sp_randi_init(sp, ud.randi);
+    sp_tabread_init(sp, ud.tr, ud.ft, 1);
+
+    sp_process(sp, &ud, process);
+
+    /* destroy */
+    sp_tblrec_destroy(&ud.tblrec);
+    sp_ftbl_destroy(&ud.ft);
+    sp_metro_destroy(&ud.met);
+    sp_pluck_destroy(&ud.plk); 
+    sp_randi_destroy(&ud.randi);
+    sp_tabread_destroy(&ud.tr);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

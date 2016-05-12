@@ -1,0 +1,64 @@
+<html>
+<title>gen_composite</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>gen_composite</h1></i>
+<div class="row">
+Files: <i>ftbl.h, ftbl.c</i></div>
+<div class="row"><br></div>
+Generate a composite waveform of sinusoids
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_gen_composite(sp_data *sp, sp_ftbl *ft , char *argstring)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Parameters</h2></div>
+<div class="row">
+<i>argstring:</i> a string of space-separated parameters, in groups of four:
+
+arg 1 is the partial number. must be positive, but it doesn't need to be a whole number.
+
+arg 2 is the strength.
+
+arg 3 is the initial phase (expressed in degrees)
+
+arg 4 is the dc offset. A dc offset of 2 will put a 2-strength sinusoid in the range
+from (-2,2) to (0, 4)
+</div>
+<div class="row">
+
+(Recommended value: 0.5 0.5 270 0.5)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdio.h&gt;
+#include "soundpipe.h"
+
+int main() {
+    sp_data *sp;
+    sp_create(&sp);
+    sp_ftbl *ft;
+    sp_ftbl_create(sp, &ft, 1024);
+    sp_gen_composite(sp, ft, "0.5 0.5 270 0.5");
+    int i;
+    FILE *fp= fopen("plot.dat", "w");
+    for(i = 0; i &lt; ft-&gt;size; i++) {
+        fprintf(fp, "%d %g\n", i, ft-&gt;tbl[i]);
+    }
+    printf("%d plot points written to plot.dat. Run write_plot.sh to see the result.\n", ft-&gt;size); 
+    fclose(fp);
+    sp_ftbl_destroy(&ft);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>
