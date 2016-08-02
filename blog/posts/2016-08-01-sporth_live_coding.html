@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Live coding with Sporth and Vim</title>
+
+<link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+</head>
+<body>
+<center>
+<table width="80%" border = 0>
+<tr>
+<td>
+<h1>Live coding with Sporth and Vim</h1>
+<p>2016-08-01</p>
+<p>Live coding with Sporth and Vim</p>
+<p>This past month, I've been working on improving live coding in Sporth. At the 
+moment, these improvements only apply to Linux users who use JACK. If you happen
+to fall in this category, read on...</p>
+<h2>The before time...</h2>
+<p>Prior to this month, live coding in Sporth was a hacked together thing I did. 
+After code re-evaluation was made possible in Sporth, 
+I quickly wrote a small utility called "jacksporth" which not only could run
+Sporth patches in realtime with JACK audio, but could also re-compile Sporth strings
+via OSC. I used this utility with Vim and some shell scripts to create a live
+coding environment for myself.</p>
+<p>This worked well enough, but it had many limitations. Comments did 
+not work and would "short circuit" and disable anything which came after it. 
+The command line interface was really awkward, not utilizing any
+command line flags from the standard sporth command line utility. jacksporth
+had read a file, even it was nothing. </p>
+<h2>Better times</h2>
+<p>How do you make a Sporth live coding better? I will tell you, in bullet point
+form:</p>
+<ul>
+<li><p>merge the "jacksporth" utility into the sporth CLI (as optional, of course)</p>
+</li>
+<li><p>add the sporth vim keybindings and shell scripts to the util folder instead of
+a random folder on my computer</p>
+</li>
+<li><p>add an option to start sporth without a file</p>
+</li>
+<li><p>give the ability to change p-values over OSC</p>
+</li>
+<li><p>give the ability to process one channel of realtime audio input using the 
+"in" ugen</p>
+</li>
+<li><p>give the ability to spawn multiple instances of sporth in realtime </p>
+</li>
+</ul>
+<p>All of the above improvements have made it much easier to get started live 
+coding!</p>
+<h2>Setup</h2>
+<p>Firstly, you'll need to make sure you have JACK and liblo installed. If 
+you plan on using Vim, you'll need to ensure that you have installed oscsend, 
+a commandline tool which should have come installed with liblo. All of these
+dependencies are needed on top of the usual dependencies for Sporth.</p>
+<p>Next, you'll need to enable jack. In config.mk, uncomment the line that says
+"BUILD_JACK=1". Then run "make clean", "make", and "sudo make install"..</p>
+<p>Inside the util folder, there is a file called sporth.vim. Place this in the
+directory where you intend to do live coding.</p>
+<h2>Running</h2>
+<p>To start Sporth for live coding, go into the directory you plan to run code
+on, and run the following command:</p>
+<pre><code> sporth -b jack -c 2 -0</code></pre>
+<p>Next, open up Vim and run ":so sporth.vim"(sporth.vim should be in 
+the current working directory). </p>
+<p>Now write some sporth code:</p>
+<pre><code> (
+ 440 0.5 sine
+ dup
+ )</code></pre>
+<p>This code can be evaluated by pressing space+s.</p>
+<h2>Alternate instances of Sporth</h2>
+<p>Any number of sporth instances can spawned. My current Sporth + Vim live coding
+setup has key bindings for two instances. To start the alternate instance, run
+this command:</p>
+<pre><code> sporth -o alternate -p 6450 -b jack -c 2 -0</code></pre>
+<p>This will create a jack client called "alternate", with an OSC server on 
+port 6450. IIn the vim setup, code can be evaluated to this alternate instance 
+with they keyboard shortcut space+l. </p>
+<h2>Audio input</h2>
+<p>The "in" ugen in Sporth has been overridden to take in one audio input from JACK.</p>
+<p>For instance:</p>
+<pre><code> in 0.8 0.75 dup delay 0.5 * + dup</code></pre>
+<p>Adds a feedback delay to an input signal. Clock and gate signals also work in 
+addition to audio signals. </p>
+
+</tr>
+</td>
+</table>
+</center>
+</body>
+</html>
