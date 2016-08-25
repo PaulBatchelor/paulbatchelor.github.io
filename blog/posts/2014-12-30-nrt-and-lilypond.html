@@ -17,14 +17,16 @@
 <p>2014-12-30</p>
 <p>Welcome to Part 4 of 9 Ways to NRT!</p>
 <p>Today, I'm going to show how this NRT notation:</p>
-<code>d4. r8 m f s2 t4 D4.</code>
-
-can be used to generate the following music staff notation:<img src="/res/nineways/lilynotes.png">
-
-The music notation is created with a free notation program called 
+<p><code>d4. r8 m f s2 t4 D4.</code>
+</p>
+<p>can be used to generate the following music staff notation:</p>
+<p><img src="/res/nineways/lilynotes.png">
+</p>
+<p>The music notation is created with a free notation program called 
 <a href="http://www.lilypond.org">Lilypond</a>. Lilypond is text based: it reads in a special markup language
 and spits out a pdf. It also runs on the command line and can read from standard input, 
-which makes it an ideal pairing with NRT.<h4>A Tiny Rant</h4>
+which makes it an ideal pairing with NRT.</p>
+<h4>A Tiny Rant</h4>
 <p>When I was at Berklee College of Music, I preferred Lilypond for 
 any assignments that needed music notation, instead of the program Finale that
 they gave to all students (they didn't give us Sibelius, so I've never used it). 
@@ -45,29 +47,27 @@ the
 <h4>The Script</h4>
 <p>Here is the full program. This program is a bit longer than the previous programs,
 so instead of being a single command, it is a bash script:</p>
-<pre><code>#!/bin/bash
+<p><pre><code>#!/bin/bash
 MODE="sharp" #"sharp" or "flat" notes
 KEY=9 #0-11, offset in semitomes
 OCTOFFSET=-1 #octave offset
-FILENAME=lilynotes.png
-
-echo $KEY $MODE $OCTOFFSET |\
-    cat - <(echo "d4. r8 m f s2 t4 D4.") |\
-    nrt2ly | lilypond -o out - 
-
-#convert pdf to png, remove pdf
+FILENAME=lilynotes.png</p>
+<p>echo $KEY $MODE $OCTOFFSET |\
+<pre><code> cat - &lt;(echo &quot;d4. r8 m f s2 t4 D4.&quot;) |\
+ nrt2ly | lilypond -o out - </code></pre>
+</p>
+<p>#convert pdf to png, remove pdf
 convert -flatten out.pdf $FILENAME
-rm out.pdf out.ps
-
-echo -e "\nSuccessfully wrote to file $FILENAME"
-</code></pre>
-
-The first command concatenates parameters and the NRT notation together, then
+rm out.pdf out.ps</p>
+<p>echo -e "\nSuccessfully wrote to file $FILENAME"
+&lt;/code>&lt;/pre></p>
+<p>The first command concatenates parameters and the NRT notation together, then
 the output is sent to the perl script I wrote called nrt2ly, which parses the 
 parameters and NRT notation to create Lilypond code. The parameters tell Lilypond
 to create notation in the key of A, to use sharps instead of flats, and to offset
 the octave down by one. Lilypond code generated from nrt2ly is then sent into 
-Lilypond, where a PDF is generated.<p>The next commands then convert the PDF file into a PNG file using ImageMagick, 
+Lilypond, where a PDF is generated.</p>
+<p>The next commands then convert the PDF file into a PNG file using ImageMagick, 
 and the files that lilypond generates are then removed.</p>
 <p>Saving this program and then running it on the commandline without any arguments
 should generate a file called <em>lilynotes.png</em>.</p>

@@ -27,80 +27,75 @@ all-time favorite music languages: Csound. Consider this an "origin" story.</p>
 <a href="http://csound.github.io/docs/manual/reverbsc.html">reverbsc</a>. I use it in all my ambient
 pieces, as it provides a beautiful and large reverb. </p>
 <p>Here's one of many ways I'd use ReverbSC in Csound:</p>
-<pre><code>sr = 44100
+<p><pre><code>sr = 44100
 ksmps = 1
 nchnls = 1
-0dbfs = 1
-
-instr 1
-    ainput diskin2 "piano.wav", 1
-    aoutL, aoutR reverbsc ainput, ainput, 0.97, 10000
-    out aoutL
-endin
-</code></pre>
-
-In the <a href="/res/why_sporth/rev.orc">example</a> above, I'm using ReverbSC to process an audio file called "piano.wav".<p>I loved ReverbSC so much, that I wanted to build a plugin out of it. While the Csound API
+0dbfs = 1</p>
+<p>instr 1
+<pre><code> ainput diskin2 &quot;piano.wav&quot;, 1
+ aoutL, aoutR reverbsc ainput, ainput, 0.97, 10000
+ out aoutL</code></pre>
+<p>endin
+&lt;/code>&lt;/pre></p>
+</p>
+<p>In the <a href="/res/why_sporth/rev.orc">example</a> above, I'm using ReverbSC to process an audio file called "piano.wav".</p>
+<p>I loved ReverbSC so much, that I wanted to build a plugin out of it. While the Csound API
 could do this task (and things like Cabbage and the like exist for this), I found it to be
 too much overhead for the task. I didn't need <em>all</em> of Csound to run ReverbSC, just 
 the code for this particular opcode. So I looked into the Csound source code, extracted the
 code I needed, and wrote a simple C interface around it. I did this for a few other Opcodes 
 I liked, and built <a href="/proj/soundpipe.html">Soundpipe</a>. </p>
 <p>With Soundpipe, I was able to port the Csound code above to a page of C <a href="/res/why_sporth/rev.c">code</a>:</p>
-<pre><code>#include &lt;stdlib.h&gt;
+<p><pre><code>#include &lt;stdlib.h&gt;
 #include &lt;stdio.h>
-#include "soundpipe.h"
-
-typedef struct {
-    sp_diskin *disk;
-    sp_revsc *rev;
-} UserData;
-
-void process(sp_data *sp, void *udata) {
-    UserData *ud= udata;
-    SPFLOAT in = 0;
-    SPFLOAT out = 0;
-    SPFLOAT foo = 0;
-
-    sp_diskin_compute(sp, ud-&gt;disk, NULL, &in);
-    sp_revsc_compute(sp, ud-&gt;rev, &in, &in, &sp-&gt;out[0], &foo); 
-}
-
-int main() {
-    UserData ud;
-    sp_data *sp;
-    sp_create(&sp);
-
-    sp_diskin_create(&ud.disk);
-    sp_revsc_create(&ud.rev);
-
-    sp_diskin_init(sp, ud.disk, "piano.wav");
-    sp_revsc_init(sp, ud.rev);
-    ud.rev-&gt;feedback = 0.97;
-    ud.rev-&gt;lpfreq = 10000;
-
-    sp-&gt;len = 44100 * 10;
-    sp_process(sp, &ud, process);
-
-    sp_diskin_destroy(&ud.disk);
-    sp_revsc_destroy(&ud.rev);
-    sp_destroy(&sp);
-    return 0;
-}</code></pre>
-
-I now had the means to build a ReverbSC plugin without needing the Csound API. From a programming standpoint,
+#include "soundpipe.h"</p>
+<p>typedef struct {
+<pre><code> sp_diskin *disk;
+ sp_revsc *rev;</code></pre>
+<p>} UserData;</p>
+</p>
+<p>void process(sp_data <em>sp, void </em>udata) {
+<pre><code> UserData *ud= udata;
+ SPFLOAT in = 0;
+ SPFLOAT out = 0;
+ SPFLOAT foo = 0;</code></pre>
+</p>
+<pre><code> sp_diskin_compute(sp, ud-&amp;gt;disk, NULL, &amp;in);
+ sp_revsc_compute(sp, ud-&amp;gt;rev, &amp;in, &amp;in, &amp;sp-&amp;gt;out[0], &amp;foo); </code></pre>
+}<p>int main() {
+<pre><code> UserData ud;
+ sp_data *sp;
+ sp_create(&amp;sp);</code></pre>
+</p>
+<pre><code> sp_diskin_create(&amp;ud.disk);
+ sp_revsc_create(&amp;ud.rev);</code></pre>
+<pre><code> sp_diskin_init(sp, ud.disk, &quot;piano.wav&quot;);
+ sp_revsc_init(sp, ud.rev);
+ ud.rev-&amp;gt;feedback = 0.97;
+ ud.rev-&amp;gt;lpfreq = 10000;</code></pre>
+<pre><code> sp-&amp;gt;len = 44100 * 10;
+ sp_process(sp, &amp;ud, process);</code></pre>
+<pre><code> sp_diskin_destroy(&amp;ud.disk);
+ sp_revsc_destroy(&amp;ud.rev);
+ sp_destroy(&amp;sp);
+ return 0;</code></pre>
+<p>}&lt;/code>&lt;/pre></p>
+<p>I now had the means to build a ReverbSC plugin without needing the Csound API. From a programming standpoint,
 things were way less complicated now. With minimal dependencies and painless build system, Soundpipe became a 
 lightweight alternative to the Csound API. However, it meant I needed to write more code. It took more time
-to make tweaks to patches, and hindering my creative productivity. <p>I soon realized that I needed an abstraction for Soundpipe so I didn't have to worry about the low-level 
+to make tweaks to patches, and hindering my creative productivity. </p>
+<p>I soon realized that I needed an abstraction for Soundpipe so I didn't have to worry about the low-level 
 details while composing. I decided to build a domain-specific language on top of Soundpipe that could
 easily be embedded into larger applications the same way Soundpipe could. I had read up on Forths and
 stack based languages how trivial they were to implement, so I went with that. A few weeks later, I built
 my Soundpipe Forth and, Sporth was born!</p>
 <p>Now my many lines of Soundpipe C code could be written as one line of Sporth <a href="/res/why_sporth/rev.sp">code</a>:</p>
-<pre><code>"piano.wav" diskin dup 0.97 10000 revsc drop</code></pre>
-
-And this the essence of why I use Sporth. It is a terse language that allows me to quickly come up with
+<p><pre><code>"piano.wav" diskin dup 0.97 10000 revsc drop</code></pre>
+</p>
+<p>And this the essence of why I use Sporth. It is a terse language that allows me to quickly come up with
 interesting sounds. And because it is using Csound DNA, things can sound <em>great</em> in the right hands.
-I can easily add experimental ugens to the language, and it is easy to embed inside other applications. <p>I hope someday I won't be the only Sporth user in the world, but for now, I'm plenty happy hacking Sporth 
+I can easily add experimental ugens to the language, and it is easy to embed inside other applications. </p>
+<p>I hope someday I won't be the only Sporth user in the world, but for now, I'm plenty happy hacking Sporth 
 on my own :)</p>
 
 </tr>
