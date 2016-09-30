@@ -24,12 +24,11 @@ generative music program using NRT and Csound. </p>
 be generating a corresponding score file, I've decided to do away with the 
 monolithic format of the CSD and just use an oldschool .orc file. Save this file
 as <em>plucker.orc</em>:</p>
-<pre><code>sr	=	96000
+<p><pre><code>sr	=	96000
 ksmps	=	1
 nchnls	=	2
-0dbfs	=	1
-
-instr 1	
+0dbfs	=	1</p>
+<p>instr 1	
 icps = cpsmidinn(p4)
 ;random amplitude
 iamp = random(0.2, 0.25)
@@ -40,46 +39,46 @@ a1 *= linsegr(1, 1, 0)
 a1 = buthp(a1, 300)
 outs a1, a1
 endin
-</code></pre>
-
-Now for the note generation. I'm using a mixture of awk and bash for my needs. The
+&lt;/code>&lt;/pre></p>
+<p>Now for the note generation. I'm using a mixture of awk and bash for my needs. The
 algorithm creates some nrt code by randomly stringing together smaller fragments
 of prewritten phrases in NRT. This code then gets sent to AWK where it is turned
-into a Csound score. The Csound score is then read and compiled to a wav file. <pre><code>#!/bin/bash
-tempo=120 
-
-#collection of NRT fragments
+into a Csound score. The Csound score is then read and compiled to a wav file. </p>
+<p><pre><code>#!/bin/bash
+tempo=120 </p>
+<p>#collection of NRT fragments
 cluster=(
-    d4rm
-    m4.f8s4
-    t8Ds2. 
-    m4rd
-);
-
-#randomly string NRT fragments, and generate score
+<pre><code> d4rm
+ m4.f8s4
+ t8Ds2. 
+ m4rd
+);</code></pre>
+</p>
+<p>#randomly string NRT fragments, and generate score
 for i in $(seq 1 4)
 do 
-   nrt=$nrt${cluster[$RANDOM % 4]} 
-done
-
-echo $nrt | nrt -F ' ' |\
+<pre><code>nrt=$nrt${cluster[$RANDOM % 4]} </code></pre>
+<p>done</p>
+</p>
+<p>echo $nrt | nrt -F ' ' |\
 awk -vtempo=$tempo '
 BEGIN{
 ts = 60 / tempo
 max = 0
 }
 {
-    print "i1",$1 * ts,$2 * ts,$3 + 60;
-    if($1 * ts + $2 * ts > max) {
-        max = $1 * ts + $2 * ts
-    }
-}
-' > score.sco
-
-#render wav file
+<pre><code> print &quot;i1&quot;,$1 * ts,$2 * ts,$3 + 60;
+ if($1 * ts + $2 * ts &gt; max) {
+     max = $1 * ts + $2 * ts
+ }</code></pre>
+<p>}
+' &gt; score.sco</p>
+</p>
+<p>#render wav file
 csound -o out.wav plucker.orc score.sco
 rm score.sco
-</pre></code><p>When this code is run, it creates a file called "out.wav", which can sound
+&lt;/pre>&lt;/code></p>
+<p>When this code is run, it creates a file called "out.wav", which can sound
 something like <a href = "/res/nineways/csound_nrt.wav">this</a>
 </p>
 
