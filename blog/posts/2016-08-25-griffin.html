@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Using the Griffin Knob as a Musical Controller</title>
+
+<link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+</head>
+<body>
+<center>
+<table width="80%" border = 0>
+<tr>
+<td>
+<h1>Using the Griffin Knob as a Musical Controller</h1>
+<p>I thought I'd document my investigations with the 
+<a href="https://www.amazon.com/gp/product/B003VWU2WA/ref=oh_aui_detailpage_o02_s00?ie=UTF8&amp;psc=1">Griffin NA10629 PowerMate USB MultiMedia Controller</a>.</p>
+<h2>Motivations</h2>
+<p>A good high-resolution knob is the sort of thing I've been looking for for 
+a while.  In the MIDI world, they simply don't exist; 7-bits of resolution 
+ain't enough.  Two weeks ago, I googled "USB Knob" in the hopes that a generic 
+peripheral would pop up. And this thing did. So I bought it. </p>
+<p>In past, I've parsed data from the Logitech F310 game controller and the 
+Huion 680s tablet. I feel hopeful in being able to read data from the Griffin.</p>
+<h2>Decoding the byte stream</h2>
+<p>The first step in hacking any peripheral device is to figure out
+how it speaks to the computer, which is some sort of binary message.</p>
+<p>When I plug it in, the Griffin seems to light up. Off to good start. </p>
+<p>Running 
+"dmesg | tail" shows that the Linux kernel is able to know it exists:</p>
+<pre><code> [ 2426.585121] usb 1-3: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+ [ 2426.585128] usb 1-3: Product: Griffin PowerMate
+ [ 2426.585130] usb 1-3: Manufacturer: Griffin Technology, Inc.
+ [ 2426.585325] usb 1-3: ep 0x81 - rounding interval to 64 microframes, ep desc says 80 microframes
+ [ 2426.585339] usb 1-3: ep 0x2 - rounding interval to 64 microframes, ep desc says 80 microframes
+ [ 2426.595289] input: Griffin PowerMate as /devices/pci0000:00/0000:00:14.0/usb1/1-3/1-3:1.0/input/input9
+ [ 2426.595389] usbcore: registered new interface driver powermate
+ [ 2426.597317] hidraw: raw HID events driver (C) Jiri Kosina
+ [ 2426.598455] usbcore: registered new interface driver usbhid</code></pre>
+<p>Linux can treat every device as a filehandle, and this device resides in
+<em>/dev/input/by-id/usb-Griffin<em>Technology</em><em>Inc.</em>Griffin_PowerMate-event-if00</em>.
+The raw binary data can be sent into a hex reader in the following way:</p>
+<pre><code> cat /dev/input/by-id/usb-Griffin_Technology__Inc._Griffin_PowerMate-event-if00 | xxd</code></pre>
+<p>With a little trial and error and looking the hex output, I am able to figure out that the message size is 24 bytes long. 
+The hex can be grouped in the following way:</p>
+<pre><code> cat /dev/input/by-id/usb-Griffin_Technology__Inc._Griffin_PowerMate-event-if00 | xxd -c 24</code></pre>
+<p>This produces some hex that looks like this:</p>
+<pre><code> 0000300: 051d bf57 0000 0000 88f6 0b00 0000 0000 0200 0700 0100 0000  ...W....................
+ 0000318: 051d bf57 0000 0000 88f6 0b00 0000 0000 0000 0000 0000 0000  ...W....................
+ 0000330: 051d bf57 0000 0000 c809 0e00 0000 0000 0200 0700 ffff ffff  ...W....................
+ 0000348: 051d bf57 0000 0000 c809 0e00 0000 0000 0000 0000 0000 0000  ...W....................
+ 0000360: 051d bf57 0000 0000 0629 0e00 0000 0000 0200 0700 ffff ffff  ...W.....)..............
+ 0000378: 051d bf57 0000 0000 0629 0e00 0000 0000 0000 0000 0000 0000  ...W.....)..............
+ 0000390: 051d bf57 0000 0000 4648 0e00 0000 0000 0200 0700 ffff ffff  ...W....FH..............
+ 00003a8: 051d bf57 0000 0000 4648 0e00 0000 0000 0000 0000 0000 0000  ...W....FH..............
+ 00003c0: 051d bf57 0000 0000 8667 0e00 0000 0000 0200 0700 ffff ffff  ...W.....g..............
+ 00003d8: 051d bf57 0000 0000 8667 0e00 0000 0000 0000 0000 0000 0000  ...W.....g..............
+ 00003f0: 051d bf57 0000 0000 c986 0e00 0000 0000 0200 0700 feff ffff  ...W....................</code></pre>
+<p>At this point, I look for patterns in the data. From experience, I can
+infer that most of the chunks refer to timestamp data, and that the rightmost
+bytes contain the data I need.</p>
+<p>From the data, I am able to figure out how button toggle message worked.
+I am also able to conclude that the Griffin does not store any type
+of internal value like a typical potentiometer would. Instead,
+it sends messages about when it is turned, and the direction it is
+going in. </p>
+<p>The message format of the Griffin adds an extra complication. The
+end goal is to get the Griffin data inside of Sporth, but there is
+no built in way to actually handle this step-based approach
+to incrementing data. Soundpipe and Sporth code has to be written.</p>
+<h2>Creating a Soundpipe Module and Sporth UGen</h2>
+<p>A new Soundpipe module is made specifically for the Griffin called
+<em>incr</em>. When triggered, the module will increment up or down by
+a specified step. Other parameters to <em>incr</em> are minimum, maximum,
+and the initial value. It is a pretty trivial module. The source
+code can be found 
+<a href="https://github.com/PaulBatchelor/Soundpipe/blob/dev/modules/incr.c">here</a>.</p>
+<p>As it turns out, <em>incr</em> is the first soundpipe module with a trigger
+that takes sign into account. When it is negative, it increments 
+downwards. when it is positive, it increments upwards.</p>
+<p>Once the incr module is created and 
+<a href="https://github.com/PaulBatchelor/Soundpipe/blob/dev/modules/data/incr.lua">documented properly</a>.
+, it can then be quickly turned 
+into a Sporth ugen thanks to a code generator I wrote in lua. </p>
+<p>Now that there is way to handle the Griffin data, the Griffin data
+needs to be brought into sporth.</p>
+<h2>Creating a Sporth Plugin</h2>
+<p>The Sporth plugin to built will allow the Griffin to be parsed inside 
+of Sporth. 
+Luckily, a good chunk of this code can be recycled from my previous
+work with the <a href="https://github.com/PaulBatchelor/huion-tablet">huion tablet</a>.</p>
+<p>The way it works is pretty straight forward: the Sporth plugin
+will spawn a thread which will open the Griffin as a file. It will
+parse it at 24 bytes at a time. Every time a knob message is recieved,
+the sporth plugin will send out either a positive or negative 
+trigger for incrementing up or down. To prevent the loop from taking
+up too much CPU, the while loop has a usleep();</p>
+<p>Since triggers are exactly one sample long, some careful 
+thought has to given with regards to creating the 
+trigger signal with the asynchronous threads. The thread therefore
+doesn't set the trigger directly; it sets a switch
+that tells sporth to trigger. Once triggered, sport shuts that
+switch off.</p>
+<p>The final code can be found <a href="https://github.com/PaulBatchelor/Griffin/blob/master/griffin.c">here</a></p>
+<h2>Writing Music</h2>
+<p>With the parsing figured out, it's now time for the hard stuff:
+making musical sense out of the knob. In the Griffin repository,
+I've taken some stabs at some Sporth patches, but there is still
+plenty to be done. I am still in the process of incorporating
+this into my musical workflow, but thats for a future post.</p>
+
+</tr>
+</td>
+</table>
+</center>
+</body>
+</html>
