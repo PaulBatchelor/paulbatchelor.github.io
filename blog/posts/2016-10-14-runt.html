@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Runt: a proposed virtual machine specfication</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="home">
+<div id="container">
+<h1>Runt: a proposed virtual machine specfication</h1>
+<p>2016-10-14</p>
+<p>In my recent efforts working with Polysporth, I found myself battling 
+the scheme Garbage Collector when trying to implement callbacks. 
+After many no-go efforts, I began scheming up a system that could
+persitently hold procedures and call C functions. What came out was a creation
+I call Runt. While no lines of actual C code have been written, I have thought out 
+much of system in the writeup below. While this is a good start, nothing
+is set in stone.</p>
+<h2>Description</h2>
+<p>Runt is a stack-based, static memory, virtual machine to be written in ANSI C. </p>
+<p>Some of the features may include:</p>
+<ul>
+<li>Stack based</li>
+<li>Static Memory-pool: no calls to malloc needed</li>
+<li>Forth-like language for parsing</li>
+<li>Simple interface for adding words to dictionary</li>
+<li>Built for polysporth: addition/alternative to tinyscheme 
+  (use this for callbacks)</li>
+<li>Procedure-based: emphasis on concatenive programming and abstraction, 
+something not easily doable in Sporth.</li>
+<li>interactive shell</li>
+</ul>
+<h2>Macros and typedefs</h2>
+<pre><code> enum {
+     RUNT_NOT_OK = 0,
+     RUNT_OK = 1,
+     RUNT_NIL = 0,
+     RUNT_FLOAT,
+     RUNT_STRING,
+     RUNT_CELL
+ };</code></pre>
+<h2>Data structures</h2>
+<h3>Pointer</h3>
+<pre><code> typedef struct {
+     runt_type type;
+     void *ud;
+ } runt_ptr;</code></pre>
+<h3>Procedure</h3>
+<pre><code> typedef runt_int runt_proc (runt_vm *, runt_ptr);</code></pre>
+<p>Here is an example of a procedure.</p>
+<pre><code> static runt_int runt_add(runt_vm *vm, runt_ptr p)
+ {
+     if(runt_check_stack(rd, 2, &quot;ff&quot;) =! OK) return RUNT_NOT_OK;</code></pre>
+<pre><code>     runt_stacklet *v1 = runt_pop(rd);
+     runt_stacklet *v2 = runt_pop(rd);
+     runt_stacklet *v3 = runt_push(rd);</code></pre>
+<pre><code>     runt_float v1f = v1-&gt;p.f;
+     runt_float v2f = v2-&gt;p.f;</code></pre>
+<pre><code>     v3-&gt;f = v1f + v2f;
+     return RUNT_OK;
+ }</code></pre>
+<h3>Cell</h3>
+<pre><code> typedef struct {
+     runt_proc proc;
+     runt_ptr data;
+     runt_uint psize;
+ } runt_cell;</code></pre>
+<h3>Stacklet</h3>
+<pre><code> typedef struct {
+     runt_ptr p;
+     runt_float f;
+ } runt_stacklet;</code></pre>
+<h3>Stack</h3>
+<pre><code> typedef struct {
+     stacklet stack[MAX_SIZE];
+     runt_int pos;
+     runt_int size;
+ } runt_stack;</code></pre>
+<h3>List</h3>
+<p>A <em>runt_entry</em> is a single link for a linked list. The init function is called
+every time a new cell is added. </p>
+<pre><code> typdef struct runt_list {
+     runt_cell *cell;
+     runt_proc init;
+     struct runt_list *next;
+ } runt_entry;</code></pre>
+<pre><code> typedef struct {
+     runt_int size;
+     runt_entry root;
+     runt_entry *last;
+ } runt_list;</code></pre>
+<h3>Dictionary</h3>
+<pre><code> typedef struct {
+     runt_int size;
+     runt_list list[128];
+ } runt_dict;</code></pre>
+<h3>Pool</h3>
+<pre><code> typedef struct {
+     unsigned char *data;
+     runt_uint size;
+     runt_uint used;
+ }</code></pre>
+<h3>Main Data struct</h3>
+<h2>VM functions</h2>
+<h3>Pools</h3>
+<p>Before Runt can call anything, the various memory pools must manually be created
+and initialized. There are two memory pools in Runt: the <strong>cell pool</strong> and the
+<strong>memory pool</strong>. The <strong>cell pool</strong> is space where procedures are stored, and
+the <strong>memory pool</strong> is where cells can allocate data without having to worry
+about freeing it. </p>
+<p><em>runt<em>cell</em>pool_set</em> sets the cell memory pool</p>
+<pre><code> runt_int runt_cell_pool_set(runt_vm *vm, runt_cell *cell, runt_uint size);</code></pre>
+<p><em>runt<em>cell</em>pool_init</em> after setting the cell pool, zeros out the cell pool (sets thing to nil)</p>
+<pre><code> runt_int runt_cell_pool_init(runt_vm *vm, runt_cell *cell);</code></pre>
+<p><em>runt<em>memory</em>pool_set</em> sets the memory pool </p>
+<pre><code> runt_int runt_memory_pool_set(runt_vm *vm, unsinged char *buf, runt_uint size);</code></pre>
+<p><em>runt_malloc</em> allocates memory from the pool. Returns (N + 1), the position in
+the memory pool</p>
+<pre><code> runt_uint runt_malloc(runt_vm *vm, size_t size, void **ud);</code></pre>
+<h3>Cell operations</h3>
+<p>Cells are the atomic unit in Runt. Inside every cell is a function and user
+data associated with that cell. </p>
+<p><em>runt<em>new</em>cell</em> gets a new cell from the cell pool.</p>
+<pre><code> runt_uint runt_new_cell(runt_vm *vm, runt_cell \*\*cell);</code></pre>
+<p><em>runt<em>link</em>cell</em> links a cell to another cell. used to call procedures </p>
+<pre><code> runt_int runt_link_cell(runt_vm *vm, runt_cell *src, runt_cell *dest);</code></pre>
+<p><em>runt_bind</em> binds function + pointer data to cell</p>
+<pre><code> runt_uint runt_bind(runt_cell *cell, runt_proc proc, runt_ptr data);</code></pre>
+<p><em>runt_call</em> executes a single cell</p>
+<pre><code> int runt_call(runt_vm *vm, runt_cell *cell);</code></pre>
+<p><em>runt_exec</em> iterates through a contiguous group of cells determined of size
+cell-&gt;psize</p>
+<pre><code> int runt_exec(runt_vm *vm, runt_cell *cell);</code></pre>
+<h3>Stack operations</h3>
+<p><em>runt_pop</em> and <em>runt_push</em> pop and push stacklet pointsers on the stack. These
+can then be read and written to. </p>
+<pre><code> runt_stacklet * runt_pop(runt_vm *vm);
+ runt_stacklet * runt_push(runt_vm *vm);</code></pre>
+<h3>Pointers</h3>
+<p><em>runt<em>mk</em>pointer</em> turns a void pointer into a runt pointer</p>
+<pre><code> runt_ptr runt_mk_pointer(runt_type type, void *ud);</code></pre>
+<p><em>runt<em>ref</em>to_cptr</em> takes an integer and gets the actual block of memory, filled
+into ud. Returns RUNT<em>OK on sucess, RUNT</em>NOT_OK on failure.</p>
+<pre><code> runt_int runt_ref_to_cptr(runt_vm *vm, runt_uint ref, void **ud);</code></pre>
+<h3>Dictionary</h3>
+<p>Procedures added to Runt can be associated with a string keyword in something
+called a dictionary. To make a word in a dictionary, you create an entry with
+the C function and optional init function for allocation, then add this table
+to the hash table.</p>
+<p><em>runt<em>entry</em>create</em> allocates memory for a new entry from the memory pool,
+then assigns the variables. What is returned is the reference. A value of
+zero indicates failure.</p>
+<pre><code> runt_uint runt_entry_create(runt_vm *vm, runt_cell *cell, runt_proc init, 
+     runt_entry **entry);</code></pre>
+<p><em>runt_word</em> adds a new word to the dictionary which points to an entry</p>
+<pre><code> runt_int runt_word(runt_vm *vm, 
+     const char *name, 
+     runt_int size, 
+     runt_entry *entry);</code></pre>
+<p><em>runt<em>word</em>search</em> looks for an entry in the dictionary</p>
+<pre><code> runt_int runt_word_search(runt_vm *vm, 
+     const char *name, runt_int size, runt_entry **entry);</code></pre>
+<h3>Lexing and parsing</h3>
+<p>In addition to the VM, Runt has a Forth-like language built around it. These
+are the functions needed. </p>
+<p><em>runt_compile</em> compiles a string to cells</p>
+<pre><code> runt_int runt_compile(runt_vm *vm, const char *str);</code></pre>
+<p><em>runt_lex</em> is called repeatedly. It parses each word in the string and returns
+the type of the word. pos is updated to the position of the next word.</p>
+<pre><code> runt_type runt_lex(runt_vm *vm, const char *str, 
+    runt_int size, runt_int *pos);</code></pre>
+<h3>Procedures</h3>
+<p>Procedures int Runt do things. In Runt, every cell is a procedure, but cells
+can also be grouped together as a procedure.</p>
+<p><em>runt<em>proc</em>begin</em> starts a procedure. cells added to the cell pool will be
+included in this procedure until <em>runt<em>proc</em>end</em> is called.</p>
+<pre><code> runt_int runt_proc_begin(runt_vm *vm, runt_cell *proc);</code></pre>
+<p><em>runt<em>proc</em>end</em> closes a procedure being made.</p>
+<pre><code> runt_int runt_proc_end(runt_vm *vm);</code></pre>
+<p><em>runt<em>proc</em>zero</em>  Is a dummy function that does nothing. It is the default
+function in all cells, as well as the function you should pass </p>
+<pre><code> runt_int runt_proc_zero(rung_vm *vm, runt_ptr p);
+</code></pre>
+
+</div>
+</body>
+</html>
