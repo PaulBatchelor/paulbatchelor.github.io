@@ -53,6 +53,6 @@ dup 0.7 92 bpm2dur 0.75 * delay -10 ampdb * +
 1 _rms get - -3 2 scale ampdb * 500 buthp
 dup jcrev 3 ampdb * +
 
-_bass get  100 100 3 eqfil + 
+_bass get  100 20 3 eqfil + 
 
 -2 ampdb * 
