@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Contrenot Assembly</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="home">
+<div id="container">
+<h1>Contrenot Assembly</h1>
+<p>2016-11-30</p>
+<p>As mentioned in my previous posts, I am in the middle of a quarter-long project
+to build an interface inspired by an upright bass. Here is an update. This really
+should have been two posts, but I've been working, so here's just one post.</p>
+<p>As it currently stands, the Contrenot is basically assembled. It makes sound,
+and is in reasonably good shape. As a bass player, I find it to be a familiar interface. 
+Bystanders (non-bass players) that tried to play the instrument had a harder time 
+playing with the instrument. To me, this is a big success: I wanted my
+years of experience playing classical bass to translate to electronic
+sound.</p>
+<p>The name "Contrenot" comes from the name "contrebass" and "martenot",
+the pull-string electronic instrument where I have drawn the most inspiration
+(the creation of which was inspired by the cello). Contrary to what the
+name suggests, the Contrenot does not (and will not) sound like a 
+bass. Instead, I plan to produce a more soloistic sound in a higher register. </p>
+<p>Many many hours were put in to get to this point. I will pick up 
+where I left off.</p>
+<h2>Buying Supplies</h2>
+<p><a href="/res/blog/contrenot_assembly/large/homedepot2.jpg"><img src="/res/blog/contrenot_assembly/small/homedepot2.jpg" alt="Home depot trip
+" /></a></p>
+<p>After building a bow prototype the week before, it was time to buy 
+lumber for the body. This meant a trip to the local home depot.</p>
+<p>At the store, I spent a lot of time laying wood out on the floor
+and measuring it to get the right width. The picture above shows one
+of the layouts I did, which included the approximate placement of the
+bow and endpin. Unfortunately, I did not end up going with those 
+oak sides... they were a bit too expensive for this prototype.</p>
+<h2>Initial body assembly </h2>
+<p><a href="/res/blog/contrenot_assembly/large/firstlayout.jpg"><img src="/res/blog/contrenot_assembly/small/firstlayout.jpg" alt="First layout
+" /></a></p>
+<p>After purchasing the wood, I immediately went to work assembling body. 
+The 2x4 planks were cut to size to build a neck and an endblock for the
+endpin. The hole I made for the endpin was not straight, which is why 
+it is crooked in the picture (rough prototype yay). </p>
+<p>The picture above show the instrument a little bit in the future, with the arduino,
+perfboard, and components mounted.</p>
+<h2>Electronics</h2>
+<p><a href="/res/blog/contrenot_assembly/large/breadboard.jpg"><img src="/res/blog/contrenot_assembly/small/breadboard.jpg" alt="Breadboarding components
+" /></a></p>
+<p>With the body constructed, it was time to focus on the electronics. 
+First, all the sensors were tested individually with the breadboard:</p>
+<ul>
+<li>The <strong>linear softpot</strong> was fairly easy to hook up to an analogue pin 
+for reading.</li>
+<li>The <strong>linear FSR</strong> was a little bit more finnicky for me to get set up.
+The pins on these are not the greatest.</li>
+<li>The <strong>16-bit adc</strong> from Adafruit was mostly easy set up thanks to the
+tutorials available. Getting the linear softpot hooked up took some 
+experimentation with resistor size to get the maximum resolution. I ended
+up getting approximate 20,000 steps. Compare that to the wimpy 1024 steps
+you get with the 10-bit ADC on arduino.</li>
+<li>The <strong>rotary encoder</strong> was a later addition to testing. I purchased the 
+200 p/r encoder from sparkfun. Lots of ups and downs with this component. 
+More on this later..</li>
+</ul>
+<p><a href="/res/blog/contrenot_assembly/large/perfboard.jpg"><img src="/res/blog/contrenot_assembly/small/perfboard.jpg" alt="Soldering the perfboard
+" /></a></p>
+<p>After all the components were tested, I began transfering the breadboarded
+circuits to a perfboard. Breadboard layouts
+can be kind of misleading, and dont transfer exactly to the perf board. 
+It took me three tries to figure that out (as a side effect,
+I got a lot better at soldering!)</p>
+<p><a href="/res/blog/contrenot_assembly/large/perfboard2.jpg"><img src="/res/blog/contrenot_assembly/small/perfboard2.jpg" alt="Perfboard, mostly final
+" /></a></p>
+<p>After multiple attempts, I was finally able to get a perfboard working. 
+It is displayed above. In retrospect, I do regret using single wire instead
+of stranded wire. A learning experience indeed.</p>
+<p><a href="/res/blog/contrenot_assembly/large/ugly_wiring.jpg"><img src="/res/blog/contrenot_assembly/small/ugly_wiring.jpg" alt="Ugly wiring
+" /></a></p>
+<p>Speaking of wires, the picture above shows the perfboard and arduino wired 
+and mounted on the body. A mess (did I mention this was my first real
+hardware project?), but it works!</p>
+<h2>Fitting the new encoder</h2>
+<p><a href="/res/blog/contrenot_assembly/large/rotaryencoder.jpg"><img src="/res/blog/contrenot_assembly/small/rotaryencoder.jpg" alt="Fitting the new encoder
+" /></a></p>
+<p>Since progress was faster than planned, I decided to try replacing
+my griffin knob with a rotary encoder for better resolution (and to have
+one USB cable).  I ended up buying a 200 P/R rotary encoder off 
+sparkfun, designed mainly for use in robotics. It is displayed above 
+being fitted with a custom 3d printed knob I designed for it. </p>
+<p>Man. This rotary encoder was almost more trouble than it was worth.
+For starters, I realized after purchasing it that it could not 
+detect direction, only distance. This turned out to be more than fine
+for me: I did not need direction, and it ended up being much more 
+simple component to work with. </p>
+<p>There were also several points where I thought I had broken the encoder.
+I was so convinced of this that I went ahead and bought another encoder with
+rush delivery.  It turns out that I did not break the encoder. 
+It was just a really hard to find bug in my code that made it look broken. 
+Oh well.</p>
+<p>The encoder was a big improvement over the griffin knob, and had much 
+more resolution. So much resolution, that the arduino was not fast enough
+to read it! I ended up having to hook the encoder up to a hardware
+interrupt. After I did that, I found that serial was also way too slow
+to do anything related to velocity. I went back and wrote more code that 
+utilized the onboard timers to very precisely measure the distance between 
+pulses in the encoder, and sent <em>those</em> measurements over serial. With
+lots of smoothing and math, I was able to implement some very satisfying
+smoothing.</p>
+<p><a href="/res/blog/contrenot_assembly/large/encoder_layout.jpg"><img src="/res/blog/contrenot_assembly/small/encoder_layout.jpg" alt="New encoder, old layout
+" /></a></p>
+<p>After thinking I had broken the encoder, I went back and rethought
+how to fit the new encoder into the body. The old way above required 
+sending the cord through a hole. I felt this design put too much
+strain on the cord, which caused it to "break". As a result, I ended
+up designing a much better system. </p>
+<p><a href="/res/blog/contrenot_assembly/large/encodernew.jpg"><img src="/res/blog/contrenot_assembly/small/encodernew.jpg" alt="New encoder, new layout
+" /></a></p>
+<p>The picture above shows the new layout. The encoder and spool were flipped
+90 degrees, and dowel rods were added to hold the encoder in place. Less 
+stress was placed on the cord, and winding the spring ended up being
+much easier to do. Adjustments could be more nuanced, so the pull
+was a lot smoother as well.</p>
+<h2>Softpot callibration</h2>
+<p><a href="/res/blog/contrenot_assembly/large/calibrate.jpg"><img src="/res/blog/contrenot_assembly/small/calibrate.jpg" alt="Calibrating the neck
+" /></a></p>
+<p>With all the components working, it was time to get some test
+sounds created, starting with the softpot. To my disappointment,
+I found that while I had many bits of resoltion in the softpot, 
+those bits were not evenly distributed. 90% of the bits were clumped
+in 25% of the space in the top. This lead to a few attempts to 
+remap the signal to make it more linear.</p>
+<p>My first thought was that the distribution logarhithmic, so I fit
+an exponential equation to some data points that I measured. The
+plots I made highly suggested a log curve, and the math I threw at
+it to make it linear seemed to help:</p>
+<p><img src="/res/blog/contrenot_assembly/chart.png" alt="Logarithmic curves" /></p>
+<p><a href="/res/blog/contrenot_assembly/large/tapedneck.jpg"><img src="/res/blog/contrenot_assembly/small/tapedneck.jpg" alt="New neck
+" /></a></p>
+
+</div>
+</body>
+</html>
