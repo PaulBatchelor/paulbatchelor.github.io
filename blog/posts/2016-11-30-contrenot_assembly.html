@@ -138,8 +138,47 @@ an exponential equation to some data points that I measured. The
 plots I made highly suggested a log curve, and the math I threw at
 it to make it linear seemed to help:</p>
 <p><img src="/res/blog/contrenot_assembly/chart.png" alt="Logarithmic curves" /></p>
+<p>When I actually applied the math, the clumping I had witnessed 
+before was gone, and I had achieved some really rough callibration:
+a value 0.5 was actually halfway on the board. </p>
+<p>Still, there were issues. While the softpot was far more linear,
+it was not linear enough for musical purposes. I tried mapping a two
+octave scale onto it, and the steps between them varied greatly. Darn.</p>
+<p>My next option was to use brute force and sample many steps of the softpot,
+and construct a linearly interpolated table. I created 50 ticks, 1cm appart,
+and measured their values at each point, and used this to build a weighting
+table that would warp the incoming values. This turned out to also be 
+a bust. I was several hours into work that day and very
+frustrated, so I went to find dinner. </p>
+<p>While walking towards dinner, I began to rethink about some of my thoughts
+regarding resolution and frequency, and came to some conclusions:</p>
+<ul>
+<li>This soft pot is going to be just used for pitch: 24 semitones
+to be exact. </li>
+<li>The most important thing is not high resolution, but being able to 
+play with vibrato</li>
+<li>Perceptually speaking, how many subdivisions does one <em>really</em> need per semitone?
+10-15 subdivisions is probably fine. </li>
+<li>In total, all I would really need
+is 384 steps, which is way less than 10 bits offered on the arduino ADCS (and here
+I am going out of my way buying a special 16-bit ADC for many bits!).</li>
+<li>I actually can afford to lose some bits</li>
+<li>Getting 24 steps mapped accurately takes priority over fine tuning</li>
+</ul>
+<p>And with that, I rushed back to the lab to implement my new solution, which
+attacked the problem from a musical angle. This solution involved 
+using the log function I tried initially, and then downsampling
+the high-res input signal to have a range of 0-1023, and feeding that into 
+a lookup table. The look-up table would then be a map expressing which
+note should be playing. I marked out the and measured the positions I wanted 
+for each note, making sure there was enough wiggle room for vibrato. With the
+map constructed, I was able to dynamically infer the size of each region. 
+This was then used to subdivide the semitone into equally spaced positions.</p>
+<p>And guess what? It worked like a charm. </p>
 <p><a href="/res/blog/contrenot_assembly/large/tapedneck.jpg"><img src="/res/blog/contrenot_assembly/small/tapedneck.jpg" alt="New neck
 " /></a></p>
+<p>I placed some Gaffers tape over the softpot to improve the accuracy of
+it and to make it easier to play, as seen in the picture above. </p>
 
 </div>
 </body>
