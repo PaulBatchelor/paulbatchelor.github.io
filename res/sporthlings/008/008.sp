@@ -1,3 +1,4 @@
+(
 # the waiting room
 # paul batchelor
 # january 2017
@@ -40,5 +41,7 @@ dup 0.7 77 bpm2dur 0.75 * delay 2000 butlp 0.5 * +
 38.1 mtof 0.3 saw +
 8 inv 1 0 _sine osc 500 2000 biscale 0.1 diode 
 
-+ 
++
 
+-3 ampdb *
+)
