@@ -23,7 +23,7 @@ time and pitch to be controlled separately.
 sp_mincer_create(sp_mincer **mincer)
 </div>
 <div class="row">
-sp_mincer_init(sp_data *sp, sp_mincer *mincer, sp_ftbl *ft)
+sp_mincer_init(sp_data *sp, sp_mincer *mincer, sp_ftbl *ft, int winsize)
 </div>
 <div class="row">
 sp_mincer_compute(sp_data *sp, sp_mincer *mincer, SPFLOAT *dummy, SPFLOAT *out)
@@ -39,6 +39,12 @@ sp_mincer_destroy(sp_mincer **mincer)
 <div class="row">
 
 (Recommended value: N/A)
+</div>
+<div class="row">
+<i>winsize:</i> FFT window size. Should be a power of 2.</div>
+<div class="row">
+
+(Recommended value: 2048)
 </div>
 <div class="row"><br></div>
 <div class="row">
@@ -85,7 +91,6 @@ typedef struct {
 void process(sp_data *sp, void *udata) {
     UserData *ud = udata;
     SPFLOAT osc = 0, mincer = 0, randi = 0;
-   
     
     sp_randi_compute(sp, ud-&gt;randi, NULL, &randi);
     ud-&gt;mincer-&gt;time = randi;
@@ -107,10 +112,10 @@ int main() {
 
     sp_randi_create(&ud.randi);
 
-    sp_mincer_init(sp, ud.mincer, ud.ft);
+    sp_mincer_init(sp, ud.mincer, ud.ft, 16384);
     sp_randi_init(sp, ud.randi);
     ud.randi-&gt;min = 0;
-    ud.randi-&gt;max = 5;
+    ud.randi-&gt;max = 1;
     ud.randi-&gt;cps = 1;
 
     sp-&gt;len = 44100 * 5;
