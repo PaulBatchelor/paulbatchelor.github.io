@@ -1,0 +1,110 @@
+<html>
+<title>waveset</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>waveset</h1></i>
+<div class="row">
+Files: <i>waveset.h, waveset.c</i></div>
+<div class="row"><br></div>
+Simple Time-stretching from repeating wavecyles
+This module looks for zero-crossings and repeats them by a integer factor.
+While a crude means for time stretching, it is a very aesthetically pleasing 
+effect to use on sounds and often produces at "wet" sound.<br>The waveset algorithm was originally created by Trevor Wishart for the Composer
+Desktop Project (CDP), and was then ported to Csound. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_waveset_create(sp_waveset **waveset)
+</div>
+<div class="row">
+sp_waveset_init(sp_data *sp, sp_waveset *waveset, SPFLOAT ilen)
+</div>
+<div class="row">
+sp_waveset_compute(sp_data *sp, sp_waveset *waveset, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_waveset_destroy(sp_waveset **waveset)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>ilen:</i> Length of buffer (in seconds).</div>
+<div class="row">
+
+(Recommended value: 1.0)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>rep:</i> Number of repeats.</div>
+<div class="row">
+
+(Default value: 1.5)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Signal input.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_waveset *waveset;
+    sp_diskin *diskin;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT wav = 0, waveset = 0;
+    sp_diskin_compute(sp, ud-&gt;diskin, NULL, &wav);
+    sp_waveset_compute(sp, ud-&gt;waveset, &wav, &waveset);
+    sp_out(sp, 0, waveset);
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_srand(sp, 1234567);
+
+    sp_waveset_create(&ud.waveset);
+    sp_diskin_create(&ud.diskin);
+
+    sp_waveset_init(sp, ud.waveset, 1.0);
+    ud.waveset-&gt;rep = 3.0;
+    sp_diskin_init(sp, ud.diskin, "oneart.wav");
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_waveset_destroy(&ud.waveset);
+    sp_diskin_destroy(&ud.diskin);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

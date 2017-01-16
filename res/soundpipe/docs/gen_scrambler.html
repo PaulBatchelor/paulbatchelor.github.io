@@ -1,0 +1,66 @@
+<html>
+<title>gen_scrambler</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>gen_scrambler</h1></i>
+<div class="row">
+Files: <i>ftbl.h, ftbl.c</i></div>
+<div class="row"><br></div>
+Scrambles phase of ftable.
+This gen routine will copy the ftable, apply an FFT, apply
+a random phase, and then do an inverse FFT. This effect 
+is ideal for creating pad-like sounds. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_gen_scrambler(sp_data *sp, sp_ftbl *ft , &sp_ftbl *dest)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Parameters</h2></div>
+<div class="row">
+<i>dest:</i> destination ftable</div>
+<div class="row">
+
+(Recommended value: 123456)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include "soundpipe.h"
+
+typedef struct {
+    sp_ftbl *src;
+    sp_ftbl *dest;
+} UserData;
+
+static void process(sp_data *sp, void *userdata)
+{
+    UserData *ud = userdata;
+    sp_out(sp, 0, ud-&gt;dest-&gt;tbl[sp-&gt;pos]);
+}
+
+int main()
+{
+    sp_data *sp;
+    UserData ud;
+    sp_create(&sp);
+    sp_srand(sp, 12345);
+    sp_ftbl_loadfile(sp, &ud.src, "oneart.wav");
+    sp_gen_scrambler(sp, ud.src, &ud.dest);
+    sp-&gt;len = ud.src-&gt;size;
+    sp_process(sp, &ud, process);
+    sp_ftbl_destroy(&ud.src);
+    sp_ftbl_destroy(&ud.dest);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

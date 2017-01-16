@@ -1,0 +1,123 @@
+<html>
+<title>peaklim</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>peaklim</h1></i>
+<div class="row">
+Files: <i>peaklim.h, peaklim.c</i></div>
+<div class="row"><br></div>
+Peak limiter 
+This is a simple peak limiting algorithm, based off code from the Stanford
+Music-424 class.
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_peaklim_create(sp_peaklim **peaklim)
+</div>
+<div class="row">
+sp_peaklim_init(sp_data *sp, sp_peaklim *peaklim)
+</div>
+<div class="row">
+sp_peaklim_compute(sp_data *sp, sp_peaklim *peaklim, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_peaklim_destroy(sp_peaklim **peaklim)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>atk:</i> Attack time, in seconds</div>
+<div class="row">
+
+(Default value: 0.01)
+</div>
+<div class="row">
+<i>rel:</i> Release time, in seconds</div>
+<div class="row">
+
+(Default value: 0.1)
+</div>
+<div class="row">
+<i>thresh:</i> Threshold, in dB</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Input signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Output signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>/*
+ * This is a dummy example.
+ * Please implement a small and simple working example of your module, and then
+ * remove this header.
+ * Don't be clever.
+ * Bonus points for musicality. 
+ *
+ */
+
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_peaklim *peaklim;
+    sp_diskin *diskin;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT diskin = 0, peaklim = 0;
+    sp_diskin_compute(sp, ud-&gt;diskin, NULL, &diskin);
+    sp_peaklim_compute(sp, ud-&gt;peaklim, &diskin, &peaklim);
+    sp-&gt;out[0] = peaklim;
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_srand(sp, 1234567);
+
+    sp_peaklim_create(&ud.peaklim);
+    sp_diskin_create(&ud.diskin);
+
+    sp_peaklim_init(sp, ud.peaklim);
+    ud.peaklim-&gt;atk = 0.1;
+    ud.peaklim-&gt;rel = 0.1;
+    ud.peaklim-&gt;thresh = -30;
+    sp_diskin_init(sp, ud.diskin, "oneart.wav");
+
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_peaklim_destroy(&ud.peaklim);
+    sp_diskin_destroy(&ud.diskin);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

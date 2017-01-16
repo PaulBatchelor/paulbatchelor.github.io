@@ -1,0 +1,138 @@
+<html>
+<title>ptrack</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>ptrack</h1></i>
+<div class="row">
+Files: <i>ptrack.h, ptrack.c</i></div>
+<div class="row"><br></div>
+Track pitch of a signal.
+Ptrack is a pitch tracker, based on an algorithm originally created by
+Miller Puckette.
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_ptrack_create(sp_ptrack **ptrack)
+</div>
+<div class="row">
+sp_ptrack_init(sp_data *sp, sp_ptrack *ptrack, int ihopsize, int ipeaks)
+</div>
+<div class="row">
+sp_ptrack_compute(sp_data *sp, sp_ptrack *ptrack, SPFLOAT *in, SPFLOAT *freq, SPFLOAT *amp)
+</div>
+<div class="row">
+sp_ptrack_destroy(sp_ptrack **ptrack)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>ihopsize:</i> hop size.</div>
+<div class="row">
+
+(Recommended value: 512)
+</div>
+<div class="row">
+<i>ipeaks:</i> Number of peaks.</div>
+<div class="row">
+
+(Recommended value: 20)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>in:</i> Input signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>freq:</i> Guessed frequency (in Hz).
+</div>
+<div class="row">
+<i>amp:</i> Guessed amplitude.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_ptrack *ptrack;
+    sp_osc *osc;
+    sp_ftbl *ft;
+    sp_blsaw *sig;
+    sp_randh *randh;
+    sp_port *port;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT freq = 0, amp = 0, sig = 0, randh = 0, osc = 0;
+    SPFLOAT portfreq = 0;
+    sp_randh_compute(sp, ud-&gt;randh, NULL, &randh);
+    sp_port_compute(sp, ud-&gt;port, &randh, &portfreq);
+    *ud-&gt;sig-&gt;freq = portfreq;
+    sp_blsaw_compute(sp, ud-&gt;sig, NULL, &sig);
+    sp_ptrack_compute(sp, ud-&gt;ptrack, &sig, &freq, &amp);
+    ud-&gt;osc-&gt;freq = freq * 2;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp-&gt;out[0] = (osc + sig * 0.1) * 0.5;
+}
+
+int main() {
+    srand(1234567);
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+
+    sp_ptrack_create(&ud.ptrack);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 4096);
+    sp_blsaw_create(&ud.sig);
+    sp_randh_create(&ud.randh);
+    sp_port_create(&ud.port);
+
+    sp_ptrack_init(sp, ud.ptrack, 512, 20);
+    sp_randh_init(sp, ud.randh);
+    ud.randh-&gt;max = 500;
+    ud.randh-&gt;min = 200;
+    ud.randh-&gt;freq = 6;
+    sp_port_init(sp, ud.port, 0.005);
+
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+
+    sp_blsaw_init(sp, ud.sig);
+    *ud.sig-&gt;amp = 0.5;
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_blsaw_destroy(&ud.sig);
+    sp_randh_destroy(&ud.randh);
+    sp_ptrack_destroy(&ud.ptrack);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+    sp_port_destroy(&ud.port);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>
