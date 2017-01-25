@@ -17,8 +17,8 @@ a Soundpipe-based audio engine called soundPlumber.</p>
 <p><strong>Features:</strong></p>
 <ul>
 <li>Stack oriented paradigm</li>
-<li>Written entirely in C</li>
-<li>90+ unit generators to choose from</li>
+<li>Written entirely in portable C</li>
+<li>100+ unit generators to choose from</li>
 <li>Powered by the Soundpipe DSP library</li>
 <li>Unix-Friendly</li>
 <li>Small codebase</li>
@@ -45,8 +45,7 @@ and be processed by other applications like SoX, Csound, RSound, and even other 
 <p>Sporth is stack based. Arguments are written first, then the function (also known as a
 unit generator, or "ugen") is called.</p>
 <p>Here is a simple sine wave at 440Hz, with an amplitude of 0.5:</p>
-<p><pre><code>440 0.5 sine</code></pre>
-</p>
+<pre><code> 440 0.5 sine</code></pre>
 <p>Internally, this is what Sporth is doing:</p>
 <ol>
 <li>Push 440 to the stack.</li>
@@ -59,8 +58,7 @@ unit generator, or "ugen") is called.</p>
 </ol>
 <p>Due to the blackbox nature of Sporth, ugens can be combined and nested together.</p>
 <p>We add onto our sine wave and add vibrato at 6hz going up and down 50hz:</p>
-<p><pre><code>6 50 sine 440 add 0.5 sine</code></pre>
-</p>
+<pre><code> 6 50 sine 440 add 0.5 sine</code></pre>
 <p>A sine wave of 6hz with an amplitude of 50 is being added to the constant 440, modulating the
 440Hz freqency of the sine wave with an amplitude of 0.5.</p>
 <p>Step by step:</p>
@@ -78,85 +76,26 @@ unit generator, or "ugen") is called.</p>
 <li> Soundpipe pops the sine sample off the stack and writes it to disk.</li>
 <li> Go back to step 1 and repeat.</li>
 </ol>
-<h2>More Sporth Code</h2>
-<p>Sporth code supports line breaks and comments with the '#' key:</p>
-<p><pre><code># A north american dialtone using DTMF tones
-350 0.3 sine
-440 0.3 sine
-mix # sum them together!
-</code></pre>
-</p>
-<p>Sporth implements some forth-like stack operations necessary for more complex patches.
-Currently supported commands are: swap, dup, drop, and rot. Here is a trivial sequencer
-example, where a single metronome is used as trigger for two ugens (tenv and tseq).
-The stack operations "dup" and "swap" are used. Understanding the state of the Stack
-during the execution of the code is crucial to writing Sporth patches.</p>
-<p><pre><code># A trivial sequencer
-# Create a table of values,
-# These do not get pushed to the stack
-"seq" "60 62 64 67" gen_vals
-# create a metronome at 3Hz, and
-# duplicate it's signal
-3 metro
-# stack: metro
-# duplicate the last (only) item on stack
-dup
-# stack: metro metro
-# A simple trigger based envelope generator
-# This pops off the metro value from
-# the stack.
-0.01 0.1 0.1 tenv
-# stack: metro tenv
-# swap last two values pushed on the stack
-swap
-# stack: tenv metro
-# reads a value from the table "seq"
-# This pops off the metro value
-# from the stack.
-0 "seq" tseq
-# stack: tenv tseq
-# pops last value from the stack, and applies
-# a MIDI to frequency conversion
-mtof
-# stack: tenv mtof
-# pops last value from the stack, and uses
-# it as the frequency for the sine wave
-0.5 sine
-# stack: tenv sine
-# pops two values from the stack, and
-# multiplies them together
-mul
-# stack: (nothing, as it should be)
-# If this were non-zero, we would run
-# into stack-overflow issues.
-</code></pre>
-</p>
 <h2>Sporth is Unix friendly</h2>
 <p>The Sporth CLI tries it's best to be Unix friendly.</p>
 <p>Instead of reading from a file, Sporth can read from standard input:</p>
-<p><pre><code>echo "440 0.5 sine" | sporth -d 10s -o sine.wav</code></pre>
-</p>
+<pre><code> echo &quot;440 0.5 sine&quot; | sporth -d 10s -o sine.wav</code></pre>
 <p>This will write a 10 second 440Hz sine to a file called sine.wav.</p>
 <p>Instead of writing to a wav file, Sporth can write raw audio data to standard output
 to be read by other standard applications.</p>
-<p><pre><code>echo "440 0.5 sine" | sporth -d 5s -b raw |\
-sox -t raw -r 44100 -b 32 -e floating-point - \
-sine.wav fade q 1 5
-</code></pre>
-</p>
+<pre><code> echo &quot;440 0.5 sine&quot; | sporth -d 5s -b raw |\
+ sox -t raw -r 44100 -b 32 -e floating-point - \
+ sine.wav fade q 1 5</code></pre>
 <p>This example pipes standard output to sox, where it applies a 1 second fade in/out
 and writes to a file called sine.wav.</p>
 <p>Sporth has the ability to read raw audio data from standard input using the "in"
 ugen. The simplest Sporth patch that can read from STDIN would look like this:</p>
-<p><pre><code>in</code></pre>
-</p>
+<pre><code> in</code></pre>
 <p>It can be implemented like so:</p>
-<p><pre><code>cat /dev/urandom | sporth -d 10s in.sp </code></pre>
-</p>
+<pre><code> cat /dev/urandom | sporth -d 10s in.sp</code></pre>
 <p>One can even use other Sporth patches as an input source, allowing you to
 daisy chain Sporth patches:</p>
-<p><pre><code>sporth -d 10s -b raw sine.sp | sporth -d 10s in.sp </code></pre>
-</p>
+<pre><code> sporth -d 10s -b raw sine.sp | sporth -d 10s in.sp</code></pre>
 <p>Your time honored Unix tools can now be used to help sculpt your computer music.
 How cool is that!</p>
 <h2>Documentation</h2>
