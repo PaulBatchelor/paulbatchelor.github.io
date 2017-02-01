@@ -33,9 +33,39 @@ soundpipe and sporth for gen routines to start with "gen_"</li>
 <li>4096 is the size of the ftable.</li>
 <li>osc takes "sine" as a parameter. </li>
 </ul>
-<h2>ftables with arguments</h2>
+<h2>Gen routines with arguments</h2>
+<p>Most gen routines are adopted from Csound, where arguments exist inside a 
+string, separated by spaces. In Sporth/Soundpipe this convention is carried
+over. The following patch uses sawtooth wavetable oscillator, whose wavetable
+was generated using the gen_line gen routine. For variety, a random number
+sample and hold generator is feeding into the frequency of the saw, and is
+also being fed into a butterworth lowpass filter. </p>
+<pre><code> &quot;saw&quot; 4096 &quot;0 1 4096 -1&quot; gen_line
+ (300 800 10 randh) 0.3 0 &quot;saw&quot; osc 
+ (1000 butlp)</code></pre>
+<p>Gen routines conventionally follow a similar argument structure:</p>
+<p>NAME SIZE ARGSTRING gen_routine</p>
+<p>Where:</p>
+<ul>
+<li>NAME is the name of the ftable</li>
+<li>SIZE is the size of the ftable (the number of floats in the ftable)</li>
+<li>ARGSTRING is the argument string parsed by the gen routine</li>
+</ul>
+<p>Because of the argument strings, gen routines are tricky things to use
+and learn about. The <a href="/res/soundpipe/docs">Soundpipe reference guide</a>,
+is the most comprehensive starting point. For instance,
+<a href="/res/soundpipe/docs/gen_line.html">here is the entry on gen_line</a>, the gen 
+routine used in above example.</p>
 <h2>The underscore (_) shortcut</h2>
-
+<p>To save keystrokes and make ftables look prettier, the underscore key can be
+used in place of strings without spaces. For instance:</p>
+<pre><code> &quot;line&quot; 4096 &quot;0 1 4096 -1&quot; gen_line</code></pre>
+<p>Is identical to:</p>
+<pre><code> _line 4096 &quot;0 1 4096 -1&quot; gen_line</code></pre>
+<p>This is the preferred convention for ftables and variables, which will be
+discussed in the next chapter.</p>
+<hr />
+<a href="/proj/cook">Back</a>
 </div>
 </body>
 </html>
