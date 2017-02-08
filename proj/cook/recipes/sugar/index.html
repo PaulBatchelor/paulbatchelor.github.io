@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title></title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="home">
+<div id="container">
+<h1>Sugar</h1>
+<p>[<a href="/res/cook/sugar.sp">code</a>]</p>
+<p>This patch is yet another patch written specifically for a Sporth Editor
+for the iPad, powered by AudioKit. This was a test patch designed to test out
+the keyboard interface.
+Like previous sporth patches for 
+the sporth editor, p-registers 0-3 map to user-controllable sliders. 
+In addition to these, p-register 4 and 5 are also used for the keyboard 
+control. p4 is a gate signal, and p5 is a pitch value (in the range 0-24).</p>
+<h2>Tables</h2>
+<pre><code> _seq &quot;0 5 7 12 2 12 7 5&quot; gen_vals
+ _filt &quot;1000 2000 7000 3000 1000 1000 7000 1000&quot; gen_vals</code></pre>
+<h2>Controls</h2>
+<p>Control 1: Tempo</p>
+<pre><code> _bpm var
+ 0 p 80 150 scale _bpm set</code></pre>
+<p>Control 2: Length</p>
+<pre><code> _seqlen var
+ 1 p 8 * floor  _seqlen set</code></pre>
+<p>Control 3: Resonance</p>
+<pre><code> _res var
+ 2 p 0 0.99 scale _res set</code></pre>
+<p>Control 4: Detune</p>
+<pre><code> _det var
+ 3 p 0.01 0.45 scale _det set</code></pre>
+<h2>Variables</h2>
+<p>A few named variables are created to carry signals used through the patch.</p>
+<pre><code> _phsr var
+ _key var
+ _dry var
+ _note var
+ _gt 4 palias</code></pre>
+<ul>
+<li>"phsr" will hold the phasor signal, which are used in the sequencers.</li>
+<li>"key" will hold the midi note number value</li>
+<li>"dry" will hold the dry signal so it can be processed by effects</li>
+<li>"gt", is the gate signal generated from p4. Since words are easier to
+remember than numbers, "palias" is used to alias p4 to the variable "gt"</li>
+</ul>
+<h2>Note Sequencer</h2>
+<p>This chunk of code is in charge of producing the arpeggiation sequence.</p>
+<pre><code> 5 p (4 p 0.5 0 thresh) 0.05 tport 60 + _key set
+ _key get tick _key get 0 gt + samphold
+ _gt get 0.5 0 thresh
+ _bpm get bpm2rate 4 _seqlen get / * 0 tphasor _phsr set
+ _phsr get _seqlen get * floor _seq tget +
+ _note set</code></pre>
+<h2>Oscillators</h2>
+<p>Once the arpeggiation has been computed, it can be fed into the
+sound source: three detuned bandlimited sawtooth oscillators.</p>
+<pre><code> _note get 0.001 port mtof 0.3 saw
+ _note get _det get 1.123 * + 0.001 port mtof 0.3 saw +
+ _note get _det get - 0.001 port mtof 0.3 saw +</code></pre>
+<h2>Filter Sequencer</h2>
+<p>In addition to sequencing the notes, there is also a sequence of 
+filter resonances that move in time. This one has some subtle sound
+engineering (it tooke me a while to figure out what I was trying to do!)</p>
+<pre><code> _phsr get _seqlen get * floor _filt tget
+ dup
+ _gt get 1.3 0.2 0.9 0.4 adsr * 
+ 0.7 cf
+ 0.001 port
+ _res get moogladder</code></pre>
+<h2>Sub oscillator</h2>
+<p>To add some meat, a sub oscillator is created.</p>
+<pre><code> _note get 12 - 0.001 port mtof 0.1 sine +
+ _gt get 0.001 0.1 0.9 0.3 adsr *
+ dup 7000 buthp 3 ampdb * +
+ _dry set</code></pre>
+<h2>Effects</h2>
+<p>The effects processing is pretty standard reverb and delay setup
+setup.</p>
+<p>The dry signal is first procesed by my favorite reverb unit ReverbSC.</p>
+<pre><code> _dry get dup 0.85 8000 revsc drop -12 ampdb * _dry get +</code></pre>
+<p>The dry signal is also processed in parallel with a filtered delay line.
+While most filtered delay lines use lowpass filters, this filter is a 
+highpass filter with a very high cutoff frequency. The resulting sound is
+a "shimmer" in a frequency space that does not compete with any other 
+instruments. </p>
+<pre><code> _dry get 0.75 0.3 delay 6000 buthp -20 ampdb * +
+
+</code></pre>
+
+</div>
+</body>
+</html>
