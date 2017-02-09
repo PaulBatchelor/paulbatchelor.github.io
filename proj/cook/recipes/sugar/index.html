@@ -23,16 +23,21 @@ control. p4 is a gate signal, and p5 is a pitch value (in the range 0-24).</p>
 <pre><code> _seq &quot;0 5 7 12 2 12 7 5&quot; gen_vals
  _filt &quot;1000 2000 7000 3000 1000 1000 7000 1000&quot; gen_vals</code></pre>
 <h2>Controls</h2>
-<p>Control 1: Tempo</p>
+<p>This patch contains 4 parametric controls.
+Control 1: Tempo
+This is the speed of the sequencer(s)</p>
 <pre><code> _bpm var
  0 p 80 150 scale _bpm set</code></pre>
-<p>Control 2: Length</p>
+<p>Control 2: Length
+The length controls the pattern length of the sequence.</p>
 <pre><code> _seqlen var
  1 p 8 * floor  _seqlen set</code></pre>
-<p>Control 3: Resonance</p>
+<p>Control 3: Resonance
+This controls how much resonance is applied to the filter.</p>
 <pre><code> _res var
  2 p 0 0.99 scale _res set</code></pre>
-<p>Control 4: Detune</p>
+<p>Control 4: Detune
+This controls how much detune there is amongst the oscillators.</p>
 <pre><code> _det var
  3 p 0.01 0.45 scale _det set</code></pre>
 <h2>Variables</h2>
@@ -51,34 +56,84 @@ remember than numbers, "palias" is used to alias p4 to the variable "gt"</li>
 </ul>
 <h2>Note Sequencer</h2>
 <p>This chunk of code is in charge of producing the arpeggiation sequence.</p>
-<pre><code> 5 p (4 p 0.5 0 thresh) 0.05 tport 60 + _key set
- _key get tick _key get 0 gt + samphold
- _gt get 0.5 0 thresh
- _bpm get bpm2rate 4 _seqlen get / * 0 tphasor _phsr set
- _phsr get _seqlen get * floor _seq tget +
+<p>The first thing is to get the base note from the keyboard UI. 
+<strong>tport</strong> is used instead of <strong>port</strong> so that the initial note-on event
+does not gliss from the previous note.
+The keyboard is biased around middle C (60), and then assigned to 
+the variable <em>key</em>. </p>
+<pre><code> 5 p (4 p 0.5 0 thresh) 0.05 tport 60 + _key set</code></pre>
+<p>The line below is a bit of logic required to work with the keyboard
+UI. This is also tricky to read, so I added parentheses for clarity.
+Because of the way the keyboard signal works, the signal needs to only change
+notes when a keyboard note is greater than 0. To do this, a <strong>samphold</strong>
+is used. tick is also used to ensure that a note is assigned at the
+start of the patch. </p>
+<p>Bear in mind that the samphold value remains on the stack to be processed
+later.</p>
+<pre><code> _key get (tick _key get 0 gt +) samphold</code></pre>
+<p>The next step is to generate a phasor signal. A phasor will generated a 
+saw wave from 0 to 1, which can then be scaled and fed into table lookup 
+unit generators. 
+The phasor generator that will be used for the arpeggiator will have 
+ability to reset itself to 0 at the start of the note. This signal
+expects a trigger, but the keyboard produces a gate. Thus, <strong>thresh</strong>
+is used:</p>
+<pre><code> _gt get 0.5 0 thresh</code></pre>
+<p>From there, the frequency of the phasor is calculated. The BPM
+is converted to frequency using bpm2rate. The rate of the sequencer
+is normalized by the sequencer length so that the notes are the same
+duration. The phase parameter for tphasor is set to 0. This entire signal
+is then fed into the variable <em>phsr</em>.</p>
+<pre><code> _bpm get bpm2rate 4 _seqlen get / * 0 tphasor _phsr set</code></pre>
+<p>The phasor signal is immediately retrieved, scaled, and floored by the 
+sequencer length. This value becomes the index parameter for the table <em>seq</em>.
+Remember that the signal generated from samphold is still on the stack. 
+The value produced from <strong>tget</strong> is added on to this signal, and then 
+assigned to the variable <em>note</em>.</p>
+<pre><code> _phsr get _seqlen get * floor _seq tget +
  _note set</code></pre>
 <h2>Oscillators</h2>
 <p>Once the arpeggiation has been computed, it can be fed into the
-sound source: three detuned bandlimited sawtooth oscillators.</p>
-<pre><code> _note get 0.001 port mtof 0.3 saw
- _note get _det get 1.123 * + 0.001 port mtof 0.3 saw +
- _note get _det get - 0.001 port mtof 0.3 saw +</code></pre>
+sound source: three detuned bandlimited sawtooth oscillators.
+The first oscillator has no detune parameter.</p>
+<pre><code> _note get 0.001 port mtof 0.3 saw</code></pre>
+<p>The second oscillator is detuned sharp. To add variety, the detuned
+parameter is scaled by 12.3 percent.</p>
+<pre><code> _note get _det get 1.123 * + 0.001 port mtof 0.3 saw +</code></pre>
+<p>The final oscillator is detuned flat. </p>
+<pre><code> _note get _det get - 0.001 port mtof 0.3 saw +</code></pre>
 <h2>Filter Sequencer</h2>
 <p>In addition to sequencing the notes, there is also a sequence of 
 filter resonances that move in time. This one has some subtle sound
 engineering (it tooke me a while to figure out what I was trying to do!)</p>
-<pre><code> _phsr get _seqlen get * floor _filt tget
- dup
+<p>Similar to the note sequencer, the phasor signal is scaled and floored,
+this time being fed into the filter table sequencer.</p>
+<pre><code> _phsr get _seqlen get * floor _filt tget</code></pre>
+<p>To add some nuance, an adsr envelope is applied to the filter frequency
+control signal. The signal is duplicated and fed into the crossfade 
+unit generator <strong>cf</strong>, with a mix of 0.7. </p>
+<pre><code> dup
  _gt get 1.3 0.2 0.9 0.4 adsr * 
- 0.7 cf
- 0.001 port
- _res get moogladder</code></pre>
+ 0.7 cf</code></pre>
+<p>To prevent clicks, some small portamento is added to the filter frequency
+sequencer. </p>
+<pre><code> 0.001 port</code></pre>
+<p>Finally, the resonance is retrieved from the variable <em>res</em>, and the 
+sawtooth signal is fed into the moog filter ugen <strong>moogladder</strong>.</p>
+<pre><code> _res get moogladder</code></pre>
 <h2>Sub oscillator</h2>
-<p>To add some meat, a sub oscillator is created.</p>
-<pre><code> _note get 12 - 0.001 port mtof 0.1 sine +
- _gt get 0.001 0.1 0.9 0.3 adsr *
- dup 7000 buthp 3 ampdb * +
- _dry set</code></pre>
+<p>To add some meat, a sub oscillator is created.
+The sub oscillator is just a sine wave generator, tuned an octave below
+the other oscillators, then added to the rest of the signal.</p>
+<pre><code> _note get 12 - 0.001 port mtof 0.1 sine +</code></pre>
+<p>This whole signal is multiplied by an ADSR envelope, fed by the gate 
+signal.</p>
+<pre><code> _gt get 0.001 0.1 0.9 0.3 adsr *</code></pre>
+<p>To add more brightness, the signal is duplicated. One of the signals is
+sent through a highpass filter and boosted. Then, they are added together.</p>
+<pre><code> dup 7000 buthp 3 ampdb * +</code></pre>
+<p>With the signal complete, it is assigned to the variable <em>dry</em>.</p>
+<pre><code> _dry set</code></pre>
 <h2>Effects</h2>
 <p>The effects processing is pretty standard reverb and delay setup
 setup.</p>

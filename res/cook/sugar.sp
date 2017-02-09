@@ -14,7 +14,7 @@ _dry var
 _note var
 _gt 4 palias
 5 p (4 p 0.5 0 thresh) 0.05 tport 60 + _key set
-_key get tick _key get 0 gt + samphold
+_key get (tick _key get 0 gt +) samphold
 _gt get 0.5 0 thresh
 _bpm get bpm2rate 4 _seqlen get / * 0 tphasor _phsr set
 _phsr get _seqlen get * floor _seq tget +
