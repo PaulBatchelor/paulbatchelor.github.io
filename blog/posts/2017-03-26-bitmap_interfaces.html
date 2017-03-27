@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Simple Musical Interfaces for Sporth using OpenGL bitmaps</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="home">
+<div id="container">
+<h1>Simple Musical Interfaces for Sporth using OpenGL bitmaps</h1>
+<p>2017-03-26</p>
+<h2>Pondering</h2>
+<p>Lately, I've been thinking about graphical user interfaces in music. 
+Not having them for so long has given me ample to time to question what they
+represent.  I've avoided including them in my sonic ecosystem of software. 
+They are just hard to do well. Libraries for handling graphics like GTK and QT 
+are large and would add a great deal of complexity to my work. And even if you get the
+technical stuff figured out, you still are stuck making things look and feel
+good. It's a set of challenges I'm just not sure about investing the time in
+solving.</p>
+<p>More importantly, I avoid graphical utilities out of principle. Now that
+I build most of my tools, I often ask myself "do I really need it?". After years
+of working with text-based highly modular environments like Csound, and then 
+building Sporth, many graphical interfaces feel restrictive and limiting for
+sound design. Indeed, even when I was knee-deep in commercial software like 
+ProTools or Reaper, I found using the "easy-to-use" mouse-based interfaces to 
+be tedious and sluggish, especially with the rise of high-quality touchscreens.
+Many widgets common in DAWs are really skeumorphic representations of analog 
+hardware, designed for a generation of technophobic audio engineers. Let's be 
+honest here: virtual knobs make no sense. </p>
+<p>Despite all this, I'm coming around to the fact that there is indeed <em>something</em>
+to be said about having a visual interface of sorts. I'm just not quite sure
+what that means for me yet. </p>
+<p>This past week, I've taken some small steps into
+the frightening world of graphical user interfaces, building some small graphics
+utilities based on interfaces I've enjoyed working with in the past. They are 
+implemented as simple Sporth plugins, which generate simple signals to be used
+within a Sporth patch. Not only are they simple, but they are also small. I've
+opted to use glBitmaps to draw the interfaces onscreen. To my surprise, they 
+have pretty fast to draw, leaving plenty of CPU room for audio.</p>
+<h2>Seq16</h2>
+<p><img src="/res/blog/bitmap_interfaces/seq16.png" alt="Seq16" /></p>
+<p>The first thing I built was <a href="http://www.github.com/paulbatchelor/seq16">Seq16</a>.</p>
+<p>Seq16 is a 4-channel, 16-step sequencer. I designed this to make it easy to
+build drum loops. Seq16 is driven by a sample-accurate clock signal generated
+by Sporth. Each channel generates a gate signal, stored in a Sporth table
+that Seq16 creates. These signals can be mapped in many ways to trigger 
+sounds in Sporth. </p>
+<p>Seq16 has the ability to save/load pattern data in the internal <a href="https://github.com/PaulBatchelor/Soundpipe/blob/master/lib/spa/spa.c">Soundpipe
+audio (SPA) format</a>
+This has proven to be very convenient so far. However, I plan on changing
+the format to be text-based rather than a binary format.</p>
+<h2>Tracker3</h2>
+<p><img src="/res/blog/bitmap_interfaces/tracker3.png" alt="Tracker3" /></p>
+<p><a href="http://www.github.com/paulbatchelor/tracker3">Tracker3</a>
+is a 3-channel, 64-step sequencer. </p>
+<p>This is designed specifically to quickly build up small melodies and monophonic 
+instruments. I am proud to say that is may be the stupidest music tracker in 
+existence. No effect columns, no instruments, no patterns. Nothin. 
+Just three channels, choice of note and octave, and 64 steps. </p>
+<p>Similar to Seq16, Tracker3 stores signals for each of it's 3 channels via
+Sporth tables.
+Each channel has two components: a note component and a gate component. The
+note component stores the current pitch as a midi note number, the gate is a binary
+signal indicating if the note is on/off. These signals can be fed into oscillators
+and envelopes to drive monophonic instruments. </p>
+<p>Building on top of Seq16, Tracker3 saves/loads/reloads patterns using a minimal 
+version of <a href="/proj/runt">Runt</a>. The advantage of this is that sequences can be
+edited in a text editor in addition to the tracker sequencer. </p>
+
+</div>
+</body>
+</html>

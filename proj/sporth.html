@@ -11,20 +11,19 @@
 <body class="home">
 <div id="container">
 <h1>Sporth</h1>
-<p>Sporth (SoundPipe fORTH) is a small hackable stack-based music programming language that uses
-a Soundpipe-based audio engine called soundPlumber.</p>
+<p>Sporth (SoundPipe fORTH) is a small stack-based audio programming language.</p>
 <p>Compile the latest version <a href="http://www.github.com/PaulBatchelor/Sporth.git">here</a>.</p>
-<p><strong>Features:</strong></p>
+<h2>Features</h2>
 <ul>
 <li>Stack oriented paradigm</li>
-<li>Written entirely in portable C</li>
+<li>Written in portable C</li>
 <li>100+ unit generators to choose from</li>
-<li>Powered by the Soundpipe DSP library</li>
+<li>Powered by the <a href="/proj/soundpipe.html">Soundpipe</a> DSP library</li>
 <li>Unix-Friendly</li>
 <li>Small codebase</li>
 <li>Powerful C API</li>
-<li>Easily extendable</li>
-<li>Easily embeddable</li>
+<li>Live coding capabilities</li>
+<li>Third-party plugin format</li>
 </ul>
 <h2>Why Sporth?</h2>
 <p><strong>For composers</strong>, Sporth is a different approach to making sound. Stack based languages
@@ -37,75 +36,38 @@ and Supercollider will find Sporth a new and refreshing take on the same basic c
 of other applications. In addition to compiling Sporth code, the API has access
 to other features of Sporth that would otherwise be unavailable, such as
 audio-rate software channels, and user defined function callbacks. </p>
-<p><strong>For Unix fans</strong>, Sporth tries its best to be as Unixy as possible. Sporth can read code from
-standard input, allowing users to programatically generate Sporth code via shell scripts.
-Sporth also has the ability to both read/write from STDIN/STDOUT, allowing Sporth to process
-and be processed by other applications like SoX, Csound, RSound, and even other Sporth instances!</p>
-<h2>Some Sporth Code</h2>
-<p>Sporth is stack based. Arguments are written first, then the function (also known as a
-unit generator, or "ugen") is called.</p>
-<p>Here is a simple sine wave at 440Hz, with an amplitude of 0.5:</p>
-<pre><code> 440 0.5 sine</code></pre>
-<p>Internally, this is what Sporth is doing:</p>
-<ol>
-<li>Push 440 to the stack.</li>
-<li>Push 0.5 stack</li>
-<li>Look up and call the function "sine".</li>
-<li>"sine" pops 440 and 0.5 off the stack for parameters.</li>
-<li>"sine" computes a sample of audio, and pushes it onto the stack.</li>
-<li>Soundpipe pops the sine sample off the stack and writes it to disk.</li>
-<li>Go back to step 1, and repeat until the desired length of audio is written.</li>
-</ol>
-<p>Due to the blackbox nature of Sporth, ugens can be combined and nested together.</p>
-<p>We add onto our sine wave and add vibrato at 6hz going up and down 50hz:</p>
-<pre><code> 6 50 sine 440 add 0.5 sine</code></pre>
-<p>A sine wave of 6hz with an amplitude of 50 is being added to the constant 440, modulating the
-440Hz freqency of the sine wave with an amplitude of 0.5.</p>
-<p>Step by step:</p>
-<ol>
-<li>Push 6 onto the stack</li>
-<li>Push 50 onto the stack</li>
-<li>"sine" pops 6 and 50 off the stack.</li>
-<li>"sine" computes a single sample of audio and pushes it to the stack</li>
-<li>Push 440 to to the stack.</li>
-<li>"add" pops the computed sine sample and 440 off the stack.</li>
-<li>"add" adds these values togeter and pushes this onto the stack.</li>
-<li>0.5 is pushed onto the stack.</li>
-<li>"sine" pops the summed value and 0.5 off the stack.</li>
-<li> "sine" computes a single sample of audio and pushes it onto the stack.</li>
-<li> Soundpipe pops the sine sample off the stack and writes it to disk.</li>
-<li> Go back to step 1 and repeat.</li>
-</ol>
-<h2>Sporth is Unix friendly</h2>
-<p>The Sporth CLI tries it's best to be Unix friendly.</p>
-<p>Instead of reading from a file, Sporth can read from standard input:</p>
-<pre><code> echo &quot;440 0.5 sine&quot; | sporth -d 10s -o sine.wav</code></pre>
-<p>This will write a 10 second 440Hz sine to a file called sine.wav.</p>
-<p>Instead of writing to a wav file, Sporth can write raw audio data to standard output
-to be read by other standard applications.</p>
-<pre><code> echo &quot;440 0.5 sine&quot; | sporth -d 5s -b raw |\
- sox -t raw -r 44100 -b 32 -e floating-point - \
- sine.wav fade q 1 5</code></pre>
-<p>This example pipes standard output to sox, where it applies a 1 second fade in/out
-and writes to a file called sine.wav.</p>
-<p>Sporth has the ability to read raw audio data from standard input using the "in"
-ugen. The simplest Sporth patch that can read from STDIN would look like this:</p>
-<pre><code> in</code></pre>
-<p>It can be implemented like so:</p>
-<pre><code> cat /dev/urandom | sporth -d 10s in.sp</code></pre>
-<p>One can even use other Sporth patches as an input source, allowing you to
-daisy chain Sporth patches:</p>
-<pre><code> sporth -d 10s -b raw sine.sp | sporth -d 10s in.sp</code></pre>
-<p>Your time honored Unix tools can now be used to help sculpt your computer music.
-How cool is that!</p>
+<h2>Things Using Sporth</h2>
+<ul>
+<li><a href="http://audiokit.io">AudioKit</a>: iOS framework for audio synthesis and
+analysis.</li>
+<li><a href="/sporthlings">Sporthlings</a>: A collection of Sporth etudes and sketches. 
+(Sound demos can be found 
+<a href="https://www.youtube.com/watch?v=sLqRb_KfIng&amp;list=PLgEE92LPHEljTLN9gFZr21ETOBxQueoTQ">here</a>)</li>
+<li><a href="https://itunes.apple.com/app/id1140110361?mt=8&amp;ign-mpt=uo%3D8">Ops</a> is
+an iOS app written using AudioKit that makes extensive use of Sporth.</li>
+<li><a href="/proj/chorth.html">Chorth</a> enables Sporth to be run inside of ChucK as a
+Chugin. It can be found in the Sporth project directory /util/chorth. </li>
+<li>pd-sporth is a Sporth implemented as a pd external. It can be found in
+the Sporth project directory /util/pd. </li>
+<li><a href="/blog/posts/2017-02-25-LMMS-sporth.html">LMMS-Sporth</a> implements a Sporth
+editor inside of LMMS. </li>
+<li><a href="/proj/moons.html">Moons</a> is an interactive circular sequencer that uses
+a mixture of Soundpipe and Sporth to generate sound.</li>
+</ul>
 <h2>Documentation</h2>
+<h3>The Sporth Cookbook</h3>
+<p><a href="/proj/cook/">The Sporth Cookbook</a> is the comprehensive text on Sporth. In
+addition to an introductory chapter on Sporth, it also contains several
+thoroughly documented patches for more advanced sporthers.</p>
+<h3>Reference</h3>
 <p>In the project folder, ugen_reference.txt is a mini reference for all the ugens in Sporth, with
 names, arguments, outputs, and a brief descriptions. When you install Sporth, a shell script called
 "ugen_lookup" is installed as well. To look up what 'tenv' does, run the command "ugen_lookup tenv".
 ugen_lookup also excepts any regular expressions supported by grep.</p>
-<p>Most of the ugens in Sporth exist under the same name in the Soundpipe library, which has much
-more thorough documentation of each module. In the soundpipe folder, documentation can be generated
-by running "make docs".</p>
+<h3>Soundpipe </h3>
+<p>Most of the ugens in Sporth exist under the same name in the Soundpipe library, 
+which has much more thorough 
+<a href="/res/soundpipe/docs">documentation of each module</a>. </p>
 <hr />
 <a href="/proj">Projects</a><p><a href="/">Home</a></p>
 
