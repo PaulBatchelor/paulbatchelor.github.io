@@ -1,0 +1,88 @@
+<html>
+<title>spa</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>spa</h1></i>
+<div class="row">
+Files: <i>spa.h, spa.c</i></div>
+<div class="row"><br></div>
+Stream a Soundpipe Audio File
+Similar to sp_diskin, sp_spa will stream a file in the internal soundpipe
+audio format. Such a format is useful for instances where you need to read
+audio files, but can't use libsndfile. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_spa_create(sp_spa **spa)
+</div>
+<div class="row">
+sp_spa_init(sp_data *sp, sp_spa *spa, const char *filename)
+</div>
+<div class="row">
+sp_spa_compute(sp_data *sp, sp_spa *spa, SPFLOAT *out)
+</div>
+<div class="row">
+sp_spa_destroy(sp_spa **spa)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>filename:</i> Filename of SPA file</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Output to spa.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_spa *spa;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT spa = 0;
+    sp_spa_compute(sp, ud-&gt;spa, NULL, &spa);
+    sp-&gt;out[0] = spa;
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_srand(sp, 1234567);
+
+    sp_spa_create(&ud.spa);
+
+    sp_spa_init(sp, ud.spa, "oneart.spa");
+
+    sp-&gt;len = 44100 * 10;
+    sp_process(sp, &ud, process);
+
+    sp_spa_destroy(&ud.spa);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

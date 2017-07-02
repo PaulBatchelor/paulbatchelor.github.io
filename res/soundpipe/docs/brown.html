@@ -1,0 +1,76 @@
+<html>
+<title>brown</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>brown</h1></i>
+<div class="row">
+Files: <i>brown.h, brown.c</i></div>
+<div class="row"><br></div>
+Brownian noise generator.
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_brown_create(sp_brown **brown)
+</div>
+<div class="row">
+sp_brown_init(sp_data *sp, sp_brown *brown)
+</div>
+<div class="row">
+sp_brown_compute(sp_data *sp, sp_brown *brown, SPFLOAT *out)
+</div>
+<div class="row">
+sp_brown_destroy(sp_brown **brown)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Brownian noise output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_brown *brown;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT brown = 0;
+    sp_brown_compute(sp, ud-&gt;brown, NULL, &brown);
+    sp-&gt;out[0] = brown;
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_srand(sp, 1234567);
+
+    sp_brown_create(&ud.brown);
+
+    sp_brown_init(sp, ud.brown);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_brown_destroy(&ud.brown);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

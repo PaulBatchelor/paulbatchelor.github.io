@@ -1,0 +1,134 @@
+<html>
+<title>lpc</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>lpc</h1></i>
+<div class="row">
+Files: <i>lpc.h, lpc.c</i></div>
+<div class="row"><br></div>
+A linear predictive coding filter.
+This module is a wrapper for the open source library openlpc, which implements
+the LPC10 audio codec optimized for speech signals. This module takes in an
+input signal, downsamples it, and produces a decoded LPC10 audio signal, which
+has a similar sound to that of a speak and spell. In this context, the LPC
+signal is meant to be more of a audio effect rather than a utility for
+communication. <br>Because the LPC10 encoder
+relies on frames for encoding, the output signal has a few milliseconds of
+delay. The delay can be calculated in seconds as (framesize * 4) / samplerate.<br>In addition to using the LPC as a decoder/encoder, this module can also be 
+set to synth mode. Instead of reading from an input signal, the LPC can
+instead read from parameters set directly in a scaled ftable. <br>
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_lpc_create(sp_lpc **lpc)
+</div>
+<div class="row">
+sp_lpc_init(sp_data *sp, sp_lpc *lpc, int framesize)
+</div>
+<div class="row">
+sp_lpc_compute(sp_data *sp, sp_lpc *lpc, SPFLOAT *input, SPFLOAT *output)
+</div>
+<div class="row">
+sp_lpc_destroy(sp_lpc **lpc)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>framesize:</i> Sets the frame size for the encoder.</div>
+<div class="row">
+
+(Recommended value: 512)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Input signal to be processed with LPC.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>output:</i> LPC encoded signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Other Functions:</h2></div>
+<div class="row">
+sp_lpc_synth(sp_data *sp, sp_lpc *lpc, sp_ftbl * ft)
+</div>
+<div class="row">
+Toggle synth mode. 
+                Instead of reading an input, manipulate the parameters in  
+                a scaled ftable.</div>
+<div class="row">
+<div class="one column"></div>
+<div class="elevent columns">
+<i>ft:</i> ftable of size 7
+</div></div>
+<div class="row">
+<div class="one column"></div>
+<div class="elevent columns">
+(Suggested default: N/A)
+
+</div></div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_diskin *wav;
+    sp_lpc *lpc;
+} user_data;
+
+static void process(sp_data *sp, void *ud)
+{
+    user_data *dt;
+    SPFLOAT diskin;
+    SPFLOAT out;
+    dt = ud;
+
+    sp_diskin_compute(sp, dt-&gt;wav, NULL, &diskin);
+    sp_lpc_compute(sp, dt-&gt;lpc, &diskin, &out);
+
+
+    sp_out(sp, 0, out);
+}
+
+int main(int argc, char **argv)
+{
+    user_data dt;
+    sp_data *sp;
+
+    sp_create(&sp);
+    sp-&gt;sr = 44100;
+    sp-&gt;len = sp-&gt;sr * 8;
+
+    sp_lpc_create(&dt.lpc);
+    sp_lpc_init(sp, dt.lpc, 512);
+
+    sp_diskin_create(&dt.wav);
+    sp_diskin_init(sp, dt.wav, "oneart.wav");
+
+
+    sp_process(sp, &dt, process);
+    sp_diskin_destroy(&dt.wav);
+    sp_lpc_destroy(&dt.lpc);
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

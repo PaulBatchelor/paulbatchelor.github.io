@@ -1,0 +1,122 @@
+<html>
+<title>rspline</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>rspline</h1></i>
+<div class="row">
+Files: <i>rspline.h, rspline.c</i></div>
+<div class="row"><br></div>
+Random spline curve generator
+This is a function that generates random spline curves. This signal generator
+is ideal for control signals. Curves are quite smooth when cps_min is not
+too different from cps_max. When the range of these two is big, 
+some discontinuity may occur. Due to the interpolation, the output 
+may be greater than the range values. 
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_rspline_create(sp_rspline **rspline)
+</div>
+<div class="row">
+sp_rspline_init(sp_data *sp, sp_rspline *rspline)
+</div>
+<div class="row">
+sp_rspline_compute(sp_data *sp, sp_rspline *rspline, SPFLOAT *dummy, SPFLOAT *out)
+</div>
+<div class="row">
+sp_rspline_destroy(sp_rspline **rspline)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Optional Parameters</h2></div>
+<div class="row">
+<i>min:</i> Minimum range.</div>
+<div class="row">
+
+(Default value: 0)
+</div>
+<div class="row">
+<i>max:</i> Maximum range</div>
+<div class="row">
+
+(Default value: 1)
+</div>
+<div class="row">
+<i>cps_min:</i> </div>
+<div class="row">
+
+(Default value: 0.1)
+</div>
+<div class="row">
+<i>cps_max:</i> </div>
+<div class="row">
+
+(Default value: 3)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Signal output.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_rspline *rspline;
+    sp_osc *osc;
+    sp_ftbl *ft; 
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, rspline = 0;
+    sp_rspline_compute(sp, ud-&gt;rspline, NULL, &rspline);
+    ud-&gt;osc-&gt;freq = rspline;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp-&gt;out[0] = osc;
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_srand(sp, 1234567);
+
+    sp_rspline_create(&ud.rspline);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+
+    sp_rspline_init(sp, ud.rspline);
+    ud.rspline-&gt;min = 300;
+    ud.rspline-&gt;max = 900;
+    ud.rspline-&gt;cps_min = 0.1;
+    ud.rspline-&gt;cps_max = 3;
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_rspline_destroy(&ud.rspline);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>

@@ -1,0 +1,108 @@
+<html>
+<title>sparec</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>sparec</h1></i>
+<div class="row">
+Files: <i>sparec.h, sparec.c</i></div>
+<div class="row"><br></div>
+Writes signal to spa file.
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_sparec_create(sp_sparec **sparec)
+</div>
+<div class="row">
+sp_sparec_init(sp_data *sp, sp_sparec *sparec, const char *filename)
+</div>
+<div class="row">
+sp_sparec_compute(sp_data *sp, sp_sparec *sparec, SPFLOAT *input, SPFLOAT *out)
+</div>
+<div class="row">
+sp_sparec_destroy(sp_sparec **sparec)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>filename:</i> Filename to write to</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Inputs</h2></div>
+<div class="row">
+<i>input:</i> Input signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> Copy of input signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Other Functions:</h2></div>
+<div class="row">
+sp_sparec_close(sp_data *sp, sp_sparec *sparec)
+</div>
+<div class="row">
+Close spa file and writes the rest of the data in the buffer.</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_sparec *sparec;
+    sp_osc *osc;
+    sp_ftbl *ft; 
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT osc = 0, sparec = 0;
+    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
+    sp_sparec_compute(sp, ud-&gt;sparec, &osc, &sparec);
+    sp-&gt;out[0] = osc;
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_srand(sp, 1234567);
+
+    sp_sparec_create(&ud.sparec);
+    sp_osc_create(&ud.osc);
+    sp_ftbl_create(sp, &ud.ft, 2048);
+
+    sp_sparec_init(sp, ud.sparec, "rec.spa");
+    sp_gen_sine(sp, ud.ft);
+    sp_osc_init(sp, ud.osc, ud.ft, 0);
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_sparec_close(sp, ud.sparec);
+    sp_sparec_destroy(&ud.sparec);
+    sp_ftbl_destroy(&ud.ft);
+    sp_osc_destroy(&ud.osc);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>
