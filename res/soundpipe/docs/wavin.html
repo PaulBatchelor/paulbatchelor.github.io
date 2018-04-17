@@ -1,0 +1,86 @@
+<html>
+<title>wavin</title>
+<head>
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+<i><h1>wavin</h1></i>
+<div class="row">
+Files: <i>wavin.h, wavin.c</i></div>
+<div class="row"><br></div>
+Reads a mono WAV file.<br>This module reads a mono WAV file from disk. It uses the public-domain 
+dr_wav library for decoding, so it can be a good substitute for libsndfile.
+
+<div class="row"><br></div>
+<div class="row">
+<div class="row">
+<h2>Functions</h2></div>
+</div>
+<div class="row">
+sp_wavin_create(sp_wavin **wavin)
+</div>
+<div class="row">
+sp_wavin_init(sp_data *sp, sp_wavin *wavin, const char *filename)
+</div>
+<div class="row">
+sp_wavin_compute(sp_data *sp, sp_wavin *wavin, SPFLOAT *out)
+</div>
+<div class="row">
+sp_wavin_destroy(sp_wavin **wavin)
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Mandatory Parameters</h2></div>
+<div class="row">
+<i>filename:</i> Filename</div>
+<div class="row">
+
+(Recommended value: N/A)
+</div>
+<div class="row"><br></div>
+
+<div class="row">
+<h2>Outputs</h2></div>
+<div class="row">
+<i>out:</i> output signal.
+</div>
+<div class="row"><br></div>
+<div class="row">
+<h2>Example Code</h2></div>
+<pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;time.h&gt;
+#include "soundpipe.h"
+
+typedef struct {
+    sp_wavin *wavin;
+} UserData;
+
+void process(sp_data *sp, void *udata) {
+    UserData *ud = udata;
+    SPFLOAT wavin = 0;
+    sp_wavin_compute(sp, ud-&gt;wavin, NULL, &wavin);
+    sp-&gt;out[0] = wavin;
+}
+
+int main() {
+    UserData ud;
+    sp_data *sp;
+    sp_create(&sp);
+    sp_srand(sp, 1234567);
+
+    sp_wavin_create(&ud.wavin);
+
+    sp_wavin_init(sp, ud.wavin, "oneart.wav");
+
+    sp-&gt;len = 44100 * 5;
+    sp_process(sp, &ud, process);
+
+    sp_wavin_destroy(&ud.wavin);
+
+    sp_destroy(&sp);
+    return 0;
+}
+</code></pre></div></body></html>
