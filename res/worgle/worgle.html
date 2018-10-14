@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>worgle</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Worgle</h1>
+<a id="What_is_Worgle?">
+<h2>1 What is Worgle?</h2>
+</a>
+<p>Hello, fellow human. I'm glad you could stop by.
+</p>
+<p>This is a document written
+in Org markup, talking about a thing I'm building called Worgle. The name
+<b>Worgle</b> is derived from what it is: a Worg Tangler. <code>Worg</code> is the name of this
+project. It too gets its name from what it is: a WEB + Org project.
+Org is the very decent markup language from org-mode.
+WEB is
+the name of the first literate programming tool ever created by Donald Knuth.
+In literate programming,
+one writes language and code together in a markup language, which can
+then be parsed two ways. The <b>weaver</b> parses the markup to produce a
+human readable document, usually a (La)TeX or HTML file. The <b>tangler</b>
+parses the markup and produces computer code that can be read by a computer
+to run or compile the program.
+</p>
+<p>In other words, Worgle is a literate programming tangler used to convert
+org-like markup into (primarily) code.
+</p>
+<p>Worgle itself is a literate program, so what tangles the worgle code? Orgle
+does! Orgle is a program written in C without literate programming. It is
+designed to be just enough of a program to bootstrap Worgle. Worgle will
+then be used as the tangler for the rest of Worg.
+</p>
+<p>Worgle will initially start out as a literate program of Orgle. In fact,
+this document will initially start out as an outline for the Orgle program.
+The Orgle program will be considered done when it is able to produce a similar
+program by parsing this Worgle document. After that is done, more work will
+be put into Worgle to make it more suitable for managing larger projects
+written in C.
+</p>
+<p>Following me so far? No? Yes? Great, let's get started.
+</p>
+<a id="Top-level_files">
+<h2>2 Top-level files</h2>
+</a>
+<p>Like Orgle, Worgle is self contained inside of a single C file.
+For the time being, this is suitable enough. The current scope of Worgle is
+to be a self-contained standalone CLI application.
+</p>
+<div><b><i>&lt;&lt;worgle-top</b></i>&gt;&gt;=</div>
+<p><code>#include&nbsp;&lt;stdio.h&gt;<br>
+#include&nbsp;&lt;stdlib.h&gt;<br>
+#include&nbsp;&lt;string.h&gt;<br>
+#include&nbsp;"parg.h"<br>
+&lt;&lt;global_variables&gt;&gt;<br>
+&lt;&lt;enums&gt;&gt;<br>
+&lt;&lt;structs&gt;&gt;<br>
+&lt;&lt;static_function_declarations&gt;&gt;<br>
+&lt;&lt;function_declarations&gt;&gt;<br>
+&lt;&lt;functions&gt;&gt;<br>
+int&nbsp;main(int&nbsp;argc,&nbsp;char&nbsp;*argv[])<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;local_variables&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;initialization&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;loading&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parsing&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;generation&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;cleanup&gt;&gt;<br>
+}<br>
+
+</code></p>
+<a id="An_Outline_of_What_Worgle_does">
+<h2>3 An Outline of What Worgle does</h2>
+</a>
+<p>This aims to show a broad overview of how Orgle (and Worgle) will work
+essentially. Orgle is a bootstrap program written in C, used to generate
+C code for Worgle (this program here). At the highest level, the two
+programs share the same basic program structure.
+</p>
+<a id="Initialization">
+<h3>3.1 Initialization</h3>
+</a>
+<a id="Initialize_worgle_data">
+<h4>3.1.1 Initialize worgle data</h4>
+</a>
+<p>Worgle is initialized before stuff is loaded.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>worgle_d&nbsp;worg;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>worgle_init(&worg);<br>
+
+</code></p>
+<a id="Get_and_set_filename">
+<h4>3.1.2 Get and set filename</h4>
+</a>
+<p>The file name is currently aqcuired from the command line, so the
+program must check and make sure that there are the right number of
+arguments. If there isn't, return an error.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>char&nbsp;*filename;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>filename&nbsp;=&nbsp;NULL;<br>
+if(argc&nbsp;&lt;&nbsp;2)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"Usage:&nbsp;%s&nbsp;filename.org\n",&nbsp;argv[0]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+}<br>
+&lt;&lt;parse_cli_args&gt;&gt;<br>
+&lt;&lt;check_filename&gt;&gt;<br>
+
+</code></p>
+<p>Check the filename.
+If the filename is not set inside by the command line, return an error,
+</p>
+<div><b><i>&lt;&lt;check_filename</b></i>&gt;&gt;=</div>
+<p><code>if(filename&nbsp;==&nbsp;NULL)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"No&nbsp;filename&nbsp;specified\n");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+}<br>
+
+</code></p>
+<p>The filename is then set inside of the Worgle struct.
+</p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>worg.filename.str&nbsp;=&nbsp;filename;<br>
+worg.filename.size&nbsp;=&nbsp;strlen(filename);<br>
+
+</code></p>
+<a id="Initialize_return_codes">
+<h4>3.1.3 Initialize return codes</h4>
+</a>
+<a id="Main_Return_Code">
+<h5>3.1.3.1 Main Return Code</h5>
+</a>
+<p>The main return code determines the overall state of the program.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;rc;<br>
+
+</code></p>
+<p>By default, it is set to be okay, which is 0 on POSIX systems.
+</p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>rc&nbsp;=&nbsp;0;<br>
+
+</code></p>
+<a id="Line_Satus_Code">
+<h5>3.1.3.2 Line Satus Code</h5>
+</a>
+<p>The getline function used by the parser returns a status code, which tells
+the program when it has reached the end of the file.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;status;<br>
+
+</code></p>
+<p>This is set to be TRUE (1) by default.
+</p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>status&nbsp;=&nbsp;0;<br>
+
+</code></p>
+<a id="Mode">
+<h5>3.1.3.3 Mode</h5>
+</a>
+<p>The overall parser mode state is set by the local variable <code>mode</code>.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;mode;<br>
+
+</code></p>
+<p>It is set to be the initial mode of <code>MODE_ORG</code>.
+</p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>mode&nbsp;=&nbsp;MODE_ORG;<br>
+
+</code></p>
+<a id="Load_file_into_memory">
+<h3>3.2 Load file into memory</h3>
+</a>
+<p>The first thing the program will do is load the file.
+</p>
+<p>While most parsers tend to parse things on a line by line basis via
+a file stream, this parser will load the entire file into memory. This
+is done due to the textual nature of the program. It is much easier to
+simply allocate everything in one big block and reference chunks, then to
+allocate smaller chunks as you go.
+</p>
+<a id="Open_file">
+<h4>3.2.1 Open file</h4>
+</a>
+<p>File is loaded into a local file handle <code>fp</code>.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>FILE&nbsp;*fp;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;loading</b></i>&gt;&gt;=</div>
+<p><code>fp&nbsp;=&nbsp;fopen(filename,&nbsp;"r");<br>
+if(fp&nbsp;==&nbsp;NULL)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"Could&nbsp;not&nbsp;find&nbsp;file&nbsp;%s\n",&nbsp;argv[1]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+}<br>
+
+</code></p>
+<a id="Get_file_size">
+<h4>3.2.2 Get file size</h4>
+</a>
+<p>The size is acquired by going to the end of the file and getting the current
+file position.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>size_t&nbsp;size;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;loading</b></i>&gt;&gt;=</div>
+<p><code>fseek(fp,&nbsp;0,&nbsp;SEEK_END);<br>
+size&nbsp;=&nbsp;ftell(fp);<br>
+
+</code></p>
+<a id="Allocate_memory,_read,_and_close">
+<h4>3.2.3 Allocate memory, read, and close</h4>
+</a>
+<p>Memory is allocated in a local buffer variable via <code>calloc</code>. The buffer
+is then stored inside of the worg struct.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>char&nbsp;*buf;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;loading</b></i>&gt;&gt;=</div>
+<p><code>buf&nbsp;=&nbsp;calloc(1,&nbsp;size);<br>
+worg.buf&nbsp;=&nbsp;buf;<br>
+
+</code></p>
+<p>The file is rewound back to the beginning and then read into the buffer. The
+file is no longer needed at this point, so it is closed.
+</p>
+<div><b><i>&lt;&lt;loading</b></i>&gt;&gt;=</div>
+<p><code>fseek(fp,&nbsp;0,&nbsp;SEEK_SET);<br>
+fread(buf,&nbsp;size,&nbsp;1,&nbsp;fp);<br>
+fclose(fp);<br>
+
+</code></p>
+<a id="Parsing">
+<h3>3.3 Parsing</h3>
+</a>
+<p>The second phase of the program is the parsing stage.
+</p>
+<p>The parsing stage will parse files line-by-line. The program will find a line
+by skimming through the block up to a line break character, then pass
+that off to be parsed. Line by line, the parser will read the program and
+produce a structure of the tangled code in memory.
+</p>
+<div><b><i>&lt;&lt;parsing</b></i>&gt;&gt;=</div>
+<p><code>while(1)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;getline&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;MODE_ORG)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parse_mode_org&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(mode&nbsp;==&nbsp;MODE_CODE)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parse_mode_code&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(mode&nbsp;==&nbsp;MODE_BEGINCODE)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parse_mode_begincode&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Parser_Local_Variables">
+<h4>3.3.1 Parser Local Variables</h4>
+</a>
+<p>The parsing stage requires a local variable called <code>str</code> to be used from time
+to time. Not sure where else to put this.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>worgle_string&nbsp;str;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>worgle_string_init(&str);<br>
+
+</code></p>
+<p><code>line</code> refers to the pointer address that the line will write to.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>char&nbsp;*line;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>line&nbsp;=&nbsp;NULL;<br>
+
+</code></p>
+<p><code>pos</code> refers to the current buffer position.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>size_t&nbsp;pos;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;initialization</b></i>&gt;&gt;=</div>
+<p><code>pos&nbsp;=&nbsp;0;<br>
+
+</code></p>
+<p>This is the local variable <code>read</code>.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>size_t&nbsp;read;<br>
+
+</code></p>
+<a id="Reading_a_line_at_a_time">
+<h4>3.3.2 Reading a line at a time</h4>
+</a>
+<p>Despite being loaded into memory, the program still reads in code one line
+at a time. The parsing relies on new line feeds to denote the beginnings
+and endings of sections and code references.
+</p>
+<p>Before reading the line, the line number inside worgle is incremented.
+</p>
+<p>A special readline function has been written based on <code>getline</code> that reads
+lines of text from an allocated block of text. This function is called
+<code>worgle_getline</code>.
+</p>
+<p>After the line has been read, the program checks the return code <code>status</code>.
+If all the lines of text have been read, the program breaks out of the
+while loop.
+</p>
+<div><b><i>&lt;&lt;getline</b></i>&gt;&gt;=</div>
+<p><code>worg.linum++;<br>
+status&nbsp;=&nbsp;worgle_getline(buf,&nbsp;&line,&nbsp;&pos,&nbsp;&read,&nbsp;size);<br>
+if(!status)&nbsp;break;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;worgle_getline(char&nbsp;*fullbuf,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;**line,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;*pos,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;*line_size,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;buf_size);<br>
+
+</code></p>
+<p><code>fullbuf</code> refers to the full text buffer.
+</p>
+<p><code>line</code> is a pointer where the current line will be stored.
+</p>
+<p><code>pos</code> is the current buffer position.
+</p>
+<p><code>line_size</code> is a variable written to that returns the size of the line. This
+includes the line break character.
+</p>
+<p><code>buf_size</code> is the size of the whole buffer.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;worgle_getline(char&nbsp;*fullbuf,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;**line,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;*pos,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;*line_size,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;buf_size)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;p;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;*line_size&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;p&nbsp;=&nbsp;*pos;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;*line&nbsp;=&nbsp;&fullbuf[p];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;while(1)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(p&nbsp;&gt;=&nbsp;buf_size)&nbsp;return&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(fullbuf[p]&nbsp;==&nbsp;'\n')&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*pos&nbsp;=&nbsp;p&nbsp;+&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*line_size&nbsp;=&nbsp;s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Parsing_Modes">
+<h4>3.3.3 Parsing Modes</h4>
+</a>
+<p>The parser is implemented as a relatively simple state machine, whose behavior
+shifts between parsing org-mode markup (<code>MODE_ORG</code>), and code blocks
+(<code>MODE_BEGINCODE</code> and <code>MODE_CODE</code>).
+The state machine makes a distinction between the start of a new code
+block (<code>MODE_BEGINCODE</code>), which provides information like the name of
+the code block and optionally the name of the file to tangle to, and
+the code block itself (<code>MODE_CODE</code>).
+</p>
+<div><b><i>&lt;&lt;enums</b></i>&gt;&gt;=</div>
+<p><code>enum&nbsp;{<br>
+&lt;&lt;parse_modes&gt;&gt;<br>
+};<br>
+
+</code></p>
+<a id="MODE_ORG">
+<h5>3.3.3.1 MODE_ORG</h5>
+</a>
+<div><b><i>&lt;&lt;parse_modes</b></i>&gt;&gt;=</div>
+<p><code>MODE_ORG,<br>
+
+</code></p>
+<p>When the parser is in <code>MODE_ORG</code>, it is only searching for the start
+of the next named block. When it finds a match, it extracts the name,
+gets ready to begin the a new block, and changes the mode <code>MODE_BEGINCODE</code>.
+</p>
+<div><b><i>&lt;&lt;parse_mode_org</b></i>&gt;&gt;=</div>
+<p><code>if(read&nbsp;&gt;=&nbsp;7)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(!strncmp(line,&nbsp;"#+NAME:",7))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;MODE_BEGINCODE;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;parse_name(line,&nbsp;read,&nbsp;&str);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_begin_block(&worg,&nbsp;&str);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Extracting_information_from_#+NAME">
+<u><i>3.3.3.1.1 Extracting information from #+NAME</i></u>
+</a>
+<p>Name extraction of the current line is done with a function called <code>parse_name</code>.
+</p>
+<div><b><i>&lt;&lt;static_function_declarations</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;parse_name(char&nbsp;*line,&nbsp;size_t&nbsp;len,&nbsp;worgle_string&nbsp;*str);<br>
+
+</code></p>
+<p># TODO: words here
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;parse_name(char&nbsp;*line,&nbsp;size_t&nbsp;len,&nbsp;worgle_string&nbsp;*str)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;pos;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;line+=7;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;len-=7;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;*namelen&nbsp;=&nbsp;0;&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;str&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(len&nbsp;&lt;=&nbsp;0)&nbsp;return&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pos&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;len;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;2)&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;0:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;str&nbsp;=&nbsp;&line[n];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pos++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;0xa)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pos++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;*namelen&nbsp;=&nbsp;pos;&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+}<br>
+
+</code></p>
+<a id="Beginning_a_new_block">
+<u><i>3.3.3.1.2 Beginning a new block</i></u>
+</a>
+<p>A new code block is started with the function <code>worgle_begin_block</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_begin_block(worgle_d&nbsp;*worg,&nbsp;worgle_string&nbsp;*name);<br>
+
+</code></p>
+<p>When a new block begins, the current block in Worgle is set to be
+a value retrieved from the block dictionary.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_begin_block(worgle_d&nbsp;*worg,&nbsp;worgle_string&nbsp;*name)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worg-&gt;curblock&nbsp;=&nbsp;worgle_hashmap_get(&worg-&gt;dict,&nbsp;name);<br>
+}<br>
+
+</code></p>
+<a id="MODE_BEGINCODE">
+<h5>3.3.3.2 MODE_BEGINCODE</h5>
+</a>
+<div><b><i>&lt;&lt;parse_modes</b></i>&gt;&gt;=</div>
+<p><code>MODE_BEGINCODE,<br>
+
+</code></p>
+<p>A parser set to mode <code>MODE_BEGINCODE</code> is only interested in finding the
+beginning block. If it doesn't, it returns a syntax error. If it does,
+it goes on to extract a potential new filename to tangle, which then
+gets appended to the Worgle file list.
+</p>
+<div><b><i>&lt;&lt;parse_mode_begincode</b></i>&gt;&gt;=</div>
+<p><code>if(read&nbsp;&gt;=&nbsp;11)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(!strncmp(line,&nbsp;"#+BEGIN_SRC",11))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;begin_the_code&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(parse_begin(line,&nbsp;read,&nbsp;&str)&nbsp;==&nbsp;2)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_append_file(&worg,&nbsp;&str);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;continue;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(line,&nbsp;read,&nbsp;1,&nbsp;stderr);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"line&nbsp;%lu:&nbsp;Expected&nbsp;#+BEGIN_SRC\n",&nbsp;worg.linum);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rc&nbsp;=&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+fprintf(stderr,&nbsp;"line&nbsp;%lu:&nbsp;Expected&nbsp;#+BEGIN_SRC\n",&nbsp;worg.linum);<br>
+rc&nbsp;=&nbsp;1;<br>
+
+</code></p>
+<a id="Extracting_information_from_#+BEGIN_SRC">
+<u><i>3.3.3.2.1 Extracting information from #+BEGIN_SRC</i></u>
+</a>
+<p>The begin source flag in org-mode can have a number of options,
+but the only one we really care about for this tangler is
+the ":tangle" option. 
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;parse_begin(char&nbsp;*line,&nbsp;size_t&nbsp;len,&nbsp;worgle_string&nbsp;*str);<br>
+
+</code></p>
+<p>The state machine begins right after the BEGIN_SRC declaration, which
+is why the string is offset by 11.
+</p>
+<p>The state machine for this parser is linear, and has 5 modes:
+</p>
+<p>- mode 0: Skip whitespace after BEGIN_SRC
+- mode 1: Find ":tangle" pattern
+- mode 2: Ignore imediate whitespace after "tangle", and begin getting filename
+- mode 3: Get filename size by reading up to the next space or line break
+- mode 4: Don't do anything, wait for line to end.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;parse_begin(char&nbsp;*line,&nbsp;size_t&nbsp;len,&nbsp;worgle_string&nbsp;*str)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;rc;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;line&nbsp;+=&nbsp;11;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;len&nbsp;-=&nbsp;11;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(len&nbsp;&lt;=&nbsp;0)&nbsp;return&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;n&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rc&nbsp;=&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;str&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;while(n&nbsp;&lt;&nbsp;len)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;0:&nbsp;/*&nbsp;initial&nbsp;spaces&nbsp;after&nbsp;BEGIN_SRC&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;look&nbsp;for&nbsp;:tangle&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;':')&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(!strncmp(line&nbsp;+&nbsp;n&nbsp;+&nbsp;1,&nbsp;"tangle",&nbsp;6))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n+=7;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rc&nbsp;=&nbsp;2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;2:&nbsp;/*&nbsp;save&nbsp;file&nbsp;name,&nbsp;spaces&nbsp;after&nbsp;tangle&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;!=&nbsp;'&nbsp;')&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;str&nbsp;=&nbsp;&line[n];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;3;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;3:&nbsp;/*&nbsp;read&nbsp;up&nbsp;to&nbsp;next&nbsp;space&nbsp;or&nbsp;line&nbsp;break&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;'&nbsp;'&nbsp;||&nbsp;line[n]&nbsp;==&nbsp;'\n')&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;4;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;4:&nbsp;/*&nbsp;countdown&nbsp;til&nbsp;end&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;rc;<br>
+}<br>
+
+</code></p>
+<a id="Setting_up_code_for_a_new_read">
+<u><i>3.3.3.2.2 Setting up code for a new read</i></u>
+</a>
+<p>When a new codeblock has indeed been found, the mode is switched to <code>MODE_CODE</code>,
+and the <code>block_started</code> boolean flag gets set. In addition, the string used
+to keep track of the new block is reset.
+</p>
+<div><b><i>&lt;&lt;begin_the_code</b></i>&gt;&gt;=</div>
+<p><code>mode&nbsp;=&nbsp;MODE_CODE;<br>
+worg.block_started&nbsp;=&nbsp;1;<br>
+worgle_string_reset(&worg.block);<br>
+
+</code></p>
+<a id="Appending_a_new_file">
+<u><i>3.3.3.2.3 Appending a new file</i></u>
+</a>
+<p>If a new file is found, the filename gets appended to the file list
+via the function <code>worgle_append_file</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_append_file(worgle_d&nbsp;*worg,&nbsp;worgle_string&nbsp;*filename);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_append_file(worgle_d&nbsp;*worg,&nbsp;worgle_string&nbsp;*filename)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_filelist_append(&worg-&gt;flist,&nbsp;filename,&nbsp;worg-&gt;curblock);<br>
+}<br>
+
+</code></p>
+<a id="MODE_CODE">
+<h5>3.3.3.3 MODE_CODE</h5>
+</a>
+<div><b><i>&lt;&lt;parse_modes</b></i>&gt;&gt;=</div>
+<p><code>MODE_CODE<br>
+
+</code></p>
+<p>In <code>MODE_CODE</code>, actual code is parsed inside of the code block. The parser will
+keep reading chunks of code until one of two things happen: a code reference
+is found, or the <code>END_SRC</code> command is found.
+</p>
+<div><b><i>&lt;&lt;parse_mode_code</b></i>&gt;&gt;=</div>
+<p><code>if(read&nbsp;&gt;=&nbsp;9)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(!strncmp(line,&nbsp;"#+END_SRC",&nbsp;9))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;MODE_ORG;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worg.block_started&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_append_string(&worg);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;continue;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+if(check_for_reference(line,&nbsp;read,&nbsp;&str))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_append_string(&worg);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_append_reference(&worg,&nbsp;&str);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worg.block_started&nbsp;=&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_string_reset(&worg.block);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;continue;<br>
+}<br>
+worg.block.size&nbsp;+=&nbsp;read;<br>
+if(worg.block_started)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worg.block.str&nbsp;=&nbsp;line;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worg.block_started&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worg.curline&nbsp;=&nbsp;worg.linum;<br>
+}<br>
+
+</code></p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_append_string(worgle_d&nbsp;*worg);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_append_string(worgle_d&nbsp;*worg)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(worg-&gt;curblock&nbsp;==&nbsp;NULL)&nbsp;return;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block_append_string(worg-&gt;curblock,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&worg-&gt;block,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worg-&gt;curline,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&worg-&gt;filename);<br>
+}<br>
+
+</code></p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_append_reference(worgle_d&nbsp;*worg,&nbsp;worgle_string&nbsp;*ref);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_append_reference(worgle_d&nbsp;*worg,&nbsp;worgle_string&nbsp;*ref)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(worg-&gt;curblock&nbsp;==&nbsp;NULL)&nbsp;return;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block_append_reference(worg-&gt;curblock,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ref,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worg-&gt;linum,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&worg-&gt;filename);<br>
+}<br>
+
+</code></p>
+<div><b><i>&lt;&lt;static_function_declarations</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;check_for_reference(char&nbsp;*line&nbsp;,&nbsp;size_t&nbsp;size,&nbsp;worgle_string&nbsp;*str);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;check_for_reference(char&nbsp;*line&nbsp;,&nbsp;size_t&nbsp;size,&nbsp;worgle_string&nbsp;*str)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;str&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;&lt;&nbsp;0)&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;0:&nbsp;/*&nbsp;spaces&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;continue;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;if(line[n]&nbsp;==&nbsp;'&lt;')&nbsp;mode&nbsp;=&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;mode&nbsp;=&nbsp;-1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;second&nbsp;&lt;&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;'&lt;')&nbsp;mode&nbsp;=&nbsp;2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;mode&nbsp;=&nbsp;-1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;2:&nbsp;/*&nbsp;word&nbsp;setup&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;str&nbsp;=&nbsp;&line[n];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;3;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;3:&nbsp;/*&nbsp;the&nbsp;word&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;'&gt;')&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;4;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;4:&nbsp;/*&nbsp;last&nbsp;&gt;&nbsp;*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(line[n]&nbsp;==&nbsp;'&gt;')&nbsp;mode&nbsp;=&nbsp;5;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;mode&nbsp;=&nbsp;-1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;(mode&nbsp;==&nbsp;5);<br>
+}<br>
+
+</code></p>
+<a id="Generation">
+<h3>3.4 Generation</h3>
+</a>
+<p>The last phase of the program is code generation.
+</p>
+<p>A parsed file generates a structure of how the code will look. The generation
+stage involves iterating through the structure and producing the code.
+</p>
+<p>Due to the hierarchical nature of the data structures,
+the generation stage is surprisingly elegant with a single expanding entry
+point.
+</p>
+<p>At the very top, generation
+consists of writing all the files in the filelist. Each file will then go
+and write the top-most block associated with that file. A block will then
+write the segment list it has embedded inside of it. A segment will either
+write a string literal to disk, or a recursively expand block reference.
+</p>
+<div><b><i>&lt;&lt;generation</b></i>&gt;&gt;=</div>
+<p><code>if(!rc)&nbsp;if(!worgle_generate(&worg))&nbsp;rc&nbsp;=&nbsp;1;<br>
+
+</code></p>
+<p>If the <code>use_warnings</code> flag is turned on, Worgle will scan the dictionary
+after generation and flag warnings about any unused blocks.
+</p>
+<div><b><i>&lt;&lt;generation</b></i>&gt;&gt;=</div>
+<p><code>if(use_warnings)&nbsp;rc&nbsp;=&nbsp;worgle_warn_unused(&worg);<br>
+
+</code></p>
+<a id="Cleanup">
+<h3>3.5 Cleanup</h3>
+</a>
+<p>At the end up the program, all allocated memory is freed via <code>worgle_free</code>.
+</p>
+<div><b><i>&lt;&lt;cleanup</b></i>&gt;&gt;=</div>
+<p><code>worgle_free(&worg);<br>
+return&nbsp;rc;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_generate(worgle_d&nbsp;*worg);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_generate(worgle_d&nbsp;*worg)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;worgle_filelist_write(&worg-&gt;flist,&nbsp;&worg-&gt;dict);<br>
+}<br>
+
+</code></p>
+<a id="Core_Data_Structures">
+<h2>4 Core Data Structures</h2>
+</a>
+<p>The Worgle/Orgle program is very much a data-structure driven program.
+Understanding the hierarchy of data here will provide a clear picture for
+how the tangling works.
+</p>
+<div><b><i>&lt;&lt;structs</b></i>&gt;&gt;=</div>
+<p><code>&lt;&lt;worgle_string&gt;&gt;<br>
+&lt;&lt;worgle_segment&gt;&gt;<br>
+&lt;&lt;worgle_block&gt;&gt;<br>
+&lt;&lt;worgle_blocklist&gt;&gt;<br>
+&lt;&lt;worgle_hashmap&gt;&gt;<br>
+&lt;&lt;worgle_file&gt;&gt;<br>
+&lt;&lt;worgle_filelist&gt;&gt;<br>
+&lt;&lt;worgle_struct&gt;&gt;<br>
+
+</code></p>
+<a id="Top_Level_Struct">
+<h3>4.1 Top Level Struct</h3>
+</a>
+<p>All Worgle operations are contained in a top-level struct called <code>worgle_d</code>.
+For the most part, this struct aims to be dynamically populated.
+</p>
+<div><b><i>&lt;&lt;worgle_struct</b></i>&gt;&gt;=</div>
+<p><code>typedef&nbsp;struct&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;worgle_struct_contents&gt;&gt;<br>
+}&nbsp;worgle_d;<br>
+
+</code></p>
+<a id="Worgle_Initialization">
+<h4>4.1.1 Worgle Initialization</h4>
+</a>
+<p>Worgle data is initialized using the function <code>worgle_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_init(worgle_d&nbsp;*worg);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_init(worgle_d&nbsp;*worg)<br>
+{<br>
+&lt;&lt;worgle_init&gt;&gt;<br>
+}<br>
+
+</code></p>
+<a id="Worgle_Deallocation">
+<h4>4.1.2 Worgle Deallocation</h4>
+</a>
+<p>When worgle is done, the program deallocates memory using the function
+<code>worgle_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_free(worgle_d&nbsp;*worg);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_free(worgle_d&nbsp;*worg)<br>
+{<br>
+&lt;&lt;worgle_free&gt;&gt;<br>
+}<br>
+
+</code></p>
+<a id="Worgle_Data">
+<h4>4.1.3 Worgle Data</h4>
+</a>
+<a id="Current_Block_Name">
+<h5>4.1.3.1 Current Block Name</h5>
+</a>
+<p>The name of current block being parsed is stored in a variable called
+<code>block</code>.
+# this needs to be renamed.
+# this needs to be explained better: why not use the name in curblock?
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>worgle_string&nbsp;block;&nbsp;/*&nbsp;TODO:&nbsp;rename&nbsp;*/<br>
+
+</code></p>
+<p>It is initialized to be an empty string.
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worgle_string_init(&worg-&gt;block);<br>
+
+</code></p>
+<a id="Current_Line">
+<h5>4.1.3.2 Current Line</h5>
+</a>
+<p>The starting line number of the current block is stored in a variable called
+<code>curline</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>size_t&nbsp;curline;<br>
+
+</code></p>
+<p>The current line is initialized to be negative value to mark that it has not
+been set yet.
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worg-&gt;curline&nbsp;=&nbsp;-1;<br>
+
+</code></p>
+<a id="Block_Started_Flag">
+<h5>4.1.3.3 Block Started Flag</h5>
+</a>
+<p>The block started flag is used by the parser to check whether or not a code
+block was started on the last iteration.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;block_started;<br>
+
+</code></p>
+<p>It is set to be FALSE (0).
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worg-&gt;block_started&nbsp;=&nbsp;0;<br>
+
+</code></p>
+<a id="Dictionary">
+<h5>4.1.3.4 Dictionary</h5>
+</a>
+<p>All code blocks are stored in a dictionary, also referred to here as a hash map.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>worgle_hashmap&nbsp;dict;<br>
+
+</code></p>
+<p>The dictionary is initialized using the function <code>worgle_hashmap_init</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worgle_hashmap_init(&worg-&gt;dict);<br>
+
+</code></p>
+<p>When free-ing time comes around, the hashmap will free itself using the function
+<code>worgle_hashmap_free</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_free</b></i>&gt;&gt;=</div>
+<p><code>worgle_hashmap_free(&worg-&gt;dict);<br>
+
+</code></p>
+<a id="File_List">
+<h5>4.1.3.5 File List</h5>
+</a>
+<p>All files to be written to are stored in a local file list called <code>flist</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>worgle_filelist&nbsp;flist;<br>
+
+</code></p>
+<p>Initialization.
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worgle_filelist_init(&worg-&gt;flist);<br>
+
+</code></p>
+<p>Destruction.
+</p>
+<div><b><i>&lt;&lt;worgle_free</b></i>&gt;&gt;=</div>
+<p><code>worgle_filelist_free(&worg-&gt;flist);<br>
+
+</code></p>
+<a id="Text_Buffer">
+<h5>4.1.3.6 Text Buffer</h5>
+</a>
+<p>The text file parsed is loaded into memory and stored into a buffer called <code>buf</code>
+</p>
+<p># TODO: put this into a data struct so that multiple org files can be read at
+# once
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>char&nbsp;*buf;<br>
+
+</code></p>
+<p>The loaded happens after initialization, so the buffer is set to be NULL for
+now.
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worg-&gt;buf&nbsp;=&nbsp;NULL;<br>
+
+</code></p>
+<p>If the buffer is non-null, the memory will be freed.
+</p>
+<div><b><i>&lt;&lt;worgle_free</b></i>&gt;&gt;=</div>
+<p><code>if(worg-&gt;buf&nbsp;!=&nbsp;NULL)&nbsp;free(worg-&gt;buf);<br>
+
+</code></p>
+<a id="Current_Block">
+<h5>4.1.3.7 Current Block</h5>
+</a>
+<p>A pointer to the currently populated code block is stored in a variable called
+<code>curblock</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>worgle_block&nbsp;*curblock;<br>
+
+</code></p>
+<p>There is no block on startup, so set it to be NULL.
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worg-&gt;curblock&nbsp;=&nbsp;NULL;<br>
+
+</code></p>
+<a id="Line_Number">
+<h5>4.1.3.8 Line Number</h5>
+</a>
+<p>The currently parsed line number is stored in a variable called <code>linum</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>size_t&nbsp;linum;<br>
+
+</code></p>
+<p>The line number is incremented, so the starting value starts at 0. Line 1 is
+the first line. Do not be tempted to set this to be -1, because it won't work.
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worg-&gt;linum&nbsp;=&nbsp;0;<br>
+
+</code></p>
+<a id="Filename">
+<h5>4.1.3.9 Filename</h5>
+</a>
+<p>The filename is stored inside of a worgle string called <code>filename</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents</b></i>&gt;&gt;=</div>
+<p><code>worgle_string&nbsp;filename;<br>
+
+</code></p>
+<p>This values does not get set on init, but it is zeroed out and initialized.
+</p>
+<div><b><i>&lt;&lt;worgle_init</b></i>&gt;&gt;=</div>
+<p><code>worgle_string_init(&worg-&gt;filename);<br>
+
+</code></p>
+<a id="String">
+<h3>4.2 String</h3>
+</a>
+<p>A string is a wrapper around a raw <code>char</code> pointer and a size. This is used
+as the base string literal.
+</p>
+<div><b><i>&lt;&lt;worgle_string</b></i>&gt;&gt;=</div>
+<p><code>typedef&nbsp;struct&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*str;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size;<br>
+}&nbsp;worgle_string;<br>
+
+</code></p>
+<a id="Reset_or_initialize_a_string">
+<h4>4.2.1 Reset or initialize a string</h4>
+</a>
+<p>Strings in worgle are reset with the function <code>worgle_string_reset</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_string_reset(worgle_string&nbsp;*str);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_string_reset(worgle_string&nbsp;*str)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;str&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str-&gt;size&nbsp;=&nbsp;0;<br>
+}<br>
+
+</code></p>
+<p>A string being initialized is identical to a string being reset. The function
+<code>worgle_string_init</code> is just a wrapper around <code>worgle_string_reset</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_string_init(worgle_string&nbsp;*str);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_string_init(worgle_string&nbsp;*str)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_string_reset(str);<br>
+}<br>
+
+</code></p>
+<a id="Writing_a_String">
+<h4>4.2.2 Writing a String</h4>
+</a>
+<p>A string is written to a particular filehandle with the function
+<code>worgle_string_write</code>.Worgle strings are <b>not</b> zero-terminated
+and can't be used in functions like printf.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_string_write(FILE&nbsp;*fp,&nbsp;worgle_string&nbsp;*str);<br>
+
+</code></p>
+<p>This function is a wrapper around a call to <code>fwrite</code>.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_string_write(FILE&nbsp;*fp,&nbsp;worgle_string&nbsp;*str)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;fwrite(str-&gt;str,&nbsp;1,&nbsp;str-&gt;size,&nbsp;fp);<br>
+}<br>
+
+</code></p>
+<a id="Segment">
+<h3>4.3 Segment</h3>
+</a>
+<p>A segment turns a string into a linked list component that has a type.
+A segment type flag can either be a text chunk or a reference.
+</p>
+<div><b><i>&lt;&lt;worgle_segment</b></i>&gt;&gt;=</div>
+<p><code>enum&nbsp;{<br>
+&lt;&lt;worgle_segment_types&gt;&gt;<br>
+};<br>
+typedef&nbsp;struct&nbsp;worgle_segment&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;type;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;str;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;worgle_segment_line_control&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;worgle_segment&nbsp;*nxt;<br>
+}&nbsp;worgle_segment;<br>
+
+</code></p>
+<p>Segments also keep track of where they are in the original org file.
+This information can be used to generate line control preprocessor commands
+for C/C++.
+</p>
+<div><b><i>&lt;&lt;worgle_segment_line_control</b></i>&gt;&gt;=</div>
+<p><code>size_t&nbsp;linum;<br>
+worgle_string&nbsp;*filename;<br>
+
+</code></p>
+<a id="Text_Chunk_Type">
+<h4>4.3.1 Text Chunk Type</h4>
+</a>
+<p>A text chunk is a literal string of text.
+</p>
+<p>When a text chunk segment is processed, it gets written to file directly.
+</p>
+<div><b><i>&lt;&lt;worgle_segment_types</b></i>&gt;&gt;=</div>
+<p><code>SEGTYPE_TEXT,<br>
+
+</code></p>
+<a id="Reference_Type">
+<h4>4.3.2 Reference Type</h4>
+</a>
+<p>A reference contains a string reference to another block.
+</p>
+<p>When a reference
+segment gets processed, it looks up the reference and processes all the
+segements in that code block.
+</p>
+<div><b><i>&lt;&lt;worgle_segment_types</b></i>&gt;&gt;=</div>
+<p><code>SEGTYPE_REFERENCE<br>
+
+</code></p>
+<a id="Initializing_a_Segment">
+<h4>4.3.3 Initializing a Segment</h4>
+</a>
+<p>A segment is initialized with the function <code>worgle_segment_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_segment_init(worgle_segment&nbsp;*s,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;type,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*str,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*filename,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;linum);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_segment_init(worgle_segment&nbsp;*s,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;type,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*str,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*filename,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;linum)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;s-&gt;type&nbsp;=&nbsp;type;<br>
+&nbsp;&nbsp;&nbsp;s-&gt;str&nbsp;=&nbsp;*str;<br>
+&nbsp;&nbsp;&nbsp;s-&gt;filename&nbsp;=&nbsp;filename;<br>
+&nbsp;&nbsp;&nbsp;s-&gt;linum&nbsp;=&nbsp;linum;<br>
+}<br>
+
+</code></p>
+<a id="Writing_a_Segment">
+<h4>4.3.4 Writing a Segment</h4>
+</a>
+<p>A segment is written to a file handle using the function <code>worgle_segment_write</code>.
+In addition to taking in a filehandle and segment, a hashmap is also passed
+in in the event that the segment is a reference.
+</p>
+<p>On sucess, the function returns TRUE (1). On failure, FALSE (0).
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_segment_write(worgle_segment&nbsp;*s,&nbsp;worgle_hashmap&nbsp;*h,&nbsp;FILE&nbsp;*fp);<br>
+
+</code></p>
+<p>Different behaviors happen depending on the segment type.
+</p>
+<p>If the segment is a chunk of text (<code>SEGTYPE_TEXT</code>), then the string
+is written. If the <code>use_debug</code> global variable is enabled, then C preprocessor
+macros are written indicating the position from the original file. This
+only needs to happen for text blocks and not references.
+</p>
+<p>If the segment is a reference (<code>SEGTYPE_REFERENCE</code>), the
+function attempts to look up a block and write it to disk. If it cannot
+find the reference, a warning is flashed to screen. If the warning
+mode is soft, the error code returns TRUE. If warning errors are turned on,
+it returns FALSE.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_segment_write(worgle_segment&nbsp;*s,&nbsp;worgle_hashmap&nbsp;*h,&nbsp;FILE&nbsp;*fp)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(s-&gt;type&nbsp;==&nbsp;SEGTYPE_TEXT)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(use_debug)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(fp,&nbsp;"#line&nbsp;%lu&nbsp;\"",&nbsp;s-&gt;linum);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string_write(fp,&nbsp;s-&gt;filename);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(fp,&nbsp;"\"\n");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string_write(fp,&nbsp;&s-&gt;str);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(!worgle_hashmap_find(h,&nbsp;&s-&gt;str,&nbsp;&b))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"Warning:&nbsp;could&nbsp;not&nbsp;find&nbsp;reference&nbsp;segment&nbsp;'");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string_write(stderr,&nbsp;&s-&gt;str);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"'\n");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(use_warnings&nbsp;==&nbsp;2)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;worgle_block_write(b,&nbsp;h,&nbsp;fp);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+}<br>
+
+</code></p>
+<a id="Code_Block">
+<h3>4.4 Code Block</h3>
+</a>
+<p>A code block is a top-level unit that stores some amount of code. It is
+made up of a list of segments. Every code block has a unique name.
+</p>
+<div><b><i>&lt;&lt;worgle_block</b></i>&gt;&gt;=</div>
+<p><code>typedef&nbsp;struct&nbsp;worgle_block&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;nsegs;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_segment&nbsp;*head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_segment&nbsp;*tail;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;name;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;am_i_used;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;worgle_block&nbsp;*nxt;<br>
+}&nbsp;worgle_block;<br>
+
+</code></p>
+<a id="Initializing_a_code_block">
+<h4>4.4.1 Initializing a code block</h4>
+</a>
+<p>A worgle code block is initialized using the function <code>worgle_block_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_init(worgle_block&nbsp;*b);<br>
+
+</code></p>
+<p>The initialization will zero out all the variables related to the segment
+linked list, as well as initialize the string holding the name of the block.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_init(worgle_block&nbsp;*b)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;nsegs&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;head&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;tail&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;nxt&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;am_i_used&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_string_init(&b-&gt;name);<br>
+}<br>
+
+</code></p>
+<a id="Freeing_a_code_block">
+<h4>4.4.2 Freeing a code block</h4>
+</a>
+<p>A code block is freed using the function <code>worgle_block_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_free(worgle_block&nbsp;*lst);<br>
+
+</code></p>
+<p>This function iterates through the segment linked list contained
+inside the block, and frees each one. Since there is nothing to
+free below a segment, the standard free function is called directly.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_free(worgle_block&nbsp;*lst)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_segment&nbsp;*s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_segment&nbsp;*nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;lst-&gt;head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;lst-&gt;nsegs;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nxt&nbsp;=&nbsp;s-&gt;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;free(s);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Appending_a_segment_to_a_code_block">
+<h4>4.4.3 Appending a segment to a code block</h4>
+</a>
+<p>A generic segment is appended to a code block with the function.
+<code>worgle_block_append_segment</code>.
+The block <code>b</code>, name of the block <code>str</code>, and type <code>type</code> are mandatory parameters
+which describe the segment. The location in the file is also required, so the
+line number <code>linum</code> and name of file <code>filename</code> are also provided as well.
+This function is called inside of a type-specific append function instead of
+being called directly.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_append_segment(worgle_block&nbsp;*b,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*str,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;type,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;linum,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*filename);<br>
+
+</code></p>
+<p>It is worthwhile to note that it is in this function that a data
+segment type gets allocated.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_append_segment(worgle_block&nbsp;*b,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*str,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;type,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;linum,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*filename)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_segment&nbsp;*s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;malloc(sizeof(worgle_segment));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(b-&gt;nsegs&nbsp;==&nbsp;0)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;head&nbsp;=&nbsp;s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;tail&nbsp;=&nbsp;s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_segment_init(s,&nbsp;type,&nbsp;str,&nbsp;filename,&nbsp;linum);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;tail-&gt;nxt&nbsp;=&nbsp;s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;tail&nbsp;=&nbsp;s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;nsegs++;<br>
+}<br>
+
+</code></p>
+<a id="Appending_a_string_segment">
+<h5>4.4.3.1 Appending a string segment</h5>
+</a>
+<p>A string segment is appended to a code block using the function
+<code>worgle_block_append_string</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_append_string(worgle_block&nbsp;*b,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*str,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;linum,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*filename);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_append_string(worgle_block&nbsp;*b,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*str,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;linum,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*filename)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block_append_segment(b,&nbsp;str,&nbsp;SEGTYPE_TEXT,&nbsp;linum,&nbsp;filename);<br>
+}<br>
+
+</code></p>
+<a id="Appending_a_reference_segment">
+<h5>4.4.3.2 Appending a reference segment</h5>
+</a>
+<p>A reference segment is appended to a code block using the function
+<code>worgle_block_append_reference</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_append_reference(worgle_block&nbsp;*b,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*str,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;linum,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*filename);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_block_append_reference(worgle_block&nbsp;*b,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*str,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;linum,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*filename)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block_append_segment(b,&nbsp;str,&nbsp;SEGTYPE_REFERENCE,&nbsp;linum,&nbsp;filename);<br>
+}<br>
+
+</code></p>
+<a id="Appending_a_code_block_to_a_code_block">
+<h4>4.4.4 Appending a code block to a code block</h4>
+</a>
+<p>In both CWEB and Org-tangle, existing code blocks can be appeneded to in
+different sections. Because of how this program works, we get this functionality
+for free!
+</p>
+<a id="Writing_a_code_block_to_filehandle">
+<h4>4.4.5 Writing a code block to filehandle</h4>
+</a>
+<p>Writing a code block to a filehandle can be done using the function
+<code>worgle_block_write</code>. In addition to the file handle <code>fp</code>, an org block
+requires a hashmap, which is required in the lower level function
+<code>orgle_segment_write</code> for expanding code references.
+</p>
+<p>This function returns a boolean TRUE (1) on success or FALSE (0) on failure.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_block_write(worgle_block&nbsp;*b,&nbsp;worgle_hashmap&nbsp;*h,&nbsp;FILE&nbsp;*fp);<br>
+
+</code></p>
+<p>A code block iterates it's segment list, writing each segment to disk.
+A block will also be marked as being used, which is useful for supplying
+warning information later.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_block_write(worgle_block&nbsp;*b,&nbsp;worgle_hashmap&nbsp;*h,&nbsp;FILE&nbsp;*fp)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_segment&nbsp;*s;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;b-&gt;head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;am_i_used&nbsp;=&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;b-&gt;nsegs;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(!worgle_segment_write(s,&nbsp;h,&nbsp;fp))&nbsp;return&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;s-&gt;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+}<br>
+
+</code></p>
+<a id="Code_Block_List">
+<h3>4.5 Code Block List</h3>
+</a>
+<p>A code block list is a linked list of blocks, which is used inside of a
+hash map.
+</p>
+<div><b><i>&lt;&lt;worgle_blocklist</b></i>&gt;&gt;=</div>
+<p><code>typedef&nbsp;struct&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;nblocks;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*tail;<br>
+}&nbsp;worgle_blocklist;<br>
+
+</code></p>
+<a id="Block_List_Initialization">
+<h4>4.5.1 Block List Initialization</h4>
+</a>
+<p>A block list is initialized using the function <code>worgle_blocklist_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_blocklist_init(worgle_blocklist&nbsp;*lst);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_blocklist_init(worgle_blocklist&nbsp;*lst)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lst-&gt;head&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lst-&gt;tail&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lst-&gt;nblocks&nbsp;=&nbsp;0;<br>
+}<br>
+
+</code></p>
+<a id="Freeing_a_Block_List">
+<h4>4.5.2 Freeing a Block List</h4>
+</a>
+<p>Blocks allocated by the block list are freed using the function
+<code>worgle_blocklist_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_blocklist_free(worgle_blocklist&nbsp;*lst);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_blocklist_free(worgle_blocklist&nbsp;*lst)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;lst-&gt;head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;lst-&gt;nblocks;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nxt&nbsp;=&nbsp;b-&gt;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_block_free(b);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;free(b);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Appending_a_Block">
+<h4>4.5.3 Appending a Block</h4>
+</a>
+<p>An allocated block is appended to a block list using the function
+<code>worgle_blocklist_append</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_blocklist_append(worgle_blocklist&nbsp;*lst,&nbsp;worgle_block&nbsp;*b);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_blocklist_append(worgle_blocklist&nbsp;*lst,&nbsp;worgle_block&nbsp;*b)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(lst-&gt;nblocks&nbsp;==&nbsp;0)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lst-&gt;head&nbsp;=&nbsp;b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lst-&gt;tail&nbsp;=&nbsp;b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lst-&gt;tail-&gt;nxt&nbsp;=&nbsp;b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lst-&gt;tail&nbsp;=&nbsp;b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lst-&gt;nblocks++;<br>
+}<br>
+
+</code></p>
+<a id="Hash_Map">
+<h3>4.6 Hash Map</h3>
+</a>
+<p>A hash map is a key-value data structure used as a dictionary for storing
+references to code blocks.
+</p>
+<div><b><i>&lt;&lt;worgle_hashmap</b></i>&gt;&gt;=</div>
+<p><code>#define&nbsp;HASH_SIZE&nbsp;256<br>
+typedef&nbsp;struct&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_blocklist&nbsp;blk[HASH_SIZE];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;nwords;<br>
+}&nbsp;worgle_hashmap;<br>
+
+</code></p>
+<a id="Hash_map_Initialization">
+<h4>4.6.1 Hash map Initialization</h4>
+</a>
+<p>A hash map is initialized using the function <code>worgle_hashmap_init</code>
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_hashmap_init(worgle_hashmap&nbsp;*h);<br>
+
+</code></p>
+<p>A hashmap is composed of an array of block lists which must be initialized.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_hashmap_init(worgle_hashmap&nbsp;*h)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;h-&gt;nwords&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;HASH_SIZE;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_blocklist_init(&h-&gt;blk[n]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Freeing_a_Hash_Map">
+<h4>4.6.2 Freeing a Hash Map</h4>
+</a>
+<p>Information allocated inside the hash map is freed using the function
+<code>worgle_hashmap_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_hashmap_free(worgle_hashmap&nbsp;*h);<br>
+
+</code></p>
+<p>To free a hash map is to free each block list in the array.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_hashmap_free(worgle_hashmap&nbsp;*h)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;HASH_SIZE;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_blocklist_free(&h-&gt;blk[n]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Looking_up_an_entry">
+<h4>4.6.3 Looking up an entry</h4>
+</a>
+<p>A hashmap lookup can be done with the function <code>worgle_hashmap_find</code>.
+This will attempt to look for a value with the key value <code>name</code>, and
+save it in the block pointer <code>b</code>. If nothing is found, the function returns
+FALSE (0). On success, TRUE (1).
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_hashmap_find(worgle_hashmap&nbsp;*h,&nbsp;worgle_string&nbsp;*name,&nbsp;worgle_block&nbsp;**b);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>&lt;&lt;hashmap_hasher&gt;&gt;<br>
+int&nbsp;worgle_hashmap_find(worgle_hashmap&nbsp;*h,&nbsp;worgle_string&nbsp;*name,&nbsp;worgle_block&nbsp;**b)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;pos;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_blocklist&nbsp;*lst;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*blk;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pos&nbsp;=&nbsp;hash(name-&gt;str,&nbsp;name-&gt;size);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lst&nbsp;=&nbsp;&h-&gt;blk[pos];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;blk&nbsp;=&nbsp;lst-&gt;head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;lst-&gt;nblocks;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(name-&gt;size&nbsp;==&nbsp;blk-&gt;name.size)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(!strncmp(name-&gt;str,&nbsp;blk-&gt;name.str,&nbsp;name-&gt;size))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*b&nbsp;=&nbsp;blk;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blk&nbsp;=&nbsp;blk-&gt;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
+}<br>
+
+</code></p>
+<p>Like any hashmap, a hashing algorithm is used to to compute which list to place
+the entry in. This is one I've used on a number of projects now.
+</p>
+<div><b><i>&lt;&lt;hashmap_hasher</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;hash(const&nbsp;char&nbsp;*str,&nbsp;size_t&nbsp;size)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;unsigned&nbsp;int&nbsp;h&nbsp;=&nbsp;5381;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;i&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;size;&nbsp;i++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;h&nbsp;=&nbsp;((h&nbsp;&lt;&lt;&nbsp;5)&nbsp;+&nbsp;h)&nbsp;^&nbsp;str[i];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;h&nbsp;%=&nbsp;0x7FFFFFFF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;h&nbsp;%&nbsp;HASH_SIZE;<br>
+}<br>
+
+</code></p>
+<a id="Getting_an_entry">
+<h4>4.6.4 Getting an entry</h4>
+</a>
+<p>To "get" an entry means to return a block if it exists or not. Return
+an entry that exists, or make a new one. This can be done with the function
+<code>worgle_hashmap_get</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>worgle_block&nbsp;*&nbsp;worgle_hashmap_get(worgle_hashmap&nbsp;*h,&nbsp;worgle_string&nbsp;*name);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>worgle_block&nbsp;*&nbsp;worgle_hashmap_get(worgle_hashmap&nbsp;*h,&nbsp;worgle_string&nbsp;*name)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_blocklist&nbsp;*lst;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;pos;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(worgle_hashmap_find(h,&nbsp;name,&nbsp;&b))&nbsp;return&nbsp;b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pos&nbsp;=&nbsp;hash(name-&gt;str,&nbsp;name-&gt;size);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;malloc(sizeof(worgle_block));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block_init(b);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b-&gt;name&nbsp;=&nbsp;*name;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lst&nbsp;=&nbsp;&h-&gt;blk[pos];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_blocklist_append(lst,&nbsp;b);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;b;<br>
+}<br>
+
+</code></p>
+<a id="File">
+<h3>4.7 File</h3>
+</a>
+<p>A worgle file is an abstraction for a single file worgle will write to. Every
+file has a filename, and a top-level code block. A worgle does not have a
+filehandle. Files will only be created at the generation stage.
+</p>
+<div><b><i>&lt;&lt;worgle_file</b></i>&gt;&gt;=</div>
+<p><code>typedef&nbsp;struct&nbsp;worgle_file&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;filename;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*top;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;worgle_file&nbsp;*nxt;<br>
+}&nbsp;worgle_file;<br>
+
+</code></p>
+<a id="Writing_A_File_to_a_filehandle">
+<h4>4.7.1 Writing A File to a filehandle</h4>
+</a>
+<p>A file is writen to a filehandle using the function <code>worgle_file_write</code>.
+A hashmap is also required because it contains all the named code blocks
+needed for any code expansion.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_file_write(worgle_file&nbsp;*f,&nbsp;worgle_hashmap&nbsp;*h);<br>
+
+</code></p>
+<p>A filehandle is opened, the top-most code block is written using
+<code>worgle_block_write</code>, and then the file is closed.
+</p>
+<p>Because worgle strings are not zero terminated, they must be copied to a
+temporary string buffer with a null terminator. Any filename greater than
+127 characters will be truncated.
+</p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_file_write(worgle_file&nbsp;*f,&nbsp;worgle_hashmap&nbsp;*h)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*fp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;tmp[128];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;rc;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(f-&gt;filename.size&nbsp;&gt;&nbsp;128)&nbsp;size&nbsp;=&nbsp;127;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;size&nbsp;=&nbsp;f-&gt;filename.size;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;tmp[n]&nbsp;=&nbsp;f-&gt;filename.str[n];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tmp[size]&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fp&nbsp;=&nbsp;fopen(tmp,&nbsp;"w");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rc&nbsp;=&nbsp;worgle_block_write(f-&gt;top,&nbsp;h,&nbsp;fp);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fclose(fp);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;rc;<br>
+}<br>
+
+</code></p>
+<a id="The_File_List">
+<h3>4.8 The File List</h3>
+</a>
+<p>A file list is a linked list of worgle files.
+</p>
+<div><b><i>&lt;&lt;worgle_filelist</b></i>&gt;&gt;=</div>
+<p><code>typedef&nbsp;struct&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_file&nbsp;*head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_file&nbsp;*tail;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;nfiles;<br>
+}&nbsp;worgle_filelist;<br>
+
+</code></p>
+<a id="Initializing_a_file_list">
+<h4>4.8.1 Initializing a file list</h4>
+</a>
+<p>A file list is zeroed out and initialized using the function
+<code>worgle_filelist_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_filelist_init(worgle_filelist&nbsp;*flist);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_filelist_init(worgle_filelist&nbsp;*flist)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;flist-&gt;head&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;flist-&gt;tail&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;flist-&gt;nfiles&nbsp;=&nbsp;0;<br>
+}<br>
+
+</code></p>
+<a id="Freeing_a_file_list">
+<h4>4.8.2 Freeing a file list</h4>
+</a>
+<p>A filelist is freed using the function <code>worgle_filelist_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_filelist_free(worgle_filelist&nbsp;*flist);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_filelist_free(worgle_filelist&nbsp;*flist)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_file&nbsp;*f;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_file&nbsp;*nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;=&nbsp;flist-&gt;head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;flist-&gt;nfiles;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nxt&nbsp;=&nbsp;f-&gt;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;free(f);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;=&nbsp;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Appending_a_file_to_a_file_list">
+<h4>4.8.3 Appending a file to a file list</h4>
+</a>
+<p>A file is appended to the file list using the function <code>worgle_filelist_append</code>.
+The name, as well as the well as the top-level code block are required here.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_filelist_append(worgle_filelist&nbsp;*flist,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*top);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>void&nbsp;worgle_filelist_append(worgle_filelist&nbsp;*flist,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string&nbsp;*name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*top)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_file&nbsp;*f;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;=&nbsp;malloc(sizeof(worgle_file));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;f-&gt;filename&nbsp;=&nbsp;*name;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;f-&gt;top&nbsp;=&nbsp;top;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if(flist-&gt;nfiles&nbsp;==&nbsp;0)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;flist-&gt;head&nbsp;=&nbsp;f;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;flist-&gt;tail&nbsp;=&nbsp;f;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;flist-&gt;tail-&gt;nxt&nbsp;=&nbsp;f;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;flist-&gt;tail&nbsp;=&nbsp;f;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;flist-&gt;nfiles++;<br>
+}<br>
+
+</code></p>
+<a id="Writing_a_filelist_to_disk">
+<h4>4.8.4 Writing a filelist to disk</h4>
+</a>
+<p>A file list can be appended using the function <code>worgle_filelist_write</code>.
+</p>
+<p>A hashmap containing all named code blocks all that is required.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_filelist_write(worgle_filelist&nbsp;*flist,&nbsp;worgle_hashmap&nbsp;*h);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_filelist_write(worgle_filelist&nbsp;*flist,&nbsp;worgle_hashmap&nbsp;*h)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_file&nbsp;*f;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;=&nbsp;flist-&gt;head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;flist-&gt;nfiles;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(!worgle_file_write(f,&nbsp;h))&nbsp;return&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;=&nbsp;f-&gt;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+}<br>
+
+</code></p>
+<a id="Command_Line_Arguments">
+<h2>5 Command Line Arguments</h2>
+</a>
+<p>This section outlines command line arguments in Worgle.
+</p>
+<a id="Parsing_command_line_flags">
+<h3>5.1 Parsing command line flags</h3>
+</a>
+<p>Command line argument parsing is done using the third-party library
+<a href="https://github.com/jibsen/parg">parg</a>, included in this source distribution.
+</p>
+<div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
+<p><code>struct&nbsp;parg_state&nbsp;ps;<br>
+int&nbsp;c;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;parse_cli_args</b></i>&gt;&gt;=</div>
+<p><code>parg_init(&ps);<br>
+while((c&nbsp;=&nbsp;parg_getopt(&ps,&nbsp;argc,&nbsp;argv,&nbsp;"gW:"))&nbsp;!=&nbsp;-1)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;switch(c)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filename&nbsp;=&nbsp;(char&nbsp;*)ps.optarg;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'g':<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;turn_on_debug_macros&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'W':<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;turn_on_warnings&gt;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"Unknown&nbsp;option&nbsp;-%c\n",&nbsp;c);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+
+</code></p>
+<a id="Turning_on_debug_macros_(-g)">
+<h3>5.2 Turning on debug macros (-g)</h3>
+</a>
+<p>Worgle has the ability to generate debug macros when generating C files.
+</p>
+<p>This will turn on a boolean flag called <code>use_debug</code> inside the worgle struct.
+</p>
+<div><b><i>&lt;&lt;turn_on_debug_macros</b></i>&gt;&gt;=</div>
+<p><code>use_debug&nbsp;=&nbsp;1;<br>
+
+</code></p>
+<p>By default, <code>use_debug</code> is set to be false in order to allow other non-C
+languages to be used.
+</p>
+<div><b><i>&lt;&lt;global_variables</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;use_debug&nbsp;=&nbsp;0;<br>
+
+</code></p>
+<a id="Turning_on_Warnings_(-W)">
+<h3>5.3 Turning on Warnings (-W)</h3>
+</a>
+<p>Worgle can print out warnings about things like unused
+sections of code. By default, this is turned off.
+</p>
+<div><b><i>&lt;&lt;global_variables</b></i>&gt;&gt;=</div>
+<p><code>static&nbsp;int&nbsp;use_warnings&nbsp;=&nbsp;0;<br>
+
+</code></p>
+<div><b><i>&lt;&lt;turn_on_warnings</b></i>&gt;&gt;=</div>
+<p><code>if(!strncmp(ps.optarg,&nbsp;"soft",&nbsp;4))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;use_warnings&nbsp;=&nbsp;1;<br>
+}&nbsp;else&nbsp;if(!strncmp(ps.optarg,&nbsp;"error",&nbsp;5))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;use_warnings&nbsp;=&nbsp;2;<br>
+}&nbsp;else&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"Unidentified&nbsp;warning&nbsp;mode&nbsp;'%s'\n",&nbsp;ps.optarg);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
+}<br>
+
+</code></p>
+<a id="Checking_for_unused_blocks">
+<h4>5.3.1 Checking for unused blocks</h4>
+</a>
+<p>One thing that warnings can do is check for unused blocks.
+This is done after the files are generated with the function
+<code>worgle_warn_unused</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_warn_unused(worgle_d&nbsp;*worg);<br>
+
+</code></p>
+<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
+<p><code>int&nbsp;worgle_warn_unused(worgle_d&nbsp;*worg)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_hashmap&nbsp;*dict;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_block&nbsp;*blk;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;worgle_blocklist&nbsp;*lst;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;n;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;b;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;rc;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dict&nbsp;=&nbsp;&worg-&gt;dict;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rc&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;HASH_SIZE;&nbsp;n++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lst&nbsp;=&nbsp;&dict-&gt;blk[n];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blk&nbsp;=&nbsp;lst-&gt;head;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(b&nbsp;=&nbsp;0;&nbsp;b&nbsp;&lt;&nbsp;lst-&gt;nblocks;&nbsp;b++)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(blk-&gt;am_i_used&nbsp;==&nbsp;0)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"Warning:&nbsp;block&nbsp;'");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;worgle_string_write(stderr,&nbsp;&blk-&gt;name);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"'&nbsp;unused.\n");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(use_warnings&nbsp;==&nbsp;2)&nbsp;rc&nbsp;=&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blk&nbsp;=&nbsp;blk-&gt;nxt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;rc;<br>
+}<br>
+
+</code></p>
+</div>
+</body>
+</html>
