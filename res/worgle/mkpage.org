@@ -1,0 +1,89 @@
+#+TITLE: mkpage
+* HTML page generator
+
+This small script is used to generate an HTML page and table of contents
+from a Worgle literate program using Sorg. It is specifically built
+to utilize the CSS rules on my website.
+
+#+NAME: top
+#+BEGIN_SRC sh :tangle mkpage.sh
+#!/bin/sh
+<<setup>>
+<<full_html_page>>
+<<table_of_contents>>
+#+END_SRC
+** Check for arguments
+First, check and make sure a filename is given. If not, print the proper use and
+exit.
+
+#+NAME: setup
+#+BEGIN_SRC sh
+if [ "$#" -eq 0 ]
+then
+    echo "Usage: $0 file.org"
+    exit 1
+fi
+#+END_SRC
+
+The org extension is stripped from the filename to get the name of the file.
+These will be used to generate the filenames for the full HTML, as well
+as the table of contents.
+
+#+NAME: setup
+#+BEGIN_SRC sh
+NAME=${1%.*}
+NAME_TOC="$NAME""_toc"
+#+END_SRC
+
+** Full HTML page generation
+#+NAME: full_html_page
+#+BEGIN_SRC sh
+cat > $NAME.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>$NAME</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+EOF
+
+sorg -s $1 >> $NAME.html
+
+cat >> $NAME.html <<EOF
+</div>
+</body>
+</html>
+EOF
+#+END_SRC
+
+#+NAME: table_of_contents
+#+BEGIN_SRC sh
+cat > $NAME_TOC.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>$NAME</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+EOF
+
+sorg -t $NAME.html -s $1 >> $NAME_TOC.html
+
+cat >> $NAME_TOC.html <<EOF
+</div>
+</body>
+</html>
+EOF
+#+END_SRC

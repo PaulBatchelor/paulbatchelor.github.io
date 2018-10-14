@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>mkpage</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>mkpage</h1>
+<a id="HTML_page_generator">
+<h2>1 HTML page generator</h2>
+</a>
+<p>This small script is used to generate an HTML page and table of contents
+from a Worgle literate program using Sorg. It is specifically built
+to utilize the CSS rules on my website.
+</p>
+<div><b><i>&lt;&lt;top</b></i>&gt;&gt;=</div>
+<p><code>#!/bin/sh<br>
+&lt;&lt;setup&gt;&gt;<br>
+&lt;&lt;full_html_page&gt;&gt;<br>
+&lt;&lt;table_of_contents&gt;&gt;<br>
+
+</code></p>
+<a id="Check_for_arguments">
+<h3>1.1 Check for arguments</h3>
+</a>
+<p>First, check and make sure a filename is given. If not, print the proper use and
+exit.
+</p>
+<div><b><i>&lt;&lt;setup</b></i>&gt;&gt;=</div>
+<p><code>if&nbsp;[&nbsp;"$#"&nbsp;-eq&nbsp;0&nbsp;]<br>
+then<br>
+&nbsp;&nbsp;&nbsp;&nbsp;echo&nbsp;"Usage:&nbsp;$0&nbsp;file.org"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;exit&nbsp;1<br>
+fi<br>
+
+</code></p>
+<p>The org extension is stripped from the filename to get the name of the file.
+These will be used to generate the filenames for the full HTML, as well
+as the table of contents.
+</p>
+<div><b><i>&lt;&lt;setup</b></i>&gt;&gt;=</div>
+<p><code>NAME=${1%.*}<br>
+NAME_TOC="$NAME""_toc"<br>
+
+</code></p>
+<a id="Full_HTML_page_generation">
+<h3>1.2 Full HTML page generation</h3>
+</a>
+<div><b><i>&lt;&lt;full_html_page</b></i>&gt;&gt;=</div>
+<p><code>cat&nbsp;&gt;&nbsp;$NAME.html&nbsp;&lt;&lt;EOF<br>
+&lt;!DOCTYPE&nbsp;html&gt;<br>
+&lt;html&nbsp;lang="en"&gt;<br>
+&lt;head&gt;<br>
+&lt;meta&nbsp;charset="utf-8"&gt;<br>
+&lt;title&gt;$NAME&lt;/title&gt;<br>
+&lt;link&nbsp;rel="stylesheet"&nbsp;href="/css/style.css"&gt;<br>
+&lt;/head&gt;<br>
+&lt;body&gt;<br>
+&lt;div&nbsp;id="main"&gt;<br>
+EOF<br>
+sorg&nbsp;-s&nbsp;$1&nbsp;&gt;&gt;&nbsp;$NAME.html<br>
+cat&nbsp;&gt;&gt;&nbsp;$NAME.html&nbsp;&lt;&lt;EOF<br>
+&lt;/div&gt;<br>
+&lt;/body&gt;<br>
+&lt;/html&gt;<br>
+EOF<br>
+
+</code></p>
+<div><b><i>&lt;&lt;table_of_contents</b></i>&gt;&gt;=</div>
+<p><code>cat&nbsp;&gt;&nbsp;$NAME_TOC.html&nbsp;&lt;&lt;EOF<br>
+&lt;!DOCTYPE&nbsp;html&gt;<br>
+&lt;html&nbsp;lang="en"&gt;<br>
+&lt;head&gt;<br>
+&lt;meta&nbsp;charset="utf-8"&gt;<br>
+&lt;title&gt;$NAME&lt;/title&gt;<br>
+&lt;link&nbsp;rel="stylesheet"&nbsp;href="/css/style.css"&gt;<br>
+&lt;/head&gt;<br>
+&lt;body&gt;<br>
+&lt;div&nbsp;id="main"&gt;<br>
+EOF<br>
+sorg&nbsp;-t&nbsp;$NAME.html&nbsp;-s&nbsp;$1&nbsp;&gt;&gt;&nbsp;$NAME_TOC.html<br>
+cat&nbsp;&gt;&gt;&nbsp;$NAME_TOC.html&nbsp;&lt;&lt;EOF<br>
+&lt;/div&gt;<br>
+&lt;/body&gt;<br>
+&lt;/html&gt;<br>
+EOF<br>
+
+</code></p>
+</div>
+</body>
+</html>

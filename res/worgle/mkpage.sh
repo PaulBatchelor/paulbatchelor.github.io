@@ -1,14 +1,11 @@
 #!/bin/sh
-
 if [ "$#" -eq 0 ]
 then
     echo "Usage: $0 file.org"
     exit 1
 fi
-
 NAME=${1%.*}
 NAME_TOC="$NAME""_toc"
-
 cat > $NAME.html <<EOF
 <!DOCTYPE html>
 <html lang="en">
@@ -31,8 +28,6 @@ cat >> $NAME.html <<EOF
 </body>
 </html>
 EOF
-
-
 cat > $NAME_TOC.html <<EOF
 <!DOCTYPE html>
 <html lang="en">
