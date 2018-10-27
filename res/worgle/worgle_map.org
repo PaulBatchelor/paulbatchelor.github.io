@@ -1,0 +1,1774 @@
+#+TITLE: Code Map
+* worgle.c
+worgle.org:44
+#+NAME: worgle-top_0
+#+BEGIN_SRC
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "parg.h"
+
+#+END_SRC
+** global_variables
+worgle.org:2016
+#+NAME: global_variables_0
+#+BEGIN_SRC
+static int use_debug = 0;
+#+END_SRC
+worgle.org:2026
+#+NAME: global_variables_1
+#+BEGIN_SRC
+static int use_warnings = 0;
+#+END_SRC
+worgle.org:2088
+#+NAME: global_variables_2
+#+BEGIN_SRC
+static int map_source_code = 0;
+static char *map_filename = NULL;
+#+END_SRC
+
+** enums
+worgle.org:468
+#+NAME: enums_0
+#+BEGIN_SRC
+enum {
+#+END_SRC
+*** parse_modes
+worgle.org:476
+#+NAME: parse_modes_0
+#+BEGIN_SRC
+MODE_ORG,
+#+END_SRC
+worgle.org:573
+#+NAME: parse_modes_1
+#+BEGIN_SRC
+MODE_BEGINCODE,
+#+END_SRC
+worgle.org:721
+#+NAME: parse_modes_2
+#+BEGIN_SRC
+MODE_CODE
+#+END_SRC
+worgle.org:470
+#+NAME: enums_2
+#+BEGIN_SRC
+};
+#+END_SRC
+
+** structs
+
+*** worgle_string
+worgle.org:1118
+#+NAME: worgle_string_0
+#+BEGIN_SRC
+typedef struct {
+    char *str;
+    size_t size;
+} worgle_string;
+#+END_SRC
+
+*** worgle_segment
+worgle.org:1184
+#+NAME: worgle_segment_0
+#+BEGIN_SRC
+enum {
+#+END_SRC
+**** worgle_segment_types
+worgle.org:1212
+#+NAME: worgle_segment_types_0
+#+BEGIN_SRC
+SEGTYPE_TEXT,
+#+END_SRC
+worgle.org:1224
+#+NAME: worgle_segment_types_1
+#+BEGIN_SRC
+SEGTYPE_REFERENCE
+#+END_SRC
+worgle.org:1186
+#+NAME: worgle_segment_2
+#+BEGIN_SRC
+};
+typedef struct worgle_segment {
+    int type;
+    worgle_string str;
+#+END_SRC
+**** worgle_segment_line_control
+worgle.org:1201
+#+NAME: worgle_segment_line_control_0
+#+BEGIN_SRC
+size_t linum;
+worgle_string *filename;
+#+END_SRC
+worgle.org:1191
+#+NAME: worgle_segment_4
+#+BEGIN_SRC
+    struct worgle_segment *nxt;
+} worgle_segment;
+#+END_SRC
+
+*** worgle_block
+worgle.org:1314
+#+NAME: worgle_block_0
+#+BEGIN_SRC
+typedef struct worgle_block {
+    int nsegs;
+    worgle_segment *head;
+    worgle_segment *tail;
+    worgle_string name;
+    int am_i_used;
+    struct worgle_block *nxt;
+} worgle_block;
+#+END_SRC
+
+*** worgle_blocklist
+worgle.org:1510
+#+NAME: worgle_blocklist_0
+#+BEGIN_SRC
+typedef struct {
+    int nblocks;
+    worgle_block *head;
+    worgle_block *tail;
+} worgle_blocklist;
+#+END_SRC
+
+*** worgle_hashmap
+worgle.org:1589
+#+NAME: worgle_hashmap_0
+#+BEGIN_SRC
+#define HASH_SIZE 256
+typedef struct {
+    worgle_blocklist blk[HASH_SIZE];
+    int nwords;
+} worgle_hashmap;
+#+END_SRC
+
+*** worgle_file
+worgle.org:1731
+#+NAME: worgle_file_0
+#+BEGIN_SRC
+typedef struct worgle_file {
+    worgle_string filename;
+    worgle_block *top;
+    struct worgle_file *nxt;
+} worgle_file;
+#+END_SRC
+
+*** worgle_filelist
+worgle.org:1784
+#+NAME: worgle_filelist_0
+#+BEGIN_SRC
+typedef struct {
+    worgle_file *head;
+    worgle_file *tail;
+    int nfiles;
+} worgle_filelist;
+#+END_SRC
+
+*** worgle_textbuf
+worgle.org:1898
+#+NAME: worgle_textbuf_0
+#+BEGIN_SRC
+typedef struct {
+    char *buf;
+    size_t size;
+    worgle_string filename;
+} worgle_textbuf;
+#+END_SRC
+
+*** worgle_struct
+worgle.org:916
+#+NAME: worgle_struct_0
+#+BEGIN_SRC
+typedef struct {
+#+END_SRC
+**** worgle_struct_contents
+worgle.org:966
+#+NAME: worgle_struct_contents_0
+#+BEGIN_SRC
+worgle_string block; /* TODO: rename */
+#+END_SRC
+worgle.org:982
+#+NAME: worgle_struct_contents_1
+#+BEGIN_SRC
+size_t curline;
+#+END_SRC
+worgle.org:997
+#+NAME: worgle_struct_contents_2
+#+BEGIN_SRC
+int block_started;
+#+END_SRC
+worgle.org:1012
+#+NAME: worgle_struct_contents_3
+#+BEGIN_SRC
+worgle_hashmap dict;
+#+END_SRC
+worgle.org:1034
+#+NAME: worgle_struct_contents_4
+#+BEGIN_SRC
+worgle_filelist flist;
+#+END_SRC
+worgle.org:1057
+#+NAME: worgle_struct_contents_5
+#+BEGIN_SRC
+worgle_textbuf *curbuf;
+worgle_textbuf *buffers;
+int nbuffers;
+#+END_SRC
+worgle.org:1087
+#+NAME: worgle_struct_contents_6
+#+BEGIN_SRC
+worgle_block *curblock;
+#+END_SRC
+worgle.org:1101
+#+NAME: worgle_struct_contents_7
+#+BEGIN_SRC
+size_t linum;
+#+END_SRC
+worgle.org:918
+#+NAME: worgle_struct_2
+#+BEGIN_SRC
+} worgle_d;
+#+END_SRC
+
+
+** static_function_declarations
+worgle.org:499
+#+NAME: static_function_declarations_0
+#+BEGIN_SRC
+static int parse_name(char *line, size_t len, worgle_string *str);
+#+END_SRC
+worgle.org:793
+#+NAME: static_function_declarations_1
+#+BEGIN_SRC
+static int check_for_reference(char *line , size_t size, worgle_string *str);
+#+END_SRC
+
+** function_declarations
+worgle.org:166
+#+NAME: function_declarations_0
+#+BEGIN_SRC
+static int loadfile(worgle_d *worg, int file);
+#+END_SRC
+worgle.org:267
+#+NAME: function_declarations_1
+#+BEGIN_SRC
+int parse_file(worgle_d *worg, int file);
+#+END_SRC
+worgle.org:411
+#+NAME: function_declarations_2
+#+BEGIN_SRC
+static int worgle_getline(char *fullbuf,
+                  char **line,
+                  size_t *pos,
+                  size_t *line_size,
+                  size_t buf_size);
+#+END_SRC
+worgle.org:555
+#+NAME: function_declarations_3
+#+BEGIN_SRC
+void worgle_begin_block(worgle_d *worg, worgle_string *name);
+#+END_SRC
+worgle.org:609
+#+NAME: function_declarations_4
+#+BEGIN_SRC
+static int parse_begin(char *line, size_t len, worgle_string *str);
+#+END_SRC
+worgle.org:707
+#+NAME: function_declarations_5
+#+BEGIN_SRC
+void worgle_append_file(worgle_d *worg, worgle_string *filename);
+#+END_SRC
+worgle.org:759
+#+NAME: function_declarations_6
+#+BEGIN_SRC
+void worgle_append_string(worgle_d *worg);
+#+END_SRC
+worgle.org:776
+#+NAME: function_declarations_7
+#+BEGIN_SRC
+void worgle_append_reference(worgle_d *worg, worgle_string *ref);
+#+END_SRC
+worgle.org:864
+#+NAME: function_declarations_8
+#+BEGIN_SRC
+int worgle_generate(worgle_d *worg);
+#+END_SRC
+worgle.org:927
+#+NAME: function_declarations_9
+#+BEGIN_SRC
+void worgle_init(worgle_d *worg);
+#+END_SRC
+worgle.org:945
+#+NAME: function_declarations_10
+#+BEGIN_SRC
+void worgle_free(worgle_d *worg);
+#+END_SRC
+worgle.org:1129
+#+NAME: function_declarations_11
+#+BEGIN_SRC
+void worgle_string_reset(worgle_string *str);
+#+END_SRC
+worgle.org:1146
+#+NAME: function_declarations_12
+#+BEGIN_SRC
+void worgle_string_init(worgle_string *str);
+#+END_SRC
+worgle.org:1165
+#+NAME: function_declarations_13
+#+BEGIN_SRC
+int worgle_string_write(FILE *fp, worgle_string *str);
+#+END_SRC
+worgle.org:1231
+#+NAME: function_declarations_14
+#+BEGIN_SRC
+void worgle_segment_init(worgle_segment *s,
+                        int type,
+                        worgle_string *str,
+                        worgle_string *filename,
+                        size_t linum);
+#+END_SRC
+worgle.org:1263
+#+NAME: function_declarations_15
+#+BEGIN_SRC
+int worgle_segment_write(worgle_segment *s, worgle_hashmap *h, FILE *fp);
+#+END_SRC
+worgle.org:1329
+#+NAME: function_declarations_16
+#+BEGIN_SRC
+void worgle_block_init(worgle_block *b);
+#+END_SRC
+worgle.org:1352
+#+NAME: function_declarations_17
+#+BEGIN_SRC
+void worgle_block_free(worgle_block *lst);
+#+END_SRC
+worgle.org:1387
+#+NAME: function_declarations_18
+#+BEGIN_SRC
+void worgle_block_append_segment(worgle_block *b,
+                                worgle_string *str,
+                                int type,
+                                size_t linum,
+                                worgle_string *filename);
+#+END_SRC
+worgle.org:1425
+#+NAME: function_declarations_19
+#+BEGIN_SRC
+void worgle_block_append_string(worgle_block *b,
+                               worgle_string *str,
+                               size_t linum,
+                               worgle_string *filename);
+#+END_SRC
+worgle.org:1448
+#+NAME: function_declarations_20
+#+BEGIN_SRC
+void worgle_block_append_reference(worgle_block *b,
+                                  worgle_string *str,
+                                  size_t linum,
+                                  worgle_string *filename);
+#+END_SRC
+worgle.org:1480
+#+NAME: function_declarations_21
+#+BEGIN_SRC
+int worgle_block_write(worgle_block *b, worgle_hashmap *h, FILE *fp);
+#+END_SRC
+worgle.org:1522
+#+NAME: function_declarations_22
+#+BEGIN_SRC
+void worgle_blocklist_init(worgle_blocklist *lst);
+#+END_SRC
+worgle.org:1541
+#+NAME: function_declarations_23
+#+BEGIN_SRC
+void worgle_blocklist_free(worgle_blocklist *lst);
+#+END_SRC
+worgle.org:1567
+#+NAME: function_declarations_24
+#+BEGIN_SRC
+void worgle_blocklist_append(worgle_blocklist *lst, worgle_block *b);
+#+END_SRC
+worgle.org:1601
+#+NAME: function_declarations_25
+#+BEGIN_SRC
+void worgle_hashmap_init(worgle_hashmap *h);
+#+END_SRC
+worgle.org:1624
+#+NAME: function_declarations_26
+#+BEGIN_SRC
+void worgle_hashmap_free(worgle_hashmap *h);
+#+END_SRC
+worgle.org:1648
+#+NAME: function_declarations_27
+#+BEGIN_SRC
+int worgle_hashmap_find(worgle_hashmap *h, worgle_string *name, worgle_block **b);
+#+END_SRC
+worgle.org:1703
+#+NAME: function_declarations_28
+#+BEGIN_SRC
+worgle_block * worgle_hashmap_get(worgle_hashmap *h, worgle_string *name);
+#+END_SRC
+worgle.org:1745
+#+NAME: function_declarations_29
+#+BEGIN_SRC
+int worgle_file_write(worgle_file *f, worgle_hashmap *h);
+#+END_SRC
+worgle.org:1797
+#+NAME: function_declarations_30
+#+BEGIN_SRC
+void worgle_filelist_init(worgle_filelist *flist);
+#+END_SRC
+worgle.org:1816
+#+NAME: function_declarations_31
+#+BEGIN_SRC
+void worgle_filelist_free(worgle_filelist *flist);
+#+END_SRC
+worgle.org:1841
+#+NAME: function_declarations_32
+#+BEGIN_SRC
+void worgle_filelist_append(worgle_filelist *flist,
+                           worgle_string *name,
+                           worgle_block *top);
+#+END_SRC
+worgle.org:1874
+#+NAME: function_declarations_33
+#+BEGIN_SRC
+int worgle_filelist_write(worgle_filelist *flist, worgle_hashmap *h);
+#+END_SRC
+worgle.org:1911
+#+NAME: function_declarations_34
+#+BEGIN_SRC
+void worgle_textbuf_zero(worgle_textbuf *txt);
+#+END_SRC
+worgle.org:1927
+#+NAME: function_declarations_35
+#+BEGIN_SRC
+void worgle_textbuf_init(worgle_textbuf *txt,
+                         char *buf,
+                         size_t bufsize);
+#+END_SRC
+worgle.org:1951
+#+NAME: function_declarations_36
+#+BEGIN_SRC
+void worgle_textbuf_free(worgle_textbuf *txt);
+#+END_SRC
+worgle.org:2049
+#+NAME: function_declarations_37
+#+BEGIN_SRC
+int worgle_warn_unused(worgle_d *worg);
+#+END_SRC
+worgle.org:2106
+#+NAME: function_declarations_38
+#+BEGIN_SRC
+static void append_filename(worgle_d *worg, char *filename);
+#+END_SRC
+worgle.org:2149
+#+NAME: function_declarations_39
+#+BEGIN_SRC
+void worgle_map(worgle_d *worg, worgle_block *b, int lvl, FILE *out);
+#+END_SRC
+worgle.org:2198
+#+NAME: function_declarations_40
+#+BEGIN_SRC
+void worgle_map_files(worgle_d *worg, char *filename);
+void worgle_map_a_file(worgle_d *worg, worgle_file *file, FILE *out);
+#+END_SRC
+
+** functions
+worgle.org:171
+#+NAME: functions_0
+#+BEGIN_SRC
+static int loadfile(worgle_d *worg, int file)
+{
+#+END_SRC
+*** loadfile_localvars
+worgle.org:183
+#+NAME: loadfile_localvars_0
+#+BEGIN_SRC
+FILE *fp;
+char *filename;
+worgle_textbuf *txt;
+#+END_SRC
+worgle.org:205
+#+NAME: loadfile_localvars_1
+#+BEGIN_SRC
+size_t size;
+#+END_SRC
+worgle.org:219
+#+NAME: loadfile_localvars_2
+#+BEGIN_SRC
+char *buf;
+#+END_SRC
+
+*** loadfile
+worgle.org:190
+#+NAME: loadfile_0
+#+BEGIN_SRC
+txt = &worg->buffers[file];
+filename = txt->filename.str;
+fp = fopen(filename, "r");
+
+if(fp == NULL) {
+    fprintf(stderr, "Could not find file %s\n", filename);
+    return 1;
+}
+#+END_SRC
+worgle.org:210
+#+NAME: loadfile_1
+#+BEGIN_SRC
+fseek(fp, 0, SEEK_END);
+size = ftell(fp);
+#+END_SRC
+worgle.org:224
+#+NAME: loadfile_2
+#+BEGIN_SRC
+buf = calloc(1, size);
+worgle_textbuf_init(&worg->buffers[file], buf, size);
+#+END_SRC
+worgle.org:233
+#+NAME: loadfile_3
+#+BEGIN_SRC
+fseek(fp, 0, SEEK_SET);
+fread(buf, size, 1, fp);
+fclose(fp);
+#+END_SRC
+worgle.org:175
+#+NAME: functions_4
+#+BEGIN_SRC
+    return 1;
+}
+#+END_SRC
+worgle.org:272
+#+NAME: functions_5
+#+BEGIN_SRC
+int parse_file(worgle_d *worg, int file)
+{
+    char *buf;
+    size_t size;
+    worgle_textbuf *curbuf;
+
+    curbuf = &worg->buffers[file];
+    buf = curbuf->buf;
+    size = curbuf->size;
+    worg->curbuf = curbuf;
+#+END_SRC
+*** parser_local_variables
+worgle.org:304
+#+NAME: parser_local_variables_0
+#+BEGIN_SRC
+worgle_string str;
+#+END_SRC
+worgle.org:316
+#+NAME: parser_local_variables_1
+#+BEGIN_SRC
+char *line;
+#+END_SRC
+worgle.org:328
+#+NAME: parser_local_variables_2
+#+BEGIN_SRC
+size_t pos;
+#+END_SRC
+worgle.org:340
+#+NAME: parser_local_variables_3
+#+BEGIN_SRC
+size_t read;
+#+END_SRC
+worgle.org:347
+#+NAME: parser_local_variables_4
+#+BEGIN_SRC
+int mode;
+#+END_SRC
+worgle.org:361
+#+NAME: parser_local_variables_5
+#+BEGIN_SRC
+int rc;
+#+END_SRC
+worgle.org:376
+#+NAME: parser_local_variables_6
+#+BEGIN_SRC
+int status;
+#+END_SRC
+
+*** parser_initialization
+worgle.org:309
+#+NAME: parser_initialization_0
+#+BEGIN_SRC
+worgle_string_init(&str);
+#+END_SRC
+worgle.org:321
+#+NAME: parser_initialization_1
+#+BEGIN_SRC
+line = NULL;
+#+END_SRC
+worgle.org:333
+#+NAME: parser_initialization_2
+#+BEGIN_SRC
+pos = 0;
+#+END_SRC
+worgle.org:354
+#+NAME: parser_initialization_3
+#+BEGIN_SRC
+mode = MODE_ORG;
+#+END_SRC
+worgle.org:368
+#+NAME: parser_initialization_4
+#+BEGIN_SRC
+rc = 0;
+#+END_SRC
+worgle.org:383
+#+NAME: parser_initialization_5
+#+BEGIN_SRC
+status = 0;
+#+END_SRC
+worgle.org:284
+#+NAME: functions_9
+#+BEGIN_SRC
+    while(1) {
+#+END_SRC
+*** getline
+worgle.org:404
+#+NAME: getline_0
+#+BEGIN_SRC
+worg->linum++;
+status = worgle_getline(buf, &line, &pos, &read, size);
+if(!status) break;
+#+END_SRC
+worgle.org:286
+#+NAME: functions_11
+#+BEGIN_SRC
+        if(mode == MODE_ORG) {
+#+END_SRC
+*** parse_mode_org
+worgle.org:485
+#+NAME: parse_mode_org_0
+#+BEGIN_SRC
+if(read >= 7) {
+    if(!strncmp(line, "#+NAME:",7)) {
+        mode = MODE_BEGINCODE;
+        parse_name(line, read, &str);
+        worgle_begin_block(worg, &str);
+    }
+}
+#+END_SRC
+worgle.org:288
+#+NAME: functions_13
+#+BEGIN_SRC
+        } else if(mode == MODE_CODE) {
+#+END_SRC
+*** parse_mode_code
+worgle.org:730
+#+NAME: parse_mode_code_0
+#+BEGIN_SRC
+
+if(read >= 9) {
+    if(!strncmp(line, "#+END_SRC", 9)) {
+        mode = MODE_ORG;
+        worg->block_started = 0;
+        worgle_append_string(worg);
+        continue;
+    }
+}
+
+if(check_for_reference(line, read, &str)) {
+    worgle_append_string(worg);
+    worgle_append_reference(worg, &str);
+    worg->block_started = 1;
+    worgle_string_reset(&worg->block);
+    continue;
+}
+
+worg->block.size += read;
+
+if(worg->block_started) {
+    worg->block.str = line;
+    worg->block_started = 0;
+    worg->curline = worg->linum;
+}
+#+END_SRC
+worgle.org:290
+#+NAME: functions_15
+#+BEGIN_SRC
+        } else if(mode == MODE_BEGINCODE) {
+#+END_SRC
+*** parse_mode_begincode
+worgle.org:583
+#+NAME: parse_mode_begincode_0
+#+BEGIN_SRC
+if(read >= 11) {
+    if(!strncmp(line, "#+BEGIN_SRC",11)) {
+#+END_SRC
+**** begin_the_code
+worgle.org:697
+#+NAME: begin_the_code_0
+#+BEGIN_SRC
+mode = MODE_CODE;
+worg->block_started = 1;
+worgle_string_reset(&worg->block);
+#+END_SRC
+worgle.org:586
+#+NAME: parse_mode_begincode_2
+#+BEGIN_SRC
+        if(parse_begin(line, read, &str) == 2) {
+            worgle_append_file(worg, &str);
+        }
+        continue;
+    } else {
+        fwrite(line, read, 1, stderr);
+        fprintf(stderr, "line %lu: Expected #+BEGIN_SRC\n", worg->linum);
+        rc = 1;
+        break;
+    }
+}
+fprintf(stderr, "line %lu: Expected #+BEGIN_SRC\n", worg->linum);
+rc = 1;
+#+END_SRC
+worgle.org:292
+#+NAME: functions_17
+#+BEGIN_SRC
+        }
+    }
+    return rc;
+}
+#+END_SRC
+worgle.org:432
+#+NAME: functions_18
+#+BEGIN_SRC
+static int worgle_getline(char *fullbuf,
+                  char **line,
+                  size_t *pos,
+                  size_t *line_size,
+                  size_t buf_size)
+{
+    size_t p;
+    size_t s;
+    *line_size = 0;
+    p = *pos;
+    *line = &fullbuf[p];
+    s = 0;
+    while(1) {
+        s++;
+        if(p >= buf_size) return 0;
+        if(fullbuf[p] == '\n') {
+            *pos = p + 1;
+            *line_size = s;
+            return 1;
+        }
+        p++;
+    }
+}
+#+END_SRC
+worgle.org:506
+#+NAME: functions_19
+#+BEGIN_SRC
+static int parse_name(char *line, size_t len, worgle_string *str)
+{
+    size_t n;
+    size_t pos;
+    int mode;
+
+    line+=7;
+    len-=7;
+    /* *namelen = 0; */
+    str->size = 0;
+    str->str = NULL;
+    if(len <= 0) return 1;
+    pos = 0;
+    mode = 0;
+    for(n = 0; n < len; n++) {
+        if(mode == 2) break;
+        switch(mode) {
+            case 0:
+                if(line[n] == ' ') {
+
+                } else {
+                    str->str = &line[n];
+                    str->size++;
+                    pos++;
+                    mode = 1;
+                }
+                break;
+            case 1:
+                if(line[n] == 0xa) {
+                    mode = 2;
+                    break;
+                }
+                pos++;
+                str->size++;
+                break;
+            default:
+                break;
+        }
+    }
+    /* *namelen = pos; */
+    return 1;
+}
+#+END_SRC
+worgle.org:563
+#+NAME: functions_20
+#+BEGIN_SRC
+void worgle_begin_block(worgle_d *worg, worgle_string *name)
+{
+    worg->curblock = worgle_hashmap_get(&worg->dict, name);
+}
+#+END_SRC
+worgle.org:625
+#+NAME: functions_21
+#+BEGIN_SRC
+static int parse_begin(char *line, size_t len, worgle_string *str)
+{
+    size_t n;
+    int mode;
+    int rc;
+
+    line += 11;
+    len -= 11;
+
+    if(len <= 0) return 0;
+
+
+    mode = 0;
+    n = 0;
+    rc = 1;
+    str->str = NULL;
+    str->size = 0;
+    while(n < len) {
+        switch(mode) {
+            case 0: /* initial spaces after BEGIN_SRC */
+                if(line[n] == ' ') {
+                    n++;
+                } else {
+                    mode = 1;
+                }
+                break;
+            case 1: /* look for :tangle */
+                if(line[n] == ' ') {
+                    mode = 0;
+                    n++;
+                } else {
+                    if(line[n] == ':') {
+                        if(!strncmp(line + n + 1, "tangle", 6)) {
+                            n+=7;
+                            mode = 2;
+                            rc = 2;
+                        }
+                    }
+                    n++;
+                }
+                break;
+            case 2: /* save file name, spaces after tangle */
+                if(line[n] != ' ') {
+                    str->str = &line[n];
+                    str->size++;
+                    mode = 3;
+                }
+                n++;
+                break;
+            case 3: /* read up to next space or line break */
+                if(line[n] == ' ' || line[n] == '\n') {
+                    mode = 4;
+                } else {
+                    str->size++;
+                }
+                n++;
+                break;
+            case 4: /* countdown til end */
+                n++;
+                break;
+        }
+    }
+
+    return rc;
+}
+#+END_SRC
+worgle.org:712
+#+NAME: functions_22
+#+BEGIN_SRC
+void worgle_append_file(worgle_d *worg, worgle_string *filename)
+{
+    worgle_filelist_append(&worg->flist, filename, worg->curblock);
+}
+#+END_SRC
+worgle.org:764
+#+NAME: functions_23
+#+BEGIN_SRC
+void worgle_append_string(worgle_d *worg)
+{
+    if(worg->curblock == NULL) return;
+    worgle_block_append_string(worg->curblock,
+                              &worg->block,
+                              worg->curline,
+                              &worg->curbuf->filename);
+}
+#+END_SRC
+worgle.org:781
+#+NAME: functions_24
+#+BEGIN_SRC
+void worgle_append_reference(worgle_d *worg, worgle_string *ref)
+{
+    if(worg->curblock == NULL) return;
+    worgle_block_append_reference(worg->curblock,
+                                 ref,
+                                 worg->linum,
+                                 &worg->curbuf->filename);
+}
+#+END_SRC
+worgle.org:798
+#+NAME: functions_25
+#+BEGIN_SRC
+static int check_for_reference(char *line , size_t size, worgle_string *str)
+{
+    int mode;
+    size_t n;
+    mode = 0;
+
+    str->size = 0;
+    str->str = NULL;
+    for(n = 0; n < size; n++) {
+        if(mode < 0) break;
+        switch(mode) {
+            case 0: /* spaces */
+                if(line[n] == ' ') continue;
+                else if(line[n] == '<') mode = 1;
+                else mode = -1;
+                break;
+            case 1: /* second < */
+                if(line[n] == '<') mode = 2;
+                else mode = -1;
+                break;
+            case 2: /* word setup */
+                str->str = &line[n];
+                str->size++;
+                mode = 3;
+                break;
+            case 3: /* the word */
+                if(line[n] == '>') {
+                    mode = 4;
+                    break;
+                }
+                str->size++;
+                break;
+            case 4: /* last > */
+                if(line[n] == '>') mode = 5;
+                else mode = -1;
+                break;
+        }
+    }
+
+    return (mode == 5);
+}
+#+END_SRC
+worgle.org:869
+#+NAME: functions_26
+#+BEGIN_SRC
+int worgle_generate(worgle_d *worg)
+{
+    return worgle_filelist_write(&worg->flist, &worg->dict);
+}
+#+END_SRC
+worgle.org:932
+#+NAME: functions_27
+#+BEGIN_SRC
+void worgle_init(worgle_d *worg)
+{
+#+END_SRC
+*** worgle_init
+worgle.org:973
+#+NAME: worgle_init_0
+#+BEGIN_SRC
+worgle_string_init(&worg->block);
+#+END_SRC
+worgle.org:989
+#+NAME: worgle_init_1
+#+BEGIN_SRC
+worg->curline = -1;
+#+END_SRC
+worgle.org:1004
+#+NAME: worgle_init_2
+#+BEGIN_SRC
+worg->block_started = 0;
+#+END_SRC
+worgle.org:1018
+#+NAME: worgle_init_3
+#+BEGIN_SRC
+worgle_hashmap_init(&worg->dict);
+#+END_SRC
+worgle.org:1041
+#+NAME: worgle_init_4
+#+BEGIN_SRC
+worgle_filelist_init(&worg->flist);
+#+END_SRC
+worgle.org:1067
+#+NAME: worgle_init_5
+#+BEGIN_SRC
+worg->curbuf = NULL;
+worg->buffers = NULL;
+worg->nbuffers = 0;
+#+END_SRC
+worgle.org:1093
+#+NAME: worgle_init_6
+#+BEGIN_SRC
+worg->curblock = NULL;
+#+END_SRC
+worgle.org:1109
+#+NAME: worgle_init_7
+#+BEGIN_SRC
+worg->linum = 0;
+#+END_SRC
+worgle.org:935
+#+NAME: functions_29
+#+BEGIN_SRC
+}
+#+END_SRC
+worgle.org:950
+#+NAME: functions_30
+#+BEGIN_SRC
+void worgle_free(worgle_d *worg)
+{
+    int i;
+#+END_SRC
+*** worgle_free
+worgle.org:1026
+#+NAME: worgle_free_0
+#+BEGIN_SRC
+worgle_hashmap_free(&worg->dict);
+#+END_SRC
+worgle.org:1048
+#+NAME: worgle_free_1
+#+BEGIN_SRC
+worgle_filelist_free(&worg->flist);
+#+END_SRC
+worgle.org:1076
+#+NAME: worgle_free_2
+#+BEGIN_SRC
+for(i = 0; i < worg->nbuffers; i++) {
+    worgle_textbuf_free(&worg->buffers[i]);
+}
+if(worg->nbuffers > 0) free(worg->buffers);
+#+END_SRC
+worgle.org:954
+#+NAME: functions_32
+#+BEGIN_SRC
+}
+#+END_SRC
+worgle.org:1134
+#+NAME: functions_33
+#+BEGIN_SRC
+void worgle_string_reset(worgle_string *str)
+{
+    str->str = NULL;
+    str->size = 0;
+}
+#+END_SRC
+worgle.org:1151
+#+NAME: functions_34
+#+BEGIN_SRC
+void worgle_string_init(worgle_string *str)
+{
+    worgle_string_reset(str);
+}
+#+END_SRC
+worgle.org:1172
+#+NAME: functions_35
+#+BEGIN_SRC
+int worgle_string_write(FILE *fp, worgle_string *str)
+{
+    return fwrite(str->str, 1, str->size, fp);
+}
+#+END_SRC
+worgle.org:1240
+#+NAME: functions_36
+#+BEGIN_SRC
+void worgle_segment_init(worgle_segment *s,
+                        int type,
+                        worgle_string *str,
+                        worgle_string *filename,
+                        size_t linum)
+{
+   s->type = type;
+   s->str = *str;
+   s->filename = filename;
+   s->linum = linum;
+}
+
+#+END_SRC
+worgle.org:1281
+#+NAME: functions_37
+#+BEGIN_SRC
+int worgle_segment_write(worgle_segment *s, worgle_hashmap *h, FILE *fp)
+{
+    worgle_block *b;
+    if(s->type == SEGTYPE_TEXT) {
+        if(use_debug) {
+            fprintf(fp, "#line %lu \"", s->linum);
+            worgle_string_write(fp, s->filename);
+            fprintf(fp, "\"\n");
+        }
+        worgle_string_write(fp, &s->str);
+    } else {
+        if(!worgle_hashmap_find(h, &s->str, &b)) {
+            fprintf(stderr, "Warning: could not find reference segment '");
+            worgle_string_write(stderr, &s->str);
+            fprintf(stderr, "'\n");
+            if(use_warnings == 2) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+        return worgle_block_write(b, h, fp);
+    }
+
+    return 1;
+}
+#+END_SRC
+worgle.org:1337
+#+NAME: functions_38
+#+BEGIN_SRC
+void worgle_block_init(worgle_block *b)
+{
+    b->nsegs = 0;
+    b->head = NULL;
+    b->tail = NULL;
+    b->nxt = NULL;
+    b->am_i_used = 0;
+    worgle_string_init(&b->name);
+}
+#+END_SRC
+worgle.org:1361
+#+NAME: functions_39
+#+BEGIN_SRC
+void worgle_block_free(worgle_block *lst)
+{
+    worgle_segment *s;
+    worgle_segment *nxt;
+    int n;
+    s = lst->head;
+    for(n = 0; n < lst->nsegs; n++) {
+        nxt = s->nxt;
+        free(s);
+        s = nxt;
+    }
+}
+#+END_SRC
+worgle.org:1399
+#+NAME: functions_40
+#+BEGIN_SRC
+void worgle_block_append_segment(worgle_block *b,
+                                worgle_string *str,
+                                int type,
+                                size_t linum,
+                                worgle_string *filename)
+{
+    worgle_segment *s;
+    s = malloc(sizeof(worgle_segment));
+    if(b->nsegs == 0) {
+        b->head = s;
+        b->tail = s;
+    }
+    worgle_segment_init(s, type, str, filename, linum);
+    b->tail->nxt = s;
+    b->tail = s;
+    b->nsegs++;
+}
+#+END_SRC
+worgle.org:1433
+#+NAME: functions_41
+#+BEGIN_SRC
+void worgle_block_append_string(worgle_block *b,
+                               worgle_string *str,
+                               size_t linum,
+                               worgle_string *filename)
+{
+    worgle_block_append_segment(b, str, SEGTYPE_TEXT, linum, filename);
+}
+#+END_SRC
+worgle.org:1456
+#+NAME: functions_42
+#+BEGIN_SRC
+void worgle_block_append_reference(worgle_block *b,
+                                  worgle_string *str,
+                                  size_t linum,
+                                  worgle_string *filename)
+{
+    worgle_block_append_segment(b, str, SEGTYPE_REFERENCE, linum, filename);
+}
+#+END_SRC
+worgle.org:1489
+#+NAME: functions_43
+#+BEGIN_SRC
+int worgle_block_write(worgle_block *b, worgle_hashmap *h, FILE *fp)
+{
+    worgle_segment *s;
+    int n;
+    s = b->head;
+    b->am_i_used = 1;
+    for(n = 0; n < b->nsegs; n++) {
+        if(!worgle_segment_write(s, h, fp)) return 0;
+        s = s->nxt;
+    }
+
+    return 1;
+}
+#+END_SRC
+worgle.org:1527
+#+NAME: functions_44
+#+BEGIN_SRC
+void worgle_blocklist_init(worgle_blocklist *lst)
+{
+    lst->head = NULL;
+    lst->tail = NULL;
+    lst->nblocks = 0;
+}
+#+END_SRC
+worgle.org:1546
+#+NAME: functions_45
+#+BEGIN_SRC
+void worgle_blocklist_free(worgle_blocklist *lst)
+{
+    worgle_block *b;
+    worgle_block *nxt;
+    int n;
+    b = lst->head;
+    for(n = 0; n < lst->nblocks; n++) {
+        nxt = b->nxt;
+        worgle_block_free(b);
+        free(b);
+        b = nxt;
+    }
+}
+#+END_SRC
+worgle.org:1572
+#+NAME: functions_46
+#+BEGIN_SRC
+void worgle_blocklist_append(worgle_blocklist *lst, worgle_block *b)
+{
+    if(lst->nblocks == 0) {
+        lst->head = b;
+        lst->tail = b;
+    }
+    lst->tail->nxt = b;
+    lst->tail = b;
+    lst->nblocks++;
+}
+#+END_SRC
+worgle.org:1608
+#+NAME: functions_47
+#+BEGIN_SRC
+void worgle_hashmap_init(worgle_hashmap *h)
+{
+    int n;
+    h->nwords = 0;
+    for(n = 0; n < HASH_SIZE; n++) {
+        worgle_blocklist_init(&h->blk[n]);
+    }
+}
+#+END_SRC
+worgle.org:1631
+#+NAME: functions_48
+#+BEGIN_SRC
+void worgle_hashmap_free(worgle_hashmap *h)
+{
+    int n;
+    for(n = 0; n < HASH_SIZE; n++) {
+        worgle_blocklist_free(&h->blk[n]);
+    }
+}
+#+END_SRC
+
+*** hashmap_hasher
+worgle.org:1682
+#+NAME: hashmap_hasher_0
+#+BEGIN_SRC
+static int hash(const char *str, size_t size)
+{
+    unsigned int h = 5381;
+    size_t i = 0;
+
+    for(i = 0; i < size; i++) {
+        h = ((h << 5) + h) ^ str[i];
+        h %= 0x7FFFFFFF;
+    }
+
+    return h % HASH_SIZE;
+}
+#+END_SRC
+worgle.org:1654
+#+NAME: functions_51
+#+BEGIN_SRC
+int worgle_hashmap_find(worgle_hashmap *h, worgle_string *name, worgle_block **b)
+{
+    int pos;
+    worgle_blocklist *lst;
+    int n;
+    worgle_block *blk;
+    pos = hash(name->str, name->size);
+    lst = &h->blk[pos];
+
+    blk = lst->head;
+    for(n = 0; n < lst->nblocks; n++) {
+        if(name->size == blk->name.size) {
+            if(!strncmp(name->str, blk->name.str, name->size)) {
+                *b = blk;
+                return 1;
+            }
+        }
+        blk = blk->nxt;
+    }
+    return 0;
+}
+#+END_SRC
+worgle.org:1708
+#+NAME: functions_52
+#+BEGIN_SRC
+worgle_block * worgle_hashmap_get(worgle_hashmap *h, worgle_string *name)
+{
+    worgle_block *b;
+    worgle_blocklist *lst;
+    int pos;
+
+    if(worgle_hashmap_find(h, name, &b)) return b;
+    pos = hash(name->str, name->size);
+    b = NULL;
+    b = malloc(sizeof(worgle_block));
+    worgle_block_init(b);
+    b->name = *name;
+    lst = &h->blk[pos];
+    worgle_blocklist_append(lst, b);
+    return b;
+}
+#+END_SRC
+worgle.org:1757
+#+NAME: functions_53
+#+BEGIN_SRC
+int worgle_file_write(worgle_file *f, worgle_hashmap *h)
+{
+    FILE *fp;
+    char tmp[128];
+    size_t n;
+    size_t size;
+    int rc;
+
+    if(f->filename.size > 128) size = 127;
+    else size = f->filename.size;
+    for(n = 0; n < size; n++) tmp[n] = f->filename.str[n];
+    tmp[size] = 0;
+
+    fp = fopen(tmp, "w");
+
+    rc = worgle_block_write(f->top, h, fp);
+
+    fclose(fp);
+    return rc;
+}
+#+END_SRC
+worgle.org:1802
+#+NAME: functions_54
+#+BEGIN_SRC
+void worgle_filelist_init(worgle_filelist *flist)
+{
+    flist->head = NULL;
+    flist->tail = NULL;
+    flist->nfiles = 0;
+}
+#+END_SRC
+worgle.org:1821
+#+NAME: functions_55
+#+BEGIN_SRC
+void worgle_filelist_free(worgle_filelist *flist)
+{
+    worgle_file *f;
+    worgle_file *nxt;
+    int n;
+    f = flist->head;
+    for(n = 0; n < flist->nfiles; n++) {
+        nxt = f->nxt;
+        free(f);
+        f = nxt;
+    }
+}
+#+END_SRC
+worgle.org:1848
+#+NAME: functions_56
+#+BEGIN_SRC
+void worgle_filelist_append(worgle_filelist *flist,
+                           worgle_string *name,
+                           worgle_block *top)
+{
+    worgle_file *f;
+    f = malloc(sizeof(worgle_file));
+    f->filename = *name;
+    f->top = top;
+
+    if(flist->nfiles == 0) {
+        flist->head = f;
+        flist->tail = f;
+    }
+    flist->tail->nxt = f;
+    flist->tail = f;
+    flist->nfiles++;
+}
+#+END_SRC
+worgle.org:1879
+#+NAME: functions_57
+#+BEGIN_SRC
+int worgle_filelist_write(worgle_filelist *flist, worgle_hashmap *h)
+{
+    worgle_file *f;
+    int n;
+
+    f = flist->head;
+    for(n = 0; n < flist->nfiles; n++) {
+        if(!worgle_file_write(f, h)) return 0;
+        f = f->nxt;
+    }
+
+    return 1;
+}
+#+END_SRC
+worgle.org:1916
+#+NAME: functions_58
+#+BEGIN_SRC
+void worgle_textbuf_zero(worgle_textbuf *txt)
+{
+    txt->buf = NULL;
+    worgle_string_init(&txt->filename);
+    txt->size = 0;
+}
+#+END_SRC
+worgle.org:1934
+#+NAME: functions_59
+#+BEGIN_SRC
+void worgle_textbuf_init(worgle_textbuf *txt,
+                         char *buf,
+                         size_t bufsize)
+{
+    txt->buf = buf;
+    txt->size = bufsize;
+}
+#+END_SRC
+worgle.org:1956
+#+NAME: functions_60
+#+BEGIN_SRC
+void worgle_textbuf_free(worgle_textbuf *txt)
+{
+    if(txt->buf != NULL) free(txt->buf);
+    worgle_textbuf_zero(txt);
+}
+#+END_SRC
+worgle.org:2054
+#+NAME: functions_61
+#+BEGIN_SRC
+int worgle_warn_unused(worgle_d *worg)
+{
+    worgle_hashmap *dict;
+    worgle_block *blk;
+    worgle_blocklist *lst;
+    int n;
+    int b;
+    int rc;
+
+    dict = &worg->dict;
+    rc = 0;
+
+    for(n = 0; n < HASH_SIZE; n++) {
+        lst = &dict->blk[n];
+        blk = lst->head;
+        for(b = 0; b < lst->nblocks; b++) {
+            if(blk->am_i_used == 0) {
+                fprintf(stderr, "Warning: block '");
+                worgle_string_write(stderr, &blk->name);
+                fprintf(stderr, "' unused.\n");
+                if(use_warnings == 2) rc = 1;
+            }
+            blk = blk->nxt;
+        }
+    }
+    return rc;
+}
+#+END_SRC
+worgle.org:2113
+#+NAME: functions_62
+#+BEGIN_SRC
+static void append_filename(worgle_d *worg, char *filename)
+{
+    worgle_string *str;
+    int pos;
+    pos = worg->nbuffers;
+    worg->nbuffers++;
+    if(worg->nbuffers == 1) {
+        worg->buffers = calloc(1, sizeof(worgle_textbuf));
+    } else {
+        worg->buffers = realloc(worg->buffers,
+                                sizeof(worgle_textbuf) * worg->nbuffers);
+    }
+    str = &worg->buffers[pos].filename;
+    str->str = filename;
+    str->size = strlen(filename);
+}
+#+END_SRC
+worgle.org:2154
+#+NAME: functions_63
+#+BEGIN_SRC
+void worgle_map(worgle_d *worg, worgle_block *b, int lvl, FILE *out)
+{
+    int i;
+    worgle_segment *s;
+    worgle_block *newblk;
+    worgle_hashmap *h;
+
+    h = &worg->dict;
+    if(lvl != 0) {
+        for(i = 0; i <= lvl; i++) {
+            fputc('*', out);
+        }
+        fputc(' ', out);
+        worgle_string_write(out, &b->name);
+        fputc('\n', out);
+    }
+
+    s = b->head;
+
+    newblk = NULL;
+
+    for(i = 0; i < b->nsegs; i++) {
+        if(s->type == SEGTYPE_TEXT) {
+            if(s->str.size > 0) {
+                worgle_string_write(out, s->filename);
+                fprintf(out, ":%zu\n", s->linum);
+                fprintf(out, "#+NAME: ");
+                worgle_string_write(out, &b->name);
+                fprintf(out, "_%d\n", i);
+                fprintf(out, "#+BEGIN_SRC\n");
+                worgle_string_write(out, &s->str);
+                fprintf(out, "#+END_SRC");
+            }
+            fprintf(out, "\n");
+        } else if(worgle_hashmap_find(h, &s->str, &newblk)) {
+            worgle_map(worg, newblk, lvl + 1, out);
+        }
+        s = s->nxt;
+    }
+}
+#+END_SRC
+worgle.org:2204
+#+NAME: functions_64
+#+BEGIN_SRC
+void worgle_map_files(worgle_d *worg, char *filename)
+{
+    int n;
+    worgle_file *f;
+    FILE *fp;
+
+    fp = fopen(filename, "w");
+    if(fp == NULL) return;
+
+    f = worg->flist.head;
+
+    fprintf(fp, "#+TITLE: Code Map\n");
+    for(n = 0; n < worg->flist.nfiles; n++) {
+        worgle_map_a_file(worg, f, fp);
+        f = f->nxt;
+    }
+
+    fclose(fp);
+}
+
+void worgle_map_a_file(worgle_d *worg, worgle_file *file, FILE *out)
+{
+    fprintf(out, "* ");
+    worgle_string_write(out, &file->filename);
+    fprintf(out, "\n");
+    worgle_map(worg, file->top, 0, out);
+}
+#+END_SRC
+worgle.org:55
+#+NAME: worgle-top_12
+#+BEGIN_SRC
+
+int main(int argc, char *argv[])
+{
+#+END_SRC
+** local_variables
+worgle.org:81
+#+NAME: local_variables_0
+#+BEGIN_SRC
+worgle_d worg;
+#+END_SRC
+worgle.org:96
+#+NAME: local_variables_1
+#+BEGIN_SRC
+char *filename;
+#+END_SRC
+worgle.org:127
+#+NAME: local_variables_2
+#+BEGIN_SRC
+int rc;
+#+END_SRC
+worgle.org:251
+#+NAME: local_variables_3
+#+BEGIN_SRC
+int i;
+#+END_SRC
+worgle.org:1971
+#+NAME: local_variables_4
+#+BEGIN_SRC
+struct parg_state ps;
+int c;
+#+END_SRC
+
+** initialization
+worgle.org:86
+#+NAME: initialization_0
+#+BEGIN_SRC
+worgle_init(&worg);
+#+END_SRC
+worgle.org:101
+#+NAME: initialization_1
+#+BEGIN_SRC
+filename = NULL;
+if(argc < 2) {
+    fprintf(stderr, "Usage: %s filename.org\n", argv[0]);
+    return 1;
+}
+#+END_SRC
+*** parse_cli_args
+worgle.org:1977
+#+NAME: parse_cli_args_0
+#+BEGIN_SRC
+parg_init(&ps);
+while((c = parg_getopt(&ps, argc, argv, "gW:m:")) != -1) {
+    switch(c) {
+        case 1:
+            filename = (char *)ps.optarg;
+#+END_SRC
+**** append_filename
+worgle.org:2101
+#+NAME: append_filename_0
+#+BEGIN_SRC
+append_filename(&worg, (char *)ps.optarg);
+#+END_SRC
+worgle.org:1983
+#+NAME: parse_cli_args_2
+#+BEGIN_SRC
+            break;
+        case 'g':
+#+END_SRC
+**** turn_on_debug_macros
+worgle.org:2008
+#+NAME: turn_on_debug_macros_0
+#+BEGIN_SRC
+use_debug = 1;
+#+END_SRC
+worgle.org:1986
+#+NAME: parse_cli_args_4
+#+BEGIN_SRC
+            break;
+        case 'W':
+#+END_SRC
+**** turn_on_warnings
+worgle.org:2031
+#+NAME: turn_on_warnings_0
+#+BEGIN_SRC
+if(!strncmp(ps.optarg, "soft", 4)) {
+    use_warnings = 1;
+} else if(!strncmp(ps.optarg, "error", 5)) {
+    use_warnings = 2;
+} else {
+    fprintf(stderr, "Unidentified warning mode '%s'\n", ps.optarg);
+    return 1;
+}
+#+END_SRC
+worgle.org:1989
+#+NAME: parse_cli_args_6
+#+BEGIN_SRC
+            break;
+        case 'm':
+#+END_SRC
+**** map_source_code
+worgle.org:2094
+#+NAME: map_source_code_0
+#+BEGIN_SRC
+map_source_code = 1;
+map_filename = (char *)ps.optarg;
+#+END_SRC
+worgle.org:1992
+#+NAME: parse_cli_args_8
+#+BEGIN_SRC
+            break;
+        default:
+            fprintf(stderr, "Unknown option -%c\n", c);
+            return 1;
+    }
+}
+#+END_SRC
+
+*** check_filename
+worgle.org:115
+#+NAME: check_filename_0
+#+BEGIN_SRC
+if(filename == NULL) {
+    fprintf(stderr, "No filename specified\n");
+    return 1;
+}
+#+END_SRC
+
+worgle.org:134
+#+NAME: initialization_6
+#+BEGIN_SRC
+rc = 0;
+#+END_SRC
+
+** loading
+worgle.org:151
+#+NAME: loading_0
+#+BEGIN_SRC
+for(i = 0; i < worg.nbuffers; i++) {
+    rc = loadfile(&worg, i);
+    if(!rc) goto cleanup;
+}
+#+END_SRC
+
+** parsing
+worgle.org:256
+#+NAME: parsing_0
+#+BEGIN_SRC
+for(i = 0; i < worg.nbuffers; i++) {
+    rc = parse_file(&worg, i);
+    if(rc) goto cleanup;
+}
+#+END_SRC
+
+** generation
+worgle.org:859
+#+NAME: generation_0
+#+BEGIN_SRC
+if(!rc) if(!worgle_generate(&worg)) rc = 1;
+#+END_SRC
+worgle.org:880
+#+NAME: generation_1
+#+BEGIN_SRC
+if(use_warnings) rc = worgle_warn_unused(&worg);
+#+END_SRC
+
+** mapping
+worgle.org:2136
+#+NAME: mapping_0
+#+BEGIN_SRC
+if(map_source_code && map_filename != NULL) {
+    worgle_map_files(&worg, map_filename);
+}
+#+END_SRC
+
+** cleanup
+worgle.org:887
+#+NAME: cleanup_0
+#+BEGIN_SRC
+cleanup:
+worgle_free(&worg);
+return rc;
+#+END_SRC
+worgle.org:65
+#+NAME: worgle-top_26
+#+BEGIN_SRC
+}
+
+#+END_SRC

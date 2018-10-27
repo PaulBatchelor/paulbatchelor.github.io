@@ -5,6 +5,9 @@
 This is Sorg, the Simple Org parser, inspired by
 [[https://github.com/Gottox/smu][smu]]. Sorg takes in an input file or stream,
 converts it to HTML, and writes it to an output stream
+
+Here is a test link: <<toc_parse_mode>>.
+
 * Main loop
 
 #+NAME: main_loop
@@ -187,6 +190,12 @@ If enabled, the parser will be set up to
 [[Table of Contents Parsing Mode][generate a table of contents]].
 Otherwise, it is just [[Normal Parsing Mode][the regular parser]].
 *** The Parse Function
+
+#+NAME: function_declarations
+#+BEGIN_SRC c
+static int parse(sorg_d *sorg, FILE *out, char *buf, size_t size);
+#+END_SRC
+
 #+NAME: parsing_top
 #+BEGIN_SRC c
 static int parse(sorg_d *sorg, FILE *out, char *buf, size_t size)
@@ -194,7 +203,6 @@ static int parse(sorg_d *sorg, FILE *out, char *buf, size_t size)
     sorg->pos = 0;
     sorg->off = 0;
     sorg->blksize = 0;
-
     if(mktoc) {
         <<toc_parse_mode>>
     } else {
@@ -218,7 +226,10 @@ if(buf[0] == '\n') {
 while(sorg->pos < size) {
     switch(sorg->mode) {
         case MODE_NONE:
-            if(is_header(sorg, buf, size)) {
+            if(is_comment(sorg, buf, size)) {
+                sorg->mode = MODE_NONE;
+                return 1;
+            } if(is_header(sorg, buf, size)) {
                 if(sorg->pmode == MODE_TEXT) fprintf(out, "</p>\n");
                 print_header(sorg, buf, size, out);
                 sorg->mode = MODE_NONE;
@@ -236,6 +247,13 @@ while(sorg->pos < size) {
                 sorg->mode = MODE_NONE;
                 sorg->pmode = sorg->mode;
                 return 1;
+            } else if(is_ulistitem(sorg, buf, size)) {
+                if(sorg->pmode == MODE_TEXT) fprintf(out, "</p>\n");
+                print_ulist_begin(sorg, out);
+                print_ulist_item(sorg, buf, size, out);
+                sorg->pmode = sorg->mode;
+                sorg->mode = MODE_ULIST;
+                return 1;
             } else {
                 sorg->mode = MODE_TEXT;
                 sorg->off = sorg->pos;
@@ -246,8 +264,16 @@ while(sorg->pos < size) {
         case MODE_TEXT:
             <<parse_formatted>>
             if(is_link(sorg, &buf[sorg->pos], size - sorg->pos)) {
-                fwrite(buf + sorg->off, 1, sorg->blksize - 1, out);
+                print_text(sorg, buf, out);
                 sorg->pos += print_link(sorg,
+                                        &buf[sorg->pos],
+                                        size - sorg->pos,
+                                        out);
+                sorg->blksize = 1;
+                sorg->off = sorg->pos;
+            } else if(is_block_ref(sorg, &buf[sorg->pos], size - sorg->pos)) {
+                print_text(sorg, buf, out);
+                sorg->pos += print_block_ref(sorg,
                                         &buf[sorg->pos],
                                         size - sorg->pos,
                                         out);
@@ -301,9 +327,20 @@ while(sorg->pos < size) {
             }
             sorg->pos++;
             break;
+        case MODE_ULIST:
+            if(is_ulistitem(sorg, buf, size)) {
+                print_ulist_item(sorg, buf, size, out);
+                return 1;
+            } else {
+                sorg->pmode = sorg->mode;
+                sorg->mode = MODE_NONE;
+                print_ulist_end(sorg, out);
+                parse(sorg, out, buf, size);
+                return 1;
+            }
+            break;
     }
 }
-
 
 fwrite(buf + sorg->off, 1, sorg->blksize, out);
 
@@ -338,11 +375,6 @@ enum {
     MODE_NONE
 };
 #+END_SRC
-** None mode
-
-By default, the state machine begins in NONE mode. In this mode, the parser
-will be parsing the line for new states.
-
 ** Headings
 *** Check for Header
 Headers in org-mode always start at the beginning of the line, and
@@ -580,6 +612,25 @@ a code block. In this mode, the parser looks for
 #+BEGIN_SRC c
 MODE_TEXT,
 #+END_SRC
+*** Writing a block of text
+A block of text is written using the function |print_text|.
+#+NAME: function_declarations
+#+BEGIN_SRC c
+void print_text(sorg_d *sorg, char *buf, FILE *out);
+#+END_SRC
+
+This code is a wrapper around |fwrite|.
+
+#+NAME: functions
+#+BEGIN_SRC c
+void print_text(sorg_d *sorg, char *buf, FILE *out)
+{
+    if(sorg->blksize > 0) {
+        printf("are we here?\n");
+        fwrite(buf + sorg->off, 1, sorg->blksize - 1, out);
+    }
+}
+#+END_SRC
 
 ** Code Blocks
 
@@ -625,6 +676,10 @@ between the regular emacs org-mode exporter and this one (and an
 important one!) Emacs will not export the name of the code block, which
 leads to more confusing readability!
 
+In addition to printing the name itself, a link target will be
+printed as well. To distinguish them from section targets,
+code sections will be prepended with an underscore '_'.
+
 #+NAME:function_declarations
 #+BEGIN_SRC c
 static void print_name(sorg_d *sorg, char *buf, size_t size, FILE *out);
@@ -665,15 +720,18 @@ static void print_name(sorg_d *sorg, char *buf, size_t size, FILE *out)
                 break;
         }
     }
+    fprintf(out, "<a id=\"_");
+    spaces_to_underscores(buf + off, name_size, out);
+    fprintf(out, "\">\n");
     fprintf(out, "<div><b><i>&lt;&lt;");
     fwrite(buf + off, 1, name_size, out);
-    fprintf(out, "</b></i>&gt;&gt;=</div>");
+    fprintf(out, "</b></i>&gt;&gt;=</div>\n");
+    fprintf(out, "</a>");
 }
 #+END_SRC
 
 Code blocks begin and end with =BEGIN_SRC= and =END_SRC= tags. When a
 new code block declaration begins, the mode is set to be in code mode.
-
 
 #+NAME:types
 #+BEGIN_SRC c
@@ -731,13 +789,96 @@ static int is_end(sorg_d *sorg, char *buf, size_t size)
     return 1;
 }
 #+END_SRC
-** Formatted Text
+** Code Block References
+Code block references are hyperlink references to named code blocks
+in text. This formatting is identical to how it appears in
+the codeblock code.
 
+A code block reference can be found via =is_block_ref=.
+
+#+NAME: function_declarations
+#+BEGIN_SRC c
+static int is_block_ref(sorg_d *sorg, char *buf, size_t size);
+#+END_SRC
+
+The code for this has been heavily copied from the function
+=is_link=.
+
+# TODO: maybe refactor this stuff?
+
+#+NAME: functions
+#+BEGIN_SRC c
+static int is_block_ref(sorg_d *sorg, char *buf, size_t size)
+{
+    size_t n;
+
+    if(size < 5) return 0;
+
+    if(buf[0] != '<' || buf[1] != '<') return 0;
+
+    size -= 1; /* for lookahead */
+
+    for(n = 2; n < size; n++) {
+        if(buf[n] == '>' && buf[n + 1] == '>') return 1;
+    }
+
+    return 0;
+}
+#+END_SRC
+
+A code block reference is printed with the function =print_block_ref=.
+This will print a hyperlink to the targetted codeblock.
+
+#+NAME: function_declarations
+#+BEGIN_SRC c
+static size_t print_block_ref(sorg_d *sorg, char *buf, size_t size, FILE *out);
+#+END_SRC
+
+Similar to =is_block_ref=, =print_block_ref= is copied from =print_link=.
+As mentioned in [[Code%20Blocks][the code block section,]]
+a block reference will always be prepended with an underscore "_".
+
+#+NAME: functions
+#+BEGIN_SRC c
+static size_t print_block_ref(sorg_d *sorg, char *buf, size_t size, FILE *out)
+{
+    size_t off;
+    size_t n;
+    char *name;
+    size_t name_size;
+    size_t tmp;
+
+
+    size -= 1; /* for lookahead */
+
+    off = 2;
+    name_size = 0;
+    tmp = 0;
+    name = &buf[2];
+    for(n = 2; n < size; n++) {
+        off++;
+        tmp++;
+        if(buf[n] == '>' && buf[n + 1] == '>') {
+            name_size = tmp - 1;
+            n++;
+            off++;
+            break;
+        }
+    }
+    fprintf(out, "<a href=\"#_");
+    spaces_to_underscores(name, name_size, out);
+    fprintf(out, "\">&lt;&lt;");
+    fwrite(name, 1, name_size, out);
+    fprintf(out, "&gt;&gt;</a>");
+    return off;
+}
+#+END_SRC
+
+** Formatted Text
 All formatted text can be generally described as encapsulated text. Each
 formatting is surrounded by a special character (or characters). Because they
 are so similar, this kind of parsing can be generalized.
 *** The core mechanic
-
 First, the parser checks to see if an item is encapsulated by a particular
 delimeter =delim= of size =dsize=.
 If there are matching delimeters on the same line, then
@@ -769,12 +910,10 @@ static int is_encapsulated(sorg_d *sorg,
     return 0;
 }
 #+END_SRC
-
 Once encapsulated text is found, the encapsulated text is printed to
 screen. In HTML, this means they are between HTML tags of a certain
 label. This function returns how many characters it parsed, so the parser
 knows to skip over them.
-
 #+NAME:function_declarations
 #+BEGIN_SRC c
 static size_t print_encapsulated(sorg_d *sorg,
@@ -792,7 +931,6 @@ the text is factoring in offsets for *both* sets of delimiters. To avoid
 the leftmost delimiter, offset by the size of the delimiter. To avoid the
 rightmost delimiter, negate the size by two times the delimiter to compensate
 for both the rightmost and leftmost delimiter.
-
 #+NAME:functions
 #+BEGIN_SRC c
 static size_t print_encapsulated(sorg_d *sorg,
@@ -819,7 +957,6 @@ static size_t print_encapsulated(sorg_d *sorg,
     return off;
 }
 #+END_SRC
-
 In the parse loop, both =is_encapsulated= and =print_encapsulated=
 can be combined together in a function called =chk_encapsulated=. The
 =chk= is short for check, and the abbreviation only used to make sure
@@ -827,7 +964,6 @@ the function call fits on the same line.
 
 On success, the function will return "true", causing the function
 to break out of the chain of if statments.
-
 #+NAME:function_declarations
 #+BEGIN_SRC c
 static int chk_encapsulated(sorg_d *sorg,
@@ -892,7 +1028,6 @@ if(chk_encapsulated(sorg, "/", 1, buf, size, "i", out)) break;
 if(chk_encapsulated(sorg, "=", 1, buf, size, "code", out)) break;
 #+END_SRC
 **** Underline
-
 #+NAME: parse_formatted
 #+BEGIN_SRC c
 if(chk_encapsulated(sorg, "_", 1, buf, size, "u", out)) break;
@@ -902,11 +1037,156 @@ This is not yet implemented.
 ** Ordered Lists
 This is not yet implemented.
 ** Unordered Lists
-This is not yet implemented.
+An unordered list is a list whose entries are noted by
+dashes "-". In Org Mode, unordered lists can have
+hierarchy via indentation. This will be implemented later.
+*** Unordered List mode
+#+NAME: types
+#+BEGIN_SRC c
+MODE_ULIST,
+#+END_SRC
+
+When a list is first found out of =MODE_NONE= mode, it is set to be
+=MODE_ULIST=, or unordered list mode. In this mode, list items will be
+added until there are no more items. When this happens, it sets the
+mode back to =MODE_NONE= and re-reads the line.
+
+# TODO: should we have the code in here?
+*** Checking for list
+A line that begins with the characters "- " (dash space) are considered to
+be the start of a list. If the line has a dash with no spaces, it is
+considered to be an ordered list.
+
+This check is done using the function =is_ulistitem=
+#+NAME: function_declarations
+#+BEGIN_SRC c
+static int is_ulistitem(sorg_d *sorg, char *buf, size_t size);
+#+END_SRC
+
+#+NAME: functions
+#+BEGIN_SRC c
+static int is_ulistitem(sorg_d *sorg, char *buf, size_t size)
+{
+    if(size == 0) return 0;
+    else if(buf[0] != '-') return 0;
+    else if(size == 2 && buf[0] == '-') return 1;
+    else if(buf[0] == '-' && buf[1] == ' ') return 1;
+    return 0;
+}
+#+END_SRC
+*** Printing the list item
+There are different components of a list that need to be printed:
+the beginning of a list, the end of a list, and a list item.
+
+The beginning of a list prints the HTML tag "ul" via =print_ulist_begin=.
+
+#+NAME: function_declarations
+#+BEGIN_SRC c
+static void print_ulist_begin(sorg_d *sorg, FILE *out);
+#+END_SRC
+
+#+NAME: functions
+#+BEGIN_SRC c
+static void print_ulist_begin(sorg_d *sorg, FILE *out)
+{
+    fprintf(out, "<ul>\n");
+}
+#+END_SRC
+
+The end of the list will print the corresponding end tag to "ul" via
+=print_list_end=.
+
+#+NAME: function_declarations
+#+BEGIN_SRC c
+static void print_ulist_end(sorg_d *sorg, FILE *out);
+#+END_SRC
+
+#+NAME: functions
+#+BEGIN_SRC c
+static void print_ulist_end(sorg_d *sorg, FILE *out)
+{
+    fprintf(out, "</ul>\n");
+}
+#+END_SRC
+
+An item of an unordered list is printed via =print_ulist_item=.
+
+#+NAME: function_declarations
+#+BEGIN_SRC c
+static void print_ulist_item(sorg_d *sorg, char *buf, size_t size, FILE *out);
+#+END_SRC
+
+=print_ulist_item= will begin the item information after the initial
+dashes and any immediate whitespace proceding it. It will end right before
+the line break.
+
+This is an interesting function because it recursively calls the top-level
+parse function in order to format the item string. This has caused some
+initial bugs to surface. Inside of =MODE_TEXT=, previous blocks of text
+get written before any formattings happen. This parser function gets called
+directly into =MODE_TEXT=, instead of being called from =MODE_NONE=. We
+do this because we only want to limit the parsing scope to things inside
+of text. This is a break from previous assumptions. Up to this point, it
+has always been assumed that there is always a block sizes of at least one.
+Now there are cases where there are empty block sizes, and nothing to
+handle for that. For some reason, blocks in text mode are printed N-1. When
+N is 0, you get negative values which results in undefined behavior. To
+combat this, the function =print_text= does a zero check.
+
+# TODO: why do we need to do blksize - 1
+
+#+NAME: functions
+#+BEGIN_SRC c
+static void print_ulist_item(sorg_d *sorg, char *buf, size_t size, FILE *out)
+{
+    size_t s;
+    int mode;
+    size_t off;
+    size_t len;
+    size_t s_blksize;
+    size_t s_off;
+    size_t s_pos;
+
+    mode = 1;
+    off = 1; /* assume first character is '-' */
+    len = 0;
+
+    for(s = 1; s < size; s++) {
+        if(mode == 0) break;
+        switch(mode) {
+            case 1: /* whitespaces after initial dash */
+                if(buf[s] != ' ') mode = 2;
+                else off++;
+                break;
+            case 2: /* look for linebreak */
+                if(buf[s] == '\n') {
+                    mode = 0;
+                }
+                len++;
+                break;
+        }
+    }
+
+    fprintf(out, "<li><p>");
+    sorg->pmode = MODE_NONE;
+    sorg->mode = MODE_TEXT;
+    s_off = sorg->off;
+    s_blksize = sorg->blksize;
+    s_pos = sorg->pos;
+    parse(sorg, out, buf + off, len + 1);
+    sorg->off = s_off;
+    sorg->blksize = s_blksize;
+    sorg->pos = s_pos;
+
+    sorg->mode = MODE_ULIST;
+    sorg->pmode = MODE_ULIST;
+    /* fwrite(buf + off, len, 1, out); */
+    fprintf(out, "</p></li>\n");
+}
+#+END_SRC
 ** TODO "TODO" headings
 This is not yet implemented.
 ** Links
-
 A link can be found in Sorg using the function =is_link=.
 
 #+NAME:function_declarations
@@ -987,6 +1267,28 @@ static size_t print_link(sorg_d *sorg, char *buf, size_t size, FILE *out)
     fwrite(name, 1, name_size, out);
     fprintf(out, "</a>");
     return off;
+}
+#+END_SRC
+** Comments
+A comment in org-mode is denoted by "# " (space included).
+
+#+NAME: function_declarations
+#+BEGIN_SRC c
+static int is_comment(sorg_d *sorg, char *line, size_t size);
+#+END_SRC
+
+In addition for checking for the pattern "# ", the =is_comment=
+function will also check if the line contains only a "#". This will
+be interpretted as a comment as well.
+
+#+NAME: functions
+#+BEGIN_SRC c
+static int is_comment(sorg_d *sorg, char *line, size_t size)
+{
+    if(size <= 0) return 0;
+    if(size == 2 && line[0] == '#') return 1;
+    if(line[0] == '#' && line[1] == ' ') return 1;
+    return 0;
 }
 #+END_SRC
 * Sections
