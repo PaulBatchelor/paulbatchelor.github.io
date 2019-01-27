@@ -60,7 +60,6 @@ int main(int argc, char *argv[])
     <<loading>>
     <<parsing>>
     <<generation>>
-    <<mapping>>
     <<cleanup>>
 }
 
@@ -118,7 +117,17 @@ if(filename == NULL) {
 }
 #+END_SRC
 
+The filename is then set inside of the Worgle struct.
+
+#+NAME: initialization
+#+BEGIN_SRC c
+worg.filename.str = filename;
+worg.filename.size = strlen(filename);
+#+END_SRC
+
 *** Initialize return codes
+
+**** Main Return Code
 
 The main return code determines the overall state of the program.
 
@@ -133,7 +142,37 @@ By default, it is set to be okay, which is 0 on POSIX systems.
 #+BEGIN_SRC c
 rc = 0;
 #+END_SRC
+**** Line Satus Code
 
+The getline function used by the parser returns a status code, which tells
+the program when it has reached the end of the file.
+
+#+NAME: local_variables
+#+BEGIN_SRC c
+int status;
+#+END_SRC
+
+This is set to be TRUE (1) by default.
+
+#+NAME: initialization
+#+BEGIN_SRC c
+status = 0;
+#+END_SRC
+**** Mode
+
+The overall parser mode state is set by the local variable =mode=.
+
+#+NAME: local_variables
+#+BEGIN_SRC c
+int mode;
+#+END_SRC
+
+It is set to be the initial mode of =MODE_ORG=.
+
+#+NAME: initialization
+#+BEGIN_SRC c
+mode = MODE_ORG;
+#+END_SRC
 ** Load file into memory
 
 The first thing the program will do is load the file.
@@ -143,56 +182,22 @@ a file stream, this parser will load the entire file into memory. This
 is done due to the textual nature of the program. It is much easier to
 simply allocate everything in one big block and reference chunks, then to
 allocate smaller chunks as you go.
-*** Loadfile function
 
-# TODO: merge with parse.
-#+NAME: loading
-#+BEGIN_SRC c
-for(i = 0; i < worg.nbuffers; i++) {
-    rc = loadfile(&worg, i);
-    if(!rc) goto cleanup;
-}
-#+END_SRC
-A file is loaded into a textbuffer via the function =loadfile=. In the
-worg startup sequence, the buffer list has been preallocated with the
-filename after parsing the command line arguments (see <<append_filename>>).
-It is in this stage that the memory block is allocated and the file loaded into
-it. The file will be allocated and loaded into the file located in index
-position =file=.
-
-On success, the function will return TRUE (1). On failure, FALSE (0).
-#+NAME: function_declarations
-#+BEGIN_SRC c
-static int loadfile(worgle_d *worg, int file);
-#+END_SRC
-
-#+NAME: functions
-#+BEGIN_SRC c
-static int loadfile(worgle_d *worg, int file)
-{
-    <<loadfile_localvars>>
-    <<loadfile>>
-    return 1;
-}
-#+END_SRC
 *** Open file
+
 File is loaded into a local file handle =fp=.
 
-#+NAME: loadfile_localvars
+#+NAME: local_variables
 #+BEGIN_SRC c
 FILE *fp;
-char *filename;
-worgle_textbuf *txt;
 #+END_SRC
 
-#+NAME: loadfile
+#+NAME: loading
 #+BEGIN_SRC c
-txt = &worg->buffers[file];
-filename = txt->filename.str;
 fp = fopen(filename, "r");
 
 if(fp == NULL) {
-    fprintf(stderr, "Could not find file %s\n", filename);
+    fprintf(stderr, "Could not find file %s\n", argv[1]);
     return 1;
 }
 #+END_SRC
@@ -200,12 +205,12 @@ if(fp == NULL) {
 The size is acquired by going to the end of the file and getting the current
 file position.
 
-#+NAME: loadfile_localvars
+#+NAME: local_variables
 #+BEGIN_SRC c
 size_t size;
 #+END_SRC
 
-#+NAME: loadfile
+#+NAME: loading
 #+BEGIN_SRC c
 fseek(fp, 0, SEEK_END);
 size = ftell(fp);
@@ -214,21 +219,21 @@ size = ftell(fp);
 Memory is allocated in a local buffer variable via =calloc=. The buffer
 is then stored inside of the worg struct.
 
-#+NAME: loadfile_localvars
+#+NAME: local_variables
 #+BEGIN_SRC c
 char *buf;
 #+END_SRC
 
-#+NAME: loadfile
+#+NAME: loading
 #+BEGIN_SRC c
 buf = calloc(1, size);
-worgle_textbuf_init(&worg->buffers[file], buf, size);
+worg.buf = buf;
 #+END_SRC
 
 The file is rewound back to the beginning and then read into the buffer. The
 file is no longer needed at this point, so it is closed.
 
-#+NAME: loadfile
+#+NAME: loading
 #+BEGIN_SRC c
 fseek(fp, 0, SEEK_SET);
 fread(buf, size, 1, fp);
@@ -244,145 +249,64 @@ by skimming through the block up to a line break character, then pass
 that off to be parsed. Line by line, the parser will read the program and
 produce a structure of the tangled code in memory.
 
-Parsing is done via the function =parse_file=.
-
-#+NAME: local_variables
+#+NAME:parsing
 #+BEGIN_SRC c
-int i;
-#+END_SRC
-
-#+NAME: parsing
-#+BEGIN_SRC c
-for(i = 0; i < worg.nbuffers; i++) {
-    rc = parse_file(&worg, i);
-    if(rc) goto cleanup;
-}
-#+END_SRC
-
-The =parse_file= function will parse a file whose filename is located
-in the index position denoted by =file=.
-
-#+NAME: function_declarations
-#+BEGIN_SRC c
-int parse_file(worgle_d *worg, int file);
-#+END_SRC
-
-#+NAME: functions
-#+BEGIN_SRC c
-int parse_file(worgle_d *worg, int file)
-{
-    char *buf;
-    size_t size;
-    worgle_textbuf *curbuf;
-
-    curbuf = &worg->buffers[file];
-    buf = curbuf->buf;
-    size = curbuf->size;
-    worg->curbuf = curbuf;
-    <<parser_local_variables>>
-    <<parser_initialization>>
-    while(1) {
-        <<getline>>
-        if(mode == MODE_ORG) {
-            <<parse_mode_org>>
-        } else if(mode == MODE_CODE) {
-            <<parse_mode_code>>
-        } else if(mode == MODE_BEGINCODE) {
-            <<parse_mode_begincode>>
-        }
+while(1) {
+    <<getline>>
+    if(mode == MODE_ORG) {
+        <<parse_mode_org>>
+    } else if(mode == MODE_CODE) {
+        <<parse_mode_code>>
+    } else if(mode == MODE_BEGINCODE) {
+        <<parse_mode_begincode>>
     }
-    return rc;
 }
 #+END_SRC
-
 *** Parser Local Variables
+
 The parsing stage requires a local variable called =str= to be used from time
 to time. Not sure where else to put this.
 
-#+NAME: parser_local_variables
+#+NAME: local_variables
 #+BEGIN_SRC c
 worgle_string str;
 #+END_SRC
 
-#+NAME: parser_initialization
+#+NAME: initialization
 #+BEGIN_SRC c
 worgle_string_init(&str);
 #+END_SRC
 
 =line= refers to the pointer address that the line will write to.
 
-#+NAME: parser_local_variables
+#+NAME:local_variables
 #+BEGIN_SRC c
 char *line;
 #+END_SRC
 
-#+NAME: parser_initialization
+#+NAME:initialization
 #+BEGIN_SRC c
 line = NULL;
 #+END_SRC
 
 =pos= refers to the current buffer position.
 
-#+NAME: parser_local_variables
+#+NAME:local_variables
 #+BEGIN_SRC c
 size_t pos;
 #+END_SRC
 
-#+NAME: parser_initialization
+#+NAME:initialization
 #+BEGIN_SRC c
 pos = 0;
 #+END_SRC
 
 This is the local variable =read=.
 
-#+NAME: parser_local_variables
+#+NAME:local_variables
 #+BEGIN_SRC c
 size_t read;
 #+END_SRC
-
-The overall parser mode state is set by the local variable =mode=.
-
-#+NAME: parser_local_variables
-#+BEGIN_SRC c
-int mode;
-#+END_SRC
-
-It is set to be the initial mode of =MODE_ORG=.
-
-#+NAME: parser_initialization
-#+BEGIN_SRC c
-mode = MODE_ORG;
-#+END_SRC
-
-The main return code determines the overall state of the program.
-
-#+NAME: parser_local_variables
-#+BEGIN_SRC c
-int rc;
-#+END_SRC
-
-By default, it is set to be okay, which is 0 on POSIX systems.
-
-#+NAME: parser_initialization
-#+BEGIN_SRC c
-rc = 0;
-#+END_SRC
-
-The getline function used by the parser returns a status code, which tells
-the program when it has reached the end of the file.
-
-#+NAME: parser_local_variables
-#+BEGIN_SRC c
-int status;
-#+END_SRC
-
-This is set to be TRUE (1) by default.
-
-#+NAME: parser_initialization
-#+BEGIN_SRC c
-status = 0;
-#+END_SRC
-
 *** Reading a line at a time
 
 Despite being loaded into memory, the program still reads in code one line
@@ -401,7 +325,7 @@ while loop.
 
 #+NAME: getline
 #+BEGIN_SRC c
-worg->linum++;
+worg.linum++;
 status = worgle_getline(buf, &line, &pos, &read, size);
 if(!status) break;
 #+END_SRC
@@ -486,7 +410,7 @@ if(read >= 7) {
     if(!strncmp(line, "#+NAME:",7)) {
         mode = MODE_BEGINCODE;
         parse_name(line, read, &str);
-        worgle_begin_block(worg, &str);
+        worgle_begin_block(&worg, &str);
     }
 }
 #+END_SRC
@@ -584,17 +508,17 @@ if(read >= 11) {
     if(!strncmp(line, "#+BEGIN_SRC",11)) {
         <<begin_the_code>>
         if(parse_begin(line, read, &str) == 2) {
-            worgle_append_file(worg, &str);
+            worgle_append_file(&worg, &str);
         }
         continue;
     } else {
         fwrite(line, read, 1, stderr);
-        fprintf(stderr, "line %lu: Expected #+BEGIN_SRC\n", worg->linum);
+        fprintf(stderr, "line %lu: Expected #+BEGIN_SRC\n", worg.linum);
         rc = 1;
         break;
     }
 }
-fprintf(stderr, "line %lu: Expected #+BEGIN_SRC\n", worg->linum);
+fprintf(stderr, "line %lu: Expected #+BEGIN_SRC\n", worg.linum);
 rc = 1;
 #+END_SRC
 
@@ -695,8 +619,8 @@ to keep track of the new block is reset.
 #+NAME: begin_the_code
 #+BEGIN_SRC c
 mode = MODE_CODE;
-worg->block_started = 1;
-worgle_string_reset(&worg->block);
+worg.block_started = 1;
+worgle_string_reset(&worg.block);
 #+END_SRC
 ***** Appending a new file
 If a new file is found, the filename gets appended to the file list
@@ -731,26 +655,26 @@ is found, or the =END_SRC= command is found.
 if(read >= 9) {
     if(!strncmp(line, "#+END_SRC", 9)) {
         mode = MODE_ORG;
-        worg->block_started = 0;
-        worgle_append_string(worg);
+        worg.block_started = 0;
+        worgle_append_string(&worg);
         continue;
     }
 }
 
 if(check_for_reference(line, read, &str)) {
-    worgle_append_string(worg);
-    worgle_append_reference(worg, &str);
-    worg->block_started = 1;
-    worgle_string_reset(&worg->block);
+    worgle_append_string(&worg);
+    worgle_append_reference(&worg, &str);
+    worg.block_started = 1;
+    worgle_string_reset(&worg.block);
     continue;
 }
 
-worg->block.size += read;
+worg.block.size += read;
 
-if(worg->block_started) {
-    worg->block.str = line;
-    worg->block_started = 0;
-    worg->curline = worg->linum;
+if(worg.block_started) {
+    worg.block.str = line;
+    worg.block_started = 0;
+    worg.curline = worg.linum;
 }
 #+END_SRC
 
@@ -767,7 +691,7 @@ void worgle_append_string(worgle_d *worg)
     worgle_block_append_string(worg->curblock,
                               &worg->block,
                               worg->curline,
-                              &worg->curbuf->filename);
+                              &worg->filename);
 }
 #+END_SRC
 
@@ -784,7 +708,7 @@ void worgle_append_reference(worgle_d *worg, worgle_string *ref)
     worgle_block_append_reference(worg->curblock,
                                  ref,
                                  worg->linum,
-                                 &worg->curbuf->filename);
+                                 &worg->filename);
 }
 #+END_SRC
 
@@ -859,19 +783,6 @@ write a string literal to disk, or a recursively expand block reference.
 if(!rc) if(!worgle_generate(&worg)) rc = 1;
 #+END_SRC
 
-#+NAME:function_declarations
-#+BEGIN_SRC c
-int worgle_generate(worgle_d *worg);
-#+END_SRC
-
-#+NAME:functions
-#+BEGIN_SRC c
-int worgle_generate(worgle_d *worg)
-{
-    return worgle_filelist_write(&worg->flist, &worg->dict);
-}
-#+END_SRC
-
 If the =use_warnings= flag is turned on, Worgle will scan the dictionary
 after generation and flag warnings about any unused blocks.
 
@@ -884,9 +795,21 @@ if(use_warnings) rc = worgle_warn_unused(&worg);
 At the end up the program, all allocated memory is freed via =worgle_free=.
 #+NAME: cleanup
 #+BEGIN_SRC c
-cleanup:
 worgle_free(&worg);
 return rc;
+#+END_SRC
+
+#+NAME:function_declarations
+#+BEGIN_SRC c
+int worgle_generate(worgle_d *worg);
+#+END_SRC
+
+#+NAME:functions
+#+BEGIN_SRC c
+int worgle_generate(worgle_d *worg)
+{
+    return worgle_filelist_write(&worg->flist, &worg->dict);
+}
 #+END_SRC
 * Core Data Structures
 
@@ -903,7 +826,6 @@ how the tangling works.
 <<worgle_hashmap>>
 <<worgle_file>>
 <<worgle_filelist>>
-<<worgle_textbuf>>
 <<worgle_struct>>
 #+END_SRC
 ** Top Level Struct
@@ -949,8 +871,7 @@ void worgle_free(worgle_d *worg);
 #+BEGIN_SRC c
 void worgle_free(worgle_d *worg)
 {
-    int i;
-    <<worgle_free>>
+<<worgle_free>>
 }
 #+END_SRC
 
@@ -1048,15 +969,14 @@ Destruction.
 worgle_filelist_free(&worg->flist);
 #+END_SRC
 **** Text Buffer
-Text files are loaded into buffers, encapsulated as a type
-=worgle_textbuf=. The currently used text buffer is stored in
-the variable =curbuf=. Buffers are stored in an array of text
-buffers known as =buflist=.
+
+The text file parsed is loaded into memory and stored into a buffer called =buf=
+
+# TODO: put this into a data struct so that multiple org files can be read at
+# once
 #+NAME:worgle_struct_contents
 #+BEGIN_SRC c
-worgle_textbuf *curbuf;
-worgle_textbuf *buffers;
-int nbuffers;
+char *buf;
 #+END_SRC
 
 The loaded happens after initialization, so the buffer is set to be NULL for
@@ -1064,19 +984,14 @@ now.
 
 #+NAME:worgle_init
 #+BEGIN_SRC c
-worg->curbuf = NULL;
-worg->buffers = NULL;
-worg->nbuffers = 0;
+worg->buf = NULL;
 #+END_SRC
 
 If the buffer is non-null, the memory will be freed.
 
 #+NAME: worgle_free
 #+BEGIN_SRC c
-for(i = 0; i < worg->nbuffers; i++) {
-    worgle_textbuf_free(&worg->buffers[i]);
-}
-if(worg->nbuffers > 0) free(worg->buffers);
+if(worg->buf != NULL) free(worg->buf);
 #+END_SRC
 **** Current Block
 A pointer to the currently populated code block is stored in a variable called
@@ -1109,6 +1024,21 @@ the first line. Do not be tempted to set this to be -1, because it won't work.
 worg->linum = 0;
 #+END_SRC
 
+**** Filename
+
+The filename is stored inside of a worgle string called =filename=.
+
+#+NAME:worgle_struct_contents
+#+BEGIN_SRC c
+worgle_string filename;
+#+END_SRC
+
+This values does not get set on init, but it is zeroed out and initialized.
+
+#+NAME:worgle_init
+#+BEGIN_SRC c
+worgle_string_init(&worg->filename);
+#+END_SRC
 ** String
 A string is a wrapper around a raw =char= pointer and a size. This is used
 as the base string literal.
@@ -1890,77 +1820,9 @@ int worgle_filelist_write(worgle_filelist *flist, worgle_hashmap *h)
     return 1;
 }
 #+END_SRC
-** Text Buffer
-Files in memory are stored in a text buffer known as a =worgle_textbuf=.
-
-#+NAME: worgle_textbuf
-#+BEGIN_SRC c
-typedef struct {
-    char *buf;
-    size_t size;
-    worgle_string filename;
-} worgle_textbuf;
-#+END_SRC
-
-*** Zeroing out a text buffer
-A text buffer is zeroed out with the function =worgle_textbuf_zero=.
-This is action will set things to be NULL an zero.
-
-#+NAME: function_declarations
-#+BEGIN_SRC c
-void worgle_textbuf_zero(worgle_textbuf *txt);
-#+END_SRC
-
-#+NAME: functions
-#+BEGIN_SRC c
-void worgle_textbuf_zero(worgle_textbuf *txt)
-{
-    txt->buf = NULL;
-    worgle_string_init(&txt->filename);
-    txt->size = 0;
-}
-#+END_SRC
-*** Initializing a text buffer
-A text buffer is fully initialized with the function =worgle_textbuf_init=.
-#+NAME: function_declarations
-#+BEGIN_SRC c
-void worgle_textbuf_init(worgle_textbuf *txt,
-                         char *buf,
-                         size_t bufsize);
-#+END_SRC
-
-#+NAME: functions
-#+BEGIN_SRC c
-void worgle_textbuf_init(worgle_textbuf *txt,
-                         char *buf,
-                         size_t bufsize)
-{
-    txt->buf = buf;
-    txt->size = bufsize;
-}
-#+END_SRC
-*** Freeing a text buffer
-A text buffer is in charge of freeing a buffer it holds. This is done
-with the function =worgle_textbuf_free=. It is assumed that
-the memory for the filename string is handled elsewhere. It is also
-assumed that the buffer was allocated via system =malloc=, so it
-uses the system =free= function.
-
-#+NAME: function_declarations
-#+BEGIN_SRC c
-void worgle_textbuf_free(worgle_textbuf *txt);
-#+END_SRC
-
-#+NAME: functions
-#+BEGIN_SRC c
-void worgle_textbuf_free(worgle_textbuf *txt)
-{
-    if(txt->buf != NULL) free(txt->buf);
-    worgle_textbuf_zero(txt);
-}
-#+END_SRC
 * Command Line Arguments
 This section outlines command line arguments in Worgle.
+
 ** Parsing command line flags
 
 Command line argument parsing is done using the third-party library
@@ -1975,20 +1837,16 @@ int c;
 #+NAME: parse_cli_args
 #+BEGIN_SRC c
 parg_init(&ps);
-while((c = parg_getopt(&ps, argc, argv, "gW:m:")) != -1) {
+while((c = parg_getopt(&ps, argc, argv, "gW:")) != -1) {
     switch(c) {
         case 1:
             filename = (char *)ps.optarg;
-            <<append_filename>>
             break;
         case 'g':
             <<turn_on_debug_macros>>
             break;
         case 'W':
             <<turn_on_warnings>>
-            break;
-        case 'm':
-            <<map_source_code>>
             break;
         default:
             fprintf(stderr, "Unknown option -%c\n", c);
@@ -2077,155 +1935,5 @@ int worgle_warn_unused(worgle_d *worg)
         }
     }
     return rc;
-}
-#+END_SRC
-** Map Source Code (-m)
-This flag will turn on source code mappings. It will dump the source code map
-to a specified file. The filename is stored in a global variable.
-
-#+NAME:global_variables
-#+BEGIN_SRC c
-static int map_source_code = 0;
-static char *map_filename = NULL;
-#+END_SRC
-
-#+NAME: map_source_code
-#+BEGIN_SRC c
-map_source_code = 1;
-map_filename = (char *)ps.optarg;
-#+END_SRC
-** Appending filenames
-
-#+NAME: append_filename
-#+BEGIN_SRC c
-append_filename(&worg, (char *)ps.optarg);
-#+END_SRC
-
-#+NAME: function_declarations
-#+BEGIN_SRC c
-static void append_filename(worgle_d *worg, char *filename);
-#+END_SRC
-
-For now, just append the file name to the first item on the
-list.
-#+NAME: functions
-#+BEGIN_SRC c
-static void append_filename(worgle_d *worg, char *filename)
-{
-    worgle_string *str;
-    int pos;
-    pos = worg->nbuffers;
-    worg->nbuffers++;
-    if(worg->nbuffers == 1) {
-        worg->buffers = calloc(1, sizeof(worgle_textbuf));
-    } else {
-        worg->buffers = realloc(worg->buffers,
-                                sizeof(worgle_textbuf) * worg->nbuffers);
-    }
-    str = &worg->buffers[pos].filename;
-    str->str = filename;
-    str->size = strlen(filename);
-}
-#+END_SRC
-* Source mapping
-Worgle has the ability to produce Org data that outlines the structure
-of the named blocks.
-
-#+NAME: mapping
-#+BEGIN_SRC c
-if(map_source_code && map_filename != NULL) {
-    worgle_map_files(&worg, map_filename);
-}
-#+END_SRC
-
-The idea behind this functionality is to provide
-a quick overview of the source code structure from the blocks
-perspective, rather than from the text perspective.
-
-Every file has a top level block, which is recursively iterated through.
-
-#+NAME: function_declarations
-#+BEGIN_SRC c
-void worgle_map(worgle_d *worg, worgle_block *b, int lvl, FILE *out);
-#+END_SRC
-
-#+NAME: functions
-#+BEGIN_SRC c
-void worgle_map(worgle_d *worg, worgle_block *b, int lvl, FILE *out)
-{
-    int i;
-    worgle_segment *s;
-    worgle_block *newblk;
-    worgle_hashmap *h;
-
-    h = &worg->dict;
-    if(lvl != 0) {
-        for(i = 0; i <= lvl; i++) {
-            fputc('*', out);
-        }
-        fputc(' ', out);
-        worgle_string_write(out, &b->name);
-        fputc('\n', out);
-    }
-
-    s = b->head;
-
-    newblk = NULL;
-
-    for(i = 0; i < b->nsegs; i++) {
-        if(s->type == SEGTYPE_TEXT) {
-            if(s->str.size > 0) {
-                worgle_string_write(out, s->filename);
-                fprintf(out, ":%zu\n", s->linum);
-                fprintf(out, "#+NAME: ");
-                worgle_string_write(out, &b->name);
-                fprintf(out, "_%d\n", i);
-                fprintf(out, "#+BEGIN_SRC\n");
-                worgle_string_write(out, &s->str);
-                fprintf(out, "#+END_SRC");
-            }
-            fprintf(out, "\n");
-        } else if(worgle_hashmap_find(h, &s->str, &newblk)) {
-            worgle_map(worg, newblk, lvl + 1, out);
-        }
-        s = s->nxt;
-    }
-}
-#+END_SRC
-
-#+NAME: function_declarations
-#+BEGIN_SRC c
-void worgle_map_files(worgle_d *worg, char *filename);
-void worgle_map_a_file(worgle_d *worg, worgle_file *file, FILE *out);
-#+END_SRC
-
-#+NAME: functions
-#+BEGIN_SRC c
-void worgle_map_files(worgle_d *worg, char *filename)
-{
-    int n;
-    worgle_file *f;
-    FILE *fp;
-
-    fp = fopen(filename, "w");
-    if(fp == NULL) return;
-
-    f = worg->flist.head;
-
-    fprintf(fp, "#+TITLE: Code Map\n");
-    for(n = 0; n < worg->flist.nfiles; n++) {
-        worgle_map_a_file(worg, f, fp);
-        f = f->nxt;
-    }
-
-    fclose(fp);
-}
-
-void worgle_map_a_file(worgle_d *worg, worgle_file *file, FILE *out)
-{
-    fprintf(out, "* ");
-    worgle_string_write(out, &file->filename);
-    fprintf(out, "\n");
-    worgle_map(worg, file->top, 0, out);
 }
 #+END_SRC

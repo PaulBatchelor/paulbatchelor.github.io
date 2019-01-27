@@ -18,14 +18,10 @@
 <a href="https://github.com/Gottox/smu">smu</a>. Sorg takes in an input file or stream,
 converts it to HTML, and writes it to an output stream
 </p>
-<p>Here is a test link: <a href="#_toc_parse_mode">&lt;&lt;toc_parse_mode&gt;&gt;</a>.
-</p>
 <a id="Main_loop">
 <h2>2 Main loop</h2>
 </a>
-<a id="_main_loop">
 <div><b><i>&lt;&lt;main_loop</b></i>&gt;&gt;=</div>
-</a>
 <p><code>#include&nbsp;&lt;stdio.h&gt;<br>
 #include&nbsp;&lt;stdlib.h&gt;<br>
 #include&nbsp;&lt;string.h&gt;<br>
@@ -73,9 +69,7 @@ int&nbsp;main(int&nbsp;argc,&nbsp;char&nbsp;*argv[])<br>
 </a>
 <p>All necessary data for sorg is encapsulated in a struct called <code>sorg_d</code>.
 </p>
-<a id="_sorg_data">
 <div><b><i>&lt;&lt;sorg_data</b></i>&gt;&gt;=</div>
-</a>
 <p><code>typedef&nbsp;struct&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;sorg_data_contents&gt;&gt;<br>
 }&nbsp;sorg_d;<br>
@@ -83,9 +77,7 @@ int&nbsp;main(int&nbsp;argc,&nbsp;char&nbsp;*argv[])<br>
 </code></p>
 <p>Sorg data is initialized with the function <code>sorg_init</code>.
 </p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>void&nbsp;sorg_init(sorg_d&nbsp;*sorg)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;initialize_stuff&gt;&gt;<br>
@@ -95,35 +87,27 @@ int&nbsp;main(int&nbsp;argc,&nbsp;char&nbsp;*argv[])<br>
 <p>The current mode of the state machine is stored in a variable called
 <code>mode</code>.
 </p>
-<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-</a>
 <p><code>int&nbsp;mode;<br>
 
 </code></p>
 <p>By default, it is set to be none, which is the general markdown
 mode.
 </p>
-<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-</a>
 <p><code>sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
 
 </code></p>
 <p>For logic for things such as paragraphs, sorg also keeps track of the
 previous mode, called <code>pmode</code>.
 </p>
-<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-</a>
 <p><code>int&nbsp;pmode;<br>
 
 </code></p>
 <p>Like mode, pmode is initialized to be <code>MODE_NONE</code>.
 </p>
-<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-</a>
 <p><code>sorg-&gt;pmode&nbsp;=&nbsp;MODE_NONE;<br>
 
 </code></p>
@@ -133,17 +117,13 @@ previous mode, called <code>pmode</code>.
 off: starting offset
 blksize: text block size
 </p>
-<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-</a>
 <p><code>size_t&nbsp;pos;<br>
 size_t&nbsp;off;<br>
 size_t&nbsp;blksize;<br>
 
 </code></p>
-<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-</a>
 <p><code>sorg-&gt;pos&nbsp;=&nbsp;0;<br>
 sorg-&gt;off&nbsp;=&nbsp;0;<br>
 sorg-&gt;blksize&nbsp;=&nbsp;0;<br>
@@ -151,18 +131,14 @@ sorg-&gt;blksize&nbsp;=&nbsp;0;<br>
 </code></p>
 <p>Section position is kept track of in an array of integers known as <code>secpos</code>.
 </p>
-<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-</a>
 <p><code>#define&nbsp;SORG_MAXSEC&nbsp;10<br>
 int&nbsp;secpos[SORG_MAXSEC];<br>
 
 </code></p>
 <p>Section numbers get all initialized to be zero.
 </p>
-<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-</a>
 <p><code>for(i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;SORG_MAXSEC;&nbsp;i++)&nbsp;sorg-&gt;secpos[i]&nbsp;=&nbsp;0;<br>
 
 </code></p>
@@ -170,9 +146,7 @@ int&nbsp;secpos[SORG_MAXSEC];<br>
 The previous depth is also recorded. This is needed for generating
 the table of contents with indentation.
 </p>
-<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-</a>
 <p><code>int&nbsp;depth;<br>
 int&nbsp;pdepth;<br>
 
@@ -183,9 +157,7 @@ value should do a bounds check before using this variable. Depth corresponds
 to array position in <code>secpos</code>, so be sure that the depth is in between
 0 and <code>SORG_MAXSEC</code>.
 </p>
-<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-</a>
 <p><code>sorg-&gt;depth&nbsp;=&nbsp;-1;<br>
 sorg-&gt;pdepth&nbsp;=&nbsp;-1;<br>
 
@@ -216,15 +188,7 @@ Otherwise, it is just <a href="#Normal_Parsing_Mode">the regular parser</a>.
 <a id="The_Parse_Function">
 <h4>4.1.1 The Parse Function</h4>
 </a>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;int&nbsp;parse(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
-<a id="_parsing_top">
 <div><b><i>&lt;&lt;parsing_top</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;parse(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;=&nbsp;0;<br>
@@ -244,9 +208,7 @@ Otherwise, it is just <a href="#Normal_Parsing_Mode">the regular parser</a>.
 </a>
 <p>This is the regular parsing mode, which converts all org syntax into HTML.
 </p>
-<a id="_normal_parse_mode">
 <div><b><i>&lt;&lt;normal_parse_mode</b></i>&gt;&gt;=</div>
-</a>
 <p><code>if(buf[0]&nbsp;==&nbsp;'\n')&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,"&lt;/p&gt;\n");<br>
@@ -257,10 +219,7 @@ Otherwise, it is just <a href="#Normal_Parsing_Mode">the regular parser</a>.
 while(sorg-&gt;pos&nbsp;&lt;&nbsp;size)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;switch(sorg-&gt;mode)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_NONE:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_comment(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;if(is_header(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_header(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;\n");<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_header(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
@@ -278,13 +237,6 @@ while(sorg-&gt;pos&nbsp;&lt;&nbsp;size)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(is_ulistitem(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_ulist_begin(sorg,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_ulist_item(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_ULIST;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_TEXT;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos;<br>
@@ -295,16 +247,8 @@ while(sorg-&gt;pos&nbsp;&lt;&nbsp;size)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_TEXT:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parse_formatted&gt;&gt;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_link(sorg,&nbsp;&buf[sorg-&gt;pos],&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_text(sorg,&nbsp;buf,&nbsp;out);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;+=&nbsp;print_link(sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&buf[sorg-&gt;pos],<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(is_block_ref(sorg,&nbsp;&buf[sorg-&gt;pos],&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_text(sorg,&nbsp;buf,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;+=&nbsp;print_block_ref(sorg,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&buf[sorg-&gt;pos],<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;out);<br>
@@ -358,18 +302,6 @@ while(sorg-&gt;pos&nbsp;&lt;&nbsp;size)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos++;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_ULIST:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_ulistitem(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_ulist_item(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_ulist_end(sorg,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;parse(sorg,&nbsp;out,&nbsp;buf,&nbsp;size);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;}<br>
 }<br>
 fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize,&nbsp;out);<br>
@@ -387,9 +319,7 @@ if(sorg-&gt;mode&nbsp;!=&nbsp;MODE_CODE)&nbsp;{<br>
 When enabled, the parser is only interested in parsing and printing
 headers. The rest, it skips.
 </p>
-<a id="_toc_parse_mode">
 <div><b><i>&lt;&lt;toc_parse_mode</b></i>&gt;&gt;=</div>
-</a>
 <p><code>if(buf[0]&nbsp;==&nbsp;'\n')&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
 }<br>
@@ -403,34 +333,34 @@ if(is_title(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
 <a id="Type_Enum">
 <h3>4.2 Type Enum</h3>
 </a>
-<a id="_enums">
 <div><b><i>&lt;&lt;enums</b></i>&gt;&gt;=</div>
-</a>
 <p><code>enum&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;types&gt;&gt;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;MODE_NONE<br>
 };<br>
 
 </code></p>
+<a id="None_mode">
+<h3>4.3 None mode</h3>
+</a>
+<p>By default, the state machine begins in NONE mode. In this mode, the parser
+will be parsing the line for new states.
+</p>
 <a id="Headings">
-<h3>4.3 Headings</h3>
+<h3>4.4 Headings</h3>
 </a>
 <a id="Check_for_Header">
-<h4>4.3.1 Check for Header</h4>
+<h4>4.4.1 Check for Header</h4>
 </a>
 <p>Headers in org-mode always start at the beginning of the line, and
 must have a number of stars, followed by a space. This is checked for
 with the function <code>is_header</code>.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
@@ -450,7 +380,7 @@ with the function <code>is_header</code>.
 
 </code></p>
 <a id="Print_Header">
-<h4>4.3.2 Print Header</h4>
+<h4>4.4.2 Print Header</h4>
 </a>
 <p>If the line is indeed a header, the parser will scan the line again, this
 time counting the number of stars before the space indicating the header
@@ -461,17 +391,13 @@ heading size starts at level 2.)
 This action is done with the function <code>print_header</code>.
 </p>
 <a id="Print_Header_Function">
-<h5>4.3.2.1 Print Header Function</h5>
+<h5>4.4.2.1 Print Header Function</h5>
 </a>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;print_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;print_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
@@ -517,18 +443,14 @@ to the problem.
 <p>Level in this parser starts at header level 2, so the value needs to be
 subtracted by 2 in order to work with the internal section counters.
 </p>
-<a id="_update_section_depth">
 <div><b><i>&lt;&lt;update_section_depth</b></i>&gt;&gt;=</div>
-</a>
 <p><code>update_section_depth(sorg,&nbsp;level&nbsp;-&nbsp;2);<br>
 
 </code></p>
 <a id="Normal_Header_Printing">
-<h5>4.3.2.2 Normal Header Printing</h5>
+<h5>4.4.2.2 Normal Header Printing</h5>
 </a>
-<a id="_print_normal_header">
 <div><b><i>&lt;&lt;print_normal_header</b></i>&gt;&gt;=</div>
-</a>
 <p><code>fprintf(out,&nbsp;"&lt;a&nbsp;id=\"");<br>
 spaces_to_underscores(buf&nbsp;+&nbsp;off,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);<br>
 fprintf(out,&nbsp;"\"&gt;\n");<br>
@@ -547,7 +469,7 @@ fprintf(out,&nbsp;"&lt;/a&gt;\n");<br>
 
 </code></p>
 <a id="TOC_Header_Printing">
-<h5>4.3.2.3 TOC Header Printing</h5>
+<h5>4.4.2.3 TOC Header Printing</h5>
 </a>
 <p>A TOC section heading in HTML is a list item in an unordered list. HTML
 supports nested lists with automatic indentation, which makes presenting
@@ -569,9 +491,7 @@ tags need to be printed. The number of necessary closed tags needed
 is obtained from getting the difference between the current depth
 and the previous depth. (Note: I missed this edge case on the first go).
 </p>
-<a id="_print_toc_header">
 <div><b><i>&lt;&lt;print_toc_header</b></i>&gt;&gt;=</div>
-</a>
 <p><code>if(sorg-&gt;depth&nbsp;&gt;&nbsp;sorg-&gt;pdepth)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;ul&gt;");<br>
 }&nbsp;else&nbsp;if(sorg-&gt;depth&nbsp;&lt;&nbsp;sorg-&gt;pdepth)&nbsp;{<br>
@@ -587,21 +507,17 @@ fprintf(out,&nbsp;"&lt;/a&gt;&lt;/li&gt;\n");<br>
 
 </code></p>
 <a id="Titles">
-<h3>4.4 Titles</h3>
+<h3>4.5 Titles</h3>
 </a>
 <p>Titles are declared using the <code>TITLE</code> tag in org-mode. They should
 only be used once per document, and it is expected that they are
 declared at the top of the file.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*title&nbsp;=&nbsp;"#+TITLE:";<br>
@@ -615,15 +531,11 @@ declared at the top of the file.
 }<br>
 
 </code></p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;print_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;print_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
@@ -662,45 +574,18 @@ declared at the top of the file.
 
 </code></p>
 <a id="Plain_Text">
-<h3>4.5 Plain Text</h3>
+<h3>4.6 Plain Text</h3>
 </a>
 <p>Plain text can be roughly defined as stuff in between headers that isn't
 a code block. In this mode, the parser looks for
 <a href="#Formatted_Text">Formatted Text</a>.
 </p>
-<a id="_types">
 <div><b><i>&lt;&lt;types</b></i>&gt;&gt;=</div>
-</a>
 <p><code>MODE_TEXT,<br>
 
 </code></p>
-<a id="Writing_a_block_of_text">
-<h4>4.5.1 Writing a block of text</h4>
-</a>
-<p>A block of text is written using the function |print_text|.
-</p>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>void&nbsp;print_text(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
-<p>This code is a wrapper around |fwrite|.
-</p>
-<a id="_functions">
-<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
-<p><code>void&nbsp;print_text(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;blksize&nbsp;&gt;&nbsp;0)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf("are&nbsp;we&nbsp;here?\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-}<br>
-
-</code></p>
 <a id="Code_Blocks">
-<h3>4.6 Code Blocks</h3>
+<h3>4.7 Code Blocks</h3>
 </a>
 <p>All code blocks are assumed to begin with the <code>NAME</code> tag with the code
 block immediately following it on the next line.
@@ -708,15 +593,11 @@ block immediately following it on the next line.
 <p>A NAME tag is found while the state machine is in NONE mode. It is
 done using the function <code>is_name</code>.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+NAME:";<br>
@@ -733,9 +614,7 @@ done using the function <code>is_name</code>.
 <p>If a <code>NAME</code> tag is found, this changes the state machine to only look for
 the beginning of a code block.
 </p>
-<a id="_types">
 <div><b><i>&lt;&lt;types</b></i>&gt;&gt;=</div>
-</a>
 <p><code>MODE_BEGIN_CODE,<br>
 
 </code></p>
@@ -744,19 +623,11 @@ between the regular emacs org-mode exporter and this one (and an
 important one!) Emacs will not export the name of the code block, which
 leads to more confusing readability!
 </p>
-<p>In addition to printing the name itself, a link target will be
-printed as well. To distinguish them from section targets,
-code sections will be prepended with an underscore '_'.
-</p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;print_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;print_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;<br>
@@ -788,36 +659,26 @@ code sections will be prepended with an underscore '_'.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
 &nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;a&nbsp;id=\"_");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;spaces_to_underscores(buf&nbsp;+&nbsp;off,&nbsp;name_size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"\"&gt;\n");<br>
 &nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;div&gt;&lt;b&gt;&lt;i&gt;&lt;&lt;");<br>
 &nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;name_size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/b&gt;&lt;/i&gt;&gt;&gt;=&lt;/div&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/a&gt;");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/b&gt;&lt;/i&gt;&gt;&gt;=&lt;/div&gt;");<br>
 }<br>
 
 </code></p>
 <p>Code blocks begin and end with <code>BEGIN_SRC</code> and <code>END_SRC</code> tags. When a
 new code block declaration begins, the mode is set to be in code mode.
 </p>
-<a id="_types">
 <div><b><i>&lt;&lt;types</b></i>&gt;&gt;=</div>
-</a>
 <p><code>MODE_CODE,<br>
 
 </code></p>
 <p>The <code>BEGIN_SRC</code> tag is checked with the function <code>is_begin</code>.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_begin(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_begin(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+BEGIN_SRC";<br>
@@ -835,15 +696,11 @@ new code block declaration begins, the mode is set to be in code mode.
 </p>
 <p>The <code>END_SRC</code> tag is found using the function <code>is_end</code>.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_end(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_end(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+END_SRC";<br>
@@ -854,87 +711,6 @@ new code block declaration begins, the mode is set to be in code mode.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;name[s])&nbsp;return&nbsp;0;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;}<br>
 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-}<br>
-
-</code></p>
-<a id="Code_Block_References">
-<h3>4.7 Code Block References</h3>
-</a>
-<p>Code block references are hyperlink references to named code blocks
-in text. This formatting is identical to how it appears in
-the codeblock code.
-</p>
-<p>A code block reference can be found via <code>is_block_ref</code>.
-</p>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;int&nbsp;is_block_ref(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
-<p>The code for this has been heavily copied from the function
-<code>is_link</code>.
-</p>
-<a id="_functions">
-<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;int&nbsp;is_block_ref(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;5)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(buf[0]&nbsp;!=&nbsp;'&lt;'&nbsp;||&nbsp;buf[1]&nbsp;!=&nbsp;'&lt;')&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-=&nbsp;1;&nbsp;/*&nbsp;for&nbsp;lookahead&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;2;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;'&gt;'&nbsp;&&&nbsp;buf[n&nbsp;+&nbsp;1]&nbsp;==&nbsp;'&gt;')&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-}<br>
-
-</code></p>
-<p>A code block reference is printed with the function <code>print_block_ref</code>.
-This will print a hyperlink to the targetted codeblock.
-</p>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;size_t&nbsp;print_block_ref(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
-<p>Similar to <code>is_block_ref</code>, <code>print_block_ref</code> is copied from <code>print_link</code>.
-As mentioned in <a href="#Code%20Blocks">the code block section,</a>
-a block reference will always be prepended with an underscore "_".
-</p>
-<a id="_functions">
-<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;size_t&nbsp;print_block_ref(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*name;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;name_size;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;tmp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-=&nbsp;1;&nbsp;/*&nbsp;for&nbsp;lookahead&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;2;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;tmp&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;=&nbsp;&buf[2];<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;2;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;'&gt;'&nbsp;&&&nbsp;buf[n&nbsp;+&nbsp;1]&nbsp;==&nbsp;'&gt;')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;tmp&nbsp;-&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;a&nbsp;href=\"#_");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;spaces_to_underscores(name,&nbsp;name_size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"\"&gt;&lt;&lt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fwrite(name,&nbsp;1,&nbsp;name_size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&gt;&gt;&lt;/a&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;off;<br>
 }<br>
 
 </code></p>
@@ -955,9 +731,7 @@ the text between is is considered to be encapsulated.
 </p>
 <p>NOTE: for now, <code>dsize</code> only works with a size of 1.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_encapsulated(sorg_d&nbsp;*sorg,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
@@ -965,9 +739,7 @@ the text between is is considered to be encapsulated.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_encapsulated(sorg_d&nbsp;*sorg,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
@@ -987,9 +759,7 @@ screen. In HTML, this means they are between HTML tags of a certain
 label. This function returns how many characters it parsed, so the parser
 knows to skip over them.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;size_t&nbsp;print_encapsulated(sorg_d&nbsp;*sorg,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
@@ -1006,9 +776,7 @@ the leftmost delimiter, offset by the size of the delimiter. To avoid the
 rightmost delimiter, negate the size by two times the delimiter to compensate
 for both the rightmost and leftmost delimiter.
 </p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;size_t&nbsp;print_encapsulated(sorg_d&nbsp;*sorg,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
@@ -1042,9 +810,7 @@ the function call fits on the same line.
 <p>On success, the function will return "true", causing the function
 to break out of the chain of if statments.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;chk_encapsulated(sorg_d&nbsp;*sorg,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
@@ -1054,9 +820,7 @@ to break out of the chain of if statments.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;chk_encapsulated(sorg_d&nbsp;*sorg,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
@@ -1093,36 +857,28 @@ to break out of the chain of if statments.
 <a id="Bold">
 <h5>4.8.2.1 Bold</h5>
 </a>
-<a id="_parse_formatted">
 <div><b><i>&lt;&lt;parse_formatted</b></i>&gt;&gt;=</div>
-</a>
 <p><code>if(chk_encapsulated(sorg,&nbsp;"*",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"b",&nbsp;out))&nbsp;break;<br>
 
 </code></p>
 <a id="Italics">
 <h5>4.8.2.2 Italics</h5>
 </a>
-<a id="_parse_formatted">
 <div><b><i>&lt;&lt;parse_formatted</b></i>&gt;&gt;=</div>
-</a>
 <p><code>if(chk_encapsulated(sorg,&nbsp;"/",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"i",&nbsp;out))&nbsp;break;<br>
 
 </code></p>
 <a id="Preformatted">
 <h5>4.8.2.3 Preformatted</h5>
 </a>
-<a id="_parse_formatted">
 <div><b><i>&lt;&lt;parse_formatted</b></i>&gt;&gt;=</div>
-</a>
 <p><code>if(chk_encapsulated(sorg,&nbsp;"=",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"code",&nbsp;out))&nbsp;break;<br>
 
 </code></p>
 <a id="Underline">
 <h5>4.8.2.4 Underline</h5>
 </a>
-<a id="_parse_formatted">
 <div><b><i>&lt;&lt;parse_formatted</b></i>&gt;&gt;=</div>
-</a>
 <p><code>if(chk_encapsulated(sorg,&nbsp;"_",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"u",&nbsp;out))&nbsp;break;<br>
 
 </code></p>
@@ -1139,165 +895,8 @@ to break out of the chain of if statments.
 <a id="Unordered_Lists">
 <h3>4.10 Unordered Lists</h3>
 </a>
-<p>An unordered list is a list whose entries are noted by
-dashes "-". In Org Mode, unordered lists can have
-hierarchy via indentation. This will be implemented later.
+<p>This is not yet implemented.
 </p>
-<a id="Unordered_List_mode">
-<h4>4.10.1 Unordered List mode</h4>
-</a>
-<a id="_types">
-<div><b><i>&lt;&lt;types</b></i>&gt;&gt;=</div>
-</a>
-<p><code>MODE_ULIST,<br>
-
-</code></p>
-<p>When a list is first found out of <code>MODE_NONE</code> mode, it is set to be
-<code>MODE_ULIST</code>, or unordered list mode. In this mode, list items will be
-added until there are no more items. When this happens, it sets the
-mode back to <code>MODE_NONE</code> and re-reads the line.
-</p>
-<a id="Checking_for_list">
-<h4>4.10.2 Checking for list</h4>
-</a>
-<p>A line that begins with the characters "- " (dash space) are considered to
-be the start of a list. If the line has a dash with no spaces, it is
-considered to be an ordered list.
-</p>
-<p>This check is done using the function <code>is_ulistitem</code>
-</p>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;int&nbsp;is_ulistitem(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
-<a id="_functions">
-<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;int&nbsp;is_ulistitem(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;==&nbsp;0)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;if(buf[0]&nbsp;!=&nbsp;'-')&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;if(size&nbsp;==&nbsp;2&nbsp;&&&nbsp;buf[0]&nbsp;==&nbsp;'-')&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;if(buf[0]&nbsp;==&nbsp;'-'&nbsp;&&&nbsp;buf[1]&nbsp;==&nbsp;'&nbsp;')&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-}<br>
-
-</code></p>
-<a id="Printing_the_list_item">
-<h4>4.10.3 Printing the list item</h4>
-</a>
-<p>There are different components of a list that need to be printed:
-the beginning of a list, the end of a list, and a list item.
-</p>
-<p>The beginning of a list prints the HTML tag "ul" via <code>print_ulist_begin</code>.
-</p>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;void&nbsp;print_ulist_begin(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
-<a id="_functions">
-<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;void&nbsp;print_ulist_begin(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;ul&gt;\n");<br>
-}<br>
-
-</code></p>
-<p>The end of the list will print the corresponding end tag to "ul" via
-<code>print_list_end</code>.
-</p>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;void&nbsp;print_ulist_end(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
-<a id="_functions">
-<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;void&nbsp;print_ulist_end(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/ul&gt;\n");<br>
-}<br>
-
-</code></p>
-<p>An item of an unordered list is printed via <code>print_ulist_item</code>.
-</p>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;void&nbsp;print_ulist_item(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
-<p><code>print_ulist_item</code> will begin the item information after the initial
-dashes and any immediate whitespace proceding it. It will end right before
-the line break.
-</p>
-<p>This is an interesting function because it recursively calls the top-level
-parse function in order to format the item string. This has caused some
-initial bugs to surface. Inside of <code>MODE_TEXT</code>, previous blocks of text
-get written before any formattings happen. This parser function gets called
-directly into <code>MODE_TEXT</code>, instead of being called from <code>MODE_NONE</code>. We
-do this because we only want to limit the parsing scope to things inside
-of text. This is a break from previous assumptions. Up to this point, it
-has always been assumed that there is always a block sizes of at least one.
-Now there are cases where there are empty block sizes, and nothing to
-handle for that. For some reason, blocks in text mode are printed N-1. When
-N is 0, you get negative values which results in undefined behavior. To
-combat this, the function <code>print_text</code> does a zero check.
-</p>
-<a id="_functions">
-<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;void&nbsp;print_ulist_item(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;len;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s_blksize;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s_off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s_pos;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;1;&nbsp;/*&nbsp;assume&nbsp;first&nbsp;character&nbsp;is&nbsp;'-'&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;len&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;1;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;0)&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;whitespaces&nbsp;after&nbsp;initial&nbsp;dash&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;'&nbsp;')&nbsp;mode&nbsp;=&nbsp;2;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;2:&nbsp;/*&nbsp;look&nbsp;for&nbsp;linebreak&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;'\n')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;len++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;li&gt;&lt;p&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;MODE_NONE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_TEXT;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;s_off&nbsp;=&nbsp;sorg-&gt;off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;s_blksize&nbsp;=&nbsp;sorg-&gt;blksize;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;s_pos&nbsp;=&nbsp;sorg-&gt;pos;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;parse(sorg,&nbsp;out,&nbsp;buf&nbsp;+&nbsp;off,&nbsp;len&nbsp;+&nbsp;1);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;s_off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;s_blksize;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;=&nbsp;s_pos;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_ULIST;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;MODE_ULIST;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;fwrite(buf&nbsp;+&nbsp;off,&nbsp;len,&nbsp;1,&nbsp;out);&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;&lt;/li&gt;\n");<br>
-}<br>
-
-</code></p>
 <a id="TODO_"TODO"_headings">
 <h3>4.11 TODO "TODO" headings</h3>
 </a>
@@ -1308,15 +907,11 @@ combat this, the function <code>print_text</code> does a zero check.
 </a>
 <p>A link can be found in Sorg using the function <code>is_link</code>.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;is_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
@@ -1330,15 +925,11 @@ combat this, the function <code>print_text</code> does a zero check.
 }<br>
 
 </code></p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;size_t&nbsp;print_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;size_t&nbsp;print_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;<br>
@@ -1385,33 +976,6 @@ combat this, the function <code>print_text</code> does a zero check.
 }<br>
 
 </code></p>
-<a id="Comments">
-<h3>4.13 Comments</h3>
-</a>
-<p>A comment in org-mode is denoted by "# " (space included).
-</p>
-<a id="_function_declarations">
-<div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;int&nbsp;is_comment(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*line,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
-<p>In addition for checking for the pattern "# ", the <code>is_comment</code>
-function will also check if the line contains only a "#". This will
-be interpretted as a comment as well.
-</p>
-<a id="_functions">
-<div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
-<p><code>static&nbsp;int&nbsp;is_comment(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*line,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;=&nbsp;0)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;==&nbsp;2&nbsp;&&&nbsp;line[0]&nbsp;==&nbsp;'#')&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(line[0]&nbsp;==&nbsp;'#'&nbsp;&&&nbsp;line[1]&nbsp;==&nbsp;'&nbsp;')&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-}<br>
-
-</code></p>
 <a id="Sections">
 <h2>5 Sections</h2>
 </a>
@@ -1433,15 +997,11 @@ all depths following it are zeroed out.
 <p>Section number depth can be checked and updated with the function
 <code>update_depth</code>.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;update_section_depth(sorg_d&nbsp;*sorg,&nbsp;int&nbsp;depth);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;update_section_depth(sorg_d&nbsp;*sorg,&nbsp;int&nbsp;depth)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;<br>
@@ -1467,18 +1027,14 @@ all depths following it are zeroed out.
 <p>To print the current section number in the nice X.Y.Z format, use
 the function <code>print_section</code> and supply a filehandle to write to.
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;print_section(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out);<br>
 
 </code></p>
 <p>It should be noted that this function will print a space, since
 a space is needed when <a href="#Headings">printing the header</a>.
 </p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;print_section(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;<br>
@@ -1497,16 +1053,12 @@ a space is needed when <a href="#Headings">printing the header</a>.
 <p>Command line argument parsing is done using the third-party library
 <a href="https://github.com/jibsen/parg">parg</a>, included in this source distribution.
 </p>
-<a id="_local_variables">
 <div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
-</a>
 <p><code>struct&nbsp;parg_state&nbsp;ps;<br>
 int&nbsp;c;<br>
 
 </code></p>
-<a id="_parse_command_flags">
 <div><b><i>&lt;&lt;parse_command_flags</b></i>&gt;&gt;=</div>
-</a>
 <p><code>parg_init(&ps);<br>
 while((c&nbsp;=&nbsp;parg_getopt(&ps,&nbsp;argc,&nbsp;argv,&nbsp;"st:"))&nbsp;!=&nbsp;-1)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;switch(c)&nbsp;{<br>
@@ -1532,17 +1084,13 @@ while((c&nbsp;=&nbsp;parg_getopt(&ps,&nbsp;argc,&nbsp;argv,&nbsp;"st:"))&nbsp;!=
 <p>The "-t" flag will turn on section numbers.
 This will set a global variable <code>use_secno</code> to be 1.
 </p>
-<a id="_turn_on_sections">
 <div><b><i>&lt;&lt;turn_on_sections</b></i>&gt;&gt;=</div>
-</a>
 <p><code>use_secno&nbsp;=&nbsp;1;<br>
 
 </code></p>
 <p>By default, the <code>use_secno</code> global is 0.
 </p>
-<a id="_global_variables">
 <div><b><i>&lt;&lt;global_variables</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;int&nbsp;use_secno&nbsp;=&nbsp;0;<br>
 
 </code></p>
@@ -1553,9 +1101,7 @@ This will set a global variable <code>use_secno</code> to be 1.
 an input parameter, which should be the name of the HTML filename containing
 the full documentation.
 </p>
-<a id="_generate_toc">
 <div><b><i>&lt;&lt;generate_toc</b></i>&gt;&gt;=</div>
-</a>
 <p><code>mktoc&nbsp;=&nbsp;1;<br>
 indxfile&nbsp;=&nbsp;(char&nbsp;*)ps.optarg;<br>
 
@@ -1563,9 +1109,7 @@ indxfile&nbsp;=&nbsp;(char&nbsp;*)ps.optarg;<br>
 <p>By default, the filename is set to NULL, and the <code>mktoc</code> variable is set
 to be false.
 </p>
-<a id="_global_variables">
 <div><b><i>&lt;&lt;global_variables</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;char&nbsp;*indxfile&nbsp;=&nbsp;NULL;<br>
 static&nbsp;int&nbsp;mktoc&nbsp;=&nbsp;0;<br>
 
@@ -1581,9 +1125,7 @@ static&nbsp;int&nbsp;mktoc&nbsp;=&nbsp;0;<br>
 <p>Because the getline function is not part of the ANSI C standard, an
 implementation is used in it's place.
 </p>
-<a id="_getline">
 <div><b><i>&lt;&lt;getline</b></i>&gt;&gt;=</div>
-</a>
 <p><code>size_t&nbsp;sorg_getline(char&nbsp;**lineptr,&nbsp;size_t&nbsp;*n,&nbsp;FILE&nbsp;*stream)&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*bufptr&nbsp;=&nbsp;NULL;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*p&nbsp;=&nbsp;bufptr;<br>
@@ -1648,15 +1190,11 @@ such as <a href="https://www.netsurf-browswer.org">netsurf</a>, don't work well 
 references have spaces in them. This function will take in a string and
 write it to a file handle, replacing the spaces ( ) to underscores (_).
 </p>
-<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;spaces_to_underscores(const&nbsp;char&nbsp;*str,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
 
 </code></p>
-<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-</a>
 <p><code>static&nbsp;void&nbsp;spaces_to_underscores(const&nbsp;char&nbsp;*str,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;blksize;<br>
