@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Alpine Linux on the GPD Pocket 2</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Alpine Linux on the GPD Pocket 2</h1>
+<p>2019-02-18</p>
+<p>A few days ago, I acquired a GPD pocket 2. Shortly after this, I managed to get
+Alpine Linux 3.9 installed on it. There really doesn't seem to be any
+information about this online (I could very well be the only person in
+the world to have attempted this), so I thought I'd share some setup notes.</p>
+<p>Anyone who has ever tried to install Linux on a laptop knows it is always a bit
+of a gamble. Since both Alpine Linux and the Pocket are very specialized,
+my expectations were very low going into this. Fortunately, the GPD Pocket 2
+seems to be a very Linux-friendly bit of hardware. Things seem to work
+just fine.</p>
+<h2>Summary</h2>
+<p>I will go into more detail later, but here's the TL;DR of it all.</p>
+<p>The list below is what I got working. An asterisk (*) indicates that some
+tweaks were needed. The console gets honorable mention because of a partial fix.</p>
+<ul>
+<li>Graphics*</li>
+<li>Touchscreen*</li>
+<li>Audio (On-board and USB)</li>
+<li>Networking + WIFI*</li>
+<li>i3*</li>
+<li>dwm*</li>
+<li>Emacs*</li>
+<li>Firefox</li>
+<li>Chrome</li>
+<li>Monome input (via libmonome)</li>
+<li>JACK audio connection kit</li>
+<li>Laptop Lid Close*</li>
+<li>Console (honorable mention)</li>
+</ul>
+<h2>Motivations</h2>
+<p>Why Alpine Linux? Why the GPD pocket? If you don't care about my decisions here,
+feel free to move along.</p>
+<h3>Why Alpine Linux?</h3>
+<p>I really enjoy Alpine Linux because of how lightweight it is. Most Linux
+distributions have a lot of bloat that I often find myself uninstalling.
+The install disk is about 100 megabytes. While not the smallest Linux
+distribution, it's pretty darn small for an actively maintained distro
+in 2019. There are also other cool things I like about it, like their
+simple package manager and init system, as well as them using the musl
+standard C library.</p>
+<h3>Why the GPD Pocket?</h3>
+<p>I really like the Pocket because of how <em>physically</em> small and lightweight it is.
+I travel a fair bit these days, so the weight and size of something is
+important to me. The GPD with its leather case clocks in at a little over a
+pound. To put that into perspective, that's about half the weight of my
+10-inch chromebook, a third of the weight of a surface pro 4 with a case,
+and about fifth the weight of my hefty 5.5 pound macbook pro with shell casing.
+The form factor is between that of a large phone and 7-inch tablet... it's
+actually small enough to fit in my pocket!</p>
+<h2>Main Install Notes</h2>
+<p>Keep in mind that this is not meant to be a tutorial. More of a loose guide
+based on my experiences. Everything is roughly chronological, though this is
+not always the case.</p>
+<h3>Initial Installation</h3>
+<p>I downloaded the latest version of Alpine Linux (x86-64), which at the time
+of writing is at version 3.9.</p>
+<p>On Linux, I did the usual dd trick. Nothing fancy here.</p>
+<p>Plug it in, and boot into Alpine Linux (IIRC I used f12 to start it)</p>
+<p>The GPD will register as a portrait display, causing the console to be rotated.
+I tried some solutions online, and have been unable to rotate the console.
+My hack for this was to physically rotate the screen and use a tablet stand and
+an external keyboard. Luckily, the lid will open 180 degrees and allow it to be
+flattened.</p>
+<p>The rest of the install was pretty normal. WIFI drivers work out of the box.
+Choose a "sys" install. I opted to install it on everything.
+I would not know how to dual boot (sorry, I haven't
+needed to do that in a long time).</p>
+<h3>Post-install Networking</h3>
+<p>WIFI connections needed to be started manually after a reboot.</p>
+<p>I did this with:</p>
+<pre><code> /etc/init.d/wpa_supplicant start</code></pre>
+<p>I personally disable networking at boot for a faster boot time, so I have a
+little script that I run as root.</p>
+<h3>Setting Up Graphics</h3>
+<p>Use the standard setup-xorg-base script to install everything that you need.
+Highly recommend this. I didn't do this on the first go (just installed stuff
+using the package manager), and when I started the server, everything froze.</p>
+<p>As mentioned before, the GPD pocket rotates everything because it thinks it is a
+portrait display. Also, being the high-density display that it is, everything
+will be very small.</p>
+<p>Luckily, the xrandr utitilty will fix both of these problems.</p>
+<p>This is what my .xinitrc file looks like</p>
+<pre><code> xrandr -o 3 --size 600x960
+ dwm</code></pre>
+<p>I currently am using dwm as a window manager.</p>
+<h3>i3 vs dwm</h3>
+<p>I usually prefer using the i3 window manager. However, I found that i3 was
+making emacs glitch out (x11 and GTK versions). dwm did not have these issues,
+so I went with that instead.</p>
+<p>You will need to manually adjust the font size for both. In i3, this can
+be done in the config file. dwm will have to be recompiled from source. Usually
+fonts around 24pt look okay.</p>
+<h3>Touchscreen</h3>
+<p>The touchscreen was something I assumed wouldn't work, but it does! However,
+it will not automatically recalibrate when you rotate the screen with xrandr.
+Luckily enough, the Arch Linux WIKI has a udev script that does the trick nicely.</p>
+<pre><code> ACTION==&quot;add|change&quot;, KERNEL==&quot;event[0-9]*&quot;, ATTRS{name}==&quot;Goodix Capacitive TouchScreen&quot;, ENV{LIBINPUT_CALIBRATION_MATRIX}=&quot;0 1 0 -1 0 1&quot;</code></pre>
+<p>Put this in a file called 90-goodix-touchscreen.rules and place it in the folder
+/etc/udev/rules.d. Restart x11 and things should work.</p>
+<h3>Getting Laptop Lid Fixed</h3>
+<p>I ran into some initial problems with the laptop lid. Anytime I closed the lid,
+keyboard/mouse input would freeze when I tried to open it back up again (this
+could be unfrozen by switching to another tty terminal and back with ctrl-alt-f2
+and then ctrl-alt-f1).</p>
+<p>It turns out this problem doesn't happen if you explicitely turn the screen off
+first before closing the lid.</p>
+<p>I wrote a little script called "snooze" which turns the screen of and then locks
+it using the utility slock</p>
+<pre><code> xset dpms force off # turn the screen off
+ slock # lock the screen</code></pre>
+<p>Later on, I figured out a better solution to the problem using the ACPI daemon
+running on Alpine. Create a file called <code>/etc/acpi/LID/00000080</code> and insert
+the following:</p>
+<pre><code> #!/bin/sh
+ echo mem &gt; /sys/power/state</code></pre>
+<p>The LID directory did not exist for me, I had to make it myself.
+It is assumed that the ACPI daemon is already running
+(by default, I think it should start up on boot).</p>
+<p>From there, the lid close worked no problem!</p>
+<h3>Emacs</h3>
+<p>Emacs is luckily available through the alpine community repositories.
+Emacs started up with a tiny unreadable font. This configuration can be saved,
+but it will write things your .emacs file. This is a problem since I use this
+config file on many computers.</p>
+<p>Running this command will change the font size from the command line:</p>
+<pre><code> emacs --eval &quot;(set-face-attribute 'default nil :height 361)&quot;</code></pre>
+<h3>Firefox vs Chromium</h3>
+<p>For web browsing, both Firefox and Chromium are both available as alpine
+packages through the community packages. For whatever reason, I found chromium
+to freeze up on Google sites like gmail and search (how ironic), so I installed
+Firefox. Firefox initially was barking something to me about dbus not being
+configured correctly. It turns out, you need to explicitely install dbus stuff.
+I figured this out accidentally while trying to get JACK to run.</p>
+<p>Firefox the browswer I am currently using.</p>
+<h3>Speeding up startup time</h3>
+<p>To improve start-up time, I removed some services that were acting as
+bottlenecks.</p>
+<p>Networking configuring was the slowest service because of DHCP and the 60 second
+timeout window, so that was the first to go. My thinking was it was easy enough
+to explicitely start at login.</p>
+<p>Since networking was disabled on boot, I removed some network-dependent services
+like sshd and chronyd (when you are connected to the internet, be sure to
+explicitely run chronyd periodically to avoid time skew issues)</p>
+<p>Crond was removed as well since I wasn't using it.</p>
+<p>On login, x windows can be started automatically with the following:</p>
+<pre><code> if [ $(tty) == &quot;/dev/tty1&quot; ]
+ then
+     startx
+ fi</code></pre>
+<h3>Monome (via libmonome)</h3>
+<p>I use the monome grid controller as a tactile music controller for composition
+and sound design. Communication with the monome is done using the libmonome
+library. At the time of writing, the liblo library, a dependency used by
+libmonome, does not seem to be available in the Alpine Linux Repositories.
+I had to manually compile that from source. Not the end of the world.</p>
+<h3>JACK audio</h3>
+<p>JACK is available as a third-party package from the alpine repostitory.</p>
+<p>I had some initial trouble getting it to run. For me, the issue was that
+dbus was not installed. These can be installed with</p>
+<pre><code> apk add dbus-libs dbus-glib dbus dbus-x11</code></pre>
+<h3>USB-C HDMI output</h3>
+<p>I managed to get output to an external display as a kind of dock.
+However, you need to undo any rotation and scaling done by xrandr.
+I also found that I needed to explicitely turn off the laptop screen
+in order for the screen to set the proper resolutions.</p>
+<pre><code> xrandr --output DP1 --auto
+ xrandr --output eDP1 --off</code></pre>
+<p>The font scaling changes I made for emacs and dwm needed to be reduced
+back to normal.</p>
+<h3>Console Fonts</h3>
+<p>The default console fonts are really small! I fixed this by installing
+the terminus font with</p>
+<pre><code> apk add terminus-font</code></pre>
+<p>I then used this command to enlarge the text:</p>
+<pre><code> setfont /usr/share/consolefonts/ter-v28n.psf.gz
+</code></pre>
+
+</div>
+</body>
+</html>
