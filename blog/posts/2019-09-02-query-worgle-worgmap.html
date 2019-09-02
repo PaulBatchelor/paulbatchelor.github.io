@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Browsing Program Structure with Worgle and SQLite</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Browsing Program Structure with Worgle and SQLite</h1>
+<p>2019-09-02</p>
+<h2>Literate Programs as Structured Data</h2>
+<p>A compelling aspect of writing literate programs is that
+they can be represented as structured data. In Worgle,
+there are two main tree representations of the overall
+program structure. The woven tree represents the document
+structure as a collection of headers found in the Org
+markup language. The tangled tree represents the generated
+code structure as a series of named codeblocks created using
+the noweb syntax.</p>
+<p>I always thought it would be a very powerful thing to be
+able to explore literate programs as trees. As of now,
+this is beginning to be possible in Worgle. Worgle has the
+ability to write data to a SQLite database, which is then
+queried using a program called worgmap.</p>
+<h2>Extracting Data from a Worgle Literate Program</h2>
+<p>Before a literate program made using Worgle can be queried,
+data must first be written to an intermediate format.
+I have chosen to use SQLite, as it is a robust and
+mature data format that is trivial for other programs
+to parse.</p>
+<p>A database is generated using the "-d" flag in Worgle.
+The code below generates a database from the main Worgle
+org file.</p>
+<pre><code> worgle -d a.db worgle.org</code></pre>
+<p>The name "a.db" is the default name of the database that
+Worgmap opens to query information.</p>
+<p>Database write times are reasonable. My largest program
+written in Worgle to-date, <a href="/proj/monolith">Monolith</a>, is
+able to write a database in under half a second on my 2015
+macbook pro. My GPD laptop running alpine Linux does seem
+to take a few seconds. This performance difference feels
+larger than I expected, even when considering the hardware
+difference. Even so, it still feels manageable.</p>
+<h2>Some Querying Via Worgmap</h2>
+<p>Once a database is generated, it can be queried using
+"get" utilities found in a program called Worgmap. The
+database is a pure SQLite database, so it is possible
+to just do raw SQL queries using the sqlite3 CLI. The
+worgmap get interface saves a few keystrokes.</p>
+<p>When worgmap is run, it is assumed the database is in
+the current working directory, and that the name of the
+database is named "a.db". In the future, this will be
+more customizable.</p>
+<p>To get a list of files from the database, run</p>
+<pre><code> worgmap get filelist</code></pre>
+<p>This will return the list of files tangled by Worgle:</p>
+<pre><code> worgle.c
+ worgle.h
+ worgle_private.h</code></pre>
+<p>The program <code>ffile</code> can be used to get metadata on
+the file "worgle.c":</p>
+<pre><code> worgmat get ffile worgle.c</code></pre>
+<p>This returns the following:</p>
+<pre><code> id = 2
+ filename = worgle.c
+ top = 1
+ next_file = 29</code></pre>
+<p>The <code>id</code> is the UUID associated with this resource.
+<code>filename</code> is the stored filename (duh). <code>top</code> refers
+to the top-level code block represented. <code>next_file</code>
+is the UUID of the next file in the list.</p>
+<p>To get more information on the top level block:</p>
+<pre><code> worgmap get blk 1</code></pre>
+<p>Which returns:</p>
+<pre><code> 1 3 worgle-top</code></pre>
+<p>This displays in order: the UUID (1), the UUID of the top
+level segment, and the name of the block (worgle-top).
+"worgle-top" is the block that contains the entire
+structure of the tangled C file "worgle.c". A
+tree view of this block can be printed using:</p>
+<pre><code> worgmap get tree worgle-top</code></pre>
+<p>The results:</p>
+<pre><code> global_variables
+ enums
+  parse_modes
+ static_function_declarations
+ functions
+  loadfile_localvars
+  loadfile
+  parser_local_variables
+  parser_initialization
+  getline
+  parse_mode_org
+  parse_mode_code
+  parse_mode_begincode
+   begin_the_code
+  worgle_block_set_id
+  worgle_file_set_id
+  worgle_segment_string_set_id
+  worgle_segment_reference_set_id
+  worgle_init
+  worgle_free
+  worgle_string_init
+  worgle_segment_init
+  worgle_block_init
+  hashmap_hasher
+  worgle_file_init_id
+ local_variables
+ initialization
+  parse_cli_args
+   append_filename
+   turn_on_debug_macros
+   turn_on_warnings
+   map_source_code
+   generate_database
+  check_filename
+ loading
+ parsing
+ generation
+ mapping
+ database
+ cleanup</code></pre>
+<h2>Future Plans</h2>
+<p>Lots of things to be done here, really. Using something like
+SQLite allows me to dump way more metadata than I know what
+to do with right now.</p>
+<p>For starters, I'd like to parse save org structure in
+addition to tangled code structure. I'm hoping to build
+more utilities that generate interesting representations of
+the document. Hoping to build a better static HTML
+generator than the simple one I have currently written. I
+also want to build a simple HTTP server that dynamic
+generates HTML content. Maybe throw in a few dot graph
+generators for good measure?</p>
+<p>Being able to write multiple worgle programs into one
+database is important to me as well, as this would allow
+more incremental (hopefully faster) development to happen.</p>
+
+</div>
+</body>
+</html>
