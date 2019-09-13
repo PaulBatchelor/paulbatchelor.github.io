@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title></title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Density</h1>
+<p>[<a href="/res/cook/density.sp">code</a>]</p>
+<p><a href="/sporthlings/006/">Density</a> is something of a test patch, originally 
+built as a playground for <a href="/proj/cook/lsys.html">lsys</a>, a new and still
+very underused microlanguage in Sporth for describing L-systems. Full 
+explanations of what lsys is doing is beyond the scope of this document. 
+Besides lys, is a very short and simple patch, make good use of exponential
+envelopes, sinusoids, and delay lines to create organic bubbly textures.
+<h2>Clock </h2>
+<p>The clock signal utilized in this patch is generated using <strong>clock</strong> and
+stored in the variable <em>clk</em>. </p>
+</p>
+<pre><code> _clk var
+ 0 150 4 clock _clk set</code></pre>
+<h2>LSYS 1</h2>
+<p>In Density, there are two very lsys-driven instruments, the first of which
+is described now. An instance of <strong>lsys</strong> is spawned. It is controlled with
+the clock signal <em>clk</em>, and has an order of 16. The output of <strong>lsys</strong>
+is fed into <strong>thresh</strong> in order to generate a trigger signal for <strong>tenvx</strong>.</p>
+<pre><code> _clk get 16 &quot;bab|a:bba|b:a&quot; lsys 10.5 2 thresh</code></pre>
+<p>The exponetial trigger envelope generator <strong>tenvx</strong> is then instantiated.
+It is a very quick envelope with 1ms durations for attack, hold and decay
+parameters. </p>
+<pre><code> 0.001 0.001 0.001 tenvx </code></pre>
+<p>This envelope drives a sinusoidal oscilator <strong>sine</strong>, whose frequency 
+is controlled by another <strong>sine</strong> lfo running between 2000Hz and 3000Hz.
+The speed of this (1/30) Hz, efficiently calculated via <strong>inv</strong>.</p>
+<pre><code> 30 inv 1 sine 2000 3000 biscale 0.5 sine *</code></pre>
+<h2>LSYS 2</h2>
+<p>The second <strong>lsys</strong> instrument in the patch is nearly identical to
+the first lsys patch, with a few notable differences. Firstly, the
+order of this instance of <strong>lsys</strong> is 17 instead of 16. This creates
+an interesting phasing effect with the other <strong>lsys</strong> generator. Secondly,
+the sinusoidal oscillator <strong>sine</strong> is set to a fixed frequency of 800Hz.</p>
+<pre><code> _clk get 17 &quot;bab|a:ba|b:a&quot; lsys 10.5 2 thresh
+ 0.001 0.001 0.001 tenvx 
+ 800 0.5 sine * +</code></pre>
+<h2>Effects</h2>
+<p>The first part of the effect chain is delay line, with a very high feedback
+amount. This delay line is set through a highpass fitler with a rather 
+aggressive cutoff point (4000hz) so that the delay line only effects the 
+high end. This signal is then attenuated by 20db. </p>
+<pre><code> dup 0.8 0.2 delay 4000 buthp -20 ampdb * + </code></pre>
+<h2>Dark noise</h2>
+<p>This is an underlying sound which I call "dark noise" because of the dark
+timbre. The initial noise source is generated via <strong>randh</strong> changed
+at audio-rate. The rate of <strong>randh</strong> is controlled by a sinusoidal LFO, 
+going between 100Hz and 110 Hz. </p>
+<pre><code> -0.1 0.1 (40 inv 1 sine 100 110 biscale) randh </code></pre>
+<p>This signal is "softened" using the butterworth lowpass filter <strong>butlp</strong>.
+It is put through a bitcrusher <em>bitcrush</em>, set to be 8 bits with a sampling
+rate of 8000Hz. This bitcrusher adds lots of nonlinear aliasing and brings 
+back some of the high end lost with <strong>butlp</strong>. This is then added to
+the rest of the mix.</p>
+<pre><code> 400 butlp 8 8000 bitcrush + 
+
+</code></pre>
+
+</div>
+</body>
+</html>

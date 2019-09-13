@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>What is Polysporth?</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>What is Polysporth?</h1>
+<p>Polysporth is a Sporth unit generator for handling multiple instances of Sporth. It's  interface
+is written in s7 scheme. It was created to solve two major shortcomings in Sporth:
+events and polyphony. </p>
+<h2>Compiling polysporth</h2>
+<p>To compile polysporth, simply enable the "BUILD_POLYSPORTH" parameter in config.mk.
+No extra dependencies should be needed. Be warned though... s7 scheme takes
+a few moments to compile since it's an entire programming language! </p>
+<h2>How it works</h2>
+<p>Polysporth is called as a unit generator from Sporth, where it takes the 
+following arguments:</p>
+<ul>
+<li>arg 0 is a trigger which calls a function in scheme defined as "run"</li>
+<li>arg 1 is a clock (typically should be a metro or dmetro)</li>
+<li>arg 2 is the number of sporth instances to create</li>
+<li>arg 3 is the input ftable (which you create)</li>
+<li>arg 4 is the output ftable (created by polysporth)</li>
+<li>arg 5 is the name of the scheme file</li>
+</ul>
+<p>Instead of pushing values to the stack, polysporth writes its audio the
+to the output ftable. Each position of the ftable corresponds to a particular
+instance of Sporth, called a <em>sporthlet</em>. </p>
+<p>Input signals can be sent to the sporth instances via the input table. </p>
+<h2>Scheme</h2>
+<p>The main interface of polysporth is controlled via the s7 dialect of scheme. s7
+scheme is included in the Sporth codebase, so there are no extra dependencies. </p>
+<p>Optionally, polysporth looks for a scheme function called "run". This is the callback 
+that runs every time the trigger signal is non-zero.</p>
+<h2>Sporthlets</h2>
+<p>Sporthlets are individual instances of Sporth inside Polysporth. When you start 
+polysporth, you must allocate how many you plan to use ahead of time. You cannot 
+change this number without restarting Sporth. </p>
+<p>Once inside scheme, you are able to handle all the individual instances of sporth,
+called sporthlets. Each sporthlet has it's own unique id from 0 to N, and can be 
+controlled individually or in a group for polyphonic instances. </p>
+<p>Sporthlets can be turned on or off. when they are off, they are not computed.</p>
+<p>Sporthlets can be scheduled in a note-list fashion, similar to languages like
+Csound, CLM, or Music V. The only difference is that the unit of time is in beats
+(via the clock) as a positive integer. You can also provide up to 8 floating
+point values as a list for parameters, accessible as an ftable called "args".</p>
+<h2>Note Events</h2>
+<p>Polysporth supports the concept of a note event. Notes in polysporth are very 
+similar in concept to a Csound notelist. </p>
+<p>A note event constsist of:</p>
+<p>group start
+group end
+starting time (beats)
+duration (beats)
+arguments (up to 8 floats, can be an empty list)</p>
+<p>Different from Csound scores, Sporthlet note events also have a concept of <em>groups</em>.
+Groups are a range of sporthlet ids. When the note runs, it will find the next available
+free sporthlet in that list and play that. Voice groups can be thought of as a low level
+implementation of Csound instrument ids, used for spawning multiple instances of the 
+same sporth instrument.  Monophonic voices will have matching start and end for their group
+(ex: 0,0). </p>
+<p>Here is a trivial example of polysporth note events. The sporth code looks like
+this:</p>
+<pre><code>&quot;in&quot; 10 zeros
+0
+(60 120 2 * / dmetro dup 0 &quot;in&quot; tset)
+9 &quot;in&quot; &quot;out&quot; &quot;test.scm&quot; polysporth
+0 &quot;out&quot; tget 
+1 &quot;out&quot; tget +
+2 &quot;out&quot; tget +</code></pre>
+<p>The scheme code looks like this:</p>
+<pre><code>(define sine &quot;0 'args' tget mtof 0.1 sine&quot;)
+(ps-eval 0 sine)
+(ps-eval 1 sine)
+(ps-eval 2 sine)
+
+(ps-noteblock-begin)
+(ps-note 0 2 0 4 '(69.0))
+(ps-note 0 2 2 4 '(71.0))
+(ps-note 0 2 4 4 '(73.0))
+(ps-noteblock-end)
+</code></pre>
+<p>Some notes (get it?) on this:
+<ul>
+<li><em>ps-eval</em> evaluates a sporth string to a sporthlet number</li>
+<li>notes are defined inside a noteblock </li>
+<li><em>ps-note</em> takes for arguments a range of sporthlet voices (first
+2 arguments), a start time, and a duration.</li>
+</ul>
+</p>
+<h2>Metanotes</h2>
+<p>Metanotes are note events that call lambda functions instead of turning on
+sporthlets. Metanotes can be used to store groups of note events for organization.<br />  </p>
+<p>Using our previous sporth code, here is a trivial example using metanotes:</p>
+<pre><code>(define nt (lambda (i start dur args) 
+    (ps-note (vector-ref i 0) (vector-ref i 1) start dur args)))
+   
+(define meta &quot;
+'saw' 4096 '0 1 4096 -1' gen_line
+'sine' 4096 gen_sine
+&quot;)
+(define synth 
+&quot;tick 0 pset 0 'args' tget 
+5 1 0 'sine' osc 
+0.5 * + mtof 
+0.1 0 'saw' osc 
+1000 butlp 
+0 p 0.1 1 0.1 tenv * &quot;)
+
+(define ins #(1 3))
+
+(ps-eval 0 meta)
+
+(ps-eval 1 synth)
+(ps-eval 2 synth)
+(ps-eval 3 synth)
+
+(ps-noteblock-begin)
+(nt ins 0 4 '(69.0))
+(nt ins 2 4 '(71.0))
+(nt ins 4 4 '(73.0))
+(ps-noteblock-end)
+</code></pre>
+
+</div>
+</body>
+</html>

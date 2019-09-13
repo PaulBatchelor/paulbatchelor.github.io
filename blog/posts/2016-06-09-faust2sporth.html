@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Custom Sporth ugens with faust using faust2sporth</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Custom Sporth ugens with faust using faust2sporth</h1>
+<p>Somewhat recently, I made it possible to load custom Sporth ugens through
+a sporth plugin format. This advancement in Sporth lead to the development of
+<em>faust2sporth</em>, a utility that generates sporth plugins from Faust code.</p>
+<h2>Motivation </h2>
+<p>faust2sporth was created for the following reasons:
+<ul>
+<li>Rapid prototyping</li>
+<li>Write weird things without having to commit code to Sporth codebse</li>
+<li>Use Faust with the Sporth Eco system</li>
+</ul>
+</p>
+<h2>Installation</h2>
+<p>faust2sporth currently can be found in the Sporth codebase in the folder 
+util/faust2sporth. The two files needed are the architecture file (sporth.cpp)
+and shell script (faust2sporth). On Linux, you could copy faust2sporth in a place
+like /usr/local/bin and the architecture file in a place like 
+/usr/local/lib/faust.</p>
+<h2>Usage</h2>
+<p>Here is some simple Faust code, using an off-the-shelf cubic non-linear distortion 
+generator put through a dcblocker:</p>
+<pre><code> import(&quot;effect.lib&quot;);</code></pre>
+<pre><code> drive = hslider(&quot;[0]drive&quot;, 0, 0, 1, 0.0001);
+ offset = hslider(&quot;[1]offset&quot;, 0, 0, 4, 0.0001);</code></pre>
+<pre><code> process = cubicnl(drive, offset) : dcblocker;</code></pre>
+<p>Like any faust2 utility, this can be compiled in the following way:</p>
+<pre><code> faust2sporth dist.dsp</code></pre>
+<p>Which will create a file called "dist.so". This plugin can be loaded and
+executed in Sporth in the following way:</p>
+<pre><code> 'dist' './dist.so' fl
+ # load an audio file
+ 'oneart.wav' diskin</code></pre>
+<pre><code> # Drive 
+ 3.0 
+ # Offset
+ 0.5 
+ 'dist' fe</code></pre>
+<pre><code> 'dist' fc
+</code></pre>
+
+</div>
+</body>
+</html>

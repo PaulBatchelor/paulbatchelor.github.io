@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>9 Ways to NRT, part 7: Creating an interactive NRT parser</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>9 Ways to NRT, part 7: Creating an interactive NRT parser</h1>
+<p>2015-02-08</p>
+<p>Welcome to Part 7 of 9 Ways to NRT!</p>
+<p>NRT by itself does not have a built-in interactive mode, and it doesn't need 
+one. It is simple enough to implement
+an interactive environment built the Unix way. I call it NRTi.</p>
+<p>NRTi can be found in the part 7 folder on the nineways github.</p>
+<h4>Running</h4>
+<p>To run NRTi, you must have NRT (duh), Csound, and rlwrap installed.</p>
+<p>NRTi has two components: the "sender" and the "reciever". To start the 
+reciever, run this command:</p>
+<p><pre><code>sh nrti-reciever.sh | csound simple.csd</code></pre>
+</p>
+<p>In the csound file, you will most likely have to change some of the CsOptions 
+and samplerate to match
+your computers setup (unless you happen to be running on Linux with Jack 
+running at a samplerate of 96kHz.) </p>
+<p>The reciever should now be waiting patiently for input from the sender.</p>
+<p>To start the sender,  run this command:
+<pre><code>rlwrap sh nrti-sender.sh</code></pre> </p>
+<p>A command prompt should now appear. Type some nrt (like "drmfs") and hear 
+Csound play it back.</p>
+<h4>How it Works</h4>
+<p>NRTi uses a named pipe (literally named pipe in this instance) to send and 
+recieve information. When the reciever is started, it creates a pipe using the 
+<em>mkfifo</em> command. Information from that pipe is then piped to NRT. NRT output is
+converted to a Csound score in an awk script. These score events are then sent 
+to Csound, set to read standard 
+input from the <em>-Lstdin</em> flag, which play the simple FM instrument that I 
+designed.</p>
+<p>The simplest way to send stuff to the reciever is to echo to the named pipe (ie 
+echo 'drmfs' > pipe). The sender is an interface for this command. Running the 
+sender command will work, but it doesn't behave the way a shell would (You 
+cannot backspace, for instance.) The program rlwrap acts as a libreadline 
+wrapper for our application, easily providing these niceties.</p>
+<p> </p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>LMMS and Sporth</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>LMMS and Sporth</h1>
+<p>2017-02-25</p>
+<p><a href="/res/blog/LMMS-sporth/lmms.png"><img src="/res/blog/LMMS-sporth/lmms_small.png" alt="LMMS-Sporth" /></a></p>
+<p>This post is a brief reflection about the efforts I took to get 
+Sporth running 
+<a href="http://www.github.com/paulbatchelor/lmms-sporth">as a native LMMS effect plugin</a>. </p>
+<h2>Motivations</h2>
+<p>Over the past few years, my compositional process has broken away from 
+the DAW to follow what I would call a first-priciples "bottoms-up" 
+approach to sound generation. 
+It all started with a curiosity of how Csound worked under the hood.
+This led to the creation of <a href="/proj/soundpipe.html">Soundpipe</a>, 
+which implemented DSP at the inner loop level. 
+This then lead to the builing a language abstraction for Soundpipe called 
+<a href="/proj/sporth.html">Sporth</a>. The natural progression is to build abstractions
+around Sporth now, which I believe will involve visualization, and graphical 
+user interfaces.</p>
+<p>The idea to put Sporth up in a DAW stems from an internal compromise I have made 
+with myself. A part of me has often wanted to build a DAW from scratch, but 
+another part of me has also realized
+the huge amount of work it takes to build a usable DAW when you are just one person. 
+The middle path is to not reinvent the wheel and find existing software that
+can be built around my ecosystem of existing tools. </p>
+<p>Enter Linux MultiMedia Studio, otherwise known as <a href="http://www.lmms.io">LMMS</a>.</p>
+<h2>Why LMMS?</h2>
+<p>LMMS is a DAW for Linux that I've known about over the years. </p>
+<p>I first used it seven years ago for my 
+<a href="c-l-a-m-p.wikispaces.com">high school senior year project</a>. My project was
+survey of the various music software for Linux available at the time.</p>
+<p>Just for fun, I dug up my report, and found the section on LMMS. 
+My concluding words for the section on LMMS were bittersweet:</p>
+<blockquote><p>LMMS has much potential for growing into an application which rivals major 
+commercial
+competitors. At the moment however, the application is still glitchy and can 
+use some optimization for
+more flexibility on older hardware. Despite these faults, it is still an 
+excellent start for beginning Linux
+musicians who do not want to spend their life learning about how music 
+technology works, and just
+want to get started making music. This program is especially good for musicians 
+used to making tracks
+in Fl Studio because of its unmistakable resemblance to the software. It is in 
+my prediction that in five
+years, LMMS will become one of the best digital audio workstations on the Linux 
+Platform.</p>
+</blockquote>
+<p>Indeed, seven years later, LMMS has gone through some incredible changes. 
+In recent years, both the UI and the website have undergone a complete makeover, 
+giving LMMS a very modern look. Along with the looks, LMMS has seem to have 
+made many many bugfixes and improvements and the user experience feels totally
+different from what I remember.
+LMMS in 2017 has a very active community of users full of individuals 
+very enthusiastic about Linux and music production. It's very cool to see.</p>
+<p>Nostalgia aside, LMMS has a few great things in particular that I like. 
+Features like automation curves, timeline editors, thoughtful UI design, and
+native plugins/synthesizers are parts of wheels I don't have to reinvent. LMMS
+compiles without trouble on my Slackware machine, and any software capable doing
+that is worth looking at. LMMS is open source, which makes it ripe for some
+tasteful, which is how Sporth got to be in LMMS to begin with.</p>
+<h2>Current set up</h2>
+<p>LMMS has enough plugins implemented that I was able to code by example. I was
+very fortunate to have someone else writing a 
+<a href="https://github.com/LMMS/lmms/pull/3259">plugin with a very similar idea</a>,
+so that make things even easier.</p>
+<p>The Sporth plugin is implemented as an effect plugin. Currently, it has
+the following features:</p>
+<ul>
+<li>A plain text editor to write Sporth code, with monospace font</li>
+<li>4 programmable knobs that can be read inside Sporth</li>
+<li>On-the-fly recompilation that can be done using automation</li>
+<li>Save Sporth text</li>
+<li>Able to process left/right input signal </li>
+<li>Can access song tempo</li>
+<li>Ability to have Sporth recompile itself</li>
+</ul>
+<p>Things work pretty well for the most part, but there are a few quirky things to
+deal with. The recompilation control is a bit of a hack, it is implemented
+as a two state knob instead of a button to make it work properly with 
+automation. When the button goes from the 0 to 1 state, it recompiles
+the Sporth code. The other weird thing is that since Sporth is an effect,
+it will only kick on when a signal is given to it. You'll need to make
+sure some kind of audio is going into it. In my LMMS projects, I have
+a dummy synth that plays a note into them, with automation that tells Sporth
+to recompile itself at the beginning.  When I start up LMMS, I have to hit
+play twice to get Sporth to run. After that, Sporth stays on indefinitely. </p>
+<h2>Unintended niceties</h2>
+<p>Since playing around with LMMS and the LMMS sporth plugin, I've come across
+a few unintended pleasant outcomes:</p>
+<p>LMMS can spawn multiple instances of Sporth. This is very nice as Sporth patches
+can process other Sporth patches! </p>
+<p>LMMS, once spawned, "stays" in the current directory, which means Sporth
+is able to load samples, sporth plugins, and other external things. This could
+potentially be a great way to indirectly extend what LMMS can do!</p>
+<p>The ability for Sporth to recompile itself is actually a feature that Sporth
+is currently unable to do by itself, so it's a nice thing to have in the LMMS editor.
+One thing I've been able to do is hook up a button from my f310 controller
+to recompile Sporth. </p>
+<h2>Thoughts for the future</h2>
+<p>The main thing I want to do now is to just use the damn thing and get more
+familiar with the LMMS workflow. My hope is that this could be a new 
+set up for my <a href="/sporthlings">Sporthlings</a>, which is currently a live coding
+setup in Vim.</p>
+<p>One idea I had was to build a native LMMS instrument that spit out MIDI 
+note number gate signals, and to couple that with Sporth to build monophonic
+synthesizers. </p>
+<p>I <em>could</em> add more than 4 knobs to Sporth, but four seems to be plenty for
+my brain to handle at one time. </p>
+<p>LMMS-Sporth is built separately from LMMS, which is perhaps the most important
+thing about this whole project. My hope is that eventually other
+LMMS developers will develop plugins in this way. It is much faster to build
+a plugin separately from the LMMS codebase, and could pave the way for 
+faster prototyping. </p>
+
+</div>
+</body>
+</html>

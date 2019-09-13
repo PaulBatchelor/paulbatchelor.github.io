@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>9 ways to NRT, part 6: Generative techniques with NRT and Csound</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h3># 9 ways to NRT, part 6: Generative techniques with NRT and Csound</h3>
+<p>2015-01-11</p>
+<p>Welcome to Part 6 of 9 Ways to NRT!</p>
+<p>At this point, I've gone through many ways to translate NRT notation
+into useful formats, but I haven't yet shown how NRT can be used as composition 
+tool for algorithmic and generative music. Today I wanted to write a simple 
+generative music program using NRT and Csound. </p>
+<p>The file below is a relatively simple pluck instrument I designed. Since we will
+be generating a corresponding score file, I've decided to do away with the 
+monolithic format of the CSD and just use an oldschool .orc file. Save this file
+as <em>plucker.orc</em>:</p>
+<p><pre><code>sr	=	96000
+ksmps	=	1
+nchnls	=	2
+0dbfs	=	1</p>
+<p>instr 1	
+icps = cpsmidinn(p4)
+;random amplitude
+iamp = random(0.2, 0.25)
+;a pluck using a saw
+a1 pluck iamp, icps, icps, ftgenonce(0, 0, 4096, 7, 1, 4096, -1), 1 
+a1 *= linsegr(1, 1, 0)
+;scoop out the low end
+a1 = buthp(a1, 300)
+outs a1, a1
+endin
+</code></pre></p>
+<p>Now for the note generation. I'm using a mixture of awk and bash for my needs. The
+algorithm creates some nrt code by randomly stringing together smaller fragments
+of prewritten phrases in NRT. This code then gets sent to AWK where it is turned
+into a Csound score. The Csound score is then read and compiled to a wav file. </p>
+<p><pre><code>#!/bin/bash
+tempo=120 </p>
+<p>#collection of NRT fragments
+cluster=(
+<pre><code> d4rm
+ m4.f8s4
+ t8Ds2. 
+ m4rd
+);</code></pre>
+</p>
+<p>#randomly string NRT fragments, and generate score
+for i in $(seq 1 4)
+do 
+<pre><code>nrt=$nrt${cluster[$RANDOM % 4]} </code></pre>
+<p>done</p>
+</p>
+<p>echo $nrt | nrt -F ' ' |\
+awk -vtempo=$tempo '
+BEGIN{
+ts = 60 / tempo
+max = 0
+}
+{
+<pre><code> print &quot;i1&quot;,$1 * ts,$2 * ts,$3 + 60;
+ if($1 * ts + $2 * ts &gt; max) {
+     max = $1 * ts + $2 * ts
+ }</code></pre>
+<p>}
+' > score.sco</p>
+</p>
+<p>#render wav file
+csound -o out.wav plucker.orc score.sco
+rm score.sco
+</pre></code></p>
+<p>When this code is run, it creates a file called "out.wav", which can sound
+something like <a href = "/res/nineways/csound_nrt.wav">this</a>
+</p>
+
+</div>
+</body>
+</html>

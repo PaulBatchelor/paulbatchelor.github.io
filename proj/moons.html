@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Moons</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Moons</h1>
+<p><img src="/res/moons/moons_sm.png" alt="Small screenshot of Moons in action" /></p>
+<p><em>Moons</em> is an isorhythmic circular sequencer. It is written using a combination of C and C++.
+All visuals are created using OpenGl; All the sounds are snythesized in realtime
+using <a href="/proj/sporth.html">Sporth</a>, <a href="/proj/soundpipe.html">Soundpipe</a>, and RTaudio.</p>
+<h2>Compilation/Installation</h2>
+<p>The latest version of Moons can be found on <a href="https://www.github.com/PaulBatchelor/Moons">github</a>.</p>
+<p>Moons requires libsporth (<a href="http://www.github.com/paulbatchelor/sporth.git">github</a>) 
+and the <strong>dev branch</strong> of libsoundpipe 
+(<a href="http://www.github.com/paulbatchelor/soundpipe.git">github</a>). On Linux, JACK and
+the development libraries will also need to be installed.</p>
+<p>After these have been installed, you can then compile Moons with:</p>
+<p>make SR=44100</p>
+<p>Where SR is the samplerate your machine is running at (which is typically 44100 or
+48000). </p>
+<p>If this is compiled successfully, you should now have a binary called "moons" that 
+you can run with:</p>
+<p>./moons</p>
+<h3>Using soundpipe and sporth locally with moons</h3>
+<p>If you do not want to install soundpipe and sporth on your machine, or do not have
+the right admin permissions to do so (like a CCRMA machine), you can place libsporth.a
+and libsoundpipe.a into the project folder in a directory you create called "libs".
+The header files can be placed in tthe top level drectory. From soundpipe, you will
+need "h/soundpipe.h". From Sporth, you will need "tmp.h", but it must be renamed
+to "sporth.h" (if tmp.h does not exist, run "make tmp.h" in the Sporth source).</p>
+<p>After you have done all that, you can proceed with compiling Moons the usual way.</p>
+<h2>Usage</h2>
+<p>When Moons first starts up, you will be faced with a black screen with background
+music playig. Clicking somewhere will create a satellite that orbits an 
+imaginary point at the center of the screen. Every time a satellite makes a full
+rotation, it will create a bell-like tone. </p>
+<p>The farther away from the center you click, the larger the radius will be, and 
+therefore the time it takes to make a full rotation. Where on the circle you decide
+to click will determine the note values. Currently, there are 7 distinct notes to choose
+from, each color coded.</p>
+<h3>Keyboard Commands</h3>
+<p>'q' - cleanly quit</p>
+<p>'u' - remove last moon created</p>
+<p>'space' - starts/stops the sound (the reverb still stays on)</p>
+<p>'1-4' - change the scale/chord</p>
+<h2>Architecture of System</h2>
+<p>Moons divides up into an audio component, and a visual component, with 
+a shared data struct between the two. Time-related things are done at audio-rate. 
+In many ways, the video component is subordinate to the audio component.</p>
+<p>When a new moon appears on-screen, a new voice is added to the synthesis engine. These
+active voices are then computed and summed together (this brute-force approach is preferred over a realtime scheduler). 
+These voices are then patched into additional DSP objects in Sporth code. This is easy enough to do because 
+Sporth supports arbitrary callback functions. Sporth code is also in charge
+of the non-diegetic generative musical accompaniment. </p>
+<p>A single <em>voice</em> consists of a single FM operator pair being modulated by two 
+triggerable envelopes (one for amplitude, the other for timbre). When a full
+rotation is made, the envelopes are triggered and there is audible sound. Since
+the envelopes have a fixed attack, hold, and decay pattern, they will only need
+to be triggered to turn on, and they will shut off by themselves. There is a maximum
+number of voices that can be played at once, and that number can be controlled
+via a macro in the source code.</p>
+<p>The white "ripples" that you see are an interesting algorithm. To prevent
+memory overloading, there are only a finite number of ripples that can be created.
+Since their decay time never changes, I implemented a circular FIFO around an array
+of ripple data structures. At any given point in time, openGL knows how many 
+ripples to draw, and where in the array of ripples to start drawing. </p>
+<h2>Initial Design </h2>
+<p>Much time was put into articulating what the sequencer should feel and 
+look like before writing a single line of code. A semi-formal write-up can 
+be found 
+<a href="/res/project_orbit/article.pdf">here</a>, and concept art can be found 
+<a href="/blog/posts/2015-10-19-milestone_orbit.html">here</a>.</p>
+<hr />
+<a href="/proj">Projects</a><p><a href="/">Home</a></p>
+
+</div>
+</body>
+</html>

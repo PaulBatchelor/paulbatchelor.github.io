@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Kona and Sporth</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Kona and Sporth</h1>
+<h2>On Kona</h2>
+<p>Kona! What a language!</p>
+<p>I first found <a href="http://www.github.com/kevinlawler/kona">Kona</a> half a year ago while 
+looking up terse programming programming languages. I wanted to find languages 
+that could be expressive in a 140-character tweet or less. I found myself intrigued with
+the unusual aesthetics of Kona and the APL family of languages; there seemed to be
+many musical applications. At the time, Kona touched upon abstractions of music that
+I wasnt readly to deal with; <a href="/proj/soundpipe">Soundpipe</a> was in its infancy, and
+<a href="/proj/sporth">Sporth</a> was not even born yet. I was still at the atomic level, and
+more infrastructure needed to be laid out and realized.</p>
+<h2>Kona and Sporth</h2>
+<p>Kona (and K for that matter) has the distinction of being centered around "lists" 
+and array-based processing. For me, that means </p>
+<p>What I wanted from Kona was to be able to compile Kona code instead of Sporth
+to generate ftable code.</p>
+<p>When I first looked at the codebase for Kona, I was both in awe and horrified at
+what I saw. Being fearless and determined, I jumped in and ended up being able to
+implement their API in Sporth in under an hour. While the codebase is quite unusual,
+it is quite consistent, and properly documented. </p>
+<h2>Building Kona for Sporth</h2>
+<p>At the moment, building Kona in Sporth is a little bit of a hack. Kona must be built before
+compiling Sporth. Once that is done, you must enable it in config.mk and specify
+where the Kona directory is. </p>
+<h2>A Major Scale in Kona</h2>
+<p>After a few days with Kona, I figured out how to build a major scale. 
+The code looks like this:</p>
+<p><pre><code>s:0 2 4 5 7 9 11;
+do:{(s@(!x)!#s)+(12*((!x)%#s))};
+do 24</code></pre>
+</p>
+<p>Some brief analysis:
+<ul>
+<li>'s' is our array</li>
+<li>'do' is our function</li>
+<li>'x' is a variable for length</li>
+<li>(!x)!#s creates a orderded sequence (1, 2, 3, ...) of x size wrapped around length of #s 
+s@ reaches for a particular index </li>
+<li>(12 * ((!x)%#s))) adds octaves (every time it reaches the end of the array, add 12)</li>
+</ul>
+</p>
+<h2>Kona to ftable</h2>
+<p>At the moment, Kona code can only be used to generate Sporth ftables. 
+Using the major scale kona code from above, we can build a sequencer using a
+fm oscillator and a trigger-sequencer:</p>
+<p><pre><code># Generate major scale
+"maj" "s:0 2 4 5 7 9 11;do:{(s@(!x)!#s)+(12*((!x)%#s))+48};do 14" kona
+<h1>cycle through generated table</h1>
+<p>0.1 dmetro dup 0 pset</p>
+</p>
+<h1>frequency from tseq</h1>
+<p>0 "maj" tseq mtof 
+<h1>amplitude</h1>
+<p>0.3 
+<h1>carrier</h1>
+<p>1 
+<h1>randomized modulator</h1>
+<p>0 p 1 4 trand floor
+<h1>randomized mod index</h1>
+<p>0 p 0 4 trand 
+fm</code></pre></p>
+</p>
+</p>
+</p>
+</p>
+<h2>Some Readings</h2>
+<p>Here are some articles on K I found.</p>
+<p>I believe that the K, and APL family of languages is worth looking into, even
+if you don't plan on doing anything with it. It's chock-full of interesting 
+people and ideas.</p>
+<p><a href="http://archive.vector.org.uk/art10010830">Whitney (creator K) on the design and aesthetics of K</a></p>
+<p><a href="http://archive.vector.org.uk/art10501320">Humorous Anecdote about Whitney and his ideas for an OS in K</a></p>
+
+</div>
+</body>
+</html>

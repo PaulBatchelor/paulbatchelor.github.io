@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>9 Ways to NRT, part 3: Generating piano rolls with NRT, PostScript, and ImageMagick</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>9 Ways to NRT, part 3: Generating piano rolls with NRT, PostScript, and ImageMagick</h1>
+<p>2014-12-21</p>
+<p>Welcome to Part 3 of <a href="{% post_url 2014-12-19-nrt-syntax %}">9 Ways to NRT</a></p>
+<p>Today, I'll be explaining how NRT notation can be used to generate piano rolls.</p>
+<p>In other words, </p>
+<p>this:</p>
+<p><code>"d4. r8 m s t4 s m r2 m4 d2." </code>
+</p>
+<p>will output this:</p>
+<p><img src="/res/nineways/notes.png">
+</p>
+<h3>A few words on PostScript</h3>
+<p>PostScript is something I've known about for quite a while, but I never thought
+much about the file format until I read this guy's <a href=" http://blog.whatfettle.com/2014/10/17/one-csv-thirty-stories-4-scattering/">blog post</a>
+ in which he created
+generated scatterplot graphs using postscript. </p>
+<p>Postscript files are easy to generate because it's just text, and the format is 
+pretty standard. I liked the fact that I didn't need to install any special 
+libraries or software to view postscript files that I generated. </p>
+<p>Because PostScript is just text, just about <em>any</em> programming language could be used
+to generate PostScript files. For consistency, I decided to use Awk, but the language
+is pretty arbitrary (while writing this in Awk, I realized I could have done a cleaner job 
+in Perl).</p>
+<h3>The Awk Script</h3>
+<p>Here is the Awk script that generates the PostScript:</p>
+<p>File <em>gen_ps.awk</em>:</p>
+<p><pre><code>BEGIN{
+printf "%!PS\n%%BoundingBox: 0 0 %d %d\n\
+\n\
+/box\n\
+{\n\
+1 dict begin\n\
+/y1 exch def\n\
+/x1 exch def\n\
+/width exch def\n\
+/height 1 def\n\
+/x2 x1 width add def\n\
+/y2 y1 height add def\n\
+newpath \n\
+x1 y1 moveto\n\
+x1 y2 lineto\n\
+x2 y2 lineto\n\
+x2 y1 lineto\n\
+closepath\n\
+} def\n\
+0.176470588235294 0.243137254901961 0.282352941176471 setrgbcolor\n\
+gsave\n\
+%d %d scale\n\
+newpath\n\
+0 0 moveto\n\
+0 1 lineto\n\
+1 1 lineto\n\
+1 0 lineto\n\
+closepath\n\
+fill\n\
+grestore\n\
+gsave\n\
+0.666666666666667 0.847058823529412 0.694117647058824 setrgbcolor \n\
+%d %d scale\n", width, height, width, height, scaleX, scaleY
+}</p>
+<p>{ 
+<pre><code> printf &quot;%g %g %g box fill\n&quot;, $2, $1, $3 + offset
+}</code></pre>
+</p>
+<p>END{
+print "grestore showpage"
+}
+</code></pre></p>
+<p>The awk script consists of writing the header, drawing the rectangles from NRT output, 
+and writing the footer.</p>
+<h3>Using ImageMagick</h3>
+<p>Different postscript viewers will read the files in slightly different ways, so 
+ImageMagick commandline utility <em>convert</em> is used to convert PostScript data to 
+a png file. <em>Convert</em> can read from standard input, which makes it possible to send
+the output of AWK directly to it without the need to write an intermediary file.</p>
+<h3>Piping it all together</h3>
+<p>Here is what the entire program looks like:</p>
+<p><pre><code>echo "d4. r8 m s t4 s m r2 m4 d2." | nrt | awk -F ',' \
+-v scaleX=30 -v scaleY=10 -v offset=12 -v width=400 -v height=300 \
+-f gen_ps.awk \
+| convert - output.png
+</code></pre>
+</p>
+<p>The flow of the program reads like this:</p>
+<ol>
+<li>NRT notation is piped into NRT</li>
+<li>NRT outputs a text table which is piped to Awk</li>
+<li>Awk creates postscript, which is then piped to ImageMagick</li>
+<li>ImageMagick reads the postscript and converts it to a PNG file. </li>
+</ol>
+<p>The Awk script takes in a few arguments, which can be used to tweak the output.
+<em>width</em> and <em>height</em> are used to define the image dimensions. <em>scaleX</em> and <em>scaleY</em>
+are used to change the size of piano roll notes in relation to the size of the picture,
+and <em>offset</em> shifts the piano roll up N notes (negative numbers work fine too).</p>
+<p>And that's about all there is to it! You can find this code (along with code with other
+ways to NRT) on <a href="http://www.github.com/paulbatchelor/ninewaystonrt/">github</a></p>
+
+</div>
+</body>
+</html>

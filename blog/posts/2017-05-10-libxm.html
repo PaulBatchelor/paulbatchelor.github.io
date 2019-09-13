@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Processing Milkytracker and XM files in Sporth with LibXM</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Processing Milkytracker and XM files in Sporth with LibXM</h1>
+<p>2017-05-10</p>
+<p>Over the past few days, I've been playing around with a library written in
+C that is capable of playing XM files. <a href="
+http://www.github.com/paulbatchelor/libxm.git">I have gone ahead and forked 
+my own version on github to hack on.</a></p>
+<p>For those of that don't know, the XM file format was one of a handful of
+popular module formats in the 90s when 
+<a href="https://en.wikipedia.org/wiki/Music_tracker">music trackers</a>
+roamed the earth. 
+Originally the file format for FastTracker, the 
+XM module has lived on in 2nd-generation music trackers like MilkyTracker.</p>
+<p>From a high-level standpoint, the XM file format (and any module format 
+generally) is comparable to the MIDI file format. Both are largely 
+8-bit and store information like note events and control data rather than
+sample data like audio formats like WAV or AIFF. 
+The key difference is that module formats store small bits of sample data, 
+which can be used as wavetables for synths and single-shot samples. Because of
+this, the XM file is a self-contained entity, requiring no mappings to 
+external soundfonts or synths, as is the case of MIDI. Fully orchestrated
+songs can be several minutes in length, yet only a few kilobytes in size. 
+Back in the days when trackers were popular, this small footprint was a 
+great feature for hardware with limited bandwidth and storage capabilities.</p>
+<h2>XM and Sporth</h2>
+<p>Using my fork of libxm, I was able to build an external Sporth unit generator,
+capable of loading and playing back XM files. To make it really worth Sporth's 
+time, I added a few tweaks to libxm. This, along with a simplified build 
+system, was my justification for forking in the first palce. </p>
+<p>The first tweak I did made it possible 
+to easily access the sound information from each channel, so that they could
+be processed separately in Sporth. In my Sporth ugen, each channel is written
+to a position in an ftable. This has the unfortunate side effect of not 
+preserving panning data. A small price to pay for adding channel effects.</p>
+<p>The second tweak I made was to have the 
+XM player spit out a clock signal so that the Sporth patch could sync up 
+with the XM file. This makes it possible to sync up clock-based Sporth patches
+with the music XM file. In addition to this, the Sporth ugen also saves 
+a variable containing the BPM of the patch so that ugens like "prop" can
+sync with sample-accuracy as well.</p>
+<p>Nothing musical has been done yet, but I am excited about the potential here. 
+Sporth has never been good at generating sequences beyond a measure, so being
+able to use an interface like Milkytracker has some exciting prospects. 
+Furthermore, the idea bringing Milkytracker into Sporth breathes new life into
+Milkytracker, adding a whole new dimension of sound design with realtime 
+DSP.</p>
+<h2>Possible Future Plans</h2>
+<ul>
+<li>Generating XM files </li>
+<li>Generating XM instruments via Sporth</li>
+<li>Writing singal-based XM files with DC offsets to be parsed in Sporth</li>
+<li>Converting libXM to ANSI-C</li>
+</ul>
+
+</div>
+</body>
+</html>
