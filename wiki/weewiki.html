@@ -11,61 +11,30 @@
 <title>WeeWiki</title>
 <h1>WeeWiki</h1>
 A weewiki page about weewiki!
-
-<h2>Syncing Pages</h2>
-
-First a page must be created. Right now, this can be done
-with:
-<br>
-<br>
-Write some stuff, then quit. Then link with an external
-file:
-<br>
-<br>
-Now, the page can be externally edited and tracked.
-<br>
-Any new changes in the pages of the wiki can be
-bidirectionally synchronized with:
 <br>
 
-<h2>A bootstrap setup</h2>
+<h2>Description</h2>
 
-Note: now that sync is utilized, this should not be used.
+This is a tiny scriptable wiki engine designed to build
+personal mind maps.
 <br>
-The following describes a bootleg weewiki sync setup using
-only push/pull commands and shell scripts.
-
-<h3>mkwiki</h3>
-
-On a new system, the wiki database must be bootstrapped.
+The core engine is written in C via the
+<a href="/proj/worgle">Worgle</a> literate programming environment.
 <br>
-This will take all the external org files and push
-them to the database.
+Wiki pages are primarly stored inside of a SQLite database,
+and are written using org syntax (presumably via org-mode
+and emacs). The org parsing is done via a custom parser,
+written in C.
+<br>
+On top of the core engine is a scripting environment.
+For this, the <a href="https://janet-lang.org">Janet language</a> is
+used. Janet code can be run inside of a wiki page, and
+can be used to dynamically generate org content, which
+is then turned into HTML by the parser. This can be
+used to do things like create dynamic reference links,
+such as <a href="/wiki/weewiki.html">this one!</a><br>
 
-<h3>push</h3>
-
-A mass <code>push</code> operation will update the internal pages to be
-the external pages.
-
-<h3>pull</h3>
-
-A mass <code>pull</code> operation will update all external pages
-to be what is stored internally.
-
-<h2>Hopes</h2>
-
-
-<h3>HTML Export</h3>
-
-In the near future, my hope is to be able to
-export this to HTML. Then in-line scripting,
-then full wiki export.
-
-<h3>Scripting</h3>
-
-Interoperability via Janet.
-
-<h2>WeeWiki Github</h2>
+<h2>WeeWiki On Github</h2>
 
 WeeWiki source coded is maintained using
 <a href="https://fossil-scm.org">Fossil</a>, but has been exported to
@@ -73,6 +42,67 @@ a read-only git repo for convenience.
 <br>
 The repository in question can be found at:
 <a href="https://www.github.com/paulbatchelor/weewiki.git">https://www.github.com/paulbatchelor/weewiki.git</a>.
+
+<h2>Usage</h2>
+
+
+<h3>TODO Creating a page</h3>
+
+This should be <code>weewiki add foo</code>, where <code>foo</code> is the name
+of your page.
+
+<h3>Editing a page</h3>
+
+To edit a page, run <code>weewiki edit foo</code>. This will create a
+page called foo and open it up inside of the text editor set
+by <code>EDITOR</code>.
+
+<h3>TODO Deleting a page</h3>
+
+Should be <code>wiki rm foo</code>, right? Well, it's not, because I
+haven't implemented it yet.
+
+<h3>Syncing Pages</h3>
+
+Page syncing is a way to edit and manage pages externally.
+<br>
+A page can be linked with <code>weewiki link foo foo.org</code>.
+<br>
+Now, the page can be externally edited and tracked.
+<br>
+Any new changes in the pages of the wiki can be
+synchronized with:
+<br>
+Synchronization works by comparing the modification
+time of the external file with the one stored in the
+link table, and will choose the newest to overwrite
+the entry in the database and the external file. Keep in
+mind that this is a simple overwrite with no fancy merging.
+
+<h3>A bootstrap setup (deprecated)</h3>
+
+<b>Note</b>: now that sync is utilized, this should not be used,
+but, I'm leaving it up anyways.
+<br>
+The following describes a bootleg weewiki sync setup using
+only push/pull commands and shell scripts.
+
+<h4>mkwiki</h4>
+
+On a new system, the wiki database must be bootstrapped.
+<br>
+This will take all the external org files and push
+them to the database.
+
+<h4>push</h4>
+
+A mass <code>push</code> operation will update the internal pages to be
+the external pages.
+
+<h4>pull</h4>
+
+A mass <code>pull</code> operation will update all external pages
+to be what is stored internally.
 </div>
 </body>
 </html>
