@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Using emacsclient inside of an Arch chroot</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Using emacsclient inside of an Arch chroot</h1>
+<p>2019-11-18</p>
+<h2>Introduction</h2>
+<p>I just figured out how to get emacsclient working in an arch
+linux chroot. I use an <a href="https://wiki.alpinelinux.org/wiki/Installing_ArchLinux_inside_an_Alpine_chroot">arch chroot on alpine</a>
+linux anytime there is some program that needs glibc, like
+the Android SDK tools or the buildroot environment I use
+to develop custom software for the
+<a href="/wiki/norns">norns</a> and the <a href="/wiki/LDK">LDK</a>. Being able to edit
+files from the chroot using emacs makes things very
+convenient.</p>
+<p>This hack has a special kind of cleverness to it that makes
+it particularly awful, so I just had to share.</p>
+<h2>Install arch chroot</h2>
+<p>This starts with having a configure <a href="https://wiki.alpinelinux.org/wiki/Installing_ArchLinux_inside_an_Alpine_chroot">arch chroot</a>.
+This needs to have emacsclient installed via <code>pacman</code>. I
+also had added an account with matching user name.</p>
+<p>All the chroot stuff is held in a folder <code>/home/paul/arch</code>,
+with the chroot dir in <code>/home/paul/arch/chroot64</code>.</p>
+<h2>Starting emacs server</h2>
+<p>I start up the emacs server inside of emacs using
+<code>M-x server-start</code>. Emacs is started on Alpine linux,
+the host computer.</p>
+<h2>Making the socket visible to chroot environment</h2>
+<p>I was able to figure out via <code>netstat -lp</code> that emacs server
+socket was stored in <code>/tmp/emacs1000</code>.</p>
+<p>So, making the socket visible to chroot environment was a
+matter of linking that folder via mount. Not entirely sure
+what <code>-o bind</code> does exactly, but I saw it used elsewhere
+in the chroot tutorial linked above.</p>
+<pre><code> cd chroot64
+ mkdir -p tmp/emacs1000
+ mount -o bind /tmp/emacs1000 tmp/emacs1000</code></pre>
+<h2>Making it save to the right filepath (the hack)</h2>
+<p>Using emacsclient on arch linux should open up the file in
+emacs. Hooray! But, emacs does not understand the chroot
+file path. So, when I open the file <code>/home/paul/foo.txt</code>
+from within the chroot environment, it will save it as
+<code>/home/paul/foo.txt</code> in my host environment, and not
+<code>/home/paul/arch/chroot64/home/paul/foo.txt</code>. Oops.</p>
+<p>My solution to this? Abuse file links to make the paths
+match.</p>
+<p>Luckily, my guest + host user names + home directories
+are the same, so that's a good first start.</p>
+<p>On my alpine host, I make a symbolic link to my
+chroot arch linux home directory with</p>
+<pre><code> ln -s chroot/home/paul paul</code></pre>
+<p>So now I have a link <code>/home/paul/arch/paul</code>.</p>
+<p>Inside the arch chroot environment, I make a folder called
+arch, and create the equivalent symlink in there.</p>
+<pre><code> # inside the chroot
+ cd ~
+ mkdir arch
+ cd arch
+ ln -s ~ paul</code></pre>
+<p>Bam! Now the path <code>/home/paul/arch/paul</code> is equivalent on
+both my host and guest computers, and emacs will
+be able to save in the correct place.</p>
+<p>Pretty terrible, right?</p>
+
+</div>
+</body>
+</html>
