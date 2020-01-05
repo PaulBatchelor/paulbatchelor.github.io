@@ -12,7 +12,6 @@
 <h1>WeeWiki</h1>
 <p>A weewiki page about weewiki!
 </p>
-</p>
 
 <h2>Description</h2>
 
@@ -88,50 +87,123 @@ the entry in the database and the external file. Keep in
 mind that this is a simple overwrite with no fancy merging.
 </p>
 
-<h3>A bootstrap setup (deprecated)</h3>
+<h3>Linking Pages</h3>
 
-<p><b>Note</b>: now that sync is utilized, this should not be used,
-but, I'm leaving it up anyways.
+<p>Oftentimes it is easier to have a wiki page be externally
+tracked, rather than tracked internally inside of a sqlite
+database.
 </p>
-<p>The following describes a bootleg weewiki sync setup using
-only push/pull commands and shell scripts.
+<p>An existing internal file can be linked to external file
+using the command <code>weewiki link foo foo.org</code> where <code>foo</code>,
+is the name of the page, and <code>foo.org</code> is the name of
+the file to be created. If an external file has already been
+created and edited, use the -f flag to force things like
+so: <code>weewiki link -f foo foo.org</code>.
+</p>
+<p>Once a file is linked, a page can be edited via the external
+file, rather than calling <code>weewiki edit</code>. Calling
+<code>weewiki sync</code> will update the wiki page.
 </p>
 
-<h4>mkwiki</h4>
+<h3>Dumping The Wiki</h3>
 
-<p>On a new system, the wiki database must be bootstrapped.
+<p>The entirety of a weewiki can be dumped to a janet script
+using the command <code>weewiki dump foo.janet</code> where <code>foo.janet</code>
+is the name of the file to write to. Omitting this causes
+the file to be written to stdout.
 </p>
-<p>This will take all the external org files and push
-them to the database.
-<pre><code>#!/bin/sh
+<p>The generated janet script can be used to reconstruct the
+wiki database. This can be done using the command
+<code>weewiki janet foo.janet</code>.
+</p>
+<p>The exported dump file will not include content for linked
+files, only the file links. It is expected that external
+files be present.
+</p>
+<p>Dump files are useful for reconstructing a wiki database
+on another computer. The script is text based, which makes
+it suitable for tracking via an SCM like git or fossil.
+</p>
 
-for org in *.org
-do
-    key=${org%.org}
-    weewiki push $org $key
-done</pre></code>
+<h3>A sample config file</h3>
 
-<h4>push</h4>
+<p>Here is the config file used by this weewiki page:
+</p>
+<pre><code>(def ww-dir "_site/wiki")
+(def webroot "/wiki")
 
-<p>A mass <code>push</code> operation will update the internal pages to be
-the external pages.
-<pre><code>#!/bin/sh
+(defn ref (link name)
+  (org
+   (string
+    "[["
+    (string webroot "/" link)
+    "]["
+    name
+    "]]")))
 
-for p in $(weewiki ls)
-do
-    weewiki push $p.org $p
-done</pre></code>
+(defn html-header
+  []
+(print
+``&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
 
-<h4>pull</h4>
+&lt;meta charset="utf-8"&gt;
+&lt;link rel="stylesheet" href="/css/style.css"&gt;
 
-<p>A mass <code>pull</code> operation will update all external pages
-to be what is stored internally.
-<pre><code>#!/bin/sh
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id="main"&gt;
+``)
+)
 
-for p in $(weewiki ls)
-do
-    weewiki pull $p $p.org
-done</pre></code>
+(defn html-footer
+  []
+  (print
+``
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+``
+))</pre></code>
+
+<h3>A sample makefile</h3>
+
+<p>Based off the one used for this wiki:
+</p>
+<pre><code>default: export
+
+export: db
+	$(RM) -r _site/wiki
+	mkdir -p _site/wiki
+	weewiki sync
+	weewiki export
+	mv mkdb.janet mkdb.janet.old
+	weewiki dump mkdb.janet
+
+db:
+	cmp mkdb.janet mkdb.janet.old ||\
+		weewiki janet mkdb.janet
+
+dump:
+	weewiki dump mkdb.janet
+
+transfer:
+	mkdir -p _live/wiki
+	cp -r _site/wiki/* _live/wiki</pre></code>
+<p></p>
+<p>Running "make" will automatically export all the pages to
+a folder called <code>_site/wiki</code>. equivalent to "make export".
+</p>
+<p>"make dump" will create a wiki dump, which can then be used
+to reconstruct the database. The wiki dump is stored as a
+janet file <code>mkdb.janet</code>.
+</p>
+<p>"make db" will regenerate the database.
+</p>
+<p>database generation and dumping happens automatically when
+exporting/transfering files.
+</p>
 </div>
 </body>
 </html>
