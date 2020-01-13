@@ -21,147 +21,160 @@ converts it to HTML, and writes it to an output stream
 <a id="Main_loop">
 <h2>2 Main loop</h2>
 </a>
+<a id="_main_loop">
 <div><b><i>&lt;&lt;main_loop</b></i>&gt;&gt;=</div>
-<p><code>#include&nbsp;&lt;stdio.h&gt;<br>
-#include&nbsp;&lt;stdlib.h&gt;<br>
-#include&nbsp;&lt;string.h&gt;<br>
-#include&nbsp;"parg.h"<br>
-&lt;&lt;global_variables&gt;&gt;<br>
-&lt;&lt;enums&gt;&gt;<br>
-&lt;&lt;sorg_data&gt;&gt;<br>
-&lt;&lt;function_declarations&gt;&gt;<br>
-&lt;&lt;functions&gt;&gt;<br>
-&lt;&lt;parsing_top&gt;&gt;<br>
-&lt;&lt;getline&gt;&gt;<br>
-int&nbsp;main(int&nbsp;argc,&nbsp;char&nbsp;*argv[])<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*in;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*line;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;read;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg_d&nbsp;sorg;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*filename;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;local_variables&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filename&nbsp;=&nbsp;NULL;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;=&nbsp;stdin;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parse_command_flags&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(filename&nbsp;!=&nbsp;NULL)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;=&nbsp;fopen(filename,&nbsp;"r");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;out&nbsp;=&nbsp;stdout;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;line&nbsp;=&nbsp;NULL;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;n&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg_init(&sorg);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;while((read&nbsp;=&nbsp;sorg_getline(&line,&nbsp;&n,&nbsp;in))&nbsp;!=&nbsp;-1)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;parse(&sorg,&nbsp;out,&nbsp;line,&nbsp;read);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(sorg.pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(mktoc&nbsp;&&&nbsp;sorg.depth&nbsp;&gt;=&nbsp;0)&nbsp;fprintf(out,&nbsp;"&lt;/ul&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(in&nbsp;!=&nbsp;stdin)&nbsp;fclose(in);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(line&nbsp;!=&nbsp;NULL)&nbsp;free(line);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>#include&nbsp;&lt;stdio.h&gt;
+#include&nbsp;&lt;stdlib.h&gt;
+#include&nbsp;&lt;string.h&gt;
+#include&nbsp;"parg.h"
+&lt;&lt;global_variables&gt;&gt;
+&lt;&lt;enums&gt;&gt;
+&lt;&lt;sorg_data&gt;&gt;
+&lt;&lt;function_declarations&gt;&gt;
+&lt;&lt;functions&gt;&gt;
+&lt;&lt;parsing_top&gt;&gt;
+&lt;&lt;getline&gt;&gt;
+int&nbsp;main(int&nbsp;argc,&nbsp;char&nbsp;*argv[])
+{
+&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*in;
+&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out;
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*line;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;read;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;
+&nbsp;&nbsp;&nbsp;&nbsp;sorg_d&nbsp;sorg;
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*filename;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;local_variables&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;filename&nbsp;=&nbsp;NULL;
+&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;=&nbsp;stdin;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parse_command_flags&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;if(filename&nbsp;!=&nbsp;NULL)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;=&nbsp;fopen(filename,&nbsp;"r");
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;out&nbsp;=&nbsp;stdout;
+&nbsp;&nbsp;&nbsp;&nbsp;line&nbsp;=&nbsp;NULL;
+&nbsp;&nbsp;&nbsp;&nbsp;n&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;sorg_init(&sorg);
+&nbsp;&nbsp;&nbsp;&nbsp;while((read&nbsp;=&nbsp;sorg_getline(&line,&nbsp;&n,&nbsp;in))&nbsp;!=&nbsp;-1)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;parse(&sorg,&nbsp;out,&nbsp;line,&nbsp;read);
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;if(sorg.pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;if(mktoc&nbsp;&&&nbsp;sorg.depth&nbsp;&gt;=&nbsp;0)&nbsp;fprintf(out,&nbsp;"&lt;/ul&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;if(in&nbsp;!=&nbsp;stdin)&nbsp;fclose(in);
+&nbsp;&nbsp;&nbsp;&nbsp;if(line&nbsp;!=&nbsp;NULL)&nbsp;free(line);
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;
+}
+</code></pre></p>
 <a id="Sorg_Data">
 <h2>3 Sorg Data</h2>
 </a>
 <p>All necessary data for sorg is encapsulated in a struct called <code>sorg_d</code>.
 </p>
+<a id="_sorg_data">
 <div><b><i>&lt;&lt;sorg_data</b></i>&gt;&gt;=</div>
-<p><code>typedef&nbsp;struct&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;sorg_data_contents&gt;&gt;<br>
-}&nbsp;sorg_d;<br>
-
-</code></p>
+</a>
+<p><pre><code>typedef&nbsp;struct&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;sorg_data_contents&gt;&gt;
+}&nbsp;sorg_d;
+</code></pre></p>
 <p>Sorg data is initialized with the function <code>sorg_init</code>.
 </p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>void&nbsp;sorg_init(sorg_d&nbsp;*sorg)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;initialize_stuff&gt;&gt;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>void&nbsp;sorg_init(sorg_d&nbsp;*sorg)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;initialize_stuff&gt;&gt;
+}
+</code></pre></p>
 <p>The current mode of the state machine is stored in a variable called
 <code>mode</code>.
 </p>
+<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-<p><code>int&nbsp;mode;<br>
-
-</code></p>
+</a>
+<p><pre><code>int&nbsp;mode;
+</code></pre></p>
 <p>By default, it is set to be none, which is the general markdown
 mode.
 </p>
+<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-<p><code>sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
-
-</code></p>
+</a>
+<p><pre><code>sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;
+</code></pre></p>
 <p>For logic for things such as paragraphs, sorg also keeps track of the
 previous mode, called <code>pmode</code>.
 </p>
+<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-<p><code>int&nbsp;pmode;<br>
-
-</code></p>
+</a>
+<p><pre><code>int&nbsp;pmode;
+</code></pre></p>
 <p>Like mode, pmode is initialized to be <code>MODE_NONE</code>.
 </p>
+<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-<p><code>sorg-&gt;pmode&nbsp;=&nbsp;MODE_NONE;<br>
-
-</code></p>
+</a>
+<p><pre><code>sorg-&gt;pmode&nbsp;=&nbsp;MODE_NONE;
+</code></pre></p>
 <p>Sorg internally keeps track of the current position (<code>pos</code>) in the line.
 </p>
 <p>TODO: better words here.
 off: starting offset
 blksize: text block size
 </p>
+<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-<p><code>size_t&nbsp;pos;<br>
-size_t&nbsp;off;<br>
-size_t&nbsp;blksize;<br>
-
-</code></p>
+</a>
+<p><pre><code>size_t&nbsp;pos;
+size_t&nbsp;off;
+size_t&nbsp;blksize;
+</code></pre></p>
+<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-<p><code>sorg-&gt;pos&nbsp;=&nbsp;0;<br>
-sorg-&gt;off&nbsp;=&nbsp;0;<br>
-sorg-&gt;blksize&nbsp;=&nbsp;0;<br>
-
-</code></p>
+</a>
+<p><pre><code>sorg-&gt;pos&nbsp;=&nbsp;0;
+sorg-&gt;off&nbsp;=&nbsp;0;
+sorg-&gt;blksize&nbsp;=&nbsp;0;
+</code></pre></p>
 <p>Section position is kept track of in an array of integers known as <code>secpos</code>.
 </p>
+<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-<p><code>#define&nbsp;SORG_MAXSEC&nbsp;10<br>
-int&nbsp;secpos[SORG_MAXSEC];<br>
-
-</code></p>
+</a>
+<p><pre><code>#define&nbsp;SORG_MAXSEC&nbsp;10
+int&nbsp;secpos[SORG_MAXSEC];
+</code></pre></p>
 <p>Section numbers get all initialized to be zero.
 </p>
+<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-<p><code>for(i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;SORG_MAXSEC;&nbsp;i++)&nbsp;sorg-&gt;secpos[i]&nbsp;=&nbsp;0;<br>
-
-</code></p>
+</a>
+<p><pre><code>for(i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;SORG_MAXSEC;&nbsp;i++)&nbsp;sorg-&gt;secpos[i]&nbsp;=&nbsp;0;
+</code></pre></p>
 <p>The current section depth is kept track in an integer called <code>depth</code>.
 The previous depth is also recorded. This is needed for generating
 the table of contents with indentation.
 </p>
+<a id="_sorg_data_contents">
 <div><b><i>&lt;&lt;sorg_data_contents</b></i>&gt;&gt;=</div>
-<p><code>int&nbsp;depth;<br>
-int&nbsp;pdepth;<br>
-
-</code></p>
+</a>
+<p><pre><code>int&nbsp;depth;
+int&nbsp;pdepth;
+</code></pre></p>
 <p><code>depth</code> and <code>pdepth</code> is set to be an initial value of -1. Functions
 aiming to read this
 value should do a bounds check before using this variable. Depth corresponds
 to array position in <code>secpos</code>, so be sure that the depth is in between
 0 and <code>SORG_MAXSEC</code>.
 </p>
+<a id="_initialize_stuff">
 <div><b><i>&lt;&lt;initialize_stuff</b></i>&gt;&gt;=</div>
-<p><code>sorg-&gt;depth&nbsp;=&nbsp;-1;<br>
-sorg-&gt;pdepth&nbsp;=&nbsp;-1;<br>
-
-</code></p>
+</a>
+<p><pre><code>sorg-&gt;depth&nbsp;=&nbsp;-1;
+sorg-&gt;pdepth&nbsp;=&nbsp;-1;
+</code></pre></p>
 <a id="Parsing">
 <h2>4 Parsing</h2>
 </a>
@@ -188,129 +201,131 @@ Otherwise, it is just <a href="#Normal_Parsing_Mode">the regular parser</a>.
 <a id="The_Parse_Function">
 <h4>4.1.1 The Parse Function</h4>
 </a>
+<a id="_parsing_top">
 <div><b><i>&lt;&lt;parsing_top</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;parse(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(mktoc)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;toc_parse_mode&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;normal_parse_mode&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;parse(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;if(mktoc)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;toc_parse_mode&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;normal_parse_mode&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+}
+</code></pre></p>
 <a id="Normal_Parsing_Mode">
 <h4>4.1.2 Normal Parsing Mode</h4>
 </a>
 <p>This is the regular parsing mode, which converts all org syntax into HTML.
 </p>
+<a id="_normal_parse_mode">
 <div><b><i>&lt;&lt;normal_parse_mode</b></i>&gt;&gt;=</div>
-<p><code>if(buf[0]&nbsp;==&nbsp;'\n')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,"&lt;/p&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;MODE_NONE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-}<br>
-while(sorg-&gt;pos&nbsp;&lt;&nbsp;size)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;switch(sorg-&gt;mode)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_NONE:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_header(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_header(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(is_name(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_name(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_BEGIN_CODE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(is_title(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_title(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_TEXT;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;!=&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;p&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_TEXT:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parse_formatted&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_link(sorg,&nbsp;&buf[sorg-&gt;pos],&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;+=&nbsp;print_link(sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&buf[sorg-&gt;pos],<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[sorg-&gt;pos]&nbsp;!=&nbsp;'\n')&nbsp;sorg-&gt;blksize++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_BEGIN_CODE:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(!is_begin(sorg,&nbsp;buf,&nbsp;size))&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"\n&lt;p&gt;&lt;code&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_CODE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_CODE:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_end(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"\n&lt;/code&gt;&lt;/p&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(buf[sorg-&gt;pos])&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'&lt;':<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos&nbsp;+&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'&gt;':<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos&nbsp;+&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'\n':<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos&nbsp;+&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;br&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'&nbsp;':<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos&nbsp;+&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&nbsp;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-}<br>
-fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize,&nbsp;out);<br>
-sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;<br>
-if(sorg-&gt;mode&nbsp;!=&nbsp;MODE_CODE)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>if(buf[0]&nbsp;==&nbsp;'\n')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,"&lt;/p&gt;\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;MODE_NONE;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+}
+while(sorg-&gt;pos&nbsp;&lt;&nbsp;size)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;switch(sorg-&gt;mode)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_NONE:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_header(sorg,&nbsp;buf,&nbsp;size))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_header(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(is_name(sorg,&nbsp;buf,&nbsp;size))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_name(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_BEGIN_CODE;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(is_title(sorg,&nbsp;buf,&nbsp;size))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;==&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;/p&gt;\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print_title(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_TEXT;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;pmode&nbsp;!=&nbsp;MODE_TEXT)&nbsp;fprintf(out,&nbsp;"&lt;p&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_TEXT:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;parse_formatted&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_link(sorg,&nbsp;&buf[sorg-&gt;pos],&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;+=&nbsp;print_link(sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&buf[sorg-&gt;pos],
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[sorg-&gt;pos]&nbsp;!=&nbsp;'\n')&nbsp;sorg-&gt;blksize++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_BEGIN_CODE:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(!is_begin(sorg,&nbsp;buf,&nbsp;size))&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"\n&lt;p&gt;&lt;code&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_CODE;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;MODE_CODE:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(is_end(sorg,&nbsp;buf,&nbsp;size))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"\n&lt;/code&gt;&lt;/p&gt;\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(buf[sorg-&gt;pos])&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'&lt;':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos&nbsp;+&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'&gt;':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos&nbsp;+&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'\n':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos&nbsp;+&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;br&gt;\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'&nbsp;':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos&nbsp;+&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&nbsp;");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+}
+fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize,&nbsp;out);
+sorg-&gt;pmode&nbsp;=&nbsp;sorg-&gt;mode;
+if(sorg-&gt;mode&nbsp;!=&nbsp;MODE_CODE)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;mode&nbsp;=&nbsp;MODE_NONE;
+}
+</code></pre></p>
 <a id="Table_of_Contents_Parsing_Mode">
 <h4>4.1.3 Table of Contents Parsing Mode</h4>
 </a>
@@ -319,27 +334,29 @@ if(sorg-&gt;mode&nbsp;!=&nbsp;MODE_CODE)&nbsp;{<br>
 When enabled, the parser is only interested in parsing and printing
 headers. The rest, it skips.
 </p>
+<a id="_toc_parse_mode">
 <div><b><i>&lt;&lt;toc_parse_mode</b></i>&gt;&gt;=</div>
-<p><code>if(buf[0]&nbsp;==&nbsp;'\n')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-}<br>
-if(is_title(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;print_title(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);<br>
-}else&nbsp;if(is_header(sorg,&nbsp;buf,&nbsp;size))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;print_header(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>if(buf[0]&nbsp;==&nbsp;'\n')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+}
+if(is_title(sorg,&nbsp;buf,&nbsp;size))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;print_title(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);
+}else&nbsp;if(is_header(sorg,&nbsp;buf,&nbsp;size))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;print_header(sorg,&nbsp;buf,&nbsp;size,&nbsp;out);
+}
+</code></pre></p>
 <a id="Type_Enum">
 <h3>4.2 Type Enum</h3>
 </a>
+<a id="_enums">
 <div><b><i>&lt;&lt;enums</b></i>&gt;&gt;=</div>
-<p><code>enum&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;types&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;MODE_NONE<br>
-};<br>
-
-</code></p>
+</a>
+<p><pre><code>enum&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;types&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;MODE_NONE
+};
+</code></pre></p>
 <a id="None_mode">
 <h3>4.3 None mode</h3>
 </a>
@@ -356,29 +373,31 @@ will be parsing the line for new states.
 must have a number of stars, followed by a space. This is checked for
 with the function <code>is_header</code>.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;==&nbsp;0)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(buf[0]&nbsp;!=&nbsp;'*')&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;1;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;'*')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;continue;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(buf[s]&nbsp;==&nbsp;'&nbsp;')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;==&nbsp;0)&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;if(buf[0]&nbsp;!=&nbsp;'*')&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;1;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;'*')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;continue;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(buf[s]&nbsp;==&nbsp;'&nbsp;')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;
+}
+</code></pre></p>
 <a id="Print_Header">
 <h4>4.4.2 Print Header</h4>
 </a>
@@ -393,49 +412,51 @@ This action is done with the function <code>print_header</code>.
 <a id="Print_Header_Function">
 <h5>4.4.2.1 Print Header Function</h5>
 </a>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;print_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;print_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;print_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;level;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;level&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;2)&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;0:&nbsp;/*&nbsp;asterisks&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[off]&nbsp;!=&nbsp;'*')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;level++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;spaces&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[off]&nbsp;!=&nbsp;'&nbsp;')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;2;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(buf[size&nbsp;-&nbsp;1]&nbsp;==&nbsp;'\n')&nbsp;size--;&nbsp;/*&nbsp;chomp&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;update_section_depth&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(mktoc)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;print_toc_header&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;print_normal_header&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;print_header(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;level;
+&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;level&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;2)&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;0:&nbsp;/*&nbsp;asterisks&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[off]&nbsp;!=&nbsp;'*')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;level++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;spaces&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[off]&nbsp;!=&nbsp;'&nbsp;')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;2;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;if(buf[size&nbsp;-&nbsp;1]&nbsp;==&nbsp;'\n')&nbsp;size--;&nbsp;/*&nbsp;chomp&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;update_section_depth&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;if(mktoc)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;print_toc_header&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;print_normal_header&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+}
+</code></pre></p>
 <p>It inside the function <code>print_header</code> that the section counter is updated.
 This overloads the functionality of <code>print_header</code>, but it is a quick solution
 to the problem.
@@ -443,31 +464,33 @@ to the problem.
 <p>Level in this parser starts at header level 2, so the value needs to be
 subtracted by 2 in order to work with the internal section counters.
 </p>
+<a id="_update_section_depth">
 <div><b><i>&lt;&lt;update_section_depth</b></i>&gt;&gt;=</div>
-<p><code>update_section_depth(sorg,&nbsp;level&nbsp;-&nbsp;2);<br>
-
-</code></p>
+</a>
+<p><pre><code>update_section_depth(sorg,&nbsp;level&nbsp;-&nbsp;2);
+</code></pre></p>
 <a id="Normal_Header_Printing">
 <h5>4.4.2.2 Normal Header Printing</h5>
 </a>
+<a id="_print_normal_header">
 <div><b><i>&lt;&lt;print_normal_header</b></i>&gt;&gt;=</div>
-<p><code>fprintf(out,&nbsp;"&lt;a&nbsp;id=\"");<br>
-spaces_to_underscores(buf&nbsp;+&nbsp;off,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);<br>
-fprintf(out,&nbsp;"\"&gt;\n");<br>
-if(level&nbsp;&lt;&nbsp;6)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;h%d&gt;",&nbsp;level);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(use_secno)&nbsp;print_section(sorg,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/h%d&gt;\n",&nbsp;level);<br>
-}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;u&gt;&lt;i&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(use_secno)&nbsp;print_section(sorg,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/i&gt;&lt;/u&gt;\n");<br>
-}<br>
-fprintf(out,&nbsp;"&lt;/a&gt;\n");<br>
-
-</code></p>
+</a>
+<p><pre><code>fprintf(out,&nbsp;"&lt;a&nbsp;id=\"");
+spaces_to_underscores(buf&nbsp;+&nbsp;off,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);
+fprintf(out,&nbsp;"\"&gt;\n");
+if(level&nbsp;&lt;&nbsp;6)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;h%d&gt;",&nbsp;level);
+&nbsp;&nbsp;&nbsp;&nbsp;if(use_secno)&nbsp;print_section(sorg,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/h%d&gt;\n",&nbsp;level);
+}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;u&gt;&lt;i&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;if(use_secno)&nbsp;print_section(sorg,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/i&gt;&lt;/u&gt;\n");
+}
+fprintf(out,&nbsp;"&lt;/a&gt;\n");
+</code></pre></p>
 <a id="TOC_Header_Printing">
 <h5>4.4.2.3 TOC Header Printing</h5>
 </a>
@@ -491,21 +514,22 @@ tags need to be printed. The number of necessary closed tags needed
 is obtained from getting the difference between the current depth
 and the previous depth. (Note: I missed this edge case on the first go).
 </p>
+<a id="_print_toc_header">
 <div><b><i>&lt;&lt;print_toc_header</b></i>&gt;&gt;=</div>
-<p><code>if(sorg-&gt;depth&nbsp;&gt;&nbsp;sorg-&gt;pdepth)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;ul&gt;");<br>
-}&nbsp;else&nbsp;if(sorg-&gt;depth&nbsp;&lt;&nbsp;sorg-&gt;pdepth)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;(sorg-&gt;pdepth&nbsp;-&nbsp;sorg-&gt;depth);&nbsp;s++)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/ul&gt;");<br>
-}<br>
-fprintf(out,&nbsp;"&lt;li&gt;&lt;a&nbsp;href=\"%s#",&nbsp;indxfile);<br>
-spaces_to_underscores(buf&nbsp;+&nbsp;off,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);<br>
-fprintf(out,&nbsp;"\"&gt;");<br>
-if(use_secno)&nbsp;print_section(sorg,&nbsp;out);<br>
-fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);<br>
-fprintf(out,&nbsp;"&lt;/a&gt;&lt;/li&gt;\n");<br>
-
-</code></p>
+</a>
+<p><pre><code>if(sorg-&gt;depth&nbsp;&gt;&nbsp;sorg-&gt;pdepth)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;ul&gt;");
+}&nbsp;else&nbsp;if(sorg-&gt;depth&nbsp;&lt;&nbsp;sorg-&gt;pdepth)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;(sorg-&gt;pdepth&nbsp;-&nbsp;sorg-&gt;depth);&nbsp;s++)
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/ul&gt;");
+}
+fprintf(out,&nbsp;"&lt;li&gt;&lt;a&nbsp;href=\"%s#",&nbsp;indxfile);
+spaces_to_underscores(buf&nbsp;+&nbsp;off,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);
+fprintf(out,&nbsp;"\"&gt;");
+if(use_secno)&nbsp;print_section(sorg,&nbsp;out);
+fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;size&nbsp;-&nbsp;off,&nbsp;out);
+fprintf(out,&nbsp;"&lt;/a&gt;&lt;/li&gt;\n");
+</code></pre></p>
 <a id="Titles">
 <h3>4.5 Titles</h3>
 </a>
@@ -513,66 +537,70 @@ fprintf(out,&nbsp;"&lt;/a&gt;&lt;/li&gt;\n");<br>
 only be used once per document, and it is expected that they are
 declared at the top of the file.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*title&nbsp;=&nbsp;"#+TITLE:";<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;title_size&nbsp;=&nbsp;8;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;title_size)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;title_size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;title[s])&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*title&nbsp;=&nbsp;"#+TITLE:";
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;title_size&nbsp;=&nbsp;8;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;title_size)&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;title_size;&nbsp;s++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;title[s])&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+}
+</code></pre></p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;print_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;print_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;print_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*title;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;tsize;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;tsize&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;title&nbsp;=&nbsp;NULL;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;8;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;0)&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;spaces&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;'&nbsp;')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;continue;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;2;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tsize&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;title&nbsp;=&nbsp;&buf[s];<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;2:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;'\n')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tsize++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(title&nbsp;!=&nbsp;NULL)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;h1&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(title,&nbsp;1,&nbsp;tsize,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/h1&gt;\n");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;print_title(sorg_d&nbsp;*sorg,&nbsp;const&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*title;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;tsize;
+&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;tsize&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;title&nbsp;=&nbsp;NULL;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;8;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;0)&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;spaces&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;'&nbsp;')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;continue;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;2;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tsize&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;title&nbsp;=&nbsp;&buf[s];
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;2:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;'\n')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tsize++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;if(title&nbsp;!=&nbsp;NULL)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;h1&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(title,&nbsp;1,&nbsp;tsize,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/h1&gt;\n");
+&nbsp;&nbsp;&nbsp;&nbsp;}
+}
+</code></pre></p>
 <a id="Plain_Text">
 <h3>4.6 Plain Text</h3>
 </a>
@@ -580,10 +608,11 @@ declared at the top of the file.
 a code block. In this mode, the parser looks for
 <a href="#Formatted_Text">Formatted Text</a>.
 </p>
+<a id="_types">
 <div><b><i>&lt;&lt;types</b></i>&gt;&gt;=</div>
-<p><code>MODE_TEXT,<br>
-
-</code></p>
+</a>
+<p><pre><code>MODE_TEXT,
+</code></pre></p>
 <a id="Code_Blocks">
 <h3>4.7 Code Blocks</h3>
 </a>
@@ -593,127 +622,137 @@ block immediately following it on the next line.
 <p>A NAME tag is found while the state machine is in NONE mode. It is
 done using the function <code>is_name</code>.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+NAME:";<br>
-&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;int&nbsp;name_size&nbsp;=&nbsp;7;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;name_size)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;name_size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;name[s])&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+NAME:";
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;int&nbsp;name_size&nbsp;=&nbsp;7;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;name_size)&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;name_size;&nbsp;s++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;name[s])&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+}
+</code></pre></p>
 <p>If a <code>NAME</code> tag is found, this changes the state machine to only look for
 the beginning of a code block.
 </p>
+<a id="_types">
 <div><b><i>&lt;&lt;types</b></i>&gt;&gt;=</div>
-<p><code>MODE_BEGIN_CODE,<br>
-
-</code></p>
+</a>
+<p><pre><code>MODE_BEGIN_CODE,
+</code></pre></p>
 <p>The NAME tag will also be printed to screen. This is a distinct difference
 between the regular emacs org-mode exporter and this one (and an
 important one!) Emacs will not export the name of the code block, which
 leads to more confusing readability!
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;print_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;print_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;print_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;name_size;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;buf+=7;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-=&nbsp;7;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;0)&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;spaces&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;2;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;2:&nbsp;/*&nbsp;count&nbsp;to&nbsp;line&nbsp;break*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;'\n'&nbsp;||&nbsp;buf[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name_size++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;div&gt;&lt;b&gt;&lt;i&gt;&lt;&lt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;name_size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/b&gt;&lt;/i&gt;&gt;&gt;=&lt;/div&gt;");<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;print_name(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;mode;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;name_size;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;
+&nbsp;&nbsp;&nbsp;&nbsp;buf+=7;
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-=&nbsp;7;
+&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(mode&nbsp;==&nbsp;0)&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch(mode)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:&nbsp;/*&nbsp;spaces&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;n;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;2;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;2:&nbsp;/*&nbsp;count&nbsp;to&nbsp;line&nbsp;break*/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;'\n'&nbsp;||&nbsp;buf[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mode&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name_size++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;div&gt;&lt;b&gt;&lt;i&gt;&lt;&lt;");
+&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;off,&nbsp;1,&nbsp;name_size,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/b&gt;&lt;/i&gt;&gt;&gt;=&lt;/div&gt;");
+}
+</code></pre></p>
 <p>Code blocks begin and end with <code>BEGIN_SRC</code> and <code>END_SRC</code> tags. When a
 new code block declaration begins, the mode is set to be in code mode.
 </p>
+<a id="_types">
 <div><b><i>&lt;&lt;types</b></i>&gt;&gt;=</div>
-<p><code>MODE_CODE,<br>
-
-</code></p>
+</a>
+<p><pre><code>MODE_CODE,
+</code></pre></p>
 <p>The <code>BEGIN_SRC</code> tag is checked with the function <code>is_begin</code>.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_begin(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_begin(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_begin(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+BEGIN_SRC";<br>
-&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;int&nbsp;name_size&nbsp;=&nbsp;11;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;name_size)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;name_size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;name[s])&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_begin(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+BEGIN_SRC";
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;int&nbsp;name_size&nbsp;=&nbsp;11;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;name_size)&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;name_size;&nbsp;s++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;name[s])&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+}
+</code></pre></p>
 <p>Lines will remain in code mode until the <code>END_SRC</code> tag is found.
 </p>
 <p>The <code>END_SRC</code> tag is found using the function <code>is_end</code>.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_end(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_end(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_end(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+END_SRC";<br>
-&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;int&nbsp;name_size&nbsp;=&nbsp;9;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;name_size)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;name_size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;name[s])&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_end(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*name&nbsp;=&nbsp;"#+END_SRC";
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;int&nbsp;name_size&nbsp;=&nbsp;9;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;name_size)&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;0;&nbsp;s&nbsp;&lt;&nbsp;name_size;&nbsp;s++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;!=&nbsp;name[s])&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+}
+</code></pre></p>
 <a id="Formatted_Text">
 <h3>4.8 Formatted Text</h3>
 </a>
@@ -731,44 +770,47 @@ the text between is is considered to be encapsulated.
 </p>
 <p>NOTE: for now, <code>dsize</code> only works with a size of 1.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_encapsulated(sorg_d&nbsp;*sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_encapsulated(sorg_d&nbsp;*sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_encapsulated(sorg_d&nbsp;*sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(buf[0]&nbsp;!=&nbsp;delim[0])&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;size&nbsp;-&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;1;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;if(buf[s]&nbsp;==&nbsp;delim[0])&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_encapsulated(sorg_d&nbsp;*sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;if(buf[0]&nbsp;!=&nbsp;delim[0])&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;size&nbsp;-&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;1;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;if(buf[s]&nbsp;==&nbsp;delim[0])&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;
+}
+</code></pre></p>
 <p>Once encapsulated text is found, the encapsulated text is printed to
 screen. In HTML, this means they are between HTML tags of a certain
 label. This function returns how many characters it parsed, so the parser
 knows to skip over them.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;size_t&nbsp;print_encapsulated(sorg_d&nbsp;*sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*tag,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;size_t&nbsp;print_encapsulated(sorg_d&nbsp;*sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*tag,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out);
+</code></pre></p>
 <p>This function extracts the text in between the two delimiters and
 then prints it between the specified HTML tags. The trick with printing
 the text is factoring in offsets for <b>both</b> sets of delimiters. To avoid
@@ -776,32 +818,33 @@ the leftmost delimiter, offset by the size of the delimiter. To avoid the
 rightmost delimiter, negate the size by two times the delimiter to compensate
 for both the rightmost and leftmost delimiter.
 </p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;size_t&nbsp;print_encapsulated(sorg_d&nbsp;*sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*tag,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;size&nbsp;-&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;1;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;delim[0])&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;%s&gt;",&nbsp;tag);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;dsize,&nbsp;1,&nbsp;off&nbsp;-&nbsp;2*dsize,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/%s&gt;",&nbsp;tag);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;off;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;size_t&nbsp;print_encapsulated(sorg_d&nbsp;*sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*tag,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;s;
+&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;size&nbsp;-&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;for(s&nbsp;=&nbsp;1;&nbsp;s&nbsp;&lt;&nbsp;size;&nbsp;s++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[s]&nbsp;==&nbsp;delim[0])&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;%s&gt;",&nbsp;tag);
+&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;dsize,&nbsp;1,&nbsp;off&nbsp;-&nbsp;2*dsize,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/%s&gt;",&nbsp;tag);
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;off;
+}
+</code></pre></p>
 <p>In the parse loop, both <code>is_encapsulated</code> and <code>print_encapsulated</code>
 can be combined together in a function called <code>chk_encapsulated</code>. The
 <code>chk</code> is short for check, and the abbreviation only used to make sure
@@ -810,78 +853,84 @@ the function call fits on the same line.
 <p>On success, the function will return "true", causing the function
 to break out of the chain of if statments.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;chk_encapsulated(sorg_d&nbsp;*sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*tag,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;chk_encapsulated(sorg_d&nbsp;*sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*tag,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;chk_encapsulated(sorg_d&nbsp;*sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*tag,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(is_encapsulated(sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;delim,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dsize,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&buf[sorg-&gt;pos],<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos))<br>
-&nbsp;&nbsp;&nbsp;&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;+=&nbsp;print_encapsulated(sorg,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;delim,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dsize,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&buf[sorg-&gt;pos],<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tag,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;chk_encapsulated(sorg_d&nbsp;*sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*delim,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;dsize,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*buf,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*tag,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FILE&nbsp;*out)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;if(is_encapsulated(sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;delim,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dsize,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&buf[sorg-&gt;pos],
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos))
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf&nbsp;+&nbsp;sorg-&gt;off,&nbsp;1,&nbsp;sorg-&gt;blksize&nbsp;-&nbsp;1,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pos&nbsp;+=&nbsp;print_encapsulated(sorg,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;delim,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dsize,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&buf[sorg-&gt;pos],
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-&nbsp;sorg-&gt;pos,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tag,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;blksize&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;off&nbsp;=&nbsp;sorg-&gt;pos;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;
+}
+</code></pre></p>
 <a id="Format_Styles">
 <h4>4.8.2 Format Styles</h4>
 </a>
 <a id="Bold">
 <h5>4.8.2.1 Bold</h5>
 </a>
+<a id="_parse_formatted">
 <div><b><i>&lt;&lt;parse_formatted</b></i>&gt;&gt;=</div>
-<p><code>if(chk_encapsulated(sorg,&nbsp;"*",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"b",&nbsp;out))&nbsp;break;<br>
-
-</code></p>
+</a>
+<p><pre><code>if(chk_encapsulated(sorg,&nbsp;"*",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"b",&nbsp;out))&nbsp;break;
+</code></pre></p>
 <a id="Italics">
 <h5>4.8.2.2 Italics</h5>
 </a>
+<a id="_parse_formatted">
 <div><b><i>&lt;&lt;parse_formatted</b></i>&gt;&gt;=</div>
-<p><code>if(chk_encapsulated(sorg,&nbsp;"/",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"i",&nbsp;out))&nbsp;break;<br>
-
-</code></p>
+</a>
+<p><pre><code>if(chk_encapsulated(sorg,&nbsp;"/",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"i",&nbsp;out))&nbsp;break;
+</code></pre></p>
 <a id="Preformatted">
 <h5>4.8.2.3 Preformatted</h5>
 </a>
+<a id="_parse_formatted">
 <div><b><i>&lt;&lt;parse_formatted</b></i>&gt;&gt;=</div>
-<p><code>if(chk_encapsulated(sorg,&nbsp;"=",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"code",&nbsp;out))&nbsp;break;<br>
-
-</code></p>
+</a>
+<p><pre><code>if(chk_encapsulated(sorg,&nbsp;"=",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"code",&nbsp;out))&nbsp;break;
+</code></pre></p>
 <a id="Underline">
 <h5>4.8.2.4 Underline</h5>
 </a>
+<a id="_parse_formatted">
 <div><b><i>&lt;&lt;parse_formatted</b></i>&gt;&gt;=</div>
-<p><code>if(chk_encapsulated(sorg,&nbsp;"_",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"u",&nbsp;out))&nbsp;break;<br>
-
-</code></p>
+</a>
+<p><pre><code>if(chk_encapsulated(sorg,&nbsp;"_",&nbsp;1,&nbsp;buf,&nbsp;size,&nbsp;"u",&nbsp;out))&nbsp;break;
+</code></pre></p>
 <a id="TeX_math_mode">
 <h5>4.8.2.5 TeX math mode</h5>
 </a>
@@ -907,75 +956,79 @@ to break out of the chain of if statments.
 </a>
 <p>A link can be found in Sorg using the function <code>is_link</code>.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;is_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;5)&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(buf[0]&nbsp;!=&nbsp;'['&nbsp;||&nbsp;buf[1]&nbsp;!=&nbsp;'[')&nbsp;return&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-=&nbsp;1;&nbsp;/*&nbsp;for&nbsp;lookahead&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;2;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;']'&nbsp;&&&nbsp;buf[n&nbsp;+&nbsp;1]&nbsp;==&nbsp;']')&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;is_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;
+&nbsp;&nbsp;&nbsp;&nbsp;if(size&nbsp;&lt;&nbsp;5)&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;if(buf[0]&nbsp;!=&nbsp;'['&nbsp;||&nbsp;buf[1]&nbsp;!=&nbsp;'[')&nbsp;return&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-=&nbsp;1;&nbsp;/*&nbsp;for&nbsp;lookahead&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;2;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;']'&nbsp;&&&nbsp;buf[n&nbsp;+&nbsp;1]&nbsp;==&nbsp;']')&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;
+}
+</code></pre></p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;size_t&nbsp;print_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;size_t&nbsp;print_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;size_t&nbsp;print_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*link;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;link_size;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*name;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;name_size;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;tmp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-=&nbsp;1;&nbsp;/*&nbsp;for&nbsp;lookahead&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;2;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;link_size&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;tmp&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;link&nbsp;=&nbsp;NULL;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;=&nbsp;NULL;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;link&nbsp;=&nbsp;&buf[2];<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;2;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;']'&nbsp;&&&nbsp;buf[n&nbsp;+&nbsp;1]&nbsp;==&nbsp;'[')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;link_size&nbsp;=&nbsp;tmp&nbsp;-&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;=&nbsp;&buf[n&nbsp;+&nbsp;2];<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(buf[n]&nbsp;==&nbsp;']'&nbsp;&&&nbsp;buf[n&nbsp;+&nbsp;1]&nbsp;==&nbsp;']')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;tmp&nbsp;-&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(!strncmp(link,&nbsp;"https://",&nbsp;8)&nbsp;||&nbsp;!strncmp(link,&nbsp;"http://",&nbsp;7))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;a&nbsp;href=\"");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(link,&nbsp;1,&nbsp;link_size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;a&nbsp;href=\"#");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;spaces_to_underscores(link,&nbsp;link_size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"\"&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fwrite(name,&nbsp;1,&nbsp;name_size,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/a&gt;");<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;off;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;size_t&nbsp;print_link(sorg_d&nbsp;*sorg,&nbsp;char&nbsp;*buf,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*link;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;link_size;
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*name;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;name_size;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;tmp;
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;-=&nbsp;1;&nbsp;/*&nbsp;for&nbsp;lookahead&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;2;
+&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;link_size&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;tmp&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;link&nbsp;=&nbsp;NULL;
+&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;=&nbsp;NULL;
+&nbsp;&nbsp;&nbsp;&nbsp;link&nbsp;=&nbsp;&buf[2];
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;2;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(buf[n]&nbsp;==&nbsp;']'&nbsp;&&&nbsp;buf[n&nbsp;+&nbsp;1]&nbsp;==&nbsp;'[')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;link_size&nbsp;=&nbsp;tmp&nbsp;-&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;=&nbsp;&buf[n&nbsp;+&nbsp;2];
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(buf[n]&nbsp;==&nbsp;']'&nbsp;&&&nbsp;buf[n&nbsp;+&nbsp;1]&nbsp;==&nbsp;']')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name_size&nbsp;=&nbsp;tmp&nbsp;-&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;if(!strncmp(link,&nbsp;"https://",&nbsp;8)&nbsp;||&nbsp;!strncmp(link,&nbsp;"http://",&nbsp;7))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;a&nbsp;href=\"");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(link,&nbsp;1,&nbsp;link_size,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;a&nbsp;href=\"#");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;spaces_to_underscores(link,&nbsp;link_size,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"\"&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;fwrite(name,&nbsp;1,&nbsp;name_size,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"&lt;/a&gt;");
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;off;
+}
+</code></pre></p>
 <a id="Sections">
 <h2>5 Sections</h2>
 </a>
@@ -997,103 +1050,111 @@ all depths following it are zeroed out.
 <p>Section number depth can be checked and updated with the function
 <code>update_depth</code>.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;update_section_depth(sorg_d&nbsp;*sorg,&nbsp;int&nbsp;depth);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;update_section_depth(sorg_d&nbsp;*sorg,&nbsp;int&nbsp;depth);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;update_section_depth(sorg_d&nbsp;*sorg,&nbsp;int&nbsp;depth)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(depth&nbsp;&lt;&nbsp;0&nbsp;&&&nbsp;depth&nbsp;&gt;&nbsp;SORG_MAXSEC)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Warning:&nbsp;section&nbsp;depth&nbsp;of&nbsp;%d&nbsp;exceeds&nbsp;maximum&nbsp;depth&nbsp;of&nbsp;%d\n",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;depth&nbsp;+&nbsp;1,&nbsp;SORG_MAXSEC);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(depth&nbsp;&gt;&nbsp;sorg-&gt;depth)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;secpos[depth]&nbsp;=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(depth&nbsp;&lt;&nbsp;sorg-&gt;depth)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;secpos[depth]++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(i&nbsp;=&nbsp;depth&nbsp;+&nbsp;1;&nbsp;i&nbsp;&lt;&nbsp;SORG_MAXSEC;&nbsp;i++)&nbsp;sorg-&gt;secpos[i]&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;secpos[depth]++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pdepth&nbsp;=&nbsp;sorg-&gt;depth;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;depth&nbsp;=&nbsp;depth;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;update_section_depth(sorg_d&nbsp;*sorg,&nbsp;int&nbsp;depth)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;
+&nbsp;&nbsp;&nbsp;&nbsp;if(depth&nbsp;&lt;&nbsp;0&nbsp;&&&nbsp;depth&nbsp;&gt;&nbsp;SORG_MAXSEC)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Warning:&nbsp;section&nbsp;depth&nbsp;of&nbsp;%d&nbsp;exceeds&nbsp;maximum&nbsp;depth&nbsp;of&nbsp;%d\n",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;depth&nbsp;+&nbsp;1,&nbsp;SORG_MAXSEC);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;if(depth&nbsp;&gt;&nbsp;sorg-&gt;depth)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;secpos[depth]&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;if(depth&nbsp;&lt;&nbsp;sorg-&gt;depth)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;secpos[depth]++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(i&nbsp;=&nbsp;depth&nbsp;+&nbsp;1;&nbsp;i&nbsp;&lt;&nbsp;SORG_MAXSEC;&nbsp;i++)&nbsp;sorg-&gt;secpos[i]&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;secpos[depth]++;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;pdepth&nbsp;=&nbsp;sorg-&gt;depth;
+&nbsp;&nbsp;&nbsp;&nbsp;sorg-&gt;depth&nbsp;=&nbsp;depth;
+}
+</code></pre></p>
 <p>To print the current section number in the nice X.Y.Z format, use
 the function <code>print_section</code> and supply a filehandle to write to.
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;print_section(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;print_section(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out);
+</code></pre></p>
 <p>It should be noted that this function will print a space, since
 a space is needed when <a href="#Headings">printing the header</a>.
 </p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;print_section(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;depth&nbsp;&lt;&nbsp;0)&nbsp;return;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"%d",&nbsp;sorg-&gt;secpos[0]);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(i&nbsp;=&nbsp;1;&nbsp;i&nbsp;&lt;=&nbsp;sorg-&gt;depth;&nbsp;i++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;".%d",&nbsp;sorg-&gt;secpos[i]);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fputc('&nbsp;',&nbsp;out);<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;print_section(sorg_d&nbsp;*sorg,&nbsp;FILE&nbsp;*out)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;
+&nbsp;&nbsp;&nbsp;&nbsp;if(sorg-&gt;depth&nbsp;&lt;&nbsp;0)&nbsp;return;
+&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;"%d",&nbsp;sorg-&gt;secpos[0]);
+&nbsp;&nbsp;&nbsp;&nbsp;for(i&nbsp;=&nbsp;1;&nbsp;i&nbsp;&lt;=&nbsp;sorg-&gt;depth;&nbsp;i++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(out,&nbsp;".%d",&nbsp;sorg-&gt;secpos[i]);
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;fputc('&nbsp;',&nbsp;out);
+}
+</code></pre></p>
 <a id="Command_line_parsing">
 <h2>6 Command line parsing</h2>
 </a>
 <p>Command line argument parsing is done using the third-party library
 <a href="https://github.com/jibsen/parg">parg</a>, included in this source distribution.
 </p>
+<a id="_local_variables">
 <div><b><i>&lt;&lt;local_variables</b></i>&gt;&gt;=</div>
-<p><code>struct&nbsp;parg_state&nbsp;ps;<br>
-int&nbsp;c;<br>
-
-</code></p>
+</a>
+<p><pre><code>struct&nbsp;parg_state&nbsp;ps;
+int&nbsp;c;
+</code></pre></p>
+<a id="_parse_command_flags">
 <div><b><i>&lt;&lt;parse_command_flags</b></i>&gt;&gt;=</div>
-<p><code>parg_init(&ps);<br>
-while((c&nbsp;=&nbsp;parg_getopt(&ps,&nbsp;argc,&nbsp;argv,&nbsp;"st:"))&nbsp;!=&nbsp;-1)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;switch(c)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filename&nbsp;=&nbsp;(char&nbsp;*)ps.optarg;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'t':<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;generate_toc&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'s':<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;turn_on_sections&gt;&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"Unknown&nbsp;option&nbsp;-%c\n",&nbsp;c);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>parg_init(&ps);
+while((c&nbsp;=&nbsp;parg_getopt(&ps,&nbsp;argc,&nbsp;argv,&nbsp;"st:"))&nbsp;!=&nbsp;-1)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;switch(c)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;1:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filename&nbsp;=&nbsp;(char&nbsp;*)ps.optarg;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'t':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;generate_toc&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;'s':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&lt;turn_on_sections&gt;&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr,&nbsp;"Unknown&nbsp;option&nbsp;-%c\n",&nbsp;c);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+}
+</code></pre></p>
 <a id="Turn_on_section_numbers_(-s)">
 <h3>6.1 Turn on section numbers (-s)</h3>
 </a>
 <p>The "-t" flag will turn on section numbers.
 This will set a global variable <code>use_secno</code> to be 1.
 </p>
+<a id="_turn_on_sections">
 <div><b><i>&lt;&lt;turn_on_sections</b></i>&gt;&gt;=</div>
-<p><code>use_secno&nbsp;=&nbsp;1;<br>
-
-</code></p>
+</a>
+<p><pre><code>use_secno&nbsp;=&nbsp;1;
+</code></pre></p>
 <p>By default, the <code>use_secno</code> global is 0.
 </p>
+<a id="_global_variables">
 <div><b><i>&lt;&lt;global_variables</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;int&nbsp;use_secno&nbsp;=&nbsp;0;<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;int&nbsp;use_secno&nbsp;=&nbsp;0;
+</code></pre></p>
 <a id="Generate_Table_of_Contents_(-t)">
 <h3>6.2 Generate Table of Contents (-t)</h3>
 </a>
@@ -1101,19 +1162,21 @@ This will set a global variable <code>use_secno</code> to be 1.
 an input parameter, which should be the name of the HTML filename containing
 the full documentation.
 </p>
+<a id="_generate_toc">
 <div><b><i>&lt;&lt;generate_toc</b></i>&gt;&gt;=</div>
-<p><code>mktoc&nbsp;=&nbsp;1;<br>
-indxfile&nbsp;=&nbsp;(char&nbsp;*)ps.optarg;<br>
-
-</code></p>
+</a>
+<p><pre><code>mktoc&nbsp;=&nbsp;1;
+indxfile&nbsp;=&nbsp;(char&nbsp;*)ps.optarg;
+</code></pre></p>
 <p>By default, the filename is set to NULL, and the <code>mktoc</code> variable is set
 to be false.
 </p>
+<a id="_global_variables">
 <div><b><i>&lt;&lt;global_variables</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;char&nbsp;*indxfile&nbsp;=&nbsp;NULL;<br>
-static&nbsp;int&nbsp;mktoc&nbsp;=&nbsp;0;<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;char&nbsp;*indxfile&nbsp;=&nbsp;NULL;
+static&nbsp;int&nbsp;mktoc&nbsp;=&nbsp;0;
+</code></pre></p>
 <a id="Miscellaneous_Utilties">
 <h2>7 Miscellaneous Utilties</h2>
 </a>
@@ -1125,63 +1188,64 @@ static&nbsp;int&nbsp;mktoc&nbsp;=&nbsp;0;<br>
 <p>Because the getline function is not part of the ANSI C standard, an
 implementation is used in it's place.
 </p>
+<a id="_getline">
 <div><b><i>&lt;&lt;getline</b></i>&gt;&gt;=</div>
-<p><code>size_t&nbsp;sorg_getline(char&nbsp;**lineptr,&nbsp;size_t&nbsp;*n,&nbsp;FILE&nbsp;*stream)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*bufptr&nbsp;=&nbsp;NULL;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*p&nbsp;=&nbsp;bufptr;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;c;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(lineptr&nbsp;==&nbsp;NULL)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(stream&nbsp;==&nbsp;NULL)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(n&nbsp;==&nbsp;NULL)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufptr&nbsp;=&nbsp;*lineptr;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;*n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;c&nbsp;=&nbsp;fgetc(stream);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(c&nbsp;==&nbsp;EOF)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(bufptr&nbsp;==&nbsp;NULL)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bufptr&nbsp;=&nbsp;malloc(128);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(bufptr&nbsp;==&nbsp;NULL)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;128;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;p&nbsp;=&nbsp;bufptr;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;while(c&nbsp;!=&nbsp;EOF)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;((p&nbsp;-&nbsp;bufptr)&nbsp;&gt;&nbsp;(size&nbsp;-&nbsp;1))&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;size&nbsp;+&nbsp;128;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bufptr&nbsp;=&nbsp;realloc(bufptr,&nbsp;size);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(bufptr&nbsp;==&nbsp;NULL)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*p++&nbsp;=&nbsp;c;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(c&nbsp;==&nbsp;'\n')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c&nbsp;=&nbsp;fgetc(stream);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;*lineptr&nbsp;=&nbsp;bufptr;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Some&nbsp;text&nbsp;editors&nbsp;do&nbsp;not&nbsp;insert&nbsp;a&nbsp;linebreak&nbsp;on&nbsp;the&nbsp;last&nbsp;line.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;For&nbsp;these&nbsp;cases,&nbsp;shift&nbsp;everything&nbsp;by&nbsp;1.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;*/<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if(c&nbsp;==&nbsp;EOF)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p&nbsp;=&nbsp;p&nbsp;+&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;+=&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;*p++&nbsp;=&nbsp;'\0';<br>
-&nbsp;&nbsp;&nbsp;&nbsp;*n&nbsp;=&nbsp;size;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;p&nbsp;-&nbsp;bufptr&nbsp;-&nbsp;1;<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>size_t&nbsp;sorg_getline(char&nbsp;**lineptr,&nbsp;size_t&nbsp;*n,&nbsp;FILE&nbsp;*stream)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*bufptr&nbsp;=&nbsp;NULL;
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*p&nbsp;=&nbsp;bufptr;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;size;
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;c;
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(lineptr&nbsp;==&nbsp;NULL)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(stream&nbsp;==&nbsp;NULL)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(n&nbsp;==&nbsp;NULL)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;bufptr&nbsp;=&nbsp;*lineptr;
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;*n;
+&nbsp;&nbsp;&nbsp;&nbsp;c&nbsp;=&nbsp;fgetc(stream);
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(c&nbsp;==&nbsp;EOF)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(bufptr&nbsp;==&nbsp;NULL)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bufptr&nbsp;=&nbsp;malloc(128);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(bufptr&nbsp;==&nbsp;NULL)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;128;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;p&nbsp;=&nbsp;bufptr;
+&nbsp;&nbsp;&nbsp;&nbsp;while(c&nbsp;!=&nbsp;EOF)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;((p&nbsp;-&nbsp;bufptr)&nbsp;&gt;&nbsp;(size&nbsp;-&nbsp;1))&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;=&nbsp;size&nbsp;+&nbsp;128;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bufptr&nbsp;=&nbsp;realloc(bufptr,&nbsp;size);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(bufptr&nbsp;==&nbsp;NULL)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;-1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*p++&nbsp;=&nbsp;c;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(c&nbsp;==&nbsp;'\n')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c&nbsp;=&nbsp;fgetc(stream);
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;*lineptr&nbsp;=&nbsp;bufptr;
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Some&nbsp;text&nbsp;editors&nbsp;do&nbsp;not&nbsp;insert&nbsp;a&nbsp;linebreak&nbsp;on&nbsp;the&nbsp;last&nbsp;line.
+&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;For&nbsp;these&nbsp;cases,&nbsp;shift&nbsp;everything&nbsp;by&nbsp;1.
+&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;if(c&nbsp;==&nbsp;EOF)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p&nbsp;=&nbsp;p&nbsp;+&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;+=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;*p++&nbsp;=&nbsp;'\0';
+&nbsp;&nbsp;&nbsp;&nbsp;*n&nbsp;=&nbsp;size;
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;p&nbsp;-&nbsp;bufptr&nbsp;-&nbsp;1;
+}
+</code></pre></p>
 <a id="Spaces_To_Underscores">
 <h3>7.2 Spaces To Underscores</h3>
 </a>
@@ -1190,31 +1254,33 @@ such as <a href="https://www.netsurf-browswer.org">netsurf</a>, don't work well 
 references have spaces in them. This function will take in a string and
 write it to a file handle, replacing the spaces ( ) to underscores (_).
 </p>
+<a id="_function_declarations">
 <div><b><i>&lt;&lt;function_declarations</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;spaces_to_underscores(const&nbsp;char&nbsp;*str,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;spaces_to_underscores(const&nbsp;char&nbsp;*str,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out);
+</code></pre></p>
+<a id="_functions">
 <div><b><i>&lt;&lt;functions</b></i>&gt;&gt;=</div>
-<p><code>static&nbsp;void&nbsp;spaces_to_underscores(const&nbsp;char&nbsp;*str,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)<br>
-{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;blksize;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;blksize&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blksize++;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(str[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(str&nbsp;+&nbsp;off,&nbsp;1,&nbsp;blksize&nbsp;-&nbsp;1,&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fputc('_',&nbsp;out);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blksize&nbsp;=&nbsp;0;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;n&nbsp;+&nbsp;1;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fwrite(str&nbsp;+&nbsp;off,&nbsp;1,&nbsp;blksize,&nbsp;out);<br>
-}<br>
-
-</code></p>
+</a>
+<p><pre><code>static&nbsp;void&nbsp;spaces_to_underscores(const&nbsp;char&nbsp;*str,&nbsp;size_t&nbsp;size,&nbsp;FILE&nbsp;*out)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;blksize;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;n;
+&nbsp;&nbsp;&nbsp;&nbsp;size_t&nbsp;off;
+&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;blksize&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;for(n&nbsp;=&nbsp;0;&nbsp;n&nbsp;&lt;&nbsp;size;&nbsp;n++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blksize++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(str[n]&nbsp;==&nbsp;'&nbsp;')&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fwrite(str&nbsp;+&nbsp;off,&nbsp;1,&nbsp;blksize&nbsp;-&nbsp;1,&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fputc('_',&nbsp;out);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blksize&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off&nbsp;=&nbsp;n&nbsp;+&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;fwrite(str&nbsp;+&nbsp;off,&nbsp;1,&nbsp;blksize,&nbsp;out);
+}
+</code></pre></p>
 </div>
 </body>
 </html>
