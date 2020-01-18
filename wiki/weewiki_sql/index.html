@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>SQL in WeeWiki</title>
+<h1>SQL in WeeWiki</h1>
+<p>This page aims to outline some little SQL tricks.
+</p>
+<p>WeeWiki bundles a version of the
+<a href="https://github.com/janet-lang/sqlite3">SQLite Janet bindings</a>,
+so this allows WeeWiki to query sqlite databases (include
+itself) and dynamically produce content.
+</p>
+<p>WeeWiki can access itself (the currently opened database)
+with the function <code>ww-db</code>. This can then be used with any of
+the SQLite3 janet functions.
+</p>
+<p>My WeeWiki has a special variable called "@life". The
+function below will query this page, and print the meaning
+of life (displayed below):
+</p>
+<pre><code>(do
+  (def db (ww-db))
+  (def val
+    (sqlite3/eval
+     db
+     "SELECT value FROM wiki where key==\"@life\""))
+  (print "The meaning of life is: ")
+  (print (get (get val 0) "value")))</pre></code>
+<p></p>
+<br>
+<p>The meaning of life is: 
+42
+</p>
+</div>
+</body>
+</html>
