@@ -10,13 +10,16 @@
 <div id="main">
 <title>SQL in WeeWiki</title>
 <h1>SQL in WeeWiki</h1>
-<p>This page aims to outline some little SQL tricks.
+<p>This page aims to outline some small SQL tricks in WeeWiki.
 </p>
 <p>WeeWiki bundles a version of the
 <a href="https://github.com/janet-lang/sqlite3">SQLite Janet bindings</a>,
 so this allows WeeWiki to query sqlite databases (include
 itself) and dynamically produce content.
 </p>
+
+<h3>Accessing WeeWiki Variables</h3>
+
 <p>WeeWiki can access itself (the currently opened database)
 with the function <code>ww-db</code>. This can then be used with any of
 the SQLite3 janet functions.
@@ -37,6 +40,99 @@ of life (displayed below):
 <br>
 <p>The meaning of life is: 
 42
+</p>
+
+<h3>Parsing Other Pages</h3>
+
+<p>Along the same line, the following code will use <code>org</code>
+instead of print to parse org code found in the
+<a href="/wiki/ars_brevis">ars brevis</a> page:
+</p>
+<pre><code>(do
+  (def db (ww-db))
+  (def val
+    (sqlite3/eval
+     db
+     "SELECT value FROM wiki where key==\"ars_brevis\""))
+  (org (get (get val 0) "value")))</pre></code>
+<p></p>
+<p><b>Ars Brevis</b> 
+</p>
+<p>A Grook by By Piet Hein
+</p>
+<p>There is
+</p>
+<p>one art,
+</p>
+<p>no more,
+</p>
+<p>no less,
+</p>
+<p>to do
+</p>
+<p>all things
+</p>
+<p>with art-
+</p>
+<p>lessness.
+</p>
+
+<h3>Iterating over values</h3>
+
+<p>One can also iterate over values. For instance, this will
+print the first 25 linked pages in wikilinks in alphabetical
+order:
+</p>
+<pre><code>(do
+  (def db (ww-db))
+  (def values
+    (sqlite3/eval
+     db
+     (string
+      "SELECT filename FROM wikilinks "
+      "ORDER BY filename "
+      "COLLATE NOCASE LIMIT 25;")))
+
+  (each file values
+    (org
+     (string (get file "filename") "\n\n"))))</pre></code>
+<p></p>
+<p>ars_brevis.org
+</p>
+<p>breathing_cards.org
+</p>
+<p>btprnt.org
+</p>
+<p>convergence.org
+</p>
+<p>equipment.org
+</p>
+<p>event_graph.org
+</p>
+<p>gpd2.org
+</p>
+<p>index.org
+</p>
+<p>maille.org
+</p>
+<p>MIDI_sucks.org
+</p>
+<p>monolith.org
+</p>
+<p>norns.org
+</p>
+<p>sample_curation.org
+</p>
+<p>sixtycolumnrule.org
+</p>
+<p>twtxt.org
+</p>
+<p>weewiki.org
+</p>
+<p>weewiki_sql.org
+</p>
+<p>wiki_index.org
+</p>
 </p>
 </div>
 </body>
