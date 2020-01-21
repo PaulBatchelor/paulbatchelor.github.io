@@ -11,9 +11,48 @@
 <title>Copying a weewiki database</title>
 <h1>Copying a weewiki database</h1>
 <p></p>
-<p>Sometimes it is ideal to copy over a weewiki database
-from one place to another.
+<p>Sometimes it is ideal to copy over <a href="/wiki/weewiki">weewiki</a> data from one SQLite database to another.
+This need came up for me while working on a
+<a href="/wiki/sample_curation">sample database</a> with
+an internal weewiki. Copying the whole file was very
+slow because the SQLar portion of the database
+was hundreds of megabytes. It made more sense to copy
+the whole file once, and then copy just the wiki data.
 </p>
+<p>The script <code>wiki_copy.sh</code> makes use of the
+<code>ATTACH</code> command in SQLite to copy tables from one location'
+to another. It can be run in the following way:
+</p>
+<pre><code>./wiki_copy.sh source.db destination.db</pre></code>
+<p></p>
+<p>It will copy the wiki data in <code>source.db</code> to
+<code>destination.db</code>. Note that this will blow away any previous
+weewiki data in the destination database. It also assumes
+that the weewiki tables already exist.
+</p>
+<pre><code>#!/bin/sh
+
+if [ "$#" -eq 0 ]
+then
+echo "Usage: $0 src dst"
+exit
+fi
+
+SRC=$1
+DST=$2
+
+sqlite3 <<EOF
+ATTACH "$SRC" as src;
+ATTACH "$DST" as dst;
+
+-- first, clear the old wiki pages in destination
+DELETE FROM dst.wiki WHERE 1;
+DELETE FROM dst.wikilinks WHERE 1;
+
+-- then, copy over tables from source
+INSERT INTO dst.wiki SELECT * from src.wiki;
+INSERT INTO dst.wikilinks SELECT * from src.wikilinks;
+EOF</pre></code>
 </div>
 </body>
 </html>
