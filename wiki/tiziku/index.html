@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Tiziku</title>
+<h1>Tiziku</h1>
+<p></p>
+<p><img src="/res/tiziku/tiziku.png">
+</p>
+<p>Tiziku (2016, 2020) is a generative audio-visual work.
+</p>
+<p>Video: <a href="https://vimeo.com/388842687">https://vimeo.com/388842687</a>.
+</p>
+<p>Code: <a href="https://www.github.com/paulbatchelor/tiziku">https://www.github.com/paulbatchelor/tiziku</a>.
+</p>
+<p>Orignally written in Spring 2016 as a final project for the
+220b algorithmic composition class at CCRMA. It was revisted
+in early 2020 and refactored to generate offline video.
+</p>
+<p>Inspiration:
+</p>
+<p>Visual: Rothko (what little I knew of them at the time), and
+my bathroom light in my apartment at the time.
+</p>
+<p>Lots of rectangles, and limited color pallettes. I used the term
+"breathing Rothko" at the time to describe what I was done.
+</p>
+<p>Audio:
+</p>
+<p>Most of the patch is 26 lines of Sporth code.
+</p>
+<p>Components:
+</p>
+<p>Samples of an orchestra tuning up. Two mincers scrub through
+this sample.
+</p>
+<p>FM keyboard patch. Plays a fixed melody. There's a fixed
+melody sequence and a fixed rhythmic sequence in prop. They
+are different sizes (7 + 6), so they good.
+</p>
+<p>White noise, gets triggered every time the Rothko
+"breathes". Meant to evoke the feeling of breathing.
+</p>
+<p>The spice on top are the "glitches". These are generated in
+ChucK: implulses put through the LPF ugen (resonant lowpass
+filter). Visually, glitches make the individual rectangles
+onscreen to blink on and off. Sometimes the squares blink
+and stay off, which cause holes of empty space to happen.
+</p>
+<p>The original 2016 codebase was very fragile.
+I only managed to get it running on two of my computers,
+only one of which I still have. At the time, I wanted to
+experiment with using many domain-specific languages at
+once. There were many moving parts:
+</p>
+<p>A hacked version of ChucK (included with the codebase),
+designed to run in my own JACK render loop.
+</p>
+<p>Sporth, run inside of ChucK via <a href="/proj/chorth.html">Chorth</a>.
+</p>
+<p>NanoVG for 2d grahics, run inside of the GLFW OpenGL
+wrapper.
+</p>
+<p>A lua scripting component for the drawing routines.
+</p>
+<p>Four years later in 2020, I decided to perform some
+compositional necromancy and bring this sucker back to life.
+This required completely rewriting the engine backend:
+</p>
+<p>The ChucK components were removed entirely. The timing
+behavior and DSP for the glitches were re-implemented in C.
+</p>
+<p>Cairo replaced NanoVG for antialiased 2d graphics.
+</p>
+<p>Instead of OpenGL/GLFW for realtime graphics, offline
+h264 video was generated using libx264.
+</p>
+<p>Sporth was replaced with... Sporth! This code was taken
+out of ChucK and pretty much worked without modification.
+I made the Sporth component run inside of a
+<a href="/proj/patchwerk">patchwerk</a> node.
+</p>
+<p>The lua code pretty much worked without any modification. I
+just had to rewrite the underlying wrapped C functions to
+use Cairo instead of NanoVG. I ended up using a local copy
+of lua 5.3 in ANSI C mode.
+</p>
+<p>The Tiziku program when run now generates a video file and
+an audio file which can be stitched together into an mp4
+using the FFMPEG tool. Rather than let FFMPEG encode the WAV
+audio, I opted to manually convert it to mp3 in LAME.
+</p>
+</div>
+</body>
+</html>
