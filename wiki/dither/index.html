@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Atkinson Dither</title>
+<h1>Atkinson Dither</h1>
+<p>A filter that takes a region in a monolith buffer and
+applies dither with two arbitrary colors. Implemented as
+a Janet plugin that works with Monolith.
+</p>
+<p>Many thanks to <a href="https://tannerhelland.com/2012/12/28/dithering-eleven-algorithms-source-code.html">this blog post</a></p>
+<p>for providing clear instructions on how to implement this.
+</p>
+
+<h3>Top</h3>
+
+<div><b><i>&lt;&lt;dither.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define MONOLITH_ANSI
+#include "janet/janet.h"
+#include "patchwerk.h"
+#include "runt.h"
+#include "monolith.h"
+&lt;&lt;grayscale&gt;&gt;
+&lt;&lt;algorithm&gt;&gt;
+&lt;&lt;janet_function&gt;&gt;
+&lt;&lt;funclist&gt;&gt;
+&lt;&lt;plugin_entry&gt;&gt;</pre></code>
+
+<h3>Boilerplate Janet stuff</h3>
+
+<p>To get this algorithm wrapped inside of Janet, you need some
+boilerplate. Quite dull actually. Why are you still reading
+this?
+</p>
+
+<h4>Loader + Plugin Entry</h4>
+
+<div><b><i>&lt;&lt;funclist&gt;&gt;=</i></b></div><pre><code>#ifndef BUILD_DITHER_PLUGIN
+#define NAME(s) "monolith/gfx-"s
+#else
+#define NAME(s) s
+#endif
+
+static const JanetReg cfuns[] = {
+    {NAME("dither"),
+     j_dither,
+     "Dithers a rectangular region between two colors."},
+    {NULL, NULL, NULL}
+};</pre></code>
+<div><b><i>&lt;&lt;plugin_entry&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_dither_loader(JanetTable *env,
+                                const char *name)
+{
+    janet_cfuns(env, name, cfuns);
+}
+#ifdef BUILD_DITHER_PLUGIN
+JANET_MODULE_ENTRY(JanetTable *env)
+{
+    monolith_gfx_dither_loader(env, "dither");
+}
+#endif</pre></code>
+
+<h4>Janet Function</h4>
+
+<div><b><i>&lt;&lt;janet_function&gt;&gt;=</i></b></div><pre><code>static monolith_pixel rgbval(int *rgb)
+{
+    return monolith_pixel_make(rgb[0], rgb[1], rgb[2], 255);
+}
+static Janet j_dither(int32_t argc, Janet *argv)
+{
+    int x, y;
+    int w, h;
+    int fg[3];
+    int bg[3];
+    int i;
+    monolith_d *m;
+    monolith_framebuffer *fb;
+
+    janet_fixarity(argc, 10);
+    m = monolith_data_get();
+    x = janet_getinteger(argv, 0);
+    y = janet_getinteger(argv, 1);
+    w = janet_getinteger(argv, 2);
+    h = janet_getinteger(argv, 3);
+
+    for (i = 0; i &lt; 3; i++) {
+        fg[i] = janet_getinteger(argv, 4 + i);
+        bg[i] = janet_getinteger(argv, 7 + i);
+    }
+
+    fb = monolith_fb_get(m);
+
+    atkinson_dither(fb, x, y, w, h, rgbval(fg), rgbval(bg));
+    return janet_wrap_nil();
+}</pre></code>
+
+<h3>Grayscale Conversion</h3>
+
+<p>Before dither can be applied, the RGB colorspace needs to be
+converted to grayscale. This <code>pixel2grayscale</code> function will
+take in an RGB pixel and return an integer between 0 and
+225.
+</p>
+<p>A standard linear conversion is used (no gamma correction).
+Not great, but it's fast and good enough.
+<div><b><i>&lt;&lt;grayscale&gt;&gt;=</i></b></div><pre><code>static int pixel2grayscale(monolith_pixel *p)
+{
+    double oned255;
+    double r, g, b;
+    double gray;
+
+    oned255 = 1.0 / 255;
+
+    r = p-&gt;r * oned255;
+    g = p-&gt;g * oned255;
+    b = p-&gt;b * oned255;
+
+    gray = 0.2126 * r + 0.715 * g + 0.0722 * b;
+
+    return floor(gray * 255);
+}</pre></code>
+
+<h3>The Dither Algorithm</h3>
+
+<p>The actual dither algorithm itself. There's some great
+places to learn about dither, including the blog post I
+linked at the top of this document. These are good places
+to get a thorough overview of the topic, not here.
+</p>
+<p>Dithering is a matter of taking each pixel and approximating
+it to the nearest color. If a pixel is kinda light, make it
+white. If it's kinda dark, make it black. For our filter,
+these two colors are referred to as light and dark.
+</p>
+<p>Two dimensional dither works by taking the error (how much
+it snapped to the color), and distributing it to the
+surrounding pixels, in a process known as <b>error diffusion</b>.
+How this error is divied up and distrubuted determines the
+diffusion algorithm.
+</p>
+<p>Atkinson dithering works by taking the error, dividing it by
+8, and then distributing that value amongst 6 surrounding
+pixels: two pixels down, two pixels forward, one pixel down
+to the left, and one pixel down to the right. It helps to
+draw a picture (the blog post I used had an excellent one).
+</p>
+<p>The full error does not get distributed. Apparently, this
+sort of technique is known to provide a "reduced color
+bleed", reducing speckling artifacts, but causing contiguous
+light/dark regions to be more pronounced.
+</p>
+<p>And that's it in a nutshell. To implement the error
+distribution, three row buffers were used: the first
+row is used to store errors for the current row, the
+second for the next row, the third for the row after
+that. At the end of every row, the row buffers rotate
+up in position, causing the first row to be the new
+third row. While in in the first row, the buffer gets
+zero'd out as it goes left-to-right, causing it to be
+fully re-initialized by the time the rotation happens.
+</p>
+<div><b><i>&lt;&lt;algorithm&gt;&gt;=</i></b></div><pre><code>static void atkinson_dither(monolith_framebuffer *f,
+                            int xpos, int ypos,
+                            int w, int h,
+                            monolith_pixel light,
+                            monolith_pixel dark)
+{
+    int x, y;
+    int *mem;
+    int *rows[3];
+    int rowpos;
+    int *err[3];
+
+    mem = malloc(3 * w * sizeof(int));
+    rowpos = 0;
+
+    rows[0] = &mem[0];
+    rows[1] = &mem[w];
+    rows[2] = &mem[w*2];
+
+    err[0] = rows[rowpos];
+    err[1] = rows[(rowpos + 1) % 3];
+    err[2] = rows[(rowpos + 2) % 3];
+
+    for (x = 0; x &lt; 3 * w; x++) mem[x] = 0;
+
+    for (y = 0; y &lt; h; y++) {
+        for (x = 0; x &lt; w; x++) {
+            monolith_pixel p;
+            monolith_pixel *out;
+            int gray;
+            int s;
+            int e;
+            e = 0;
+
+            s = 0;
+            monolith_gfx_pixel_get(f, x + xpos, y + ypos, &p);
+            gray = pixel2grayscale(&p) + err[0][x];
+
+            /* clear error */
+            err[0][x] = 0;
+
+            s = (gray &gt; 127);
+
+            if (s) {
+                out = &light;
+                e = gray - 255;
+            } else {
+                out = &dark;
+                e = gray;
+            }
+
+
+            /* divide error by 8 */
+            e &gt;&gt;= 3;
+
+            if ((x + 2) &lt; w) {
+                err[0][x + 2] += e;
+
+                /* also do x + 1 */
+                err[0][x + 1] += e;
+                err[1][x + 1] += e;
+            } else if ((x + 1) &lt; w) {
+                err[0][x + 1] += e;
+                err[1][x + 1] += e;
+            }
+
+            /* x + 1 distribution */
+            if (x &gt; 0) {
+                err[1][x - 1] += e;
+            }
+
+            err[1][x] += e;
+            err[2][x] += e;
+
+            monolith_gfx_pixel_set(f, x + xpos, y + ypos, *out);
+
+            /* shift rows circularly */
+            rowpos = (rowpos + 1) % 3;
+            err[0] = rows[rowpos];
+            err[1] = rows[(rowpos + 1) % 3];
+            err[2] = rows[(rowpos + 2) % 3];
+        }
+    }
+
+    free(mem);
+}</pre></code>
+</div>
+</body>
+</html>
