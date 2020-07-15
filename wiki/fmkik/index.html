@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>FMKik</title>
+<h1>FMKik</h1>
+<p></p>
+<p>A recipe for a simple FM kick drum.
+</p>
+<div><b><i>&lt;&lt;fmkik.scm&gt;&gt;=</i></b></div><pre><code>&lt;&lt;top&gt;&gt;</pre></code>
+<p></p>
+<p>I tried to build this to be highly parametric, so the core
+function <code>fmkik</code> has a lot of variables, all lambdas
+except for <code>ft</code>:
+</p>
+<p><code>trig</code> is the trigger signal.
+</p>
+<p><code>freq</code> is the frequency of the kick (in hz).
+</p>
+<p><code>c</code>, <code>m</code>, and <code>i</code> are the carrier/modulation/index FM
+parameters. The index is being enveloped, so <code>i</code> is the
+initial amount.
+</p>
+<p><code>dst</code> is the overdrive distortion level
+(simple limit distortion). 1 is normal, anything greater
+will cause some sort of clipping.
+</p>
+<p><code>len</code> is the overall hold time length of the kick.
+</p>
+<p><code>tail</code> controls the decay time of the amp enveloped.
+</p>
+<p><code>body</code> controls the decay time of the modulation index
+(timbre) envelope.
+</p>
+<p><code>ft</code> is the sine ftable, as a lambda.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (fmkik trig freq c m i dst len tail body ft)
+  (let* ((t (monolith:mkcab trig 0))
+         (trigf (lambda () (cabget t))))
+    (begin
+      (display t)
+      (newline)
+      (cabget t)
+      (tenvx
+       zz
+       (param 0.0001)
+       (len)
+       (tail))
+      (fmkik-fm
+       trigf
+       freq
+       c
+       m
+       (lambda () (expon (trigf) (i) (body) 0.001))
+       ft)
+      (mul zz zz)
+      (mul zz (dst))
+      (limit zz -1 1)
+
+      (cabclr t))))</pre></code>
+<p></p>
+<p>The core components of the kick are a retriggerable sine
+oscillator, and from that a retriggerable FM oscillator.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (fmkik-sine rt freq ft)
+    (tphasor (rt) (freq) 0)
+    (trd zz ft))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (fmkik-fm rt freq car mod indx ft)
+  (let* ((o (lambda (f) (fmkik-sine rt f ft)))
+        (freq-reg (monolith:mkcab freq 0))
+        (fr (lambda () (cabget freq-reg)))
+        (car-reg (monolith:mkcab car freq-reg))
+        (c (lambda () (cabget car-reg)))
+        (car-osc
+         (lambda ()
+           (mul
+            (mul (indx) (mul (fr) (c)))
+            (o (lambda () (mul (fr) (c))))))))
+    (begin
+      (display "freq-reg: ")
+      (display freq-reg)
+      (newline)
+      (display "car-reg: ")
+      (display car-reg)
+      (newline)
+      (o (lambda () (add (mul (fr) (mod)) (car-osc))))
+      (cabclr freq-reg)
+      (cabclr car-reg))))</pre></code>
+<p></p>
+<p>Here's a dead simple version of FMkik, with all the
+parameters tuned to a sensible defaults.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (fmkik-default t ft)
+  (fmkik
+   t
+   (paramf 60)
+   (paramf 1)
+   (paramf 1)
+   (paramf 3)
+   (paramf 2)
+   (paramf 0.01)
+   (paramf 0.1)
+   (paramf 0.09)
+   ft))</pre></code>
+<p></p>
+<br>
+<p>A little demo:
+</p>
+<pre><code>(monolith:load "ugens.scm")</pre></code>
+<p></p>
+<pre><code>(monolith:start)</pre></code>
+<p></p>
+<pre><code>(define (run)
+  (display "FMKik Demo")
+  (newline)
+  (regset (gen_sine (ftnew 8192)) 0)
+  (fmkik-default
+   (lambda () (metro 1))
+   (lambda () (regget 0)))
+  (mul zz 0.5)
+  (out zz)
+  (regclr 0))</pre></code>
+</div>
+</body>
+</html>
