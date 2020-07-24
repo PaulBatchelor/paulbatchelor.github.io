@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Giblang</title>
+<h1>Giblang</h1>
+<p>This is a little script I use to generate asemic titles and
+names for the things I work on. It is notably used to
+generate titles for my <a href="/wiki/breathing_cards">BreathingCards</a>.
+</p>
+<p>The main idea is to build up words one syllable at a time.
+A syllable is a random pairing of a consonant sound and a
+vowel sound.
+</p>
+<pre><code>(def cons (array
+           "b" "c" "d" "f"
+           "g" "h" "j" "k"
+           "l" "m" "n" "p"
+           "r" "s" "t" "v"
+           "w" "z" "ch" "sh"
+           "zh"))
+
+(def vow (array "a" "e" "i" "o" "u" "y" "ee" "ai" "ae"))
+
+(defn rpick (t)
+  (t (math/floor (* (math/random) (length t)))))
+
+
+(defn seed () (math/seedrandom (os/time)))
+
+(defn syl () (string (rpick cons) (rpick vow)))
+
+(defn word ()
+  (do
+    (var str "")
+    (for i 0 (+ (math/floor (* (math/random) 3)) 1)
+      (set str (string str (syl))))
+    (cond (&gt; (math/random) 0.2)
+          (set str (string str (rpick cons))))
+    (string str)))
+
+(seed)
+(print (word))</pre></code>
+</div>
+</body>
+</html>
