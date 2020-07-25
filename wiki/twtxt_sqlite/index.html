@@ -18,21 +18,23 @@ current working directory called <code>twtxt.txt</code>.
 echo "BEGIN;"
 echo "DROP TABLE IF EXISTS twtxt;"
 echo "DROP VIEW IF EXISTS timeline;"
-echo "CREATE TABLE IF NOT EXISTS twtxt("
-echo "time integer,"
-echo "message TEXT"
+echo "CREATE VIRTUAL TABLE IF NOT EXISTS twtxt using fts5("
+echo "time,"
+echo "message"
 echo ");"
+
 while read -r line
 do
 TIME=$(echo $line | cut -f 1 -d ' ')
 MSG=$(echo $line | sed "s/.*Z //" | sed "s/'/''/g")
 echo "INSERT OR REPLACE INTO twtxt(time, message)"
-echo "VALUES(CAST(strftime('%s', '$TIME') as INTEGER),"
+#echo "VALUES(CAST(strftime('%s', '$TIME') as INTEGER),"
+echo "VALUES(strftime('%s', '$TIME'),"
 echo " '$MSG');"
 done &lt; twtxt.txt
 
 echo "CREATE VIEW timeline AS "
-echo "SELECT "
+echo "SELECT time as id, "
 echo "DATETIME(time, 'unixepoch', 'localtime') as date, message "
 echo "FROM twtxt ORDER BY time DESC;"
 echo "COMMIT;"</pre></code>
