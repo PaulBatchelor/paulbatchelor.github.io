@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>twtxt + sqlite</title>
+<h1>twtxt + sqlite</h1>
+<p>The following script is used to generate a sqlite database
+from a twtxt text file. This assumes there is a file in the
+current working directory called <code>twtxt.txt</code>.
+</p>
+<div><b><i>&lt;&lt;mksql&gt;&gt;=</i></b></div><pre><code>#!/bin/sh
+echo "BEGIN;"
+echo "DROP TABLE IF EXISTS twtxt;"
+echo "DROP VIEW IF EXISTS timeline;"
+echo "CREATE TABLE IF NOT EXISTS twtxt("
+echo "time integer,"
+echo "message TEXT"
+echo ");"
+while read -r line
+do
+TIME=$(echo $line | cut -f 1 -d ' ')
+MSG=$(echo $line | sed "s/.*Z //" | sed "s/'/''/g")
+echo "INSERT OR REPLACE INTO twtxt(time, message)"
+echo "VALUES(CAST(strftime('%s', '$TIME') as INTEGER),"
+echo " '$MSG');"
+done &lt; twtxt.txt
+
+echo "CREATE VIEW timeline AS "
+echo "SELECT "
+echo "DATETIME(time, 'unixepoch', 'localtime') as date, message "
+echo "FROM twtxt ORDER BY time DESC;"
+echo "COMMIT;"</pre></code>
+</div>
+</body>
+</html>
