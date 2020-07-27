@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>searching for tweets in twtxt</title>
+<h1>searching for tweets in twtxt</h1>
+<p>A hacked up little script written in <a href="/wiki/janet">janet</a> to
+look up IDs for <a href="/wiki/twtxt">twtxt</a> tweets written to a
+<a href="/wiki/twtxt_sqlite">sqlite</a> database.
+</p>
+<p>Use it in the following way: <code>search_twtxt keyword [maxlen]</code>
+where <code>keyword</code> is the keyword search term used in the full
+text search, and <code>maxlen</code> is an optional keyword used to
+limit how many characters to display in the results. The
+default is 60 characters.
+</p>
+<div><b><i>&lt;&lt;search_twtxt&gt;&gt;=</i></b></div><pre><code>#!/usr/local/bin/weewiki janet
+(def twtxtdb "twtxt/tweets.db")
+
+(defn search (keyword &opt limit)
+  (default limit nil)
+  (def db (sqlite3/open twtxtdb))
+  (var msg (string
+            "SELECT *"
+            " FROM timeline WHERE message MATCH \""
+            keyword
+            "\""
+            (if (not (nil? limit)) (string "LIMIT " limit) "")
+            ";"))
+  (var tweets
+       (sqlite3/eval db msg))
+  (sqlite3/close db)
+  tweets)
+
+(def keyword (string/ascii-lower ((dyn :args) 1)))
+(def maxlen
+  (if-not (nil? ((dyn :args) 2))
+    (eval-string ((dyn :args) 2))))
+(def tweets (search keyword))
+
+(defn trunc [str key &opt maxlen]
+  (default maxlen 60)
+  #(if (nil? maxlen) (set maxlen 60))
+  (if (&gt; (length str) maxlen)
+    (do
+      (var start
+           ((peg/match
+             (peg/compile
+              ~(any (+ (* ($) ,key) 1)))
+             (string/ascii-lower str)) 0))
+
+      (if (&gt; (+ start maxlen) (length str))
+        (set start (- (length str) maxlen)))
+      (var end (+ start maxlen))
+      (string
+       (if (&gt; start 0) "...")
+       (string/slice str start end) "..."))
+
+    str))
+
+(each tweet tweets
+  (print
+   (tweet "id")
+   ": "
+   (trunc (tweet "message") keyword maxlen)))</pre></code>
+</div>
+</body>
+</html>
