@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>btprnt</title>
+<h1>btprnt</h1>
+<p>A small library for drawing bitmap images.
+</p>
+
+<h3>Files</h3>
+
+<p>btprnt writes itself to a single header file called
+<code>btprnt.h</code>. Defining <code>BTPRNT_IMPL</code> will define the
+functions, otherwise it is just function declarations.
+</p>
+<div><b><i>&lt;&lt;btprnt.h&gt;&gt;=</i></b></div><pre><code>#ifndef BTPRNT_H
+#define BTPRNT_H
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;btprnt_region_struct&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+#ifdef BTPRNT_IMPL
+#include &lt;math.h&gt;
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+&lt;&lt;structs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;
+#endif
+#endif</pre></code>
+
+<h3>The Top Level Interface</h3>
+
+<p>The <code>btprnt</code> interface is one that handles all the low-level
+details.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct btprnt btprnt;</pre></code>
+<p></p>
+<p>The btprnt struct contains a canvas, and a buffer.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct btprnt {
+    btprnt_buf *buf;
+    btprnt_canvas *canvas;
+};</pre></code>
+<p></p>
+<p>Canvas can be retrieved using the function
+<code>btprnt_canvas_get</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_canvas *btprnt_canvas_get(btprnt *b);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_canvas *btprnt_canvas_get(btprnt *b)
+{
+    return b-&gt;canvas;
+}</pre></code>
+<p></p>
+<p>The buffer can be retrieved using <code>btprnt_buf_get</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_buf * btprnt_buf_get(btprnt *b);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_buf * btprnt_buf_get(btprnt *b)
+{
+    return b-&gt;buf;
+}</pre></code>
+<p></p>
+<p>The function <code>btprnt_new</code> will allocate and return a new
+btprnt instance. Internally, this will allocate and
+initialize the canvas and the buffer. The dimensions of
+the buffer are needed to be known at init time.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt * btprnt_new(int w, int h);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt * btprnt_new(int w, int h)
+{
+    btprnt *b;
+
+    b = calloc(1, sizeof(btprnt));
+
+    if (b == NULL) return NULL;
+
+    b-&gt;buf = btprnt_buf_init(w, h);
+
+    if (b-&gt;buf == NULL) {
+        free(b);
+        return NULL;
+    }
+
+    b-&gt;canvas = btprnt_canvas_new(b-&gt;buf);
+
+    if (b-&gt;canvas == NULL) {
+        btprnt_buf_free(&b-&gt;buf);
+        free(b);
+        return NULL;
+    }
+    return b;
+}</pre></code>
+<p></p>
+<p>The function <code>btprnt_del</code> will delete that which has
+been previously allocated.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_del(btprnt **b);</pre></code>
+<p></p>
+<p>This pointer notation is a bit too clever for my peabrain,
+but it is very convenient. I will explain it while it is
+still fresh in my head:
+</p>
+<p><code>b</code> is a pointer to a pointer to <code>btprnt</code> (aka double star)
+</p>
+<p><code>*b</code> will return the pointer to <code>btprnt</code>. We need this
+to access things like <code>canvas</code> with <code>(*b)->canvas</code>.
+</p>
+<p>The freeing functions take pointers to pointers (double
+stars), so we need to give it the address of the pointer
+<code>&(*b)->canvas</code>, NOT the pointer itself which would be
+<code>(*b)->canvas</code>.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_del(btprnt **b)
+{
+    if (*b == NULL) return;
+    btprnt_canvas_del(&(*b)-&gt;canvas);
+    btprnt_buf_free(&(*b)-&gt;buf);
+    free(*b);
+    *b = NULL;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_del(btprnt **b);</pre></code>
+
+<h3>The Buffer</h3>
+
+<p>The lowest level data construct is a buffer. This is where
+bits are written to.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct btprnt_buf btprnt_buf;</pre></code>
+<p></p>
+<p>A bitmap has an array where it stores data, and integers
+storing the width and a height.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct btprnt_buf {
+    int w;
+    int h;
+    int stride;
+    unsigned char free;
+    unsigned char *data;
+};</pre></code>
+<p></p>
+<p>The buffer is allocated + initialized with the function
+<code>btprnt_buf_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_buf * btprnt_buf_init(int w, int h);</pre></code>
+<p></p>
+<p>To make the math a bit easier, the rows will be rounded to
+the nearest multiple of 8.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_buf * btprnt_buf_init(int w, int h)
+{
+    btprnt_buf *b;
+    int stride;
+
+    b = calloc(1, sizeof(btprnt_buf));
+
+    if (b == NULL) return NULL;
+
+    b-&gt;free = 1;
+    b-&gt;w = w;
+    b-&gt;h = h;
+
+    if (w % 8) {
+        stride = ((w / 8) + 1) * 8;
+    } else {
+        stride = w / 8;
+    }
+
+    b-&gt;stride = stride;
+    b-&gt;data = calloc(1, stride * h);
+
+    if (b-&gt;data == NULL) {
+        free(b);
+        return NULL;
+    }
+
+    return b;
+}</pre></code>
+<p></p>
+<p>Buffers that use externally managed memory blocks can be
+created with <code>btprnt_buf_extmem</code>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_buf * btprnt_buf_extmem(int w, int h,
+                               unsigned char *data);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_buf * btprnt_buf_extmem(int w, int h,
+                               unsigned char *data)
+{
+    btprnt_buf *b;
+    int stride;
+
+    b = calloc(1, sizeof(btprnt_buf));
+
+    if (b == NULL) return NULL;
+
+    b-&gt;free = 0;
+    b-&gt;w = w;
+    b-&gt;h = h;
+
+    if (w % 8) {
+        stride = ((w / 8) + 1) * 8;
+    } else {
+        stride = w / 8;
+    }
+
+    b-&gt;stride = stride;
+    b-&gt;data = data;
+
+    return b;
+}</pre></code>
+<p></p>
+<p>The buffer is freed with <code>btprnt_buf_free</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_buf_free(btprnt_buf **buf);</pre></code>
+<p>The data and the struct must be freed. To prevent
+double-free corruptions, the pointer is set to be NULL.
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_buf_free(btprnt_buf **buf)
+{
+    if (*buf == NULL) return;
+    if ((*buf)-&gt;free) free((*buf)-&gt;data);
+    free(*buf);
+    *buf = NULL;
+}</pre></code>
+<p></p>
+<br>
+<p>The main operations are read + write with <code>btprnt_buf_read</code>
+and <code>btprnt_buf_write</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>unsigned char btprnt_buf_read(btprnt_buf *b, int x, int y);
+void btprnt_buf_write(btprnt_buf *b, int x, int y, int c);</pre></code>
+<p>Reading bit is a matter of first finding the byte where it
+is located, and then ANDing with the local bit location.
+</p>
+<p>Multiplying the stride by the height gives us which to look
+at. Adding x divided by 8 (bits to a byte), gives us the
+byte offset.
+</p>
+<p>No coordinate checks done here so be careful. This isn't
+an interface to be accessed directly. Sanitized inputs are
+expected to be here.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>unsigned char btprnt_buf_read(btprnt_buf *b, int x, int y)
+{
+    unsigned char bitpos;
+    int pos;
+    int off;
+
+    off = x &gt;&gt; 3;
+    pos = (y * b-&gt;stride) + off;
+    bitpos = x - (off * 8);
+
+    return (b-&gt;data[pos] & (1 &lt;&lt; bitpos)) &gt; 0;
+}</pre></code>
+<p></p>
+<p>Similar process with reading, except the buffer is toggled
+on or off depending on the value of <code>c</code>.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_buf_write(btprnt_buf *b, int x, int y, int c)
+{
+    unsigned char bitpos;
+    int pos;
+    int off;
+
+    off = x &gt;&gt; 3;
+    pos = (y * b-&gt;stride) + off;
+    bitpos = x - (off * 8);
+
+    if (c) {
+        b-&gt;data[pos] |= (1 &lt;&lt; bitpos);
+    } else {
+        b-&gt;data[pos] &= ~(1 &lt;&lt; bitpos);
+    }
+}</pre></code>
+<p></p>
+<p>Dimensions for the buffer can be retrieved using
+<code>btprnt_buf_width</code> and <code>btprnt_buf_height</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int btprnt_buf_width(btprnt_buf *buf);
+int btprnt_buf_height(btprnt_buf *buf);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int btprnt_buf_width(btprnt_buf *buf)
+{
+    return buf-&gt;w;
+}
+
+int btprnt_buf_height(btprnt_buf *buf)
+{
+    return buf-&gt;h;
+}</pre></code>
+<p></p>
+<p>A buffer can be written to a pbm file with the function
+<code>btprnt_buf_pbm</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_buf_pbm(btprnt_buf *buf, const char *filename);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_buf_pbm(btprnt_buf *buf, const char *filename)
+{
+    FILE *fp;
+    int x, y;
+    int count;
+    fp = fopen(filename, "w");
+
+    if (buf == NULL || fp == NULL) return;
+
+    fprintf(fp, "P1\n");
+    fprintf(fp, "# Generated with btprnt\n");
+    fprintf(fp, "%d %d\n", buf-&gt;w, buf-&gt;h);
+
+    count = 0;
+    for(y = 0; y &lt; buf-&gt;h; y++) {
+        for(x = 0; x &lt; buf-&gt;w; x++) {
+            fprintf(fp, "%d", btprnt_buf_read(buf, x, y));
+            count++;
+            if (count == 16) {
+                count = 0;
+                fprintf(fp, "\n");
+            } else if (count != 0) {
+                fprintf(fp, " ");
+            }
+        }
+    }
+
+    fclose(fp);
+}</pre></code>
+<p></p>
+<p>The buffer can also be written to an XBM file using
+the function <code>btprnt_buf_xbm</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_buf_xbm(btprnt_buf *buf,
+                    const char *name,
+                    const char *filename);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_buf_xbm(btprnt_buf *buf,
+                    const char *name,
+                    const char *filename)
+{
+    FILE *fp;
+    int n;
+    unsigned int count;
+
+    fp = fopen(filename, "w");
+
+    if (buf == NULL || fp == NULL) return;
+
+    fprintf(fp, "#define %s_width %d\n", name, buf-&gt;w);
+    fprintf(fp, "#define %s_height %d\n", name, buf-&gt;h);
+    fprintf(fp, "static unsigned char %s_bits[] = {\n", name);
+
+    count = buf-&gt;h * buf-&gt;stride;
+
+    for (n = 0; n &lt; count; n++) {
+        fprintf(fp, "0x%x,", buf-&gt;data[n]);
+        if ((n + 1) % 8 == 0) {
+            fprintf(fp, "\n");
+        } else {
+            fprintf(fp, " ");
+        }
+    }
+
+    fprintf(fp, "};");
+
+
+    fclose(fp);
+}</pre></code>
+
+<h3>The Region</h3>
+
+<p>Regions are rectangular spaces to draw stuff into.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct btprnt_region btprnt_region;</pre></code>
+<p></p>
+<p>A region provides two main things: a local coordinate
+space, and rectangular clipping.
+</p>
+<p>A region contains the top left coordinate position,
+the region width, and the region height.
+</p>
+<p>Because of how important regions for user level
+operations, this struct is actually exposed in
+the public header, allowing for instances to be allocated
+on the stack instead of the heap.
+</p>
+<div><b><i>&lt;&lt;btprnt_region_struct&gt;&gt;=</i></b></div><pre><code>struct btprnt_region {
+    btprnt_canvas *c;
+    int w, h;
+    int x, y;
+};</pre></code>
+<p></p>
+<p>A new region is created with <code>btprnt_region_new</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_region * btprnt_region_new(btprnt_canvas *c,
+                                  int x, int y,
+                                  int w, int h);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_region * btprnt_region_new(btprnt_canvas *c,
+                                  int x, int y,
+                                  int w, int h)
+{
+    btprnt_region *r;
+
+    r = calloc(1, sizeof(btprnt_region));
+
+    if (r == NULL) return NULL;
+
+    btprnt_region_init(c, r, x, y, w, h);
+
+    return r;
+}</pre></code>
+<p></p>
+<p>It is freed with <code>btprnt_region_del</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_del(btprnt_region **r);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_del(btprnt_region **r)
+{
+    if (*r == NULL) return;
+    free(*r);
+    *r = NULL;
+}</pre></code>
+<p></p>
+<p>If a region is to be allocated on the stack, it needs
+only to be initialized. This can be done with
+<code>btprnt_region_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_init(btprnt_canvas *c,
+                        btprnt_region *r,
+                        int x, int y,
+                        int w, int h);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_init(btprnt_canvas *c,
+                        btprnt_region *r,
+                        int x, int y,
+                        int w, int h)
+{
+    btprnt_region_xpos_set(r, x);
+    btprnt_region_ypos_set(r, y);
+    btprnt_region_width_set(r, w);
+    btprnt_region_height_set(r, h);
+    r-&gt;c = c;
+}</pre></code>
+<p></p>
+<p>The dimensions and position can be changed after it is
+instantiated.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_xpos_set(btprnt_region *r, int x);
+void btprnt_region_ypos_set(btprnt_region *r, int y);
+void btprnt_region_width_set(btprnt_region *r, int w);
+void btprnt_region_height_set(btprnt_region *r, int h);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_xpos_set(btprnt_region *r, int x)
+{
+    r-&gt;x = x;
+}
+
+void btprnt_region_ypos_set(btprnt_region *r, int y)
+{
+    r-&gt;y = y;
+}
+
+void btprnt_region_width_set(btprnt_region *r, int w)
+{
+    r-&gt;w = w;
+}
+
+void btprnt_region_height_set(btprnt_region *r, int h)
+{
+    r-&gt;h = h;
+}</pre></code>
+<p></p>
+<p>Drawing utilities write to a region. The region ensures that
+the pixel is not being written beyond the bounds of itself.
+The actual placement on the buffer is handled via a canvas.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_draw(btprnt_region *r,
+                        int x, int y,
+                        int c);</pre></code>
+<p>For now, this function will be a little bit overpowered. In
+the future, it might be better to break this up into
+different components and flesh out the canvas interface.
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_draw(btprnt_region *r,
+                        int x, int y,
+                        int c)
+{
+    btprnt_canvas *cv;
+    int gx, gy;
+
+    cv = r-&gt;c;
+
+    if (x &lt; 0 || x &gt;= r-&gt;w) return;
+    if (y &lt; 0 || y &gt;= r-&gt;h) return;
+
+    gx = cv-&gt;offx + r-&gt;x + x;
+    if (gx &lt; 0 || gx &gt;= cv-&gt;buf-&gt;w) return;
+    gy = cv-&gt;offy + r-&gt;y + y;
+    if (gy &lt; 0 || gy &gt;= cv-&gt;buf-&gt;h) return;
+
+    btprnt_buf_write(cv-&gt;buf, gx, gy, c);
+}</pre></code>
+
+<h3>The Canvas</h3>
+
+<p>The canvas is an abstraction of the bitmap buffer. Regions
+get drawn to the buffer via a canvas.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct btprnt_canvas btprnt_canvas;</pre></code>
+<p></p>
+<p>It can be created with <code>btprnt_canvas_new</code>, and freed with
+<code>btprnt_canvas_del</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_canvas * btprnt_canvas_new(btprnt_buf *buf);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_canvas * btprnt_canvas_new(btprnt_buf *buf)
+{
+    btprnt_canvas *c;
+
+    c = calloc(1, sizeof(btprnt_canvas));
+
+    if (c == NULL) return NULL;
+
+    c-&gt;buf = buf;
+    btprnt_canvas_offx_set(c, 0);
+    btprnt_canvas_offy_set(c, 0);
+    return c;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_canvas_offx_set(btprnt_canvas *c, int x);
+void btprnt_canvas_offy_set(btprnt_canvas *c, int y);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_canvas_offx_set(btprnt_canvas *c, int x)
+{
+    c-&gt;offx = x;
+}
+
+void btprnt_canvas_offy_set(btprnt_canvas *c, int y)
+{
+    c-&gt;offy = y;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_canvas_del(btprnt_canvas **c);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_canvas_del(btprnt_canvas **c)
+{
+    if (*c == NULL) return;
+    free(*c);
+    *c = NULL;
+}</pre></code>
+<p></p>
+<p>The main point of canvas abstraction is to provide an
+infinite for regions to lie on. Any pixels out of range of
+the buffer will be clipped by the canvas. Regions can be
+resized and moved around without having to worry about
+accessing bad memory.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct btprnt_canvas {
+    btprnt_buf *buf;
+    int offx, offy;
+};</pre></code>
+<p></p>
+<p>The canvas has a global offset value. A canvas can be moved
+around to make regions or less visible.
+</p>
+
+<h3>Text</h3>
+
+<p>Text is next most important thing after all the
+fundamentals. This can be broken up into levels.
+</p>
+
+<h4>Level 1: Drawing tiles from a map</h4>
+
+<p>The lowest layer involves drawing a single tile
+from a tile map stored in memory.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_tile(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int mx, int my,
+                      int w, int h,
+                      int scale, int color);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_tile(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int mx, int my,
+                      int w, int h,
+                      int scale, int color)
+{
+    int startx;
+    int starty;
+    int x;
+    int y;
+    int c;
+
+    startx = mx * w;
+    starty = my * h;
+
+    for (y = 0; y &lt; h; y++) {
+        for (x = 0; x &lt; w; x++) {
+            c = btprnt_buf_read(map,
+                                startx + x,
+                                starty + y);
+            if (c) {
+                if (scale == 1) {
+                    btprnt_region_draw(reg,
+                                       xpos + x, ypos + y,
+                                       color);
+                } else {
+                    int sx, sy;
+                    for (sy = 0; sy &lt; scale; sy++) {
+                        for (sx = 0; sx &lt; scale; sx++) {
+                            btprnt_region_draw(reg,
+                                               xpos + x*scale + sx,
+                                               ypos + y*scale + sy,
+                                               color);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}</pre></code>
+
+<h4>Level 2: Drawing a character</h4>
+
+<p>To draw the right tile, we need to be be able to match
+an ASCII character to the position on the map. Right now,
+the layout for the map matches that of many of the C64
+tileset dumps found online. More details on that later.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_char(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int w, int h,
+                      char c, int scale, int color);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_char(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int w, int h,
+                      char c, int scale, int color)
+{
+    int gx, gy;
+    char o;
+
+    o = c - ' '; /* start at 0 */
+
+    gx = o % (map-&gt;stride);
+    gy = o / (map-&gt;stride);
+
+    btprnt_draw_tile(reg, map,
+                     xpos, ypos,
+                     gx, gy,
+                     w, h,
+                     scale, color);
+}</pre></code>
+
+<h4>Level 3: Drawing a string</h4>
+
+<p>From there, a string characters can be drawn onto a
+region.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_text(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int w, int h,
+                      const char *str);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_text(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int w, int h,
+                      const char *str)
+{
+    int len;
+    int n;
+    len = strlen(str);
+
+    for (n = 0; n &lt; len; n++) {
+        btprnt_draw_char(reg, map,
+                         xpos + w*n, ypos,
+                         w, h,
+                         str[n], 1, 1);
+    }
+}</pre></code>
+
+<h4>Level 4: Text wrapping</h4>
+
+<p>Since the dimensions of the textbox are known, some basic
+text wrapping can be implemented.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_wraptext(btprnt_region *reg,
+                          btprnt_buf *map,
+                          int xpos, int ypos,
+                          int w, int h,
+                          const char *str);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_wraptext(btprnt_region *reg,
+                          btprnt_buf *map,
+                          int xpos, int ypos,
+                          int w, int h,
+                          const char *str)
+{
+    int len;
+    int n;
+    int curpos;
+    int line;
+    int c;
+    len = strlen(str);
+    line = 0;
+    curpos = 0;
+    c = 0;
+
+    for (n = 0; n &lt; len; n++) {
+        curpos = xpos + w*c;
+        if (curpos &gt; reg-&gt;w) {
+            curpos = xpos;
+            line++;
+            c = 0;
+        }
+        btprnt_draw_char(reg, map,
+                         curpos, ypos + line*h,
+                         w, h,
+                         str[n], 1, 1);
+        c++;
+    }
+}</pre></code>
+
+<h4>Level 5: Word Wrapping</h4>
+
+<p>With a bit more sophistication, some basic word wrapping can
+done by writing the text chunks between spaces. If a word is
+larger than what it left, it will know to go to the next
+line. If the word is larger than how many characters there
+are on a line, it will do the best it can to break to
+wrap the text up.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_textbox(btprnt_region *reg,
+                         btprnt_buf *map,
+                         int xpos, int ypos,
+                         int w, int h,
+                         const char *str,
+                         int scale,
+                         int color);</pre></code>
+<p></p>
+<p>This function works by counting characters until it reaches
+a space. Once it finds that space, it will write that chunk
+of letters up to (and including) that space. Some arithmetic
+will done. If it happens that the number of characters
+exceeds the bounds of the current line position, it will
+start a new line. (Space needs to be included with this
+count so there aren't any trailing spaces at the end of a
+line.) If it happens that the number of characters is
+greater than the length of the line, it won't matter
+if a newline happens, and the word will be split up as
+best as it can.
+</p>
+<p>To be clear: a newline <b>shouldn't</b> happen if the number
+of characters in a word is longer than the width. A weird
+edge case I ran into involved having the first word in
+the textbox be long. The original code added a empty
+line on the first line, which looked weird.
+</p>
+<p>When the text has reached the end, it has to print out
+the last word, if there is any. This process is pretty
+much indentical to what happens in the for loop, except
+that some of the variables updated don't matter.
+</p>
+<p>For now, I literally copy-pasted this twice because I'm
+tired and lazy. I may come back at some point and do
+something more elegant when I have the time.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_textbox(btprnt_region *reg,
+                         btprnt_buf *map,
+                         int xpos, int ypos,
+                         int w, int h,
+                         const char *str,
+                         int scale,
+                         int color)
+{
+    int len;
+    int n;
+    int start;
+    int nchars;
+    int c;
+    int line;
+    len = strlen(str);
+
+    start = 0;
+    nchars = 0;
+    c = 0;
+    line = 0;
+    for (n = 0; n &lt; len; n++) {
+        nchars++;
+        if (str[n] == ' ' || str[n] == '\n') {
+            int wordlen;
+            int off;
+            int i;
+            int curpos;
+            char x;
+
+            wordlen = nchars*w*scale;
+            off = xpos + c*w*scale;
+
+            if ((off + wordlen) &gt; reg-&gt;w) {
+                /* nested if is a clumsy, but it works */
+                if (wordlen &lt; reg-&gt;w) {
+                    line++;
+                    c = 0;
+                }
+            }
+
+            for (i = 0; i &lt; nchars; i++) {
+                curpos = xpos + c*w*scale;
+
+                x = str[start + i];
+
+                if ((curpos + w*scale) &gt; reg-&gt;w || x == '\n') {
+                    curpos = xpos;
+                    line++;
+                    c = 0;
+                }
+
+
+                if (x != '\n') {
+                    btprnt_draw_char(reg, map,
+                                     curpos,
+                                     ypos + line*h*scale,
+                                     w, h, x, scale, color);
+                    c++;
+                }
+            }
+
+            start = n + 1;
+            nchars = 0;
+        }
+    }
+
+    if (nchars &gt; 0) {
+        /* duplicate code alert ring ring ring */
+        int wordlen;
+        int off;
+        int i;
+        int curpos;
+
+        wordlen = nchars * w * scale;
+        off = xpos + c*w*scale;
+
+        if ((off + wordlen) &gt; reg-&gt;w) {
+            line++;
+            c = 0;
+        }
+
+        for (i = 0; i &lt; nchars; i++) {
+            curpos = xpos + c*w*scale;
+
+            if ((curpos + w*scale) &gt; reg-&gt;w) {
+                curpos = xpos;
+                line++;
+                c = 0;
+            }
+
+            btprnt_draw_char(reg, map,
+                             curpos, ypos + line*h*scale,
+                             w, h,
+                             str[start + i], scale, color);
+            c++;
+        }
+
+        start = n + 1;
+        nchars = 0;
+    }
+}</pre></code>
+
+<h3>Fill</h3>
+
+<p>The function <code>btprnt_fill</code> will fill a region.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_fill(btprnt_region *reg, int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_fill(btprnt_region *reg, int clr)
+{
+    int x, y;
+    for (y = 0; y &lt; reg-&gt;h; y++) {
+        for (x = 0; x &lt; reg-&gt;w; x++) {
+            btprnt_region_draw(reg, x, y, clr);
+        }
+    }
+}</pre></code>
+
+<h3>Lines</h3>
+
+
+<h4>Horizontal Line</h4>
+
+<p>A horizontal line can be drawn with <code>btprnt_draw_hline</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_hline(btprnt_region *r,
+                       int x, int y,
+                       int sz, int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_hline(btprnt_region *r,
+                       int x, int y,
+                       int sz, int clr)
+{
+    int n;
+
+    for (n = 0; n &lt; sz; n++) {
+        btprnt_region_draw(r, x + n, y, clr);
+    }
+}</pre></code>
+
+<h4>Vertical Line</h4>
+
+<p>A horizontal line can be drawn with <code>btprnt_draw_vline</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_vline(btprnt_region *r,
+                       int x, int y,
+                       int sz, int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_vline(btprnt_region *r,
+                       int x, int y,
+                       int sz, int clr)
+{
+    int n;
+
+    for (n = 0; n &lt; sz; n++) {
+        btprnt_region_draw(r, x, y + n, clr);
+    }
+}</pre></code>
+
+<h4>DONE Regular Line</h4>
+
+<p>CLOSED: [2020-04-25 Sat 09:43]
+Bresenham circle algorithm.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_line(btprnt_region *reg,
+                      int x0, int y0,
+                      int x1, int y1,
+                      int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void swap(int *a, int *b)
+{
+    int tmp;
+    tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+void btprnt_draw_line(btprnt_region *reg,
+                      int x0, int y0,
+                      int x1, int y1,
+                      int clr)
+{
+    int x, y;
+    int dx, dy;
+    int derror2;
+    int error2;
+    char steep = 0;
+
+    if (abs(x0 - x1) &lt; abs(y0 - y1)) {
+        swap(&x0, &y0);
+        swap(&x1, &y1);
+        steep = 1;
+    }
+
+    if (x0 &gt; x1) {
+        swap(&x0, &x1);
+        swap(&y0, &y1);
+    }
+
+    dx = x1 - x0;
+    dy = y1 - y0;
+    derror2 = abs(dy) * 2;
+    error2 = 0;
+    y = y0;
+
+    for (x = x0; x &lt; x1; x++) {
+        if (steep) {
+            btprnt_region_draw(reg, y, x, clr);
+        } else {
+            btprnt_region_draw(reg, x, y, clr);
+        }
+        error2 += derror2;
+        if (error2 &gt; dx) {
+            y += (y1 &gt; y0 ? 1 : -1);
+            error2 -= dx * 2;
+        }
+    }
+}</pre></code>
+
+<h3>Rectangle</h3>
+
+
+<h4>Stroked Rectangle</h4>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_rect(btprnt_region *r,
+                      int x, int y,
+                      int w, int h,
+                      int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_rect(btprnt_region *r,
+                      int x, int y,
+                      int w, int h,
+                      int clr)
+{
+    btprnt_draw_hline(r, x, y, w, clr);
+    btprnt_draw_hline(r, x, y + (h - 1), w, clr);
+    btprnt_draw_vline(r, x, y, h, clr);
+    btprnt_draw_vline(r, x + (w - 1), y, h, clr);
+}</pre></code>
+
+<h4>Filled Rectangle</h4>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_rect_filled(btprnt_region *r,
+                             int xpos, int ypos,
+                             int w, int h,
+                             int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_rect_filled(btprnt_region *r,
+                             int xpos, int ypos,
+                             int w, int h,
+                             int clr)
+{
+    int x, y;
+
+    for (y = 0; y &lt; h; y++) {
+        for (x = 0; x &lt; w; x++) {
+            btprnt_region_draw(r,
+                               xpos + x,
+                               ypos + y,
+                               clr);
+        }
+    }
+}</pre></code>
+
+<h3>WIP Circle</h3>
+
+
+<h4>Stroked Circle</h4>
+
+<p>Midpoint circle algorithm.
+</p>
+<p>I don't know where I found the code for the first algorithm,
+but it was too pointy at the compass coordinates. This one
+is slightly more expensive, but makes for a much smoother
+circle:
+<a href="https://iq.opengenus.org/bresenhams-circle-drawing-algorithm/">https://iq.opengenus.org/bresenhams-circle-drawing-algorithm/</a></p>
+<br>
+<p>That ones a bit boxy, so I tried this one:
+<a href="https://zcsaha.github.io/computer-graphics/midpoint-circle-drawing-algorithm-in-c.html">https://zcsaha.github.io/computer-graphics/midpoint-circle-drawing-algorithm-in-c.html</a></p>
+<br>
+<p>I'm not great either. Kind of looks like a polygon when the
+radius is 16. We're keeping it at that for now.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_circ(btprnt_region *r,
+                      int cx, int cy,
+                      int rad,
+                      int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void circ_pixel(btprnt_region *r,
+                       int cx, int cy,
+                       int x, int y,
+                       int clr)
+{
+    btprnt_region_draw(r, cx - x, cy + y, clr);
+    btprnt_region_draw(r, cx + x, cy + y, clr);
+    btprnt_region_draw(r, cx - y, cy + x, clr);
+    btprnt_region_draw(r, cx + y, cy + x, clr);
+    btprnt_region_draw(r, cx + x, cy - y, clr);
+    btprnt_region_draw(r, cx - x, cy - y, clr);
+    btprnt_region_draw(r, cx + y, cy - x, clr);
+    btprnt_region_draw(r, cx - y, cy - x, clr);
+}
+void btprnt_draw_circ(btprnt_region *r,
+                      int cx, int cy,
+                      int rad,
+                      int clr)
+{
+    int x;
+    int y;
+    int err;
+
+    x = 0;
+    y = rad;
+    err = 1 - rad;
+
+    circ_pixel(r, cx, cy, x, y, clr);
+
+    while (x &lt; y) {
+        x++;
+
+        if (err &lt; 0) {
+            err += 2 * x + 1;
+        } else {
+            y--;
+            err += 2 * (x - y) + 1;
+        }
+
+        circ_pixel(r, cx, cy, x, y, clr);
+    }
+}</pre></code>
+
+<h4>Filled Circle</h4>
+
+
+<h3>TODO Rounded Rectangle</h3>
+
+
+<h4>Stroked Rounded Rectangle</h4>
+
+
+<h4>Filled Rounded Rectangle</h4>
+
+
+<h3>Triangle</h3>
+
+<p>A filled triangle is ideal for arrows in flowcharts!
+</p>
+<p>The algorithm for this particular rasterization method
+is based off the one found <a href=" http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html">here</a>.
+</p>
+<p>The paramters supplied are the 3 vertices of the triangle.
+</p>
+<p>Note: I'm using 1-indexed variables here to better match
+the variables in the algorithm.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_triangle(btprnt_region *r,
+                          int v1x, int v1y,
+                          int v2x, int v2y,
+                          int v3x, int v3y,
+                          int c);</pre></code>
+<p></p>
+<p>Before the processing begins, vertices are sorted out
+in ascending order by y, making v1 the highest point.
+</p>
+<div><b><i>&lt;&lt;sort_vertices_by_y&gt;&gt;=</i></b></div><pre><code>{
+    int tmpx;
+    int tmpy;
+
+    if (v1y &gt; v2y) {
+        tmpy = v1y;
+        tmpx = v1x;
+
+        v1y = v2y;
+        v1x = v2x;
+
+        v2y = tmpy;
+        v2x = tmpx;
+    }
+
+    if (v1y &gt; v3y) {
+        tmpy = v1y;
+        tmpx = v1x;
+
+        v1y = v3y;
+        v1x = v3x;
+
+        v3y = tmpy;
+        v3x = tmpx;
+    }
+
+    if (v2y &gt; v3y) {
+        tmpy = v2y;
+        tmpx = v2x;
+
+        v2y = v3y;
+        v2x = v3x;
+
+        v3y = tmpy;
+        v3x = tmpx;
+    }
+}</pre></code>
+<p></p>
+<p>The bresenham approach to filling involves draw two lines in
+parallel, and then drawing the horizontal lines between them.
+</p>
+<p>This particular adaptation is from the java code, and
+assumes that vertices 2 + 3 sahre the same Y axis.
+</p>
+<div><b><i>&lt;&lt;flat_triangle_fill&gt;&gt;=</i></b></div><pre><code>static int signum(int x)
+{
+    if (x &lt; 0) return -1;
+    if (x &gt; 0) return 1;
+    else return 0;
+}
+
+
+static void bresenham_fill(btprnt_region *r,
+                           int v1x, int v1y,
+                           int v2x, int v2y,
+                           int v3x, int v3y,
+                           int c)
+{
+    int vtmp1x;
+    int vtmp1y;
+    int vtmp2x;
+    int vtmp2y;
+
+    int changed1;
+    int changed2;
+
+    int dx1;
+    int dy1;
+    int dx2;
+    int dy2;
+
+    int signx1;
+    int signx2;
+
+    int signy1;
+    int signy2;
+
+    int e1;
+    int e2;
+
+    int i;
+
+    vtmp1x = v1x;
+    vtmp1y = v1y;
+
+    vtmp2x = v1x;
+    vtmp2y = v1y;
+
+    changed1 = 0;
+    changed2 = 0;
+
+    dx1 = abs(v2x - v1x);
+    dy1 = abs(v2y - v1y);
+
+    dx2 = abs(v3x - v1x);
+    dy2 = abs(v3y - v1y);
+
+    signx1 = signum(v2x - v1x);
+    signx2 = signum(v3x - v1x);
+
+    signy1 = signum(v2y - v1y);
+    signy2 = signum(v3y - v1y);
+
+    if (dy1 &gt; dx1) {
+        int tmp;
+        tmp = dx1;
+        dx1 = dy1;
+        dy1 = tmp;
+        changed1 = 1;
+    }
+
+    if (dy2 &gt; dx2) {
+        int tmp;
+        tmp = dx2;
+        dx2 = dy2;
+        dy2 = tmp;
+        changed2 = 1;
+    }
+
+    e1 = 2 * dy1 - dx1;
+    e2 = 2 * dy2 - dx2;
+
+    for(i = 0; i &lt;= dx1; i++) {
+        btprnt_draw_line(r, vtmp1x, vtmp1y, vtmp2x, vtmp2y, c);
+
+        while (e1 &gt;= 0) {
+            if (changed1) vtmp1x += signx1;
+            else vtmp1y += signy1;
+
+            e1 = e1 - 2 * dx1;
+        }
+
+        if (changed1) vtmp1y += signy1;
+        else vtmp1x += signx1;
+
+        e1 = e1 + 2 * dy1;
+
+        while (vtmp2y != vtmp1y) {
+            while (e2 &gt;= 0) {
+                if (changed2) vtmp2x += signx2;
+                else vtmp2y += signy2;
+
+                e2 = e2 - 2 * dx2;
+            }
+
+            if (changed2) vtmp2y += signy2;
+            else vtmp2x += signx2;
+
+            e2 = e2 + 2 * dy2;
+        }
+    }
+
+}</pre></code>
+<p></p>
+<p>In the more general case, the triangle is split in half into
+two smaller triangles: one with a flat bottom, the other
+with a flat top.
+</p>
+<div><b><i>&lt;&lt;split_the_triangle&gt;&gt;=</i></b></div><pre><code>int v4x, v4y;
+
+v4x = (v1x +
+    ((float)(v2y - v1y)/(v3y - v1y)) *
+    (v3x - v1x));
+v4y = v2y;
+
+bresenham_fill(r,
+               v1x, v1y,
+               v2x, v2y,
+               v4x, v4y,
+               c);
+
+bresenham_fill(r,
+               v3x, v3y,
+               v2x, v2y,
+               v4x, v4y,
+               c);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;flat_triangle_fill&gt;&gt;
+
+void btprnt_draw_triangle(btprnt_region *r,
+                          int v1x, int v1y,
+                          int v2x, int v2y,
+                          int v3x, int v3y,
+                          int c)
+{
+    &lt;&lt;sort_vertices_by_y&gt;&gt;
+    if (v2y == v3y) {
+        bresenham_fill(r,
+                       v1x, v1y,
+                       v2x, v2y,
+                       v3x, v3y,
+                       c);
+    } if (v1y == v2y) {
+        bresenham_fill(r,
+                       v3x, v3y,
+                       v1x, v1y,
+                       v2x, v2y,
+                       c);
+    } else {
+        &lt;&lt;split_the_triangle&gt;&gt;
+    }
+
+}</pre></code>
+
+<h3>Arrow</h3>
+
+<p>This draws an arrowed line. One can specify if the start and
+end points have an arrow.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_arrow(btprnt_region *r,
+                       int start_x, int start_y,
+                       int end_x, int end_y,
+                       int arrow_start,
+                       int arrow_end,
+                       int draw_line,
+                       int c);</pre></code>
+<p></p>
+<p>Arrowheads are equalateral triangles, angled relative to the
+slope of the line.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_arrow(btprnt_region *r,
+                       int start_x, int start_y,
+                       int end_x, int end_y,
+                       int arrow_start,
+                       int arrow_end,
+                       int draw_line,
+                       int c)
+{
+    int sz;
+    float angle;
+    float off;
+    int ptx[2];
+    int pty[2];
+    int dx;
+    int dy;
+    int dir;
+
+    if (start_x &gt; end_x) {
+        dir = -1;
+    } else {
+        dir = 1;
+    }
+
+    sz = 9;
+
+    dx = end_x - start_x;
+    dy = end_y - start_y;
+
+    off = asin(dx / sqrt(dx*dx + dy*dy));
+
+    if (off &lt; 0) {
+        dir *= -1;
+    }
+
+    angle = 30;
+    /* convert to radians */
+    angle *= M_PI / 180.0;
+
+    if (draw_line) {
+        btprnt_draw_line(r,
+                        start_x, start_y,
+                        end_x, end_y, c);
+    }
+
+    if (arrow_start) {
+        ptx[0] = start_x + dir * sz * sin(angle + off);
+        pty[0] = start_y + dir * sz * cos(angle + off);
+
+        ptx[1] = start_x + dir * sz * sin(off - angle);
+        pty[1] = start_y + dir * sz * cos(off - angle);
+
+        btprnt_draw_triangle(r,
+                            start_x, start_y,
+                            ptx[0], pty[0],
+                            ptx[1], pty[1],
+                            c);
+    }
+
+    if (arrow_end) {
+        ptx[0] = end_x + -dir * sz * sin(angle + off);
+        pty[0] = end_y + -dir * sz * cos(angle + off);
+
+        ptx[1] = end_x + -dir * sz * sin(off - angle);
+        pty[1] = end_y + -dir * sz * cos(off - angle);
+
+        btprnt_draw_triangle(r,
+                            end_x, end_y,
+                            ptx[0], pty[0],
+                            ptx[1], pty[1],
+                            c);
+
+    }
+}</pre></code>
+
+<h3>Bezier Curve</h3>
+
+<p>Adapted from the bresenham bezier found at
+<a href="http://members.chello.at/~easyfilter/bresenham.html">this page</a>, as
+well as this <a href="https://stackoverflow.com/questions/31757501/pixel-by-pixel-b%C3%A9zier-curve">stackoverflow post</a></p>
+<br>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_bezier(btprnt_region *reg,
+                        int x0, int y0,
+                        int x1, int y1,
+                        int x2, int y2,
+                        int c);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;draw_bezier_seg&gt;&gt;
+void btprnt_draw_bezier(btprnt_region *reg,
+                        int x0, int y0,
+                        int x1, int y1,
+                        int x2, int y2,
+                        int c)
+{
+    int x, y;
+    double t, r;
+
+    x = x0-x1;
+    y = y0-y1;
+    t = x0-2*x1+x2;
+
+    if ((long)x*(x2-x1) &gt; 0) {
+        if ((long)y*(y2-y1) &gt; 0)
+            if (fabs((y0-2*y1+y2)/t*x) &gt; abs(y)) {
+                x0 = x2; x2 = x+x1; y0 = y2; y2 = y+y1;
+            }
+        t = (x0-x1)/t;
+        r = (1-t)*((1-t)*y0+2.0*t*y1)+t*t*y2;
+        t = (x0*x2-x1*x1)*t/(x0-x1);
+        x = floor(t+0.5); y = floor(r+0.5);
+        r = (y1-y0)*(t-x0)/(x1-x0)+y0;
+        bezierseg(reg, x0, y0, x, floor(r+0.5), x, y, c);
+        r = (y1-y2)*(t-x2)/(x1-x2)+y2;
+        x0 = x1 = x; y0 = y; y1 = floor(r+0.5);
+    }
+
+    if ((long)(y0-y1)*(y2-y1) &gt; 0) {
+        t = y0-2*y1+y2; t = (y0-y1)/t;
+        r = (1-t)*((1-t)*x0+2.0*t*x1)+t*t*x2;
+        t = (y0*y2-y1*y1)*t/(y0-y1);
+        x = floor(r+0.5); y = floor(t+0.5);
+        r = (x1-x0)*(t-y0)/(y1-y0)+x0;
+        bezierseg(reg, x0, y0, floor(r+0.5), y, x, y, c);
+        r = (x1-x2)*(t-y2)/(y1-y2)+x2;
+        x0 = x; x1 = floor(r+0.5); y0 = y1 = y;
+    }
+
+    bezierseg(reg, x0, y0, x1, y1, x2, y2, c);
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;draw_bezier_seg&gt;&gt;=</i></b></div><pre><code>static void bezierseg(btprnt_region *r,
+                      int x0, int y0,
+                      int x1, int y1,
+                      int x2, int y2,
+                      int c)
+{
+    int sx, sy;
+    long xx, yy, xy;
+    double dx, dy, err, cur;
+    int rc;
+
+    sx = x2-x1;
+    sy = y2-y1;
+    xx = x0-x1;
+    yy = y0-y1;
+
+    cur = xx*sy-yy*sx;
+
+    rc = xx*sx &lt;= 0 && yy*sy &lt;= 0;
+
+    if (!rc) return;
+
+    if (sx*(long)sx+sy*(long)sy &gt; xx*xx+yy*yy) {
+        x2 = x0;
+        x0 = sx+x1;
+        y2 = y0;
+        y0 = sy+y1;
+        cur = -cur;
+    }
+
+    if (cur != 0) {
+        xx += sx;
+        xx *= sx = x0 &lt; x2 ? 1 : -1;
+
+        yy += sy;
+        yy *= sy = y0 &lt; y2 ? 1 : -1;
+
+        xy = 2*xx*yy;
+        xx *= xx;
+        yy *= yy;
+
+        if (cur*sx*sy &lt; 0) {
+            xx = -xx;
+            yy = -yy;
+            xy = -xy;
+            cur = -cur;
+        }
+
+        dx = 4.0*sy*cur*(x1-x0)+xx-xy;
+        dy = 4.0*sx*cur*(y0-y1)+yy-xy;
+
+        xx += xx;
+        yy += yy;
+        err = dx+dy+xy;
+
+        do {
+            btprnt_region_draw(r, x0, y0, c);
+
+            if (x0 == x2 && y0 == y2) return;
+
+            y1 = 2*err &lt; dx;
+
+            if (2*err &gt; dy) {
+                x0 += sx;
+                dx -= xy;
+                err += dy += yy;
+            }
+
+            if (y1) {
+                y0 += sy;
+                dy -= xy;
+                err += dx += xx;
+            }
+        } while (dy &lt; dx );
+    }
+
+    btprnt_draw_line(r, x0, y0, x2, y2, c);
+}</pre></code>
+
+<h3>Bezier Arrow</h3>
+
+<p>Like an arrow, but with a bezier curved line.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_bezier_arrow(btprnt_region *r,
+                              int start_x, int start_y,
+                              int end_x, int end_y,
+                              int ctrl_x, int ctrl_y,
+                              int arrow_start,
+                              int arrow_end,
+                              int c);</pre></code>
+<p></p>
+<p>Internally, this is done by drawing two arrowheads pointing
+away from a control point, then drawing a bezier curve
+connecting those two points.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_bezier_arrow(btprnt_region *r,
+                              int start_x, int start_y,
+                              int end_x, int end_y,
+                              int ctrl_x, int ctrl_y,
+                              int arrow_start,
+                              int arrow_end,
+                              int c)
+{
+    btprnt_draw_arrow(r,
+                      start_x, start_y,
+                      ctrl_x, ctrl_y,
+                      1, 0, 0, c);
+
+    btprnt_draw_arrow(r,
+                      end_x, end_y,
+                      ctrl_x, ctrl_y,
+                      1, 0, 0, c);
+
+    btprnt_draw_bezier(r,
+                       start_x, start_y,
+                       ctrl_x, ctrl_y,
+                       end_x, end_y,
+                       c);
+}</pre></code>
+</div>
+</body>
+</html>
