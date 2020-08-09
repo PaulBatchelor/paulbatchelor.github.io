@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>The Oscillator</title>
+<h1>The Oscillator</h1>
+
+<h3>Introduction.</h3>
+
+<p>This document will describe an implementation of a classic
+table-lookup oscillator with linear interpolation.
+</p>
+<p>The algorithm for this is an interesting mix of numerical
+brocessing, with the phasor being implemented in fixed
+point, with everything else being done in floating point.
+A big advantage to doing it this way is numerical stability:
+there is no risk of any phase acculumation or truncation
+like you'd get with floating-point representation. This
+is an important feature in something like a phasor to avoid
+things like phase drifting. As will shown later on, the
+fixed-point approach can be a little bit harder to
+understand, especially if one is unfamiliar with fixed-point
+DSP. The implementation also has the limitation of also only
+being able to take in tables with a power of 2.
+</p>
+
+<h3>Generated Files</h3>
+
+<p>Header:
+</p>
+<div><b><i>&lt;&lt;osc.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_OSC_H
+#define SK_OSC_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+&lt;&lt;typedefs&gt;&gt;
+#ifdef SK_OSC_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<p>C file:
+</p>
+<div><b><i>&lt;&lt;osc.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdint.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;math.h&gt;
+#define SK_OSC_PRIV
+#include "osc.h"
+&lt;&lt;constants&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h3>Top-level functions</h3>
+
+<p>The table-lookup oscillator is initialized with
+<code>sk_osc_init</code>. The following arguments must be provided:
+</p>
+<p><code>osc</code> is a pre-allocated struct of <code>sk_osc</code>.
+</p>
+<p><code>sr</code> is the sampling rate.
+</p>
+<p><code>tab</code> is a pre-allocated wavetable, an array of <code>SKFLT</code>
+floating-point values.
+</p>
+<p><code>sz</code> is the array size of the wavetable <code>wt</code>.
+</p>
+<p><code>iphs</code> provides the initial phase of the oscillator. It is
+a value between 0-1.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_osc_init(sk_osc *osc, int sr, SKFLT *wt, int sz, SKFLT iphs);</pre></code>
+<p></p>
+<p>To compute a sample of audio, use <code>sk_osc_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_osc_tick(sk_osc *osc);</pre></code>
+<p></p>
+<p>This oscillator has 2 main parameters: frequency (freq),
+and amplitude (amp). They can be
+set with the following functions.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_osc_freq(sk_osc *osc, SKFLT freq);
+void sk_osc_amp(sk_osc *osc, SKFLT amp);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_osc_freq(sk_osc *osc, SKFLT freq)
+{
+    osc-&gt;freq = freq;
+}
+
+void sk_osc_amp(sk_osc *osc, SKFLT amp)
+{
+    osc-&gt;amp = amp;
+}</pre></code>
+
+<h3>Constants</h3>
+
+<div><b><i>&lt;&lt;constants&gt;&gt;=</i></b></div><pre><code>#define SK_OSC_MAXLEN 0x1000000L
+#define SK_OSC_PHASEMASK 0x0FFFFFFL</pre></code>
+
+<h3>Struct and Constants</h3>
+
+<p>The main struct of this oscillator is called <code>sk_osc</code>.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_osc sk_osc;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_osc {
+    &lt;&lt;sk_osc&gt;&gt;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_osc&gt;&gt;=</i></b></div><pre><code>SKFLT freq, amp;
+SKFLT *tab;
+int inc;
+size_t sz;
+uint32_t nlb;
+SKFLT inlb;
+uint32_t mask;
+SKFLT maxlens;
+int32_t lphs;</pre></code>
+<p></p>
+<p>The oscillator stores it's main parameters <code>freq</code> and <code>amp</code>
+as floating point parameters. They are set to be values
+440 and 0.2 by default.
+</p>
+<div><b><i>&lt;&lt;osc_init&gt;&gt;=</i></b></div><pre><code>osc-&gt;freq = 440;
+osc-&gt;amp = 0.2;</pre></code>
+<p></p>
+<p>A reference to the table is stored in the variable <code>tab</code>,
+with its size <code>sz</code>.
+</p>
+<div><b><i>&lt;&lt;osc_init&gt;&gt;=</i></b></div><pre><code>osc-&gt;tab = wt;
+osc-&gt;sz = sz;</pre></code>
+<p></p>
+<p>A table lookup oscillator indexes through the table using
+the increment rate stored in the integer value <code>inc</code>. This
+value can be positive or negative. Is is zeroed out at
+init-time.
+</p>
+<div><b><i>&lt;&lt;osc_init&gt;&gt;=</i></b></div><pre><code>osc-&gt;inc = 0;</pre></code>
+<p></p>
+<p>The variable <code>lphs</code> stores the phase position of the
+previous sample. The initial phase value <code>iphs</code> is
+multiplied with the the maximum table value, and then
+masked to keep values in range.
+</p>
+<div><b><i>&lt;&lt;osc_init&gt;&gt;=</i></b></div><pre><code>osc-&gt;lphs = ((int32_t)(iphs * SK_OSC_MAXLEN)) & SK_OSC_PHASEMASK;</pre></code>
+<p></p>
+<p>For the fixed point table-lookup, some constants are derived
+and stored.
+</p>
+<p>Phasor position is stored by splitting the bits of an
+N-bit integer number into two parts. The upper bits store the
+integer portion, while the lower bits store fractional
+portion. The maximum number of bits is arbitrary, but the
+underlying architecture must be able to accomodate for the
+width. In this implementation, the phasor uses 28 bits
+inside of a 32-bit number. This implicitely means the largest
+value can be
+</p>
+<p>Split in the phasor position is measured by counting the
+number of lower bits. This value is stored in the variable
+<code>nlb</code>. This value is calculated with the equation
+</p>
+<p><img src="/res/wiki/osc/osc_log2.png"nil>
+</p>
+<p>Where <code>n</code> is the number of lower bits, <code>M</code> is the maximum
+wavetable size, and <code>s</code> is the size of the wavetable.
+</p>
+<p>To calculate <code>nlb</code>, and hand-rolled <code>log2</code> function is
+created.
+</p>
+<p>Smaller values of <code>s</code> mean more bits in the fractional
+component of the number.
+</p>
+<div><b><i>&lt;&lt;osc_init&gt;&gt;=</i></b></div><pre><code>{
+uint32_t tmp;
+tmp = SK_OSC_MAXLEN / sz;
+osc-&gt;nlb = 0;
+while(tmp &gt;&gt;= 1) osc-&gt;nlb++;
+}
+&lt;&lt;calculate_mask&gt;&gt;
+&lt;&lt;calculate_inlb&gt;&gt;</pre></code>
+<p></p>
+<p>The <code>mask</code> is the lower-bits masking variable. When an AND
+operation is used against this constant, it filters out all
+the upper bits, so only the lower bits can pass through.
+This constant is necessary for being able to extract the
+lower bits from the fixed-point phase value representation.
+This sort of value is known in the bit-twiddling world as a
+<code>mask</code>. In binary, all the lower bits up to the number of
+lower bits are set to be on, with the remaining bits set
+to be 0. 
+</p>
+<div><b><i>&lt;&lt;calculate_mask&gt;&gt;=</i></b></div><pre><code>osc-&gt;mask = (1&lt;&lt;osc-&gt;nlb) - 1;</pre></code>
+<p></p>
+<p>The inverse of <code>nlb</code>, or <code>1/nlb</code>, is stored as a constant.
+This cached value is used to replace a divide operation with
+a multiply operation, which has traditionally a cheaper
+operation to do on a computer.
+</p>
+<div><b><i>&lt;&lt;calculate_inlb&gt;&gt;=</i></b></div><pre><code>osc-&gt;inlb = 1.0 / (1&lt;&lt;osc-&gt;nlb);</pre></code>
+<p></p>
+<p>The constant <code>maxlens</code> is the maximum table length in units
+of seconds. This is a value used to efficiently convert the
+frequency parameter to sample increment value.
+</p>
+<div><b><i>&lt;&lt;calculate_inlb&gt;&gt;=</i></b></div><pre><code>osc-&gt;maxlens = 1.0 * SK_OSC_MAXLEN / sr;</pre></code>
+
+<h3>Initialization</h3>
+
+<p>In addition to setting variables, the init function will
+also set the starting phase of oscillator.
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_osc_init(sk_osc *osc, int sr, SKFLT *wt, int sz, SKFLT iphs)
+{
+    &lt;&lt;osc_init&gt;&gt;
+}</pre></code>
+
+<h3>Computation</h3>
+
+<p>The meat of the algorithm is here. Here outlines the
+<code>tick</code> function, where a single sample of an oscillator
+is computer.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_osc_tick(sk_osc *osc)
+{
+    SKFLT out;
+    SKFLT freq;
+    SKFLT fract;
+    SKFLT x1, x2;
+    int32_t phs;
+    int pos;
+
+    out = 0;
+    &lt;&lt;update_increment_amount&gt;&gt;
+    &lt;&lt;lookup_values&gt;&gt;
+    &lt;&lt;obtain_fractional_component&gt;&gt;
+    &lt;&lt;interpolate_values&gt;&gt;
+    &lt;&lt;update_the_state&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<p>First, the increment amount <code>inc</code> is updated.
+The increment amount tells how much further to move the read
+pointer in the table. This increment amount is based on the
+current oscillator frequency <code>freq</code> and the variable
+<code>maxlens</code>. <code>lrintf</code> is used to round to the nearest integer.
+</p>
+<div><b><i>&lt;&lt;update_increment_amount&gt;&gt;=</i></b></div><pre><code>osc-&gt;inc = (int32_t)lrintf(osc-&gt;freq * osc-&gt;maxlens);</pre></code>
+<p></p>
+<p>Look up values A <code>n</code> and B <code>n + 1</code> samples from wavetable.
+Perform table lookup. Both the current position, and it's
+neighor are needed.
+This position is found by looking at the upper bits of
+the current phase.
+</p>
+<div><b><i>&lt;&lt;lookup_values&gt;&gt;=</i></b></div><pre><code>phs = osc-&gt;lphs;
+pos = phs &gt;&gt; osc-&gt;nlb;
+x1 = osc-&gt;tab[pos];
+x2 = osc-&gt;tab[(pos + 1) % osc-&gt;sz];</pre></code>
+<p></p>
+<p>Now, it's time to interpolate between points A and B. This
+oscillator uses linear interpolation, which can be thought
+of as a crossfade between two values. The equation for
+linear interpolation is commonly shown as:
+</p>
+<p><img src="/res/wiki/osc/osc_lerp.png"nil>
+</p>
+<p>Where $x2$ are two values, and $\alpha$ is a
+fractional value between 0 and 1. The $\alpha$ values
+determines the distribution balance of
+the two values. When $\alpha = 0$, it is entirely $x_1$, and
+when $\alpha = 1$, the value is $x_2$.
+</p>
+<p>The fractional (alpha) value is obtained by taking the lower
+bits portion of the current fixed-point phase position, and
+normalizing it to be a floating-point value between 0 and 1.
+</p>
+<div><b><i>&lt;&lt;obtain_fractional_component&gt;&gt;=</i></b></div><pre><code>fract = (phs & osc-&gt;mask) * osc-&gt;inlb;</pre></code>
+<p></p>
+<p>There are now all the parts to do the interpolation. It
+turns out the equation above can be simplified further to
+shave off a multiply operation.
+</p>
+<p><img src="/res/wiki/osc/osc_lerp_simp.png"nil>
+</p>
+<p>Which then gets translated to the following C code below.
+In this step, the output is also being scaled by the
+amplitude <code>amp</code>.
+</p>
+<div><b><i>&lt;&lt;interpolate_values&gt;&gt;=</i></b></div><pre><code>out = (x1 + (x2 - x1) * fract) * osc-&gt;amp;</pre></code>
+<p></p>
+<p>And now the sample has been computed! To wrap up, the
+internal phase amount <code>lphs</code> is updated and masked to
+prevent overflow.
+</p>
+<div><b><i>&lt;&lt;update_the_state&gt;&gt;=</i></b></div><pre><code>phs += osc-&gt;inc;
+phs &= SK_OSC_PHASEMASK;
+osc-&gt;lphs = phs;</pre></code>
+</div>
+</body>
+</html>
