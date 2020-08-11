@@ -38,19 +38,19 @@ sp_expon_destroy(sp_expon **expon)
 <i>a:</i> Inital point.</div>
 <div class="row">
 
-(Default value: 1.0)
+(Default value: 1)
 </div>
 <div class="row">
 <i>dur:</i> Duration (in seconds)</div>
 <div class="row">
 
-(Default value: 1.0)
+(Default value: 1)
 </div>
 <div class="row">
 <i>b:</i> End point</div>
 <div class="row">
 
-(Default value: 1.0)
+(Default value: 1)
 </div>
 <div class="row"><br></div>
 
@@ -66,61 +66,4 @@ sp_expon_destroy(sp_expon **expon)
 <i>out:</i> Signal output.
 </div>
 <div class="row"><br></div>
-<div class="row">
-<h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-#include "soundpipe.h"
-
-typedef struct {
-    sp_expon *line;
-    sp_osc *osc;
-    sp_ftbl *ft; 
-    sp_dmetro *dm;
-} UserData;
-
-void process(sp_data *sp, void *udata) {
-    UserData *ud = udata;
-    SPFLOAT osc = 0, line = 0, dm = 0;
-    sp_dmetro_compute(sp, ud-&gt;dm, NULL, &dm);
-    sp_expon_compute(sp, ud-&gt;line, &dm, &line);
-    ud-&gt;osc-&gt;freq = line;
-    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    sp-&gt;out[0] = osc;
-}
-
-int main() {
-    srand(1234567);
-    UserData ud;
-    sp_data *sp;
-    sp_create(&sp);
-
-    sp_expon_create(&ud.line);
-    sp_osc_create(&ud.osc);
-    sp_ftbl_create(sp, &ud.ft, 2048);
-    sp_dmetro_create(&ud.dm);
-
-    sp_expon_init(sp, ud.line);
-
-    ud.line-&gt;a = 100;
-    ud.line-&gt;b = 400;
-    ud.line-&gt;dur = 1;
-
-    sp_gen_sine(sp, ud.ft);
-    sp_osc_init(sp, ud.osc, ud.ft, 0);
-    sp_dmetro_init(sp, ud.dm);
-    ud.dm-&gt;time = 2;
-
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, process);
-
-    sp_expon_destroy(&ud.line);
-    sp_ftbl_destroy(&ud.ft);
-    sp_osc_destroy(&ud.osc);
-    sp_dmetro_destroy(&ud.dm);
-
-    sp_destroy(&sp);
-    return 0;
-}
-</code></pre></div></body></html>
+</div></body></html>

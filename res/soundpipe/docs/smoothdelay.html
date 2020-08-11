@@ -40,7 +40,7 @@ sp_smoothdelay_destroy(sp_smoothdelay **smoothdelay)
 <i>maxdel:</i> Maximum delay time (in seconds)</div>
 <div class="row">
 
-(Recommended value: 1.0)
+(Recommended value: 1)
 </div>
 <div class="row">
 <i>interp:</i> interpolation time (in samples)</div>
@@ -77,59 +77,4 @@ sp_smoothdelay_destroy(sp_smoothdelay **smoothdelay)
 <i>out:</i> Signal output.
 </div>
 <div class="row"><br></div>
-<div class="row">
-<h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-#include "soundpipe.h"
-
-typedef struct {
-    sp_smoothdelay *smoothdelay;
-    sp_osc *osc;
-    sp_ftbl *ft; 
-    sp_diskin *diskin;
-} UserData;
-
-void process(sp_data *sp, void *udata) {
-    UserData *ud = udata;
-    SPFLOAT osc = 0, smoothdelay = 0, diskin = 0;
-    sp_diskin_compute(sp, ud-&gt;diskin, NULL, &diskin);
-    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    osc = 0.1 + (0.5 * (1 + osc)) * 0.8;
-    ud-&gt;smoothdelay-&gt;del = osc;
-    sp_smoothdelay_compute(sp, ud-&gt;smoothdelay, &diskin, &smoothdelay);
-    sp-&gt;out[0] = diskin + smoothdelay;
-}
-
-int main() {
-    UserData ud;
-    sp_data *sp;
-    sp_create(&sp);
-    sp_srand(sp, 1234567);
-
-    sp_smoothdelay_create(&ud.smoothdelay);
-    sp_osc_create(&ud.osc);
-    sp_ftbl_create(sp, &ud.ft, 2048);
-    sp_diskin_create(&ud.diskin);
-
-    sp_smoothdelay_init(sp, ud.smoothdelay, 1.0, 1024);
-    ud.smoothdelay-&gt;feedback = 0.5;
-    sp_gen_sine(sp, ud.ft);
-    sp_osc_init(sp, ud.osc, ud.ft, 0);
-    ud.osc-&gt;freq = 0.2;
-    ud.osc-&gt;amp = 1.0;
-    sp_diskin_init(sp, ud.diskin, "oneart.wav");
-
-    sp-&gt;len = 44100 * 10;
-    sp_process(sp, &ud, process);
-
-    sp_smoothdelay_destroy(&ud.smoothdelay);
-    sp_ftbl_destroy(&ud.ft);
-    sp_osc_destroy(&ud.osc);
-    sp_diskin_destroy(&ud.diskin);
-
-    sp_destroy(&sp);
-    return 0;
-}
-</code></pre></div></body></html>
+</div></body></html>

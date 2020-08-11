@@ -66,48 +66,4 @@ sp_osc_destroy(sp_osc **osc)
 <i>out:</i> Signal output.
 </div>
 <div class="row"><br></div>
-<div class="row">
-<h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-#include "soundpipe.h"
-
-typedef struct {
-    sp_osc *osc;
-    sp_ftbl *ft; 
-    int counter;
-} UserData;
-
-void write_osc(sp_data *sp, void *udata) {
-    UserData *ud = udata;
-    SPFLOAT osc = 0;
-    if(ud-&gt;counter == 0){
-        ud-&gt;osc-&gt;freq = 500 + rand() % 2000;
-    }
-    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    ud-&gt;counter = (ud-&gt;counter + 1) % 4410;
-    sp_out(sp, 0, osc);
-}
-
-int main() {
-    srand(time(NULL));
-    UserData ud;
-    ud.counter = 0;
-    sp_data *sp;
-    sp_create(&sp);
-    sp_ftbl_create(sp, &ud.ft, 2048);
-    sp_osc_create(&ud.osc);
-    
-    sp_gen_sine(sp, ud.ft);
-    sp_osc_init(sp, ud.osc, ud.ft, 0);
-    ud.osc-&gt;freq = 500;
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, write_osc);
-
-    sp_ftbl_destroy(&ud.ft);
-    sp_osc_destroy(&ud.osc);
-    sp_destroy(&sp);
-    return 0;
-}
-</code></pre></div></body></html>
+</div></body></html>

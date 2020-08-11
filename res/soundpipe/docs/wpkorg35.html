@@ -42,13 +42,13 @@ sp_wpkorg35_destroy(sp_wpkorg35 **wpkorg35)
 <i>res:</i> Filter resonance (should be between 0-2)</div>
 <div class="row">
 
-(Default value: 1.0)
+(Default value: 1)
 </div>
 <div class="row">
 <i>saturation:</i> Filter saturation.</div>
 <div class="row">
 
-(Default value: 0.0)
+(Default value: 0)
 </div>
 <div class="row"><br></div>
 
@@ -64,56 +64,4 @@ sp_wpkorg35_destroy(sp_wpkorg35 **wpkorg35)
 <i>out:</i> Signal output.
 </div>
 <div class="row"><br></div>
-<div class="row">
-<h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-#include "soundpipe.h"
-
-typedef struct {
-    sp_wpkorg35 *wpkorg35;
-    sp_noise *noise;
-    sp_randi *randi;
-} UserData;
-
-void process(sp_data *sp, void *udata) {
-    UserData *ud = udata;
-    SPFLOAT noise = 0, wpkorg35 = 0, randi = 0;
-    sp_randi_compute(sp, ud-&gt;randi, NULL, &randi);
-    sp_noise_compute(sp, ud-&gt;noise, NULL, &noise);
-    ud-&gt;wpkorg35-&gt;cutoff = randi;
-    sp_wpkorg35_compute(sp, ud-&gt;wpkorg35, &noise, &wpkorg35);
-    sp-&gt;out[0] = wpkorg35;
-}
-
-int main() {
-    srand(1234567);
-    UserData ud;
-    sp_data *sp;
-    sp_create(&sp);
-
-    sp_wpkorg35_create(&ud.wpkorg35);
-    sp_noise_create(&ud.noise);
-    sp_randi_create(&ud.randi);
-
-    sp_wpkorg35_init(sp, ud.wpkorg35);
-    ud.wpkorg35-&gt;res = 1.99;
-    sp_noise_init(sp, ud.noise);
-    ud.noise-&gt;amp = 0.01;
-    sp_randi_init(sp, ud.randi);
-    ud.randi-&gt;min = 100;
-    ud.randi-&gt;max = 3000;
-    ud.randi-&gt;cps = 10;
-
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, process);
-
-    sp_wpkorg35_destroy(&ud.wpkorg35);
-    sp_noise_destroy(&ud.noise);
-    sp_randi_destroy(&ud.randi);
-
-    sp_destroy(&sp);
-    return 0;
-}
-</code></pre></div></body></html>
+</div></body></html>

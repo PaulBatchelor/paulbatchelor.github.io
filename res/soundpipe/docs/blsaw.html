@@ -44,7 +44,7 @@ sp_blsaw_destroy(sp_blsaw **blsaw)
 <i>amp:</i> Amplitude (range 0-1).</div>
 <div class="row">
 
-(Default value: 1.0)
+(Default value: 1)
 </div>
 <div class="row"><br></div>
 
@@ -54,44 +54,4 @@ sp_blsaw_destroy(sp_blsaw **blsaw)
 <i>out:</i> Signal output.
 </div>
 <div class="row"><br></div>
-<div class="row">
-<h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-#include "soundpipe.h"
-
-typedef struct {
-    sp_blsaw *blsaw;
-    int counter;
-} UserData;
-
-void process(sp_data *sp, void *udata) {
-    UserData *ud = udata;
-    if(ud-&gt;counter == 0){
-        *ud-&gt;blsaw-&gt;freq = 500 + rand() % 2000;
-    }
-    sp_blsaw_compute(sp, ud-&gt;blsaw, NULL, &sp-&gt;out[0]);
-    ud-&gt;counter = (ud-&gt;counter + 1) % 4410;
-}
-
-int main() {
-    srand(time(NULL));
-    UserData ud;
-    ud.counter = 0;
-    sp_data *sp;
-    sp_create(&sp);
-
-    sp_blsaw_create(&ud.blsaw);
-
-    sp_blsaw_init(sp, ud.blsaw);
-    *ud.blsaw-&gt;freq = 500;
-    *ud.blsaw-&gt;amp = 1;
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, process);
-
-    sp_blsaw_destroy(&ud.blsaw);
-    sp_destroy(&sp);
-    return 0;
-}
-</code></pre></div></body></html>
+</div></body></html>

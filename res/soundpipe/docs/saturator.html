@@ -35,13 +35,13 @@ sp_saturator_destroy(sp_saturator **saturator)
 <i>drive:</i> Input gain into the distortion section, in decibels. Controls overall amount of distortion.</div>
 <div class="row">
 
-(Default value: 1.0)
+(Default value: 1)
 </div>
 <div class="row">
 <i>dcoffset:</i> Constant linear offset applied to the signal. A small offset will introduce odd harmonics into the distoration spectrum, whereas a zero offset will have only even harmonics.</div>
 <div class="row">
 
-(Default value: 0.0)
+(Default value: 0)
 </div>
 <div class="row"><br></div>
 
@@ -57,54 +57,4 @@ sp_saturator_destroy(sp_saturator **saturator)
 <i>out:</i> output.
 </div>
 <div class="row"><br></div>
-<div class="row">
-<h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-#include "soundpipe.h"
-
-typedef struct {
-    sp_saturator *saturator;
-    sp_diskin *diskin;
-    sp_dcblock *dcblk;
-} UserData;
-
-void process(sp_data *sp, void *udata) 
-{
-    UserData *ud = udata;
-    SPFLOAT diskin = 0, saturator = 0, dcblk = 0;
-    sp_diskin_compute(sp, ud-&gt;diskin, NULL, &diskin);
-    sp_saturator_compute(sp, ud-&gt;saturator, &diskin, &saturator);
-    sp_dcblock_compute(sp, ud-&gt;dcblk, &saturator, &dcblk);
-    sp_out(sp, 0, dcblk);
-}
-
-int main() 
-{
-    UserData ud;
-    sp_data *sp;
-    sp_create(&sp);
-    sp_srand(sp, 1234567);
-
-    sp_saturator_create(&ud.saturator);
-    sp_diskin_create(&ud.diskin);
-    sp_dcblock_create(&ud.dcblk);
-
-    sp_saturator_init(sp, ud.saturator);
-    sp_diskin_init(sp, ud.diskin, "oneart.wav");
-    sp_dcblock_init(sp, ud.dcblk);
-
-    ud.saturator-&gt;drive = 10;
-    ud.saturator-&gt;dcoffset = 4;
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, process);
-
-    sp_saturator_destroy(&ud.saturator);
-    sp_diskin_destroy(&ud.diskin);
-    sp_dcblock_destroy(&ud.dcblk);
-
-    sp_destroy(&sp);
-    return 0;
-}
-</code></pre></div></body></html>
+</div></body></html>

@@ -57,45 +57,4 @@ sp_butbp_destroy(sp_butbp **butbp)
 <i>output:</i> Output signal (input modified by the filter).
 </div>
 <div class="row"><br></div>
-<div class="row">
-<h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-#include "soundpipe.h"
-
-typedef struct {
-    sp_noise *ns;
-    sp_butbp *butbp;
-    int counter;
-} UserData;
-
-void write_noise(sp_data *sp, void *udata) {
-    UserData *ud = udata;
-    SPFLOAT in = 0;
-    SPFLOAT out = 0;
-    if(ud-&gt;counter == 0) {
-        ud-&gt;butbp-&gt;freq= 500 + rand() % 4000;
-    }
-    sp_noise_compute(sp, ud-&gt;ns, NULL, &in);
-    sp_butbp_compute(sp, ud-&gt;butbp, &in, &sp-&gt;out[0]); 
-    ud-&gt;counter = (ud-&gt;counter + 1) % 5000;
-}
-int main() {
-    srand(time(NULL));
-    UserData ud;
-    ud.counter = 0;
-    sp_data *sp;
-    sp_create(&sp);
-    sp_noise_create(&ud.ns);
-    sp_butbp_create(&ud.butbp);
-    sp_noise_init(sp, ud.ns);
-    sp_butbp_init(sp, ud.butbp);
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, write_noise);
-    sp_noise_destroy(&ud.ns);
-    sp_butbp_destroy(&ud.butbp);
-    sp_destroy(&sp);
-    return 0;
-}
-</code></pre></div></body></html>
+</div></body></html>

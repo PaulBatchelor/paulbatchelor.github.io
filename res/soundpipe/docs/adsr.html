@@ -11,7 +11,12 @@
 Files: <i>adsr.h, adsr.c</i></div>
 <div class="row"><br></div>
 ADSR generator
-This is an ADSR generator whose curves are created using a one-pole low pass filter.
+This is an ADSR generator whose curves are created using a one-pole low pass filter.<br>NOTE: The attack, decay, and release parameters are "fuzzy" values that don't
+exactly correspond to duration in seconds. More accurately, they are special
+tau constant units that feed into the filter used to generate the envelope. The
+attack value specificly undergoes some "creative" modificiations in order to
+create snappier attack times. It is highly recommend to tune parameters by
+ear rather than to read the values literally.
 
 <div class="row"><br></div>
 <div class="row">
@@ -34,13 +39,13 @@ sp_adsr_destroy(sp_adsr **adsr)
 <div class="row">
 <h2>Optional Parameters</h2></div>
 <div class="row">
-<i>atk:</i> Attack time (in seconds)</div>
+<i>atk:</i> Attack</div>
 <div class="row">
 
 (Default value: 0.1)
 </div>
 <div class="row">
-<i>dec:</i> Decay time (in seconds)</div>
+<i>dec:</i> Decay</div>
 <div class="row">
 
 (Default value: 0.1)
@@ -52,7 +57,7 @@ sp_adsr_destroy(sp_adsr **adsr)
 (Default value: 0.5)
 </div>
 <div class="row">
-<i>rel:</i> Release time (in seconds)</div>
+<i>rel:</i> Release</div>
 <div class="row">
 
 (Default value: 0.3)
@@ -71,53 +76,4 @@ sp_adsr_destroy(sp_adsr **adsr)
 <i>out:</i> ADSR envelope.
 </div>
 <div class="row"><br></div>
-<div class="row">
-<h2>Example Code</h2></div>
-<pre><code>#include &lt;stdlib.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;time.h&gt;
-#include "soundpipe.h"
-
-typedef struct {
-    sp_adsr *adsr;
-    sp_osc *osc;
-    sp_ftbl *ft; 
-} UserData;
-
-void process(sp_data *sp, void *udata) {
-    UserData *ud = udata;
-    SPFLOAT osc = 0, adsr = 0, gate = 0;
-    if(sp-&gt;pos &lt; sp-&gt;sr * 3) {
-        gate = 1;
-    }
-    sp_adsr_compute(sp, ud-&gt;adsr, &gate, &adsr);
-    sp_osc_compute(sp, ud-&gt;osc, NULL, &osc);
-    sp-&gt;out[0] = adsr * osc;
-}
-
-int main() {
-    srand(1234567);
-    UserData ud;
-    sp_data *sp;
-    sp_create(&sp);
-
-    sp_adsr_create(&ud.adsr);
-    sp_osc_create(&ud.osc);
-    sp_ftbl_create(sp, &ud.ft, 2048);
-
-    sp_adsr_init(sp, ud.adsr);
-    sp_gen_sine(sp, ud.ft);
-    sp_osc_init(sp, ud.osc, ud.ft, 0);
-    ud.osc-&gt;amp = 0.5;
-
-    sp-&gt;len = 44100 * 5;
-    sp_process(sp, &ud, process);
-
-    sp_adsr_destroy(&ud.adsr);
-    sp_ftbl_destroy(&ud.ft);
-    sp_osc_destroy(&ud.osc);
-
-    sp_destroy(&sp);
-    return 0;
-}
-</code></pre></div></body></html>
+</div></body></html>
