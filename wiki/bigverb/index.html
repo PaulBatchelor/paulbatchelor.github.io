@@ -55,14 +55,17 @@ a very dense-sounding reverb output.
 <h4>Parameter Tunings</h4>
 
 <p>The parameter tunings of this reverb add to the
-particular character of this sound. The tuning consists
-of 8 parameter sets, corresponding to each delay line
-"unit". A set has the following parameters: delay time
+particular character of this sound. All units are set in
+such a way so that they can be stored as integer values.
+</p>
+<p>The tuning consists of 8 parameter sets, corresponding to
+each delay line "unit". A set has the following parameters: delay time
 (<code>delay</code>) (in units of samples with a samplerate of
 44.1kHz), the amount of variation in delay time to apply
 (<code>drift</code>) (in units of tenth milliseconds, in order to use
 integer values), the random variation frequency (<code>randfreq</code>)
-(in Hz), as well as a starting seed for the internal RNG.
+(in Hz multiplied by 1000 to avoid decimals),
+as well as a starting seed for the internal RNG.
 </p>
 <p>The credit for these parameter tunings (and this topology)
 go to Sean Costello, who also originally designed this
@@ -73,19 +76,19 @@ published by his company ValhallaDSP.
 <div><b><i>&lt;&lt;parameter_set&gt;&gt;=</i></b></div><pre><code>struct bigverb_paramset {
     int delay; /* in samples, 44.1 kHz */
     int drift; /* 1/10 milliseconds */
-    SKFLT randfreq; /* Hertz */
-    unsigned int seed;
+    int randfreq; /* Hertz * 1000 */
+    int seed;
 };
 
 static const struct bigverb_paramset params[8] = {
-    {0x09a9, 10, 3.100, 0x07ae},
-    {0x0acf, 11, 3.500, 0x7333},
-    {0x0c91, 17, 1.110, 0x5999},
-    {0x0de5,  6, 3.973, 0x2666},
-    {0x0f43, 10, 2.341, 0x50a3},
-    {0x101f, 11, 1.897, 0x5999},
-    {0x085f, 17, 0.891, 0x7333},
-    {0x078d,  6, 3.221, 0x3851}
+    {0x09a9, 0x0a, 0xc1c, 0x07ae},
+    {0x0acf, 0x0b, 0xdac, 0x7333},
+    {0x0c91, 0x11, 0x456, 0x5999},
+    {0x0de5, 0x06, 0xf85, 0x2666},
+    {0x0f43, 0x0a, 0x925, 0x50a3},
+    {0x101f, 0x0b, 0x769, 0x5999},
+    {0x085f, 0x11, 0x37b, 0x7333},
+    {0x078d, 0x06, 0xc95, 0x3851}
 };</pre></code>
 
 <h4>Delay Line Configuration</h4>
@@ -775,7 +778,7 @@ high-level parameter.
 </p>
 <div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>int maxcount;</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;init_jitter&gt;&gt;=</i></b></div><pre><code>d-&gt;maxcount = round((sr / (SKFLT)p-&gt;randfreq));</pre></code>
+<div><b><i>&lt;&lt;init_jitter&gt;&gt;=</i></b></div><pre><code>d-&gt;maxcount = round((sr / ((SKFLT)p-&gt;randfreq * 0.001)));</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;reset_counter&gt;&gt;=</i></b></div><pre><code>d-&gt;counter = d-&gt;maxcount;</pre></code>
 <p></p>
