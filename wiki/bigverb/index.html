@@ -60,9 +60,9 @@ of 8 parameter sets, corresponding to each delay line
 "unit". A set has the following parameters: delay time
 (<code>delay</code>) (in units of samples with a samplerate of
 44.1kHz), the amount of variation in delay time to apply
-(<code>drift</code>) (in units of seconds), the random variation
-frequency (<code>randfreq</code>) (in Hz), as well as a starting seed
-for the internal RNG.
+(<code>drift</code>) (in units of tenth milliseconds, in order to use
+integer values), the random variation frequency (<code>randfreq</code>)
+(in Hz), as well as a starting seed for the internal RNG.
 </p>
 <p>The credit for these parameter tunings (and this topology)
 go to Sean Costello, who also originally designed this
@@ -72,20 +72,20 @@ published by his company ValhallaDSP.
 </p>
 <div><b><i>&lt;&lt;parameter_set&gt;&gt;=</i></b></div><pre><code>struct bigverb_paramset {
     int delay; /* in samples, 44.1 kHz */
-    SKFLT drift; /* seconds */
+    int drift; /* 1/10 milliseconds */
     SKFLT randfreq; /* Hertz */
     unsigned int seed;
 };
 
 static const struct bigverb_paramset params[8] = {
-    {0x09a9, 0.0010, 3.100, 0x07ae},
-    {0x0acf, 0.0011, 3.500, 0x7333},
-    {0x0c91, 0.0017, 1.110, 0x5999},
-    {0x0de5, 0.0006, 3.973, 0x2666},
-    {0x0f43, 0.0010, 2.341, 0x50a3},
-    {0x101f, 0.0011, 1.897, 0x5999},
-    {0x085f, 0.0017, 0.891, 0x7333},
-    {0x078d, 0.0006, 3.221, 0x3851}
+    {0x09a9, 10, 3.100, 0x07ae},
+    {0x0acf, 11, 3.500, 0x7333},
+    {0x0c91, 17, 1.110, 0x5999},
+    {0x0de5,  6, 3.973, 0x2666},
+    {0x0f43, 10, 2.341, 0x50a3},
+    {0x101f, 11, 1.897, 0x5999},
+    {0x085f, 17, 0.891, 0x7333},
+    {0x078d,  6, 3.221, 0x3851}
 };</pre></code>
 
 <h4>Delay Line Configuration</h4>
@@ -236,7 +236,7 @@ first call to the tick function after initialization.
 <div><b><i>&lt;&lt;sk_bigverb&gt;&gt;=</i></b></div><pre><code>SKFLT cutoff;
 SKFLT pcutoff;</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>bv-&gt;pcutoff = -1;</pre></code>
+<div><b><i>&lt;&lt;init_variables&gt;&gt;=</i></b></div><pre><code>bv-&gt;pcutoff = -1;</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_cutoff(sk_bigverb *bv, SKFLT cutoff)
 {
@@ -249,7 +249,7 @@ SKFLT pcutoff;</pre></code>
 </p>
 <div><b><i>&lt;&lt;sk_bigverb&gt;&gt;=</i></b></div><pre><code>SKFLT filt;</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>bv-&gt;filt = 1.0;</pre></code>
+<div><b><i>&lt;&lt;init_variables&gt;&gt;=</i></b></div><pre><code>bv-&gt;filt = 1.0;</pre></code>
 
 <h3>Computing Audio</h3>
 
@@ -405,7 +405,7 @@ is used again to properly slice up the big memory chunk.
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int get_delay_size(const struct bigverb_paramset *p, int sr)
 {
     SKFLT sz;
-    sz = (SKFLT)p-&gt;delay/44100 + p-&gt;drift * 1.125;
+    sz = (SKFLT)p-&gt;delay/44100 + (p-&gt;drift * 0.0001) * 1.125;
     return floor(16 + sz*sr);
 }</pre></code>
 <p></p>
@@ -512,7 +512,7 @@ the end of the buffer.
 <p>Truncate (using integer cast).'
 </p>
 <div><b><i>&lt;&lt;setup_readpos&gt;&gt;=</i></b></div><pre><code>readpos = ((SKFLT)p-&gt;delay / 44100);
-readpos += d-&gt;rng * p-&gt;drift / 32768.0;
+readpos += d-&gt;rng * (p-&gt;drift * 0.0001) / 32768.0;
 readpos = sz - (readpos * sr);
 d-&gt;irpos = floor(readpos);
 d-&gt;frpos = floor((readpos - d-&gt;irpos) * FRACSCALE);</pre></code>
@@ -792,7 +792,7 @@ curdel /= sr;</pre></code>
 <p>The next delay time to lerp to is derived from the RNG
 and drift amount.
 </p>
-<div><b><i>&lt;&lt;compute_delay_values&gt;&gt;=</i></b></div><pre><code>nxtdel = (d-&gt;rng * d-&gt;drift / 32768.0) + d-&gt;dels;</pre></code>
+<div><b><i>&lt;&lt;compute_delay_values&gt;&gt;=</i></b></div><pre><code>nxtdel = (d-&gt;rng * (d-&gt;drift * 0.0001) / 32768.0) + d-&gt;dels;</pre></code>
 <p></p>
 <p>The delay time, in seconds (<code>dels</code>).
 </p>
