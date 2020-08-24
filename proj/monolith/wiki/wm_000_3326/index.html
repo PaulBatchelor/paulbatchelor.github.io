@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>28. Channels</h3>
+
+<p><a id="wm_000_3326"></a>Channels are used to share information between monolith and
+patchwerk. What these are are an array of floating
+point values, which can be addressed by index position. The
+number of values is specified by the macro
+<code>MONOLITH_MAXCHAN</code>.
+</p>
+
+<h4>28.1. Channel Worgle Constructs</h4>
+
+<p><a id="wm_000_3328"></a><div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_function_declarations&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_static_function_declarations&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_functions&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;monolith_runt_loader&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_runt_entries&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_scheme_functions&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_scheme_entries&gt;&gt;</pre></code>
+
+<h4>28.2. Channels Top Level Declaration</h4>
+
+<p><a id="wm_000_3353"></a>Really, the only thing needed here is an array of floats. In
+this case, <code>PWFLTS</code> will be used to match the resolution of
+patchwerk.
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_MAXCHAN
+#define MONOLITH_MAXCHAN 16
+#endif</pre></code>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>PWFLT chan[MONOLITH_MAXCHAN];</pre></code>
+
+<h4>28.3. Channel Initialization</h4>
+
+<p><a id="wm_000_3359"></a>Channels are initialized at runtime by being zeroed out,
+via the function <code>monolith_chan_init</code>.
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>monolith_chan_init(m);</pre></code>
+<div><b><i>&lt;&lt;chan_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_chan_init(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>void monolith_chan_init(monolith_d *m)
+{
+    int i;
+    for(i = 0; i &lt; MONOLITH_MAXCHAN; i++) {
+        m-&gt;chan[i] = 0;
+    }
+}</pre></code>
+
+<h4>28.4. Channel Get</h4>
+
+<p><a id="wm_000_3369"></a>The function <code>monolith_chan_get</code> will retrieve a
+channel value at position N. If the value is out of range,
+0 will be returned.
+<div><b><i>&lt;&lt;chan_function_declarations&gt;&gt;=</i></b></div><pre><code>PWFLT monolith_chan_get(monolith_d *m, int chan);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>PWFLT monolith_chan_get(monolith_d *m, int chan)
+{
+    if(chan &lt; 0 || chan &gt;= MONOLITH_MAXCHAN) {
+        return 0;
+    }
+    return m-&gt;chan[chan];
+}</pre></code>
+
+<h4>28.5. Channel Set</h4>
+
+<p><a id="wm_000_3375"></a>The function <code>monolith_gfx_chan_set</code> will set a particular
+channel value. If the channel is out of range, no action
+will happen.
+<div><b><i>&lt;&lt;chan_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_chan_set(monolith_d *m, int chan, PWFLT val);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>void monolith_chan_set(monolith_d *m, int chan, PWFLT val)
+{
+    if(chan &lt; 0 || chan &gt;= MONOLITH_MAXCHAN) {
+        return;
+    }
+    m-&gt;chan[chan] = val;
+}</pre></code>
+
+<h4>28.6. Channel Nodes + Words</h4>
+
+<p><a id="wm_000_3381"></a></p>
+
+<h5>28.6.1. DONE monget</h5>
+
+<p><a id="wm_000_3382"></a>CLOSED: [2019-05-31 Fri 22:15]
+The <code>monget</code> node will get a particular channel. The
+channel taken in is init-time.
+</p>
+
+<h6>28.6.1.1. DONE monget node</h6>
+
+<p><a id="wm_000_3384"></a>CLOSED: [2019-05-31 Fri 22:15]
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_monget(pw_node *n, monolith_d *m, int chan);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static int node_monget(pw_node *n, monolith_d *m, int chan)
+{
+    PWFLT *val;
+    pw_node_cables_alloc(n, 1);
+    pw_node_set_block(n, 0);
+
+    if(chan &lt; 0 || chan &gt;= MONOLITH_MAXCHAN) {
+        return PW_NOT_OK;
+    }
+
+    val = &m-&gt;chan[chan];
+
+    pw_node_set_compute(n, monget_compute);
+    pw_node_set_destroy(n, monget_destroy);
+    pw_node_set_data(n, val);
+    return PW_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void monget_compute(pw_node *n);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static void monget_compute(pw_node *n)
+{
+    int s;
+    int blksize;
+    PWFLT *val;
+    pw_cable *out;
+
+    blksize = pw_node_blksize(n);
+    pw_node_get_cable(n, 0, &out);
+    val = pw_node_get_data(n);
+
+    for(s = 0; s &lt; blksize; s++) {
+        pw_cable_set(out, s, *val);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void monget_destroy(pw_node *n);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static void monget_destroy(pw_node *n)
+{
+    pw_node_cables_free(n);
+}</pre></code>
+
+<h6>28.6.1.2. DONE monget runt word</h6>
+
+<p><a id="wm_000_3399"></a>CLOSED: [2019-05-31 Fri 22:15]
+<div><b><i>&lt;&lt;chan_runt_entries&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "monget", 6, rproc_monget, m);</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monget(runt_vm *vm, runt_ptr p);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monget(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_stacklet *out;
+    runt_int rc;
+    rpw_param chan;
+    pw_patch *patch;
+    pw_node *n;
+
+    rc = rpw_get_param(vm, &chan);
+    RUNT_ERROR_CHECK(rc);
+
+    if(!rpw_param_is_constant(&chan)) {
+        runt_print(vm,
+                   "monget: channel must be a constant\n");
+        return RUNT_NOT_OK;
+    }
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    m = runt_to_cptr(p);
+
+    patch = monolith_patchwerk_get(m);
+
+    rc = pw_patch_new_node(patch, &n);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rc = node_monget(n, m, rpw_param_get_constant(&chan));
+
+    if(rc != PW_OK) {
+        runt_print(vm, "monget: invalid channel\n");
+        return RUNT_NOT_OK;
+    }
+
+    rpw_push_output(vm, n, out, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h5>28.6.2. DONE monset</h5>
+
+<p><a id="wm_000_3408"></a>CLOSED: [2019-10-20 Sun 12:11]
+The <code>monset</code> node will set a particular channel with
+a signal from patchwerk. Note that this value will
+automatically be downsampled to block-rate, as that is
+what is only readable from monolith.
+</p>
+
+<h6>28.6.2.1. DONE monset node</h6>
+
+<p><a id="wm_000_3410"></a>CLOSED: [2019-10-20 Sun 12:11]
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_monset(pw_node *n, monolith_d *m, int chan);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static int node_monset(pw_node *n, monolith_d *m, int chan)
+{
+    PWFLT *val;
+    pw_node_cables_alloc(n, 1);
+
+    if(chan &lt; 0 || chan &gt;= MONOLITH_MAXCHAN) {
+        return PW_NOT_OK;
+    }
+
+    val = &m-&gt;chan[chan];
+
+    pw_node_set_compute(n, monset_compute);
+    pw_node_set_data(n, val);
+    return PW_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void monset_compute(pw_node *n);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static void monset_compute(pw_node *n)
+{
+    PWFLT *val;
+    pw_cable *in;
+
+    pw_node_get_cable(n, 0, &in);
+    val = pw_node_get_data(n);
+
+    *val = pw_cable_get(in, 0);
+}</pre></code>
+
+<h6>28.6.2.2. DONE monset runt word</h6>
+
+<p><a id="wm_000_3420"></a>CLOSED: [2019-10-20 Sun 12:10]
+<div><b><i>&lt;&lt;chan_runt_entries&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "monset", 6, rproc_monset, m);</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monset(runt_vm *vm, runt_ptr p);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monset(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    rpw_param in;
+    rpw_param chan;
+    pw_patch *patch;
+    pw_node *n;
+
+    rc = rpw_get_param(vm, &chan);
+    RUNT_ERROR_CHECK(rc);
+
+    if(!rpw_param_is_constant(&chan)) {
+        runt_print(vm,
+                   "monset: channel must be a constant\n");
+        return RUNT_NOT_OK;
+    }
+
+    rc = rpw_get_param(vm, &in);
+    RUNT_ERROR_CHECK(rc);
+
+    m = runt_to_cptr(p);
+
+    patch = monolith_patchwerk_get(m);
+
+    rc = pw_patch_new_node(patch, &n);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rc = node_monset(n, m, rpw_param_get_constant(&chan));
+
+    if(rc != PW_OK) {
+        runt_print(vm, "monget: invalid channel\n");
+        return RUNT_NOT_OK;
+    }
+
+    rpw_set_param(vm, n, &in, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>28.7. Channel Scheme Functions</h4>
+
+<p><a id="wm_000_3428"></a>The two functions needed here are <code>monolith:chan-get</code>
+and <code>monolith:chan-set</code>.
+<div><b><i>&lt;&lt;chan_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:chan-get", pp_chan_get, 1, 1, {INT,___,___}},</pre></code>
+<div><b><i>&lt;&lt;chan_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_chan_get(cell x)
+{
+    PWFLT val;
+    int pos;
+    monolith_d *m;
+    unsigned int ival;
+    char name[] = "monolith:chan-get";
+
+    pos = integer_value(name, car(x));
+
+    m = monolith_data_get();
+    val = monolith_chan_get(m, pos);
+
+    /* get non-decimal part */
+    ival = floor(val);
+    /* get 4 decimal places */
+    val = floor(1e4 * (ival + (val - ival)));
+    return s9_make_real(1, -4, s9_make_integer(val));
+}</pre></code>
+<div><b><i>&lt;&lt;chan_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:chan-set", pp_chan_set, 2, 2, {INT,REA,___}},</pre></code>
+<div><b><i>&lt;&lt;chan_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_chan_set(cell x)
+{
+    PWFLT val;
+    int pos;
+    monolith_d *m;
+    char name[] = "monolith:chan-set";
+    int mantissa;
+    int exponent;
+    cell real;
+
+    pos = integer_value(name, car(x));
+    x = cdr(x);
+
+    m = monolith_data_get();
+
+    real = car(x);
+    mantissa = s9_bignum_to_int(s9_real_mantissa(real));
+    exponent = s9_real_exponent(real);
+    val = mantissa * pow(10, exponent);
+
+    monolith_chan_set(m, pos, val);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h4>28.8. Channel Janet Functions</h4>
+
+<p><a id="wm_000_3440"></a>Identical in functionality to scheme functions.
+<code>monolith/chan-get</code> and <code>monolith/chan-set</code>.
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_chan_get(int32_t argc, Janet *argv)
+{
+    PWFLT val;
+    int pos;
+    monolith_d *m;
+
+    janet_fixarity(argc, 1);
+
+    pos = janet_unwrap_integer(argv[0]);
+
+    m = monolith_data_get();
+    val = monolith_chan_get(m, pos);
+
+    return janet_wrap_number(val);
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/chan-get",
+j_chan_get,
+"get a channel\n"
+},</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_chan_set(int32_t argc, Janet *argv)
+{
+    PWFLT val;
+    int pos;
+    monolith_d *m;
+
+    janet_fixarity(argc, 2);
+
+    pos = janet_unwrap_integer(argv[0]);
+    val = janet_unwrap_number(argv[1]);
+
+    m = monolith_data_get();
+
+    monolith_chan_set(m, pos, val);
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/chan-set",
+j_chan_set,
+"setting a channel value\n"
+},</pre></code>
+</div>
+</body>
+</html>

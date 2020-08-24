@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>24. Writing a PNG file</h3>
+
+<p><a id="wm_000_3058"></a>PNG files are written to disk using the very portable lodepng library, included
+with monolith.
+<div><b><i>&lt;&lt;gfx_aux_includes&gt;&gt;=</i></b></div><pre><code>#include "lodepng/lodepng.h"</pre></code>
+<p>A framebuffer is written to a PNG file using the function
+<code>monolith_framebuffer_write_png</code>.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_write_png(monolith_framebuffer *fb,
+                                    const char *filename);</pre></code>
+<p>Pixels are copied to a an allocated "zoom buffer", which
+is then written to a PNG file via lodepng. This is done
+regardless of whether or not there a zoom because it also
+ensures proper byte order.
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_write_png(monolith_framebuffer *fb,
+                                    const char *filename)
+{
+    unsigned char *zbuf;
+    unsigned int x, y, xi, yi;
+    unsigned int pos;
+    unsigned int pos_zoom;
+    zbuf = NULL;
+    if(fb == NULL) return;
+
+    zbuf = calloc(1, 4 * monolith_gfx_width(fb) *
+                    fb-&gt;zoom * monolith_gfx_height(fb) * fb-&gt;zoom);
+
+    for(y = 0; y &lt; monolith_gfx_height(fb); y++) {
+        for(x = 0; x &lt; monolith_gfx_width(fb); x++) {
+            pos = y * monolith_gfx_width(fb) + x;
+            for(yi = 0; yi &lt; fb-&gt;zoom; yi++) {
+                for(xi = 0; xi &lt; fb-&gt;zoom; xi++) {
+                    pos_zoom =
+                        y * fb-&gt;zoom * monolith_gfx_width(fb) * fb-&gt;zoom +
+                        x * fb-&gt;zoom +
+                        yi * monolith_gfx_width(fb) * fb-&gt;zoom +
+                        xi;
+                    pos_zoom *= 4;
+                    zbuf[pos_zoom] = fb-&gt;pix[pos].r;
+                    zbuf[pos_zoom + 1] = fb-&gt;pix[pos].g;
+                    zbuf[pos_zoom + 2] = fb-&gt;pix[pos].b;
+                    zbuf[pos_zoom + 3] = fb-&gt;pix[pos].a;
+                }
+            }
+        }
+    }
+    lodepng_encode32_file(filename,
+                            zbuf,
+                            monolith_gfx_width(fb) * fb-&gt;zoom,
+                            monolith_gfx_height(fb) * fb-&gt;zoom);
+    if(zbuf != NULL) free(zbuf);
+}</pre></code>
+<p>This function can be called using the function
+<code>monolith:gfx-write-png</code>. It will
+use the global monolith framebuffer, if it exists.
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:gfx-write-png", pp_write_png, 1, 1, {STR,___,___}},</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_write_png(cell p)
+{
+    monolith_d *m;
+    const char *filename;
+    m = monolith_data_get();
+    filename = string(car(p));
+    monolith_framebuffer_write_png(m-&gt;fb, filename);
+    return UNSPECIFIC;
+}</pre></code>
+<p>Similar functionality is done with Janet using the function
+<code>monolith/gfx-write-png</code>.
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_gfx_write_png(int32_t argc, Janet *argv)
+{
+    monolith_framebuffer *fb;
+    monolith_d *m;
+    const char *filename;
+
+    janet_fixarity(argc, 1);
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    filename = (const char *)janet_unwrap_string(argv[0]);
+
+    if(fb != NULL) {
+        monolith_framebuffer_write_png(fb, filename);
+    }
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/gfx-write-png",
+j_gfx_write_png,
+"Writes framebuffer to disk."
+},</pre></code>
+</div>
+</body>
+</html>

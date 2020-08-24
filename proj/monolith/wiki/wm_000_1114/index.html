@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>11. Pages</h3>
+
+<p><a id="wm_000_1114"></a>In Monolith, a "Page" is special program for controlling
+things in Monolith. Multiple pages exist simultaneously, but
+are controlled one at at time. When a page is "selected",
+the page is granted access to all the peripherals (which
+right now consists of the griffin and the monome).
+</p>
+
+<h4>11.1. Active Page Selection</h4>
+
+<p><a id="wm_000_1116"></a>At any given time, only one page can be selected. This
+active page is sored in a variable in the top-level struct
+called <code>curpage</code>.
+</p>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>monolith_page *curpage;</pre></code>
+<p></p>
+<p>By default, it is set to point to NULL.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;curpage = NULL;</pre></code>
+<p></p>
+<p>The current page is set with the function
+<code>monolith_curpage_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_curpage_set(monolith_d *m, monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_curpage_set(monolith_d *m, monolith_page *pg)
+{
+    if(m-&gt;curpage != NULL) monolith_page_close(pg);
+    m-&gt;curpage = pg;
+    monolith_page_open(pg);
+}</pre></code>
+
+<h5>11.1.1. Find and set a page</h5>
+
+<p><a id="wm_000_1128"></a>A page can be selected by name with the function
+<code>monolith_curpage_find_and_select</code>. It will attempt to look
+up the name in the dictionary, and then set that to the
+current page.
+</p>
+<p>On success, TRUE (1). Failure, FALSE (0).
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_curpage_find_and_select(monolith_d *m,
+                                     const char *name,
+                                     unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_curpage_find_and_select(monolith_d *m,
+                                     const char *name,
+                                     unsigned int len)
+{
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+
+    dict = monolith_dict_get(m);
+    rc = monolith_dict_lookup(dict, &pg, name, len);
+    if(!rc) return 0;
+    monolith_curpage_set(m, pg);
+    return 1;
+}</pre></code>
+
+<h5>11.1.2. Scheme Function</h5>
+
+<p><a id="wm_000_1134"></a>A page can be selected by name using the scheme function
+<code>monolith:page-select</code>.
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:page-select", pp_page_select, 1, 1, {STR,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_page_select(cell x)
+{
+    const char *str;
+    monolith_d *m;
+    int rc;
+
+    m = monolith_data_get();
+
+    str = string(car(x));
+
+    rc = monolith_curpage_find_and_select(m,
+                                          str,
+                                          strlen(str));
+
+    if(!rc) {
+        fprintf(stderr, "Could not find page '%s'\n", str);
+        return UNSPECIFIC;
+    }
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>11.1.3. Janet Function</h5>
+
+<p><a id="wm_000_1140"></a><div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/page-select",
+j_page_select,
+"Selects a page."
+},</pre></code>
+<div><b><i>&lt;&lt;janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_page_select(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    const char *str;
+    int rc;
+
+    m = monolith_data_get();
+    janet_fixarity(argc, 1);
+    str = (const char *)janet_unwrap_string(argv[0]);
+    rc = monolith_curpage_find_and_select(m,
+                                          str,
+                                          strlen(str));
+
+    if(!rc) {
+        fprintf(stderr, "Could not find page '%s'\n", str);
+    }
+
+    return janet_wrap_nil();
+}</pre></code>
+
+<h4>11.2. Checking if a Page is Selected</h4>
+
+<p><a id="wm_000_1145"></a>A page can be checked if it is selected or not with the
+function <code>monolith_page_selected</code>. It will compare the
+pointer address of the page with the currently selected
+page.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_page_selected(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_page_selected(monolith_page *pg)
+{
+    return pg == pg-&gt;m-&gt;curpage;
+}</pre></code>
+
+<h4>11.3. Page Dictionary (included in top-level struct)</h4>
+
+<p><a id="wm_000_1151"></a></p>
+
+<h5>11.3.1. Entry Page Lookup</h5>
+
+<p><a id="wm_000_1152"></a></p>
+
+<h6>11.3.1.1. Dictionary Lookup</h6>
+
+<p><a id="wm_000_1153"></a>A monolith page is retrieved from the dictionary using the
+function <code>monolith_page_lookup</code>. It has arguments which
+mirror <code>monolith_dict_newpage</code>. A found monolith page will
+store itself in the supplied page pointer.
+</p>
+<p>The function will return TRUE (1) on success and FALSE (0)
+on failure.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_dict_lookup(monolith_dict *d,
+                         monolith_page **pg,
+                         const char *name,
+                         unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_dict_lookup(monolith_dict *d,
+                         monolith_page **pg,
+                         const char *name,
+                         unsigned int len)
+{
+    unsigned int listpos;
+    monolith_dict_entrylist *el;
+    monolith_dict_entry *ent;
+    unsigned int i;
+
+    listpos = dict_hash(name, len, MONOLITH_DICT_SIZE);
+    el = &d-&gt;lists[listpos];
+    ent = el-&gt;head;
+    for(i = 0; i &lt; el-&gt;size; i++) {
+        if(len == ent-&gt;len) {
+            if(!strncmp(name, ent-&gt;key, len)) {
+                if (ent-&gt;type != MONOLITH_ENTRY_PAGE) {
+                    return 0;
+                }
+                if (pg != NULL) *pg = ent-&gt;ud;
+                return 1;
+            }
+        }
+        ent = ent-&gt;nxt;
+    }
+    return 0;
+}</pre></code>
+
+<h6>11.3.1.2. Monolith Dictionary Lookup</h6>
+
+<p><a id="wm_000_1159"></a>This task is done often enough by pages that a convience
+function was created called <code>monolith_lookup_page</code>, created
+so that that pages didn't have to access the dictionary from
+the opaque monolith pointer.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_lookup_page(monolith_d *m,
+                         monolith_page **pg,
+                         const char *key,
+                         unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_lookup_page(monolith_d *m,
+                         monolith_page **pg,
+                         const char *key,
+                         unsigned int len)
+{
+    return monolith_dict_lookup(&m-&gt;dict, pg, key, len);
+}</pre></code>
+
+<h5>11.3.2. Entry Find (generalized page lookup)</h5>
+
+<p><a id="wm_000_1165"></a>This is a more generalized version of
+<code>monolith_dict_lookup</code>. Instead of looking for a page, it
+just stores the entry. Initially created to look up images
+stored in the dictionary.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_dict_find(monolith_dict *d,
+                       monolith_dict_entry **pent,
+                       const char *name,
+                       unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_dict_find(monolith_dict *d,
+                       monolith_dict_entry **pent,
+                       const char *name,
+                       unsigned int len)
+{
+    unsigned int listpos;
+    monolith_dict_entrylist *el;
+    monolith_dict_entry *ent;
+    unsigned int i;
+
+    listpos = dict_hash(name, len, MONOLITH_DICT_SIZE);
+    el = &d-&gt;lists[listpos];
+    ent = el-&gt;head;
+    for(i = 0; i &lt; el-&gt;size; i++) {
+        if(len == ent-&gt;len) {
+            if(!strncmp(name, ent-&gt;key, len)) {
+                if (pent != NULL) *pent = ent;
+                return MONOLITH_OK;
+            }
+        }
+        ent = ent-&gt;nxt;
+    }
+
+    return MONOLITH_NOTFOUND;
+}</pre></code>
+
+<h5>11.3.3. Page Entry</h5>
+
+<p><a id="wm_000_1171"></a>The atomic element of a dictionary is a page entry. A page
+entry is a wrapper around a monolith page, which makes it
+ready for a linked list.
+</p>
+<p>In addition, an entry has a corresponding key value and
+length, which is stored in a char pointer.
+</p>
+<p>Page entries are managed inside of a list known as an
+entry list, known as the <code>monolith_dict_entry_list</code>.
+<div><b><i>&lt;&lt;monolith_dict_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_dict_entry monolith_dict_entry;</pre></code>
+<div><b><i>&lt;&lt;monolith_dict_entry_struct&gt;&gt;=</i></b></div><pre><code>struct monolith_dict_entry {
+    void *ud;
+    int type;
+    char *key;
+    unsigned int len;
+    monolith_dict_entry *nxt;
+    monolith_dict_entry *prv;
+};</pre></code>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>enum {
+    MONOLITH_ENTRY_NONE,
+    MONOLITH_ENTRY_PAGE,
+    MONOLITH_ENTRY_CHAN,
+    MONOLITH_ENTRY_IMAGE,
+    MONOLITH_ENTRY_FTBL
+};</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>const char *monolith_dict_entry_key(monolith_dict_entry *ent);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>const char *monolith_dict_entry_key(monolith_dict_entry *ent)
+{
+    return ent-&gt;key;
+}</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>monolith_page * monolith_dict_entry_page(monolith_dict_entry *ent);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>monolith_page * monolith_dict_entry_page(monolith_dict_entry *ent)
+{
+    /* TODO: type checking */
+    return (monolith_page *)ent-&gt;ud;
+}</pre></code>
+
+<h5>11.3.4. Entry List</h5>
+
+<p><a id="wm_000_1189"></a>A list of entries is known as an entry list. This is a
+linked list structure. These lists are used to build a
+monolith structure. This is known as a
+<code>monome_dict_entrylist</code>.
+</p>
+
+<h6>11.3.4.1. Entry List Struct</h6>
+
+<p><a id="wm_000_1191"></a><div><b><i>&lt;&lt;monolith_dict_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_dict_entrylist monolith_dict_entrylist;</pre></code>
+<div><b><i>&lt;&lt;monolith_dict_entrylist_struct&gt;&gt;=</i></b></div><pre><code>struct monolith_dict_entrylist {
+    monolith_dict_entry *head;
+    monolith_dict_entry *tail;
+    unsigned int size;
+};</pre></code>
+
+<h6>11.3.4.2. Entry List Initialization</h6>
+
+<p><a id="wm_000_1197"></a>An entry list is initialized with the function
+<code>monolith_dict_entrylist_init</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_dict_entrylist_init(monolith_dict_entrylist *e);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_dict_entrylist_init(monolith_dict_entrylist *e)
+{
+    e-&gt;head = NULL;
+    e-&gt;tail = NULL;
+    e-&gt;size = 0;
+}</pre></code>
+
+<h6>11.3.4.3. Entry List Cleanup</h6>
+
+<p><a id="wm_000_1203"></a>An entry list is freed with the function
+<code>monolith_dict_entrylist_free</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_dict_entrylist_free(monolith_dict_entrylist *el);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_dict_entrylist_free(monolith_dict_entrylist *el)
+{
+    unsigned int i;
+    monolith_dict_entry *ent;
+    monolith_dict_entry *nxt;
+    monolith_page *pg;
+
+    ent = el-&gt;head;
+
+    for(i = 0; i &lt; el-&gt;size; i++) {
+        nxt = ent-&gt;nxt;
+        if (ent-&gt;type == MONOLITH_ENTRY_PAGE) {
+            pg = ent-&gt;ud;
+            monolith_page_free(pg);
+            free(ent-&gt;ud);
+        } else if (ent-&gt;type == MONOLITH_ENTRY_IMAGE) {
+            monolith_gfx_img *img;
+            img = ent-&gt;ud;
+            monolith_gfx_img_free(&img);
+        } else if (ent-&gt;type == MONOLITH_ENTRY_FTBL) {
+            sp_ftbl *ft;
+            ft = ent-&gt;ud;
+            sp_ftbl_destroy(&ft);
+        }
+        free(ent-&gt;key);
+        free(ent);
+        ent = nxt;
+    }
+}</pre></code>
+
+<h6>11.3.4.4. Appending an Entry to an Entry-List</h6>
+
+<p><a id="wm_000_1209"></a>An entry can be appended to an entry-list with the function
+<code>monolith_dict_entrylist_append</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_dict_entrylist_append(monolith_dict_entrylist *el,
+                                    monolith_dict_entry *ent);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_dict_entrylist_append(monolith_dict_entrylist *el,
+                                    monolith_dict_entry *ent)
+{
+    if(el-&gt;size == 0) {
+        el-&gt;head = ent;
+    }
+    if(el-&gt;tail != NULL) {
+        el-&gt;tail-&gt;nxt = ent;
+    }
+    ent-&gt;prv = el-&gt;tail;
+    el-&gt;tail = ent;
+    el-&gt;size++;
+}</pre></code>
+
+<h5>11.3.5. Dictionary Struct Declaration and Initialization</h5>
+
+<p><a id="wm_000_1215"></a>A page dictionary is declared as the C struct <code>monolith_dict</code>.
+<div><b><i>&lt;&lt;monolith_dict_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_dict monolith_dict;</pre></code>
+<div><b><i>&lt;&lt;monolith_dict_struct&gt;&gt;=</i></b></div><pre><code>&lt;&lt;monolith_dict_entry_struct&gt;&gt;
+&lt;&lt;monolith_dict_entrylist_struct&gt;&gt;
+struct monolith_dict {
+&lt;&lt;monolith_dict_contents&gt;&gt;
+};</pre></code>
+<p>The monolith dictionary data is initialized with the
+function <code>monolith_dict_init</code>. This function <b>will</b>
+allocate memory, so it should only be called once before
+runtime.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_dict_init(monolith_d *m, monolith_dict *d);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_dict_init(monolith_d *m, monolith_dict *d)
+{
+    int i;
+&lt;&lt;monolith_dict_init&gt;&gt;
+}</pre></code>
+<p>All memory allocated by <code>monolith_dict_init</code> is freed with
+the function <code>monolith_dict_free</code>. This should be called
+once during cleanup.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_dict_cleanup(monolith_dict *d);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_dict_cleanup(monolith_dict *d)
+{
+    int i;
+&lt;&lt;monolith_dict_cleanup&gt;&gt;
+}</pre></code>
+
+<h5>11.3.6. Dictionary in Main Struct</h5>
+
+<p><a id="wm_000_1242"></a>A single instance of a dictionary is declared in the main
+struct.
+</p>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>monolith_dict dict;</pre></code>
+<p></p>
+<p>It can be accessed from the opaque pointer using the function
+<code>monolith_dict_get</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>monolith_dict * monolith_dict_get(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>monolith_dict * monolith_dict_get(monolith_d *m)
+{
+    return &m-&gt;dict;
+}</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>monolith_dict_init(m, &m-&gt;dict);</pre></code>
+<p></p>
+<p>It is allocated initialized in the top-level init function,
+and freed in the top level free function.
+</p>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>monolith_dict_cleanup(&m-&gt;dict);</pre></code>
+
+<h5>11.3.7. Dictionary Hash</h5>
+
+<p><a id="wm_000_1256"></a>The dictionary uses the static function <code>dict_hash</code> to hash
+a string, and figure out which entry list to place it in.
+</p>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>static unsigned int dict_hash(const char *str,
+                              unsigned int len,
+                              unsigned int nlists);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static unsigned int dict_hash(const char *str,
+                              unsigned int len,
+                              unsigned int nlists)
+{
+    unsigned long h;
+    unsigned int i;
+
+    h = 5381;
+    for(i = 0; i &lt; len; i++) {
+        h = ((h &lt;&lt; 5) + h) ^ str[i];
+        h %= 0x7FFFFFFF;
+    }
+
+    return h % nlists;
+}</pre></code>
+
+<h5>11.3.8. Dictionary Contents</h5>
+
+<p><a id="wm_000_1262"></a></p>
+
+<h6>11.3.8.1. Monolith Data Reference</h6>
+
+<p><a id="wm_000_1263"></a>A reference to the top-level monolith data is stored inside
+the dictionary.
+<div><b><i>&lt;&lt;monolith_dict_contents&gt;&gt;=</i></b></div><pre><code>monolith_d *m;</pre></code>
+<div><b><i>&lt;&lt;monolith_dict_init&gt;&gt;=</i></b></div><pre><code>d-&gt;m = m;</pre></code>
+
+<h6>11.3.8.2. Number of Types</h6>
+
+<p><a id="wm_000_1271"></a>The <code>ntypes</code> variable keeps track of how many page types
+there are.
+<div><b><i>&lt;&lt;monolith_dict_contents&gt;&gt;=</i></b></div><pre><code>unsigned int ntypes;</pre></code>
+<p>There are of course zero types to begin with because there
+are no pages.
+<div><b><i>&lt;&lt;monolith_dict_init&gt;&gt;=</i></b></div><pre><code>d-&gt;ntypes = 0;</pre></code>
+
+<h6>11.3.8.3. Number of Words</h6>
+
+<p><a id="wm_000_1278"></a>The total number of words in the dictionary is stored in a
+variable called <code>nwords</code>.
+<div><b><i>&lt;&lt;monolith_dict_contents&gt;&gt;=</i></b></div><pre><code>unsigned int nwords;</pre></code>
+<div><b><i>&lt;&lt;monolith_dict_init&gt;&gt;=</i></b></div><pre><code>d-&gt;nwords = 0;</pre></code>
+
+<h6>11.3.8.4. Entry Lists</h6>
+
+<p><a id="wm_000_1284"></a><div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_DICT_SIZE
+#define MONOLITH_DICT_SIZE 32
+#endif</pre></code>
+<div><b><i>&lt;&lt;monolith_dict_contents&gt;&gt;=</i></b></div><pre><code>monolith_dict_entrylist lists[MONOLITH_DICT_SIZE];</pre></code>
+<div><b><i>&lt;&lt;monolith_dict_init&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; MONOLITH_DICT_SIZE; i++) {
+    monolith_dict_entrylist_init(&d-&gt;lists[i]);
+}</pre></code>
+<div><b><i>&lt;&lt;monolith_dict_cleanup&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; MONOLITH_DICT_SIZE; i++) {
+    monolith_dict_entrylist_free(&d-&gt;lists[i]);
+}</pre></code>
+
+<h5>11.3.9. Type Handling</h5>
+
+<p><a id="wm_000_1294"></a>A new type is acquired with the function
+<code>monolith_dict_newtype</code>. This will return an integer
+containing a unique numeric ID.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>unsigned int monolith_dict_newtype(monolith_dict *d);</pre></code>
+<p>All this function does is increment the type counter and
+return that value. This is all the logic that is needed
+here. Pages themselves must figure out a way to keep track
+of their type ID and get assigned a type ID at runtime.
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>unsigned int monolith_dict_newtype(monolith_dict *d)
+{
+    d-&gt;ntypes++;
+    return d-&gt;ntypes;
+}</pre></code>
+
+<h5>11.3.10. (Page) Entry Creation</h5>
+
+<p><a id="wm_000_1301"></a>The function <code>monolith_dict_newpage</code> is
+used to create a page with a particular key. This page can
+then be passed into a particular page function to be
+created. The page will be stored in the page pointer
+provided. If the key already exists, an error will be
+returned. Every page will have an associated keyword
+associated with it, supplied by <code>name</code> and the corresponding
+key length (excluding NULL terminator) <code>len</code>.
+</p>
+<p>The function will return TRUE (1) on success and FALSE (0)
+on failure.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_dict_newpage(monolith_dict *d,
+                          monolith_page **ppg,
+                          const char *name,
+                          unsigned int len);</pre></code>
+<p></p>
+<p>A note that two memory allocations here: one for the entry
+itself, and another for key inside the entry.
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_dict_newpage(monolith_dict *d,
+                          monolith_page **ppg,
+                          const char *name,
+                          unsigned int len)
+{
+    monolith_dict_entry *ent;
+    unsigned int i;
+    unsigned int listpos;
+    monolith_dict_entrylist *el;
+    monolith_page *pg;
+
+    if(monolith_dict_lookup(d, NULL, name, len)) return 0;
+
+    ent = calloc(1, sizeof(monolith_dict_entry));
+    if(ent == NULL) return 0;
+    ent-&gt;key = calloc(1, len + 1);
+    ent-&gt;len = len;
+    ent-&gt;type = MONOLITH_ENTRY_PAGE;
+    for(i = 0; i &lt; len; i++) {
+        ent-&gt;key[i] = name[i];
+    }
+    pg = calloc(1, sizeof(monolith_page));
+    monolith_page_init(d-&gt;m, pg);
+    *ppg = pg;
+    ent-&gt;ud = pg;
+    ent-&gt;nxt = NULL;
+    ent-&gt;prv = NULL;
+    listpos = dict_hash(name, len, MONOLITH_DICT_SIZE);
+    el = &d-&gt;lists[listpos];
+    monolith_dict_entrylist_append(el, ent);
+    return 1;
+}</pre></code>
+
+<h5>11.3.11. Entry Creation</h5>
+
+<p><a id="wm_000_1308"></a>Like <code>monolith_dict_newpage</code>, only for generic entries.
+Eventually will be refactored into that function. For now,
+it is needed for creating an image entry.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_dict_newentry(monolith_dict *d,
+                           monolith_dict_entry **pent,
+                           const char *name,
+                           unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_dict_newentry(monolith_dict *d,
+                           monolith_dict_entry **pent,
+                           const char *name,
+                           unsigned int len)
+{
+    monolith_dict_entry *ent;
+    unsigned int i;
+    unsigned int listpos;
+    monolith_dict_entrylist *el;
+
+    if(monolith_dict_lookup(d, NULL, name, len)) {
+        *pent = NULL;
+        return MONOLITH_NOTOK;
+    }
+
+    ent = calloc(1, sizeof(monolith_dict_entry));
+    if(ent == NULL) return 0;
+    ent-&gt;key = calloc(1, len + 1);
+    ent-&gt;len = len;
+    ent-&gt;type = MONOLITH_ENTRY_NONE;
+
+    for(i = 0; i &lt; len; i++) {
+        ent-&gt;key[i] = name[i];
+    }
+
+    *pent = ent;
+    ent-&gt;nxt = NULL;
+    ent-&gt;prv = NULL;
+    listpos = dict_hash(name, len, MONOLITH_DICT_SIZE);
+    el = &d-&gt;lists[listpos];
+    monolith_dict_entrylist_append(el, ent);
+    return MONOLITH_OK;
+}</pre></code>
+
+<h5>11.3.12. TODO Erasing an Entry</h5>
+
+<p><a id="wm_000_1314"></a>The mechanics of removing a page are a ways away, but they
+will be implemented...
+</p>
+<p>Eventually, this function will remove an from the dictionary
+and free the page associated with it.
+</p>
+
+<h4>11.4. Page Struct Declaration</h4>
+
+<p><a id="wm_000_1316"></a>A monolith page is declared as type <code>monolith_page</code>.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_page monolith_page;
+&lt;&lt;monolith_dict_typedefs&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct monolith_page {
+&lt;&lt;monolith_page_contents&gt;&gt;
+};
+&lt;&lt;monolith_dict_struct&gt;&gt;</pre></code>
+<p></p>
+<p>The monolith page struct is initialized with the function
+<code>monolith_page_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_init(monolith_d *m, monolith_page *p);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_init(monolith_d *m, monolith_page *p)
+{
+&lt;&lt;monolith_page_init&gt;&gt;
+}</pre></code>
+
+<h4>11.5. User Data</h4>
+
+<p><a id="wm_000_1335"></a>All state information is handled inside of a void pointer.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>void *ud;</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;ud = NULL;</pre></code>
+<p></p>
+<p>Data can be set using the function <code>monolith_page_data_set</code>,
+and retrieved using <code>monolith_page_data_get</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void* monolith_page_data_get(monolith_page *pg);
+void monolith_page_data_set(monolith_page *pg, void *ud);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void* monolith_page_data_get(monolith_page *pg)
+{
+    return pg-&gt;ud;
+}
+
+void monolith_page_data_set(monolith_page *pg, void *ud)
+{
+    pg-&gt;ud = ud;
+}</pre></code>
+
+<h4>11.6. Monolith Top-level data</h4>
+
+<p><a id="wm_000_1348"></a>A copy of the monolith data is stored in page struct. While
+top-heavy, this is awfully convenient for now.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>monolith_d *m;</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;m = m;</pre></code>
+<p></p>
+<p>This can be retrieved using the function
+<code>monolith_page_monolith</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>monolith_d * monolith_page_monolith(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>monolith_d * monolith_page_monolith(monolith_page *pg)
+{
+    return pg-&gt;m;
+}</pre></code>
+
+<h4>11.7. Type Information</h4>
+
+<p><a id="wm_000_1359"></a>The page type is stored inside of an integer called type.
+Nodes requiring particular page types will use this flag to
+validate that yes indeed that page is being given.
+</p>
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>unsigned int type;</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;type = 0;</pre></code>
+<p></p>
+<p>This type variable can be set/get with the functions
+<code>monolith_page_type_set</code> and <code>monolith_page_type_get</code>,
+respectively.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_type_set(monolith_page *pg, unsigned int type);
+unsigned int monolith_page_type_get(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_type_set(monolith_page *pg, unsigned int type)
+{
+    pg-&gt;type = type;
+}
+unsigned int monolith_page_type_get(monolith_page *pg)
+{
+    return pg-&gt;type;
+}</pre></code>
+<p></p>
+<p>In previous things I've done, I've managed types using an
+enum. While convenient and easy, this makes things more
+centralized. I'd like to try
+to try a different approach this time around, that would
+make it so pages could be more "standalone".
+</p>
+
+<h4>11.8. Page Callbacks</h4>
+
+<p><a id="wm_000_1371"></a>A page is can be thought of as an interface made up of
+little callbacks which touch a various peripherals. By
+default, they are all set to be NULL. All parts of the
+program which call page callbacks must check for NULL first!
+</p>
+
+<h5>11.8.1. Page Open</h5>
+
+<p><a id="wm_000_1373"></a>This callback gets called anytime a page is opened. This is
+where you'd recall a monome state, for instance.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>void (*open)(monolith_page *);</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;open = NULL;</pre></code>
+<p></p>
+<p>The monolith open callback is set with the function <code>monolith_page_open_set</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_open_set(monolith_page *p, void (*open)(monolith_page *));</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_open_set(monolith_page *p, void (*open)(monolith_page *))
+{
+    p-&gt;open = open;
+}</pre></code>
+<p></p>
+<p>It is called with the function <code>monolith_page_open</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_open(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_open(monolith_page *pg)
+{
+    if(pg != NULL) {
+        if(pg-&gt;open != NULL) pg-&gt;open(pg);
+    }
+}</pre></code>
+
+<h5>11.8.2. Page Close</h5>
+
+<p><a id="wm_000_1389"></a>This callback gets called anytime a page is closed. Not sure
+what you'd be doing here, but it seems useful.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>void (*close)(monolith_page *);</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;close = NULL;</pre></code>
+<p></p>
+<p>The monolith close callback is set with the function <code>monolith_page_close_set</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_close_set(monolith_page *p, void (*close)(monolith_page *));</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_close_set(monolith_page *p, void (*close)(monolith_page *))
+{
+    p-&gt;close = close;
+}</pre></code>
+<p></p>
+<p>The is function can be called with the function <code>monolith_page_close</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_close(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_close(monolith_page *pg)
+{
+    if(pg != NULL) {
+        if(pg-&gt;close != NULL) pg-&gt;close(pg);
+    }
+}</pre></code>
+
+<h5>11.8.3. Page Monome key</h5>
+
+<p><a id="wm_000_1405"></a>Anytime a monome key gets pressed, this function is called.
+This function has arguments for the XY position, as well as
+state (x, y, s).
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>void (*press)(monolith_page *,int,int,int);</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;press = NULL;</pre></code>
+<p></p>
+<p>The page press callback is set with the function
+<code>monolith_page_press_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_press_set(monolith_page *p,
+                             void (*press)(monolith_page *,int,int,int));</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_press_set(monolith_page *p,
+                             void (*press)(monolith_page *,int,int,int))
+{
+    p-&gt;press = press;
+}</pre></code>
+<p></p>
+<p>It is called with the function <code>monolith_page_press</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_press(monolith_page *pg, int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_press(monolith_page *pg, int x, int y, int s)
+{
+    if(pg != NULL) {
+        if(pg-&gt;press != NULL) pg-&gt;press(pg, x, y, s);
+    }
+}</pre></code>
+
+<h5>11.8.4. Page Griffin Turn</h5>
+
+<p><a id="wm_000_1421"></a>Anytime the Griffin turns, this function is called. This
+function has an integer indicating the direction it is
+turning in.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>void (*turn)(monolith_page *,int);</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;turn = NULL;</pre></code>
+<p>The page turn callback is set with the function
+<code>monolith_page_turn_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_turn_set(monolith_page *p,
+                             void (*turn)(monolith_page *,int));</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_turn_set(monolith_page *p,
+                             void (*turn)(monolith_page *,int))
+{
+    p-&gt;turn = turn;
+}</pre></code>
+<p>It can be called with <code>monolith_page_turn</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_turn(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_turn(monolith_page *pg, int s)
+{
+    if(pg != NULL) {
+        if(pg-&gt;turn != NULL) pg-&gt;turn(pg, s);
+    }
+}</pre></code>
+
+<h5>11.8.5. Page Griffin Push</h5>
+
+<p><a id="wm_000_1437"></a>Anytime the Griffin gets pushed down, this function is
+called. This function has a single integer passed to it,
+indicating state.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>void (*push)(monolith_page *,int);</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;push = NULL;</pre></code>
+<p>The page push callback is set with the function
+<code>monolith_page_push_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_push_set(monolith_page *p,
+                             void (*push)(monolith_page *,int));</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_push_set(monolith_page *p,
+                             void (*push)(monolith_page *,int))
+{
+    p-&gt;push = push;
+}</pre></code>
+<p></p>
+<p>It can be called with the function <code>monolith_page_push</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_push(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_push(monolith_page *pg, int s)
+{
+    if(pg != NULL) {
+        if(pg-&gt;push != NULL) pg-&gt;push(pg, s);
+    }
+}</pre></code>
+
+<h5>11.8.6. Page Arc Delta</h5>
+
+<p><a id="wm_000_1453"></a>Any time an arc turns, the <code>delta</code> callback gets called.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>void (*delta)(monolith_page *,int,int);</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;delta = NULL;</pre></code>
+<p></p>
+<p>The page press callback is set with the function
+<code>monolith_page_press_set</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_delta_set(monolith_page *p,
+                             void (*delta)(monolith_page *,int,int));</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_delta_set(monolith_page *p,
+                             void (*delta)(monolith_page *,int,int))
+{
+    p-&gt;delta = delta;
+}</pre></code>
+<p></p>
+<p>It is called with the function <code>monolith_page_press</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_delta(monolith_page *pg, int n, int delta);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_delta(monolith_page *pg, int n, int delta)
+{
+    if(pg != NULL) {
+        if(pg-&gt;delta != NULL) pg-&gt;delta(pg, n, delta);
+    }
+}</pre></code>
+
+<h5>11.8.7. Page Free</h5>
+
+<p><a id="wm_000_1469"></a>When a page is freed, this function is called. Any user data
+allocated should be freed here.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>void (*free)(monolith_page *);</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;free = NULL;</pre></code>
+<p>The page free callback is set with the function <code>monolith_page_free_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_free_set(monolith_page *p,
+                             void (*free)(monolith_page *));</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_free_set(monolith_page *p,
+                             void (*free)(monolith_page *))
+{
+    p-&gt;free = free;
+}</pre></code>
+<p></p>
+<p>It is called with the function <code>monolith_page_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_free(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_free(monolith_page *pg)
+{
+    if(pg != NULL) {
+        if(pg-&gt;free != NULL) pg-&gt;free(pg);
+    }
+}</pre></code>
+
+<h5>11.8.8. Page State Callbacks</h5>
+
+<p><a id="wm_000_1485"></a>Page states can be loaded and saved from disk via using the
+state interface. More information can be found in the
+section <a href="State">State</a></p>
+</p>
+
+<h6>11.8.8.1. Page Save</h6>
+
+<p><a id="wm_000_1487"></a>Page state data is saved with the <code>save</code> callback. The
+callback, in addition to having the monolith page data, has
+a pointer to the monolith state parameter, as well as a
+unique keyword to write it to.
+</p>
+<div><b><i>&lt;&lt;callback_prototypes&gt;&gt;=</i></b></div><pre><code>typedef int (*monolith_statefun)(monolith_page *, monolith_state*, const char*, unsigned int);</pre></code>
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>monolith_statefun save;</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;save = NULL;</pre></code>
+<p></p>
+<p>The page save callback is set with the function
+<code>monolith_page_free_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_save_set(monolith_page *p, monolith_statefun save);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_save_set(monolith_page *p, monolith_statefun save)
+{
+    p-&gt;save = save;
+}</pre></code>
+<p></p>
+<p>It is called with the function <code>monolith_page_save</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_save(monolith_page *pg,
+                        monolith_state *ms,
+                        const char *key,
+                        unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_save(monolith_page *pg,
+                        monolith_state *ms,
+                        const char *key,
+                        unsigned int len)
+{
+    if(pg != NULL) {
+        if(pg-&gt;save != NULL) pg-&gt;save(pg, ms, key, len);
+    }
+}</pre></code>
+
+<h6>11.8.8.2. Page Load</h6>
+
+<p><a id="wm_000_1506"></a>Page state data is saved with the <code>load</code> callback.
+<div><b><i>&lt;&lt;monolith_page_contents&gt;&gt;=</i></b></div><pre><code>monolith_statefun load;</pre></code>
+<div><b><i>&lt;&lt;monolith_page_init&gt;&gt;=</i></b></div><pre><code>p-&gt;load = NULL;</pre></code>
+<p></p>
+<p>The page save callback is set with the function
+<code>monolith_page_free_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_load_set(monolith_page *p, monolith_statefun load);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_load_set(monolith_page *p, monolith_statefun load)
+{
+    p-&gt;load = load;
+}</pre></code>
+<p></p>
+<p>It is called with the function <code>monolith_page_save</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_load(monolith_page *pg,
+                        monolith_state *ms,
+                        const char *key,
+                        unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_load(monolith_page *pg,
+                        monolith_state *ms,
+                        const char *key,
+                        unsigned int len)
+{
+    if(pg != NULL) {
+        if(pg-&gt;load != NULL) pg-&gt;load(pg, ms, key, len);
+    }
+}</pre></code>
+
+<h4>11.9. Loading/Saving Page State</h4>
+
+<p><a id="wm_000_1522"></a></p>
+
+<h5>11.9.1. Saving Page Data</h5>
+
+<p><a id="wm_000_1523"></a></p>
+
+<h6>11.9.1.1. Saving Page Data in C</h6>
+
+<p><a id="wm_000_1524"></a>A page in scheme can be looked up and saved with the function
+<code>monolith_page_find_and_save</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_page_find_and_save(monolith_d *m,
+                                const char *pgname,
+                                unsigned int pglen,
+                                const char *key,
+                                unsigned int keylen);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_page_find_and_save(monolith_d *m,
+                                const char *pgname,
+                                unsigned int pglen,
+                                const char *key,
+                                unsigned int keylen)
+{
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+
+    dict = monolith_dict_get(m);
+    rc = monolith_dict_lookup(dict, &pg, pgname, pglen);
+    if(!rc) return 0;
+    monolith_page_save(pg, &m-&gt;state, key, keylen);
+    return 1;
+}</pre></code>
+
+<h6>11.9.1.2. DONE Saving Page Data in Scheme</h6>
+
+<p><a id="wm_000_1530"></a>CLOSED: [2019-01-19 Sat 16:49]
+Page data can be saved in scheme using the function
+<code>monolith:page-save</code>.
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:page-save", pp_page_save, 2, 2, {STR,STR,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_page_save(cell p) {
+    monolith_d *m;
+    const char *pgname;
+    unsigned int pglen;
+    const char *key;
+    unsigned int keylen;
+
+    pgname = string(car(p));
+    pglen = strlen(pgname);
+    p = cdr(p);
+    key = string(car(p));
+    keylen = strlen(key);
+    m = monolith_data_get();
+    if(m-&gt;state.db == NULL) {
+        return error("State not open. Could not save page.", car(p));
+    }
+    if(m != NULL) monolith_page_find_and_save(m, pgname, pglen, key, keylen);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h6>11.9.1.3. Saving Page Data in Janet</h6>
+
+<p><a id="wm_000_1536"></a>Done with <code>monolith/page-save</code>.
+<div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/page-save",
+j_page_save,
+"Saves a page.\n"
+},</pre></code>
+<div><b><i>&lt;&lt;janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_page_save(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    const char *pgname;
+    unsigned int pglen;
+    const char *key;
+    unsigned int keylen;
+
+    janet_fixarity(argc, 2);
+
+    pgname = (const char *)janet_getstring(argv, 0);
+    pglen = strlen(pgname);
+
+    key = (const char *)janet_getstring(argv, 1);
+    keylen = strlen(key);
+
+    m = monolith_data_get();
+
+    if (m-&gt;state.db == NULL) {
+        fprintf(stderr,
+                "State not open. Could not save page.");
+        return janet_wrap_nil();
+    }
+
+    if (m != NULL) {
+        monolith_page_find_and_save(m,
+                                    pgname, pglen,
+                                    key, keylen);
+    }
+
+    return janet_wrap_nil();
+}</pre></code>
+
+<h5>11.9.2. Loading Page Data</h5>
+
+<p><a id="wm_000_1542"></a></p>
+
+<h6>11.9.2.1. Loading Page Data in C</h6>
+
+<p><a id="wm_000_1543"></a>A page in scheme can be looked up and loaded with the
+function <code>monolith_page_find_and_load</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_page_find_and_load(monolith_d *m,
+                                const char *pgname,
+                                unsigned int pglen,
+                                const char *key,
+                                unsigned int keylen);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_page_find_and_load(monolith_d *m,
+                                const char *pgname,
+                                unsigned int pglen,
+                                const char *key,
+                                unsigned int keylen)
+{
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+
+    dict = monolith_dict_get(m);
+    rc = monolith_dict_lookup(dict, &pg, pgname, pglen);
+    if(!rc) return 0;
+    monolith_page_load(pg, &m-&gt;state, key, keylen);
+    return 1;
+}</pre></code>
+
+<h6>11.9.2.2. Loading Page Data in Scheme</h6>
+
+<p><a id="wm_000_1549"></a>Page data can be saved in scheme using the function
+<code>monolith:page-save</code>.
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:page-load", pp_page_load, 2, 2, {STR,STR,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_page_load(cell p) {
+    monolith_d *m;
+    const char *pgname;
+    unsigned int pglen;
+    const char *key;
+    unsigned int keylen;
+
+    pgname = string(car(p));
+    pglen = strlen(pgname);
+    p = cdr(p);
+    key = string(car(p));
+    keylen = strlen(key);
+    m = monolith_data_get();
+    if(m-&gt;state.db == NULL) {
+        return error("State not open. Could not save page.", car(p));
+    }
+    if(m != NULL) monolith_page_find_and_load(m, pgname, pglen, key, keylen);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h6>11.9.2.3. Loading Page Data in Janet</h6>
+
+<p><a id="wm_000_1555"></a>AKA <code>monolith/page-load</code>.
+<div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/page-load",
+j_page_load,
+"Loads a page.\n"
+},</pre></code>
+<div><b><i>&lt;&lt;janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_page_load(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    const char *pgname;
+    unsigned int pglen;
+    const char *key;
+    unsigned int keylen;
+
+    janet_fixarity(argc, 2);
+
+    pgname = (const char *)janet_getstring(argv, 0);
+    pglen = strlen(pgname);
+
+    key = (const char *)janet_getstring(argv, 1);
+    keylen = strlen(key);
+
+    m = monolith_data_get();
+
+
+    if (m-&gt;state.db == NULL) {
+        fprintf(stderr, "State not open. Could not save page.");
+        return janet_wrap_nil();
+    }
+
+    if (m != NULL) {
+        monolith_page_find_and_load(m,
+                                    pgname, pglen,
+                                    key, keylen);
+    }
+    return janet_wrap_nil();
+}</pre></code>
+
+<h4>11.10. Page Pin</h4>
+
+<p><a id="wm_000_1561"></a>An integer counter keeps track of how many processes are
+accessing the page at a given point. When a page is
+non-zero, it is said to be "pinned" down. When a page is
+pinned down, it is cannot be destroyed.
+</p>
+<p>When something intends to use a particular page, it must be
+pin it down. When this happens, the counter is incremented
+by one.
+</p>
+<p>When a page is done using a page, it will "unpin" the page.
+When this happens, the counter goes down by one.
+</p>
+<p>A page can be checked if it is pinned down or checking if
+the counter is non-zero.
+</p>
+
+<h4>11.11. Monome Page State</h4>
+
+<p><a id="wm_000_1563"></a>Most pages will want to utilize the monome. This small
+interface provides a layer to access monome interfaces while
+also providing the ability to save/recall grid states.
+</p>
+
+<h5>11.11.1. Monome Page State Data</h5>
+
+<p><a id="wm_000_1565"></a></p>
+
+<h6>11.11.1.1. Struct Declarations</h6>
+
+<p><a id="wm_000_1566"></a>Monome page state data is defined in a struct called
+<code>monolith_page_mstate</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_page_mstate monolith_page_mstate;</pre></code>
+<p></p>
+<p>Internally, there isn't a great deal of monome page state
+data needed. All that is really required is a pointer to the
+monome virtual interface, and an array of bytes, whose bits
+store the grid data. The monome grid that I am using is a
+16x8 grid, which means that 128 bits are needed. This yields
+16 bytes (look at those dimmensions and it makes sense).
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct monolith_page_mstate {
+    monolith_monome_d *vmonome;
+    unsigned char data[16];
+    monolith_page *pg;
+};</pre></code>
+
+<h6>11.11.1.2. Struct Initialization</h6>
+
+<p><a id="wm_000_1573"></a>The monolith page data is initialized with the function
+<code>monolith_page_mstate_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_init(monolith_page *p, monolith_page_mstate *ms);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_init(monolith_page *p, monolith_page_mstate *ms)
+{
+    int i;
+    ms-&gt;vmonome = &p-&gt;m-&gt;vmonome;
+    for(i = 0; i &lt; 16; i++) ms-&gt;data[i] = 0;
+    ms-&gt;pg = p;
+}</pre></code>
+
+<h6>11.11.1.3. Struct Creation/Destruction</h6>
+
+<p><a id="wm_000_1579"></a>These are opaque structs which must be manually allocated
+and freed by the page. This is done with the functions
+<code>monolith_page_mstate_new</code> and <code>monolith_page_mstate_free</code>,
+respectively.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_page_mstate_new(monolith_page *pg, monolith_page_mstate **ms);
+int monolith_page_mstate_free(monolith_page_mstate **ms);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_page_mstate_new(monolith_page *pg, monolith_page_mstate **ms)
+{
+    monolith_page_mstate *pms;
+
+    pms = calloc(1, sizeof(monolith_page_mstate));
+
+    if(pms == NULL) return 0;
+
+    monolith_page_mstate_init(pg, pms);
+    *ms = pms;
+    return 1;
+}
+
+int monolith_page_mstate_free(monolith_page_mstate **ms)
+{
+    free(*ms);
+    return 1;
+}</pre></code>
+
+<h6>11.11.1.4. State Data Getter</h6>
+
+<p><a id="wm_000_1585"></a>The state data can be aqcuired as an unsigned short array
+with the function. <code>monolith_page_mstate_data_get</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>unsigned short * monolith_page_mstate_data_get(monolith_page_mstate *ms);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>unsigned short * monolith_page_mstate_data_get(monolith_page_mstate *ms)
+{
+    return (unsigned short *)ms-&gt;data;
+}</pre></code>
+
+<h5>11.11.2. Monome Interface Wrapper</h5>
+
+<p><a id="wm_000_1591"></a>The following functions are used as wrappers around the
+virtual monome interface. In addition to sending messages
+to the virtual monome interface, it will also write the
+changes inside of the supplied bits.
+</p>
+
+<h6>11.11.2.1. Wrapper for led_set</h6>
+
+<p><a id="wm_000_1593"></a>A single LED can be set using the function
+<code>monolith_page_mstate_led_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_led_set(monolith_page_mstate *ms,
+                                  int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_led_set(monolith_page_mstate *ms,
+                                  int x, int y, int s)
+{
+    unsigned short *g;
+    g = (unsigned short *)ms-&gt;data;
+    if(s) {
+        g[y] |= 1 &lt;&lt; x;
+    } else {
+        g[y] &= ~(1 &lt;&lt; x);
+    }
+    if(monolith_page_mstate_selected(ms)) {
+        monolith_monome_led_set(ms-&gt;vmonome, x, y, s);
+    }
+}</pre></code>
+
+<h6>11.11.2.2. Wrapper led_row</h6>
+
+<p><a id="wm_000_1599"></a>To be honest, I'm not exactly sure how <code>led_row</code> fully
+works, and I haven't bothered to really figure it out.
+For now, the X axis is split up into bytes. If the X is 255,
+it is the upper bytes, otherwise the lower bytes. This is
+how it seems to work with the monome interface, and I'm just
+going to live with it for now.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_led_row(monolith_page_mstate *ms,
+                                  int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_led_row(monolith_page_mstate *ms,
+                                  int x, int y, int s)
+{
+    unsigned short *g;
+    g = (unsigned short *)ms-&gt;data;
+    if(x == 0xff) {
+        g[y] &= 0xff; /* keep lower bits, zero out upper bits */
+        g[y] |= (s &lt;&lt; 8);
+    } else {
+        /* set lower bits without disrupting upper bits*/
+        g[y] = (s & 0xff) | (g[y] & 0xff00);
+    }
+    if(monolith_page_mstate_selected(ms)) {
+        monolith_monome_led_row(ms-&gt;vmonome, x, y, s);
+    }
+}</pre></code>
+
+<h6>11.11.2.3. Wrapper led_row16</h6>
+
+<p><a id="wm_000_1605"></a>This wraps the row16 function... instead of needing to split
+up a row into two 8-bit bytes, it stores it all in a short.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_led_row16(monolith_page_mstate *ms,
+                                    int row,
+                                    unsigned short s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_led_row16(monolith_page_mstate *ms,
+                                    int row,
+                                    unsigned short s)
+{
+    unsigned short *g;
+    g = (unsigned short *)ms-&gt;data;
+    g[row] = s;
+    if(monolith_page_mstate_selected(ms)) {
+        monolith_monome_led_row16(ms-&gt;vmonome, row, s);
+    }
+}</pre></code>
+
+<h6>11.11.2.4. Wrapper led_col</h6>
+
+<p><a id="wm_000_1611"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_led_col(monolith_page_mstate *ms,
+                                  int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_led_col(monolith_page_mstate *ms,
+                                  int x, int y, int s)
+{
+    unsigned short *g;
+    unsigned short tmp;
+    int c;
+    unsigned char bit;
+
+    g = (unsigned short *)ms-&gt;data;
+
+    for (c = 0; c &lt; 8; c++) {
+        tmp = g[c];
+        bit = (s & (1 &lt;&lt; c)) != 0;
+        if (bit) tmp |= 1 &lt;&lt; x;
+        else tmp &= ~(1 &lt;&lt; x);
+        g[c] = tmp;
+    }
+
+    if(monolith_page_mstate_selected(ms)) {
+        monolith_monome_led_col(ms-&gt;vmonome,
+                                x, y,
+                                s);
+    }
+}</pre></code>
+
+<h5>11.11.3. Monome Page State Recall</h5>
+
+<p><a id="wm_000_1616"></a>The for the monome is recalled with the function
+<code>monolith_page_mstate_recall</code>. This will apply the state
+stored to the monome. This function is expected to be called
+anytime the page is opened or re-opened.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_recall(monolith_page_mstate *ms);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_recall(monolith_page_mstate *ms)
+{
+    int y;
+    int x;
+    int c;
+    unsigned char *g;
+    g = ms-&gt;data;
+    c = 0;
+    for(y = 0; y &lt; 8; y++) {
+        for(x = 0; x &lt; 2; x++) {
+            if(x == 0) {
+                monolith_monome_led_row(ms-&gt;vmonome, 0, y, g[c]);
+            } else {
+                monolith_monome_led_row(ms-&gt;vmonome, 255, y, g[c]);
+            }
+            c++;
+        }
+    }
+}</pre></code>
+
+<h5>11.11.4. Setting/Getting XY value state</h5>
+
+<p><a id="wm_000_1622"></a>The state of a particular position can be read and written
+to with the function <code>monolith_page_mstate_get</code> and
+<code>monolith_page_mstate_set</code>, respectively.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_page_mstate_get(monolith_page_mstate *ms, int x, int y);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_page_mstate_get(monolith_page_mstate *ms, int x, int y)
+{
+    unsigned short *g;
+    g = (unsigned short *)ms-&gt;data;
+    return (g[y] & (1 &lt;&lt; x)) != 0;
+}</pre></code>
+<p></p>
+<p><code>monolith_page_mstate_set</code> is just a wrapper around the
+function <code>monolith_page_mstate_led_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_set(monolith_page_mstate *ms, int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_mstate_set(monolith_page_mstate *ms, int x, int y, int s)
+{
+    monolith_page_mstate_led_set(ms, x, y, s);
+}</pre></code>
+
+<h5>11.11.5. Checking if Monome State is actively selected</h5>
+
+<p><a id="wm_000_1633"></a>The monome state has the ability to indirectly access the
+monome LED panel. This allows pages to simultaneously
+manipulate the actual LEDs while storing the grid state for
+recall later. If the page that the monome is is attached to
+is not currentely active, it shouldn't be able to turn on
+LED lights.
+</p>
+<p>To check of the monome state is actively selected, the
+function <code>monolith_page_mstate_selected</code>. This will compare
+the pointer address of the page (stored internally) with the
+currently selected monolith page via the function
+<code>monolith_page_selected</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_page_mstate_selected(monolith_page_mstate *ms);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_page_mstate_selected(monolith_page_mstate *ms)
+{
+    return monolith_page_selected(ms-&gt;pg);
+}</pre></code>
+
+<h4>11.12. DONE Arc Page State</h4>
+
+<p><a id="wm_000_1639"></a>CLOSED: [2019-08-07 Wed 11:18]
+If variable brightness is not needed, Arc LED state can be
+manipulated using the <code>monolith_page_arcstate</code> struct.
+This will store the LED encoder states for each of the four
+encoders in a memory efficient way.
+</p>
+
+<h5>11.12.1. Arc Page State Data</h5>
+
+<p><a id="wm_000_1641"></a></p>
+
+<h6>11.12.1.1. Struct Declarations</h6>
+
+<p><a id="wm_000_1642"></a>Arc page state data is defined in a struct called
+<code>monolith_page_arcstate</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_page_arcstate monolith_page_arcstate;</pre></code>
+<p></p>
+<p>Because vari-brightness is discarded, each encoder can be
+stored in 8 bytes of data instead of 64 bytes of data.
+Each encoder state is stored inside of a local struct called
+<code>arc_encoder_state</code>.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    unsigned char state[8];
+} arc_encoder_state;
+
+struct monolith_page_arcstate {
+    monolith_arc_d *varc;
+    arc_encoder_state encoder[4];
+    monolith_page *pg;
+};</pre></code>
+
+<h6>11.12.1.2. Struct Initialization</h6>
+
+<p><a id="wm_000_1649"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_arcstate_init(monolith_page *p, monolith_page_arcstate *as);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_arcstate_init(monolith_page *p, monolith_page_arcstate *as)
+{
+    int i;
+    as-&gt;varc = &p-&gt;m-&gt;varc;
+    for(i = 0; i &lt; 4; i++) arc_encoder_state_init(&as-&gt;encoder[i]);
+    as-&gt;pg = p;
+}</pre></code>
+<p></p>
+<p>Arc encoders are each initialized using
+<code>arc_encoder_state_init</code>, a static function.
+</p>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void arc_encoder_state_init(arc_encoder_state *enc);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void arc_encoder_state_init(arc_encoder_state *enc)
+{
+    int i;
+    for(i = 0; i &lt; 8; i++) enc-&gt;state[i] = 0;
+}</pre></code>
+
+<h6>11.12.1.3. Struct Creation/Destruction</h6>
+
+<p><a id="wm_000_1659"></a>These are opaque structs which must be manually allocated
+and freed by the page. This is done with the functions
+<code>monolith_page_arcstate_new</code> and
+<code>monolith_page_arcstate_free</code>, respectively.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_page_arcstate_new(monolith_page *pg, monolith_page_arcstate **as);
+int monolith_page_arcstate_free(monolith_page_arcstate **as);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_page_arcstate_new(monolith_page *pg, monolith_page_arcstate **as)
+{
+    monolith_page_arcstate *pas;
+
+    pas = calloc(1, sizeof(monolith_page_arcstate));
+
+    if(pas == NULL) return 0;
+
+    monolith_page_arcstate_init(pg, pas);
+    *as = pas;
+    return 1;
+}
+
+int monolith_page_arcstate_free(monolith_page_arcstate **as)
+{
+    free(*as);
+    return 1;
+}</pre></code>
+
+<h6>11.12.1.4. State Data Getter/Setter</h6>
+
+<p><a id="wm_000_1665"></a>Data for each encoder can be retrieved using the function
+<code>monolith_page_arcstate_get</code>. The encoder number must be
+supplied. If the number is out of range, null will be
+returned.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>unsigned char * monolith_page_arcstate_data_get(monolith_page_arcstate *as,
+                                                int n);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>unsigned char * monolith_page_arcstate_data_get(monolith_page_arcstate *as,
+                                                int n)
+{
+    if(n &lt; 0 || n &gt; 3) return NULL;
+    return as-&gt;encoder[n].state;
+}</pre></code>
+<p></p>
+<p>Data can be set using the function
+<code>monolith_page_arcstate_data_set</code>. This function expects
+an <code>unsigned char</code> array of size 8. This is to be copied
+over to the internal arcstate data.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_arcstate_data_set(monolith_page_arcstate *as,
+                                     int n,
+                                     unsigned char *data);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_arcstate_data_set(monolith_page_arcstate *as,
+                                     int n,
+                                     unsigned char *data)
+{
+    unsigned char *state;
+    int i;
+    if(n &lt; 0 || n &gt; 3) return;
+    state = monolith_page_arcstate_data_get(as, n);
+
+    for(i = 0; i &lt; 8; i++) {
+        state[i] = data[i];
+    }
+}</pre></code>
+
+<h5>11.12.2. Arc Interface Wrapper</h5>
+
+<p><a id="wm_000_1676"></a></p>
+
+<h6>11.12.2.1. Wrapper for Map</h6>
+
+<p><a id="wm_000_1677"></a>The function <code>monolith_page_arcstate_map</code> will take in a
+bitmap size 64 (an array of 8 8-bit unsigned ints), and then
+set it to a knob <code>n</code>.
+</p>
+<p>This function will also take the time to copy the mapped
+data into the internal state.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_arcstate_map(monolith_page_arcstate *as,
+                               int n, unsigned char *map);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void map2arc(unsigned char *map, unsigned char *out)
+{
+    int i;
+    unsigned char byte;
+    int bytepos;
+    for(i = 0; i &lt; 64; i++) {
+        byte = map[i / 8];
+        bytepos = i % 8;
+        if(byte & 1 &lt;&lt; bytepos) {
+            out[i] = 15;
+        } else {
+            out[i] = 0;
+        }
+    }
+}
+
+void monolith_page_arcstate_map(monolith_page_arcstate *as,
+                               int n, unsigned char *map)
+{
+    unsigned char out[64];
+
+    map2arc(map, out);
+
+    monolith_page_arcstate_data_set(as, n, map);
+
+    if(monolith_page_arcstate_selected(as)) {
+        monolith_arc_map(as-&gt;varc, n, out);
+    }
+}</pre></code>
+
+<h5>11.12.3. Checking if Arc is actively selected</h5>
+
+<p><a id="wm_000_1683"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_page_arcstate_selected(monolith_page_arcstate *as);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_page_arcstate_selected(monolith_page_arcstate *as)
+{
+    return monolith_page_selected(as-&gt;pg);
+}</pre></code>
+
+<h5>11.12.4. Arc State Recall</h5>
+
+<p><a id="wm_000_1688"></a>Recalls arc based on internal state.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_page_arcstate_recall(monolith_page_arcstate *as);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_page_arcstate_recall(monolith_page_arcstate *as)
+{
+    unsigned char out[64];
+    unsigned char *state;
+    int k;
+    for(k = 0; k &lt; 4; k++) {
+        state = monolith_page_arcstate_data_get(as, k);
+        map2arc(state, out);
+        monolith_arc_map(as-&gt;varc, k, out);
+    }
+}</pre></code>
+
+<h5>11.12.5. Map value to Arc</h5>
+
+<p><a id="wm_000_1694"></a>A common operation is to take a normalized floating point
+value and display it on one of the arcs. This does just
+that with <code>monolith_arcstate_mapval</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_arcstate_mapval(monolith_page_arcstate *as,
+                              int pos,
+                              PWFLT val);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_arcstate_mapval(monolith_page_arcstate *as,
+                              int pos,
+                              PWFLT val)
+{
+    uint32_t ring[2];
+    int ringsize;
+
+    if (val &lt; 0) val = 0;
+    else if (val &gt; 1) val = 1;
+
+    ringsize = round(val * 63); /* N - 1 */
+
+    /* this is done so that 0.5 maps to exactly half */
+    if (val != 0) ringsize++;
+
+    if(ringsize == 0) {
+        ring[0] = 0;
+        ring[1] = 0;
+    } else if(ringsize == 1) {
+        ring[0] = 1;
+        ring[1] = 0;
+    } else if(ringsize &lt; 32) {
+        ring[0] = (1 &lt;&lt; ringsize) - 1;
+        ring[1] = 0;
+    } else {
+        ring[0] = 0xffffffff;
+        ringsize -= 32;
+        if(ringsize == 1) {
+            ring[1] = 1;
+        } else if(ringsize == 32) {
+            ring[1] = 0xffffffff;
+        } else {
+            ring[1] = (1 &lt;&lt; ringsize) - 1;
+        }
+    }
+    monolith_page_arcstate_map(as,
+                               pos,
+                               (unsigned char *)ring);
+
+}</pre></code>
+
+<h4>11.13. Page Lookup from Runt</h4>
+
+<p><a id="wm_000_1700"></a>The task of looking for a particular page in the monolith
+dictionary is a common task. The process can be automated
+with the function <code>runt_monolith_lookup_page</code>. This function
+handles the dictionary lookup, type checking, and error
+messages.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int runt_monolith_lookup_page(runt_vm *vm,
+                              monolith_d *m,
+                              const char *name,
+                              const char *page,
+                              int (*is_type)(monolith_page *),
+                              monolith_page **pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int runt_monolith_lookup_page(runt_vm *vm,
+                              monolith_d *m,
+                              const char *name,
+                              const char *page,
+                              int (*is_type)(monolith_page *),
+                              monolith_page **pg)
+{
+    int rc;
+    rc = monolith_lookup_page(m, pg, name, strlen(name));
+    if(!rc) {
+        runt_print(vm, "Could not find page '%s'\n", name);
+        return RUNT_NOT_OK;
+    }
+    if(!is_type(*pg)) {
+        runt_print(vm, "Page '%s' is not a %s page\n", name, page);
+        return RUNT_NOT_OK;
+    }
+    return RUNT_OK;
+}</pre></code>
+
+<h4>11.14. Retrieve Patchwerk from Page</h4>
+
+<p><a id="wm_000_1706"></a>This is a function which allows one to directly retrieve
+the <code>pw_patch</code> instance from a page.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>pw_patch * monolith_page_patchwerk(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>pw_patch * monolith_page_patchwerk(monolith_page *pg)
+{
+    monolith_d *m;
+
+    m = monolith_page_monolith(pg);
+
+    return m-&gt;patch;
+}</pre></code>
+
+<h4>11.15. Print Page List</h4>
+
+<p><a id="wm_000_1712"></a></p>
+
+<h5>11.15.1. DONE Page List Creation</h5>
+
+<p><a id="wm_000_1713"></a>CLOSED: [2019-10-12 Sat 13:48]
+It is sometimes ideal to be able to get a list of all the
+pages. This is done in monolith by allocating a list of
+page entries that are pages. This is created with the
+function <code>monolith_pagelist_create</code>, which will allocate
+and return a pointer list of <code>monolith_dict_entry</code> types,
+and the number of elements.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_pagelist_create(monolith_d *m,
+                              monolith_dict_entry ***pages,
+                              int *npages);</pre></code>
+<p></p>
+<p>The list created must be freed manually with
+<code>monolith_pagelist_destroy</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_pagelist_destroy(monolith_dict_entry ***pages);</pre></code>
+<p></p>
+<p><code>monolith_pagelist_create</code> works by querying the dictionary
+twice. The first time is to get the number of pages. The
+second time is to store the pages.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_pagelist_create(monolith_d *m,
+                              monolith_dict_entry ***pages,
+                              int *npages)
+{
+    int np, pos;
+    monolith_dict_entry **pgs;
+    monolith_dict_entrylist *el;
+    monolith_dict_entry *ent;
+    monolith_dict *d;
+    unsigned int i, lst;
+
+    np = 0;
+    d = &m-&gt;dict;
+
+    for (lst=0; lst &lt; MONOLITH_DICT_SIZE; lst++) {
+        el = &d-&gt;lists[lst];
+        ent = el-&gt;head;
+        for (i = 0; i &lt; el-&gt;size; i++) {
+            if (ent-&gt;type == MONOLITH_ENTRY_PAGE) np++;
+            ent = ent-&gt;nxt;
+        }
+    }
+
+    pgs = calloc(1, sizeof(monolith_dict_entry *) * np);
+
+    pos = 0;
+
+    for (lst=0; lst &lt; MONOLITH_DICT_SIZE; lst++) {
+        el = &d-&gt;lists[lst];
+        ent = el-&gt;head;
+        for (i = 0; i &lt; el-&gt;size; i++) {
+            if (ent-&gt;type == MONOLITH_ENTRY_PAGE) {
+                pgs[pos] = ent;
+                pos++;
+            }
+            ent = ent-&gt;nxt;
+        }
+    }
+    *npages = np;
+
+    *pages = pgs;
+}</pre></code>
+<p></p>
+<p><code>monolith_pagelist_destroy</code> frees the pagelist using <code>free</code>.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_pagelist_destroy(monolith_dict_entry ***pages)
+{
+    free(*pages);
+    pages = NULL;
+}</pre></code>
+
+<h5>11.15.2. Sorting the page list</h5>
+
+<p><a id="wm_000_1726"></a>Done via <code>qsort</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_pagelist_sort(monolith_dict_entry **pages,
+                            int npages);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int cmpstring(const void *p1, const void *p2)
+{
+    monolith_dict_entry *ent[2];
+
+    ent[0] = *(monolith_dict_entry **)p1;
+    ent[1] = *(monolith_dict_entry **)p2;
+    return strcmp(ent[0]-&gt;key, ent[1]-&gt;key);
+}
+
+void monolith_pagelist_sort(monolith_dict_entry **pages,
+                            int npages)
+{
+    qsort(pages,
+          npages,
+          sizeof(monolith_dict_entry *),
+          cmpstring);
+}</pre></code>
+
+<h5>11.15.3. in C</h5>
+
+<p><a id="wm_000_1732"></a>The function <code>monolith_print_pages</code> will print all pages to
+a filehandle <code>fp</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_print_pages(monolith_d *m, FILE *fp);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_print_pages(monolith_d *m, FILE *fp)
+{
+    monolith_dict_entry **pgs;
+    int size;
+    int n;
+
+    pgs = NULL;
+    size = 0;
+    monolith_pagelist_create(m, &pgs, &size);
+    monolith_pagelist_sort(pgs, size);
+
+    for (n = 0; n &lt; size; n++) {
+        fprintf(fp, "%s\n", pgs[n]-&gt;key);
+    }
+
+    monolith_pagelist_destroy(&pgs);
+}</pre></code>
+
+<h5>11.15.4. in Scheme</h5>
+
+<p><a id="wm_000_1738"></a><div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:print-pages", pp_print_pages, 0, 0, {___,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_print_pages(cell x)
+{
+    monolith_d *m;
+    m = monolith_data_get();
+    monolith_print_pages(m, stdout);
+    return UNSPECIFIC;
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>26. Runt-img integration</h3>
+
+<p><a id="wm_000_3174"></a>The runt-img library is a little pixel art graphics library I wrote in runt
+a few years ago. The hope here is to make it possible for the runt-img library
+to write directly to the framebuffer.
+</p>
+
+<h4>26.1. Runt-img draw callback</h4>
+
+<p><a id="wm_000_3176"></a>The runt-img library is driven by a low level draw callback, which is used
+to draw a single pixel at a particular XY location. Instead of
+writing to the default buffer, it will write to the graphics framebuffer.
+</p>
+<p>The pointer callback has no user data, so global variables must be accessed
+inside of it. It must know about:
+</p>
+<p>- The graphics buffer, stored inside of the monolith global data struct
+- The current color set by runt-img
+</p>
+<p>The monolith struct is retrieved with <code>monolith_data_get</code>.
+</p>
+<p>The current runt image color (RGBA) can be found with
+<code>img_get_current_color</code>.
+</p>
+<div><b><i>&lt;&lt;gfx_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void gfx_point(unsigned int x, unsigned int y);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>static void gfx_point(unsigned int x, unsigned int y)
+{
+    monolith_d *m;
+    unsigned char *rgba;
+    monolith_framebuffer *fb;
+
+    m = monolith_data_get();
+    rgba = img_get_current_color();
+
+    if(m == NULL) return;
+    if(rgba == NULL) return;
+    fb = monolith_fb_get(m);
+
+    if(fb != NULL) {
+        monolith_gfx_pixel_set(fb, x, y,
+                               monolith_pixel_make(rgba[0],
+                                                   rgba[1],
+                                                   rgba[2],
+                                                   rgba[3]));
+    }
+}</pre></code>
+
+<h4>26.2. Setting the point callback (monolith:gfx-runt-img)</h4>
+
+<p><a id="wm_000_3183"></a>Runt-img must be explicitely bound using the scheme function
+<code>monolith:gfx-runt-img</code>. This can only be done in scheme, because the graphics
+stack is built to only work when the scheme system is fully initialized.
+</p>
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:gfx-runt-img", pp_runt_img, 0, 0, {___,___,___}},</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_runt_img(cell p)
+{
+    img_set_point_function(gfx_point);
+    img_setsize(MAXWIDTH, MAXHEIGHT);
+    return UNSPECIFIC;
+}</pre></code>
+</div>
+</body>
+</html>

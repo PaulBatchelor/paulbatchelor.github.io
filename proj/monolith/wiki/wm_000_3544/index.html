@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>32. HSLuv colorspace</h3>
+
+<p><a id="wm_000_3544"></a>HSLuv is a developer-friendly colorspace. I read a
+<a href="https://www.kuon.ch/post/2020-03-08-hsluv/">Blog Post</a></p>
+<p>about it and knew I had to have it. Luckily, a C
+implementation exists with a permissive license, and
+I was able to easily drop it into this codebase.
+</p>
+<p>The HSLuv colorspace converters (will) exist as 2
+janet functions: <code>monolith/rgb2hsluv</code> and
+<code>monolith/hsluv2rgb</code>.
+</p>
+<p>Both will return values as arrays.
+</p>
+<p>RGB values are expected to be in range 0-1.
+</p>
+<p>HSL values expect the following ranges:
+</p>
+<p>H (Hue) is between 0 and 360.
+</p>
+<p>S (Saturation) is between 0 and 100.
+</p>
+<p>l (Lightness) is between 0 and 100.
+</p>
+<div><b><i>&lt;&lt;gfx_aux_includes&gt;&gt;=</i></b></div><pre><code>#include "hsluv/hsluv.h"</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{"monolith/rgb2hsluv", j_rgb2hsluv, NULL},
+{"monolith/hsluv2rgb", j_hsluv2rgb, NULL},</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_hsluv2rgb(int32_t argc, Janet *argv)
+{
+    double r, g, b;
+    double h, s, l;
+    JanetArray *a;
+
+    janet_fixarity(argc, 3);
+
+    h = janet_unwrap_number(argv[0]);
+    s = janet_unwrap_number(argv[1]);
+    l = janet_unwrap_number(argv[2]);
+
+    a = janet_array(3);
+
+    r = 0;
+    g = 0;
+    b = 0;
+
+    hsluv2rgb(h, s, l, &r, &g, &b);
+
+    janet_array_push(a, janet_wrap_number(r));
+    janet_array_push(a, janet_wrap_number(g));
+    janet_array_push(a, janet_wrap_number(b));
+
+    return janet_wrap_array(a);
+}
+
+static Janet j_rgb2hsluv(int32_t argc, Janet *argv)
+{
+    double r, g, b;
+    double h, s, l;
+    JanetArray *a;
+
+    janet_fixarity(argc, 3);
+
+    r = janet_unwrap_number(argv[0]);
+    g = janet_unwrap_number(argv[1]);
+    b = janet_unwrap_number(argv[2]);
+
+    a = janet_array(3);
+
+    h = 0;
+    s = 0;
+    l = 0;
+
+    rgb2hsluv(r, g, b, &h, &s, &l);
+
+    janet_array_push(a, janet_wrap_number(h));
+    janet_array_push(a, janet_wrap_number(s));
+    janet_array_push(a, janet_wrap_number(l));
+
+    return janet_wrap_array(a);
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>22. The Graphics Framebuffer</h3>
+
+<p><a id="wm_000_2900"></a></p>
+
+<h4>22.1. GFX Framebuffer Top-Level</h4>
+
+<p><a id="wm_000_2901"></a></p>
+
+<h5>22.1.1. GFX Framebuffer Struct Declaration</h5>
+
+<p><a id="wm_000_2902"></a><div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>monolith_framebuffer *fb;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;fb = NULL;</pre></code>
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>monolith_framebuffer *monolith_fb_get(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>monolith_framebuffer *monolith_fb_get(monolith_d *m)
+{
+    return m-&gt;fb;
+}</pre></code>
+
+<h5>22.1.2. GFX Framebuffer Top-level initialization/cleanup</h5>
+
+<p><a id="wm_000_2911"></a>The framebuffer must be explicitely allocated and
+initialized before it can be used. This is done with the
+function <code>monolith_gfx_fb_init</code>.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_fb_init(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_fb_init(monolith_d *m)
+{
+    if(m-&gt;fb != NULL) return 0;
+    m-&gt;fb = calloc(1, sizeof(monolith_framebuffer));
+    monolith_framebuffer_init(m-&gt;fb);
+    return 0;
+}</pre></code>
+<p>It is freed with <code>monolith_gfx_fb_clean</code>
+#+NAME: gfxdeclarations
+<pre><code>void monolith_gfx_fb_clean(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_fb_clean(monolith_d *m)
+{
+    if(m-&gt;fb != NULL) {
+        monolith_framebuffer_clean(m-&gt;fb);
+        free(m-&gt;fb);
+    }
+}</pre></code>
+<p>It is called automatically at cleanup.
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>monolith_gfx_fb_clean(m);</pre></code>
+
+<h5>22.1.3. GFX Framebuffer initialization from scheme</h5>
+
+<p><a id="wm_000_2925"></a>Initialization must be explicitely called in scheme using
+the function
+<code>monolith:gfx-fb-init</code>.
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:gfx-fb-init", pp_fb_init, 0, 0, {___,___,___}},</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_fb_init(cell p)
+{
+    monolith_d *m;
+    m = monolith_data_get();
+    monolith_gfx_fb_init(m);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>22.1.4. GFX Framebuffer initialization from Janet</h5>
+
+<p><a id="wm_000_2933"></a><div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_gfx_fb_init(int32_t argc, Janet *argv)
+{
+    janet_fixarity(argc, 0);
+    monolith_gfx_fb_init(monolith_data_get());
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/gfx-fb-init",
+j_gfx_fb_init,
+"Initializes monolith framebuffer for drawing."
+},</pre></code>
+
+<h4>22.2. The Framebuffer Struct</h4>
+
+<p><a id="wm_000_2940"></a>All data for a framebuffer is contained in a struct called a
+<code>monolith_framebuffer</code>.
+<div><b><i>&lt;&lt;gfx_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_framebuffer monolith_framebuffer;</pre></code>
+<div><b><i>&lt;&lt;gfx_structs&gt;&gt;=</i></b></div><pre><code>struct monolith_framebuffer {
+&lt;&lt;monolith_framebuffer_contents&gt;&gt;
+};</pre></code>
+<p>A framebuffer is initialized with the funciton
+<code>monolith_framebuffer_init</code>.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_init(monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_init(monolith_framebuffer *fb)
+{
+    unsigned int i;
+    for(i = 0; i &lt; WIDTHxHEIGHT; i++) {
+        fb-&gt;pix[i] = monolith_pixel_make(0, 0, 0, 255);
+    }
+&lt;&lt;monolith_framebuffer_init&gt;&gt;
+}</pre></code>
+<p>Allocated data is freed with <code>monolith_framebuffer_clean</code>.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_clean(monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_clean(monolith_framebuffer *fb)
+{
+&lt;&lt;monolith_framebuffer_clean&gt;&gt;
+}</pre></code>
+
+<h4>22.3. A Single Pixel</h4>
+
+<p><a id="wm_000_2964"></a>A single pixel in represented as a RGBA value, called a
+<code>monolith_pixel</code>. Each component is an 8 bit value.
+<div><b><i>&lt;&lt;gfx_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_pixel monolith_pixel;
+&lt;&lt;monolith_pixel&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;monolith_pixel&gt;&gt;=</i></b></div><pre><code>struct monolith_pixel {
+    unsigned char r, g, b, a;
+};</pre></code>
+<p>A new pixel can be made using the function
+<code>monolith_pixel_make</code>
+#+NAME: gfxdeclarations
+<pre><code>monolith_pixel monolith_pixel_make(unsigned int r,
+                                   unsigned int g,
+                                   unsigned int b,
+                                   unsigned int a);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>monolith_pixel monolith_pixel_make(unsigned int r,
+                                   unsigned int g,
+                                   unsigned int b,
+                                   unsigned int a)
+{
+    monolith_pixel p;
+    p.r = r;
+    p.g = g;
+    p.b = b;
+    p.a = a;
+    return p;
+}</pre></code>
+
+<h4>22.4. The Pixel Array</h4>
+
+<p><a id="wm_000_2978"></a><div><b><i>&lt;&lt;monolith_framebuffer_contents&gt;&gt;=</i></b></div><pre><code>monolith_pixel pix[WIDTHxHEIGHT];</pre></code>
+
+<h4>22.5. Framebuffer Dimensions</h4>
+
+<p><a id="wm_000_2982"></a>The maximum width and height for the screen is 320x200 pixels, corresponding to
+screen dimmensions of the commodore 64. This can be adjusted later.
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define MAXWIDTH 320
+#define MAXHEIGHT 200
+#define WIDTHxHEIGHT 64000 /* 320 x 200 */</pre></code>
+<p>The dimmensions are stored as integers and can be changed at runtime. By default
+they are initialized to be the maximum width and heigh.
+<div><b><i>&lt;&lt;monolith_framebuffer_contents&gt;&gt;=</i></b></div><pre><code>int w;
+int h;</pre></code>
+<div><b><i>&lt;&lt;monolith_framebuffer_init&gt;&gt;=</i></b></div><pre><code>fb-&gt;w = MAXWIDTH;
+fb-&gt;h = MAXHEIGHT;</pre></code>
+<p>The width can be obtained using the function <code>monolith_gfx_width</code>.
+and <code>monolith_gfx_height</code>.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_width(monolith_framebuffer *fb);
+int monolith_gfx_height(monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_width(monolith_framebuffer *fb)
+{
+    return fb-&gt;w;
+}
+int monolith_gfx_height(monolith_framebuffer *fb)
+{
+    return fb-&gt;h;
+}</pre></code>
+<p>Dimensions can be set using the function <code>monolith_gfx_setsize</code>.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_setsize(monolith_framebuffer *fb, int w, int h);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_setsize(monolith_framebuffer *fb, int w, int h)
+{
+    if(fb == NULL) return;
+    if(fb-&gt;w &gt; 0 && fb-&gt;w &lt;= MAXWIDTH) fb-&gt;w = w;
+    if(fb-&gt;h &gt; 0 && fb-&gt;h &lt;= MAXHEIGHT) fb-&gt;h = h;
+    alloc_zoom_buffer(fb);
+}</pre></code>
+<p>The global framebuffer dimensions can be size using the function
+<code>monolith:gfx-setsize</code>.
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:gfx-setsize", pp_setsize, 2, 2, {INT,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_setsize(cell p)
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int w;
+    int h;
+    char *name = "monolith:gfx-setsize";
+    m = monolith_data_get();
+    w = integer_value(name, car(p));
+    p = cdr(p);
+    h = integer_value(name, car(p));
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    monolith_framebuffer_setsize(fb, w, h);
+    return UNSPECIFIC;
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_gfx_setsize(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int w, h;
+
+    janet_fixarity(argc, 2);
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+
+    w = janet_unwrap_integer(argv[0]);
+    h = janet_unwrap_integer(argv[1]);
+
+    monolith_framebuffer_setsize(fb, w, h);
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/gfx-setsize",
+j_gfx_setsize,
+"(monolith/gfx-setsize w h)\n"
+"Sets size of framebuffer.\n"
+},</pre></code>
+
+<h4>22.6. Zoom Factor</h4>
+
+<p><a id="wm_000_3011"></a>The zoom factor indicates the zoom amount for the framebuffer, as a whole
+integer multiple. A value of 1 is the original, a value of 2 is twice the size,
+3 is three times, etc..
+</p>
+<p>By default, the zoom level is set to 1.
+<div><b><i>&lt;&lt;monolith_framebuffer_contents&gt;&gt;=</i></b></div><pre><code>unsigned int zoom;</pre></code>
+<div><b><i>&lt;&lt;monolith_framebuffer_init&gt;&gt;=</i></b></div><pre><code>fb-&gt;zoom = 1;</pre></code>
+<p></p>
+<p>The framebuffer can be set using the function
+<code>monolith_framebuffer_zoom</code>.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_zoom(monolith_framebuffer *fb, unsigned int zoom);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_zoom(monolith_framebuffer *fb, unsigned int zoom)
+{
+    fb-&gt;zoom = zoom;
+    alloc_zoom_buffer(fb);
+}</pre></code>
+<p></p>
+<p>This scheme function can be set using the function <code>monolith:gfx-zoom</code>.
+</p>
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:gfx-zoom", pp_zoom, 1, 1, {INT,___,___}},</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_zoom(cell p)
+{
+    int zoom;
+    monolith_framebuffer *fb;
+    monolith_d *m;
+    char name[] = "monolith:gfx-zoom";
+
+    zoom = integer_value(name, car(p));
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    if(fb != NULL) {
+        monolith_framebuffer_zoom(fb, zoom);
+    }
+    return UNSPECIFIC;
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_gfx_zoom(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int zoom;
+
+    janet_fixarity(argc, 1);
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+
+    zoom = janet_unwrap_integer(argv[0]);
+
+    if (fb != NULL) monolith_framebuffer_zoom(fb, zoom);
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/gfx-zoom",
+j_gfx_zoom,
+"(monolith/gfx-zoom zoom)\n"
+"Sets zoom factor of framebuffer.\n"
+},</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>29. Image Loading and Storing</h3>
+
+<p><a id="wm_000_3450"></a>Monolith has the ability to load and store images inside
+of the monolith dictionary.
+</p>
+
+<h4>29.1. Low-Level Image Handling</h4>
+
+<p><a id="wm_000_3452"></a>These are routines that are mostly used internally to
+monolith for loading monolith images.
+</p>
+
+<h5>29.1.1. Image Struct</h5>
+
+<p><a id="wm_000_3454"></a>The monolith image struct stores loaded image information.
+It is called <code>monolith_gfx_image</code>.
+</p>
+
+<h6>29.1.1.1. Typedef</h6>
+
+<p><a id="wm_000_3456"></a><div><b><i>&lt;&lt;gfx_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_gfx_img monolith_gfx_img;</pre></code>
+
+<h6>29.1.1.2. Struct Contents</h6>
+
+<p><a id="wm_000_3459"></a>Included in this struct is the width, height, as well
+as raw RGBA data.
+<div><b><i>&lt;&lt;gfx_structs&gt;&gt;=</i></b></div><pre><code>struct monolith_gfx_img {
+    unsigned int w;
+    unsigned int h;
+    unsigned char *data;
+};</pre></code>
+<p>Here are the getters:
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_dim(monolith_gfx_img *img,
+                          unsigned int *w,
+                          unsigned int *h);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_dim(monolith_gfx_img *img,
+                          unsigned int *w,
+                          unsigned int *h)
+{
+    if (w != NULL) *w = img-&gt;w;
+    if (h != NULL) *h = img-&gt;h;
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_data(monolith_gfx_img *img,
+                           unsigned char **data,
+                           unsigned int *sz);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_data(monolith_gfx_img *img,
+                           unsigned char **data,
+                           unsigned int *sz)
+{
+    *data = img-&gt;data;
+    if (sz != NULL) {
+        *sz = img-&gt;w * img-&gt;h * 4;
+    }
+}</pre></code>
+
+<h5>29.1.2. Loading Image Data</h5>
+
+<p><a id="wm_000_3472"></a>An image struct can be allocated and loaded in a
+<code>monolith_gfx_image</code> struct using the function
+<code>monlith_gfx_img_load</code>.
+</p>
+<p>This will allocate the image data AND the struct itself. For
+image loading, monolith uses the internal <code>lodepng</code> library.
+This means that only valid PNG files will be used.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_load(const char *filename,
+                           monolith_gfx_img **img);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_load(const char *filename,
+                           monolith_gfx_img **img)
+{
+    int error;
+    monolith_gfx_img *pimg;
+
+    pimg = calloc(1, sizeof(monolith_gfx_img));
+    error = lodepng_decode32_file(&pimg-&gt;data,
+                                  &pimg-&gt;w,
+                                  &pimg-&gt;h,
+                                  filename);
+
+    if (error) {
+        fprintf(stderr,
+                "lodepng error %u: %s\n",
+                error,
+                lodepng_error_text(error));
+        *img = NULL;
+        return;
+    }
+
+    *img = pimg;
+}</pre></code>
+
+<h5>29.1.3. Freeing Image Data</h5>
+
+<p><a id="wm_000_3478"></a>Image struct + data can be freed simultaneously with the
+function <code>monolith_gfx_image_free</code>. This should be called
+inside of something like <code>monolith_dict_entry_list_free</code>.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_free(monolith_gfx_img **img);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_free(monolith_gfx_img **img)
+{
+    monolith_gfx_img *pimg;
+    pimg = *img;
+
+    free(pimg-&gt;data);
+    free(pimg);
+    pimg = NULL;
+}</pre></code>
+
+<h4>29.2. High Level Image Handling</h4>
+
+<p><a id="wm_000_3484"></a>These functions are more closely exposed at the user API
+level for handling images and the monolith dictionary.
+</p>
+
+<h5>29.2.1. Loading an image to a dictionary</h5>
+
+<p><a id="wm_000_3486"></a>The function <code>monolith_img_load</code> will load an image and
+store it inside of the monolith dictionary to a unique
+keyword.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_img_load(monolith_d *m,
+                      const char *key,
+                      size_t len,
+                      const char *filename,
+                      monolith_gfx_img **img);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>int monolith_img_load(monolith_d *m,
+                      const char *key,
+                      size_t len,
+                      const char *filename,
+                      monolith_gfx_img **img)
+{
+    monolith_gfx_img *pimg;
+    monolith_dict_entry *ent;
+    int rc;
+
+    ent = NULL;
+
+    rc = monolith_dict_newentry(&m-&gt;dict, &ent, key, len);
+    if (img != NULL) *img = NULL;
+
+    if (rc != MONOLITH_OK) {
+        fprintf(stderr, "Unable to create entry ");
+        fwrite(key, 1, len, stderr);
+        fprintf(stderr, "\n");
+        return MONOLITH_NOTOK;
+    }
+
+    pimg = NULL;
+    monolith_gfx_img_load(filename, &pimg);
+
+    if (pimg == NULL) {
+        fprintf(stderr,
+                "Could not load file %s\n",
+                filename);
+        return MONOLITH_NOTOK;
+    }
+
+    ent-&gt;type = MONOLITH_ENTRY_IMAGE;
+    ent-&gt;ud = pimg;
+
+    if (img != NULL) *img = pimg;
+    return MONOLITH_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_img_load(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_gfx_img *img;
+    const char *key;
+    const char *filename;
+    int rc;
+
+    janet_fixarity(argc, 2);
+    m = monolith_data_get();
+
+    key = (const char *)janet_unwrap_string(argv[0]);
+    filename = (const char *)janet_unwrap_string(argv[1]);
+
+    img = NULL;
+    rc = monolith_img_load(m,
+                           key, strlen(key),
+                           filename,
+                           &img);
+
+    if (rc == MONOLITH_OK) {
+        return janet_wrap_abstract(img);
+    }
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/img-load",
+j_img_load,
+"(monolith/img-load key filename)\n"
+"Loads a filename into key. On success, will return\n"
+"handle to image.\n"
+},</pre></code>
+
+<h5>29.2.2. Finding an entry</h5>
+
+<p><a id="wm_000_3496"></a>The function <code>monolith_img_lookup</code> will attempt to look up
+an image given a key.
+<div><b><i>&lt;&lt;gfx_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_img_find(monolith_d *m,
+                      const char *key,
+                      size_t len,
+                      monolith_gfx_img **img);</pre></code>
+<div><b><i>&lt;&lt;gfx_functions&gt;&gt;=</i></b></div><pre><code>int monolith_img_find(monolith_d *m,
+                      const char *key,
+                      size_t len,
+                      monolith_gfx_img **img)
+{
+    monolith_dict_entry *ent;
+    int rc;
+
+    ent = NULL;
+
+    rc = monolith_dict_find(&m-&gt;dict, &ent, key, len);
+
+    if (rc != MONOLITH_OK) {
+        return rc;
+    }
+
+    if (ent-&gt;type != MONOLITH_ENTRY_IMAGE) {
+        return MONOLITH_NOTOK;
+    }
+
+    if (img != NULL) *img = ent-&gt;ud;
+
+    return MONOLITH_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_img_find(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_gfx_img *img;
+    const char *key;
+    int rc;
+
+    janet_fixarity(argc, 1);
+    m = monolith_data_get();
+
+    key = (const char *)janet_unwrap_string(argv[0]);
+
+    img = NULL;
+    rc = monolith_img_find(m,
+                           key, strlen(key),
+                           &img);
+
+    if (rc == MONOLITH_OK) {
+        return janet_wrap_abstract(img);
+    }
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/img-find",
+j_img_find,
+"(monolith/img-find key)\n"
+"Looks up image given a key.\n"
+},</pre></code>
+</div>
+</body>
+</html>
