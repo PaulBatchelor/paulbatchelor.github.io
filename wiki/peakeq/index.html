@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>PeakEQ</title>
+<h1>PeakEQ</h1>
+
+<h3>Overview</h3>
+
+<p>PeakEQ is an implementation of a single
+<a href="https://ccrma.stanford.edu/~jos//filters/Peaking_Equalizers.html">peaking equalizer filter</a>, with sweepable
+frequency, bandwidth, and gain.
+When used in series, the PeakEQ filter can be used
+to construct parametric and graphic equalizers commonly
+found in DAWs.
+</p>
+
+<h3>Algorithm Details</h3>
+
+<p>The filter design based on the 2nd-order equalization filter
+design by Reglia and Mitra, from the paper
+"Tunable Digital Frequency Response Equalization Filters",
+IEEE Trans. on Ac., Sp. and Sig Proc., 35 (1), 1987
+</p>
+<p>This implementation takes the original filter design and
+converts it to a direct-form 2 filter configuration, which
+has better numerical stability.
+</p>
+
+<h3>Conversion to Direct Form 2</h3>
+
+<p>We begin with the transfer function, described in the 1987
+paper:
+</p>
+<pre><code>$$
+{
+\alpha + \beta(1 + \alpha)z^{-1} + z^{-2}
+\over
+1 + \beta(1 + \alpha)z^{-1} + \alpha z^{-2}
+}
+$$</pre></code>
+<p></p>
+<p>This has the following difference equation:
+</p>
+<pre><code>$$
+y(n) = \alpha x(n) + \beta(1 + \alpha)x(n - 1) + x(n - 2)
+- \beta(1 + \alpha)z^{-1} y(n - 1)  - \alpha y(n - 2)
+$$</pre></code>
+<p></p>
+<p>The
+<a href="https://ccrma.stanford.edu/~jos/filters/Direct_Form_II.html">Direct Form II Structure</a>. can be
+represented in this generalized difference equation:
+</p>
+<pre><code>$$
+v(n) = x(n) - a_1 v(n - 1) - a_2 v(n - 2)
+
+y(n) = b_0 v(n) + b_1 v(n - 1) + b_2 v(n - 2)
+$$</pre></code>
+<p></p>
+<p>Converting to direct form II is a matter of putting
+coefficients in their correct places. Placing in the
+coefficients from the Regalia and Mitra design yields the
+following difference equation:
+</p>
+<pre><code>$$
+v(n) = x(n) - \beta(1 + \alpha)v(n - 1) - \alpha v(n - 2)
+
+y(n) = \alpha v(n) + \beta(1 + \alpha) v(n - 1) + v(n - 2)
+$$</pre></code>
+<p></p>
+<p>Which can be translated to C code.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p>Tangles to files <code>peakeq.c</code> and <code>peakeq.h</code>.
+</p>
+<div><b><i>&lt;&lt;peakeq.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_PEAKEQ_PRIV
+#include "peakeq.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<p>When <code>SK_PEAKEQ_PRIV</code> is defined, it exposes the main
+struct.
+</p>
+<div><b><i>&lt;&lt;peakeq.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_PEAKEQ_H
+#define SK_PEAKEQ_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_PEAKEQ_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+
+<h3>Struct</h3>
+
+<p>Everything is stored in a struct called <code>sk_peakeq</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_peakeq sk_peakeq;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_peakeq {
+    &lt;&lt;sk_peakeq&gt;&gt;
+};</pre></code>
+
+<h3>Init</h3>
+
+<p>PeakEQ is initialized with <code>sk_peakeq_init</code>. The sampling
+rate is required here.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_peakeq_init(sk_peakeq *eq, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_peakeq_init(sk_peakeq *eq, int sr)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Filter State Memory and Constants</h3>
+
+<p>The direct-form 2 form can be thought of as a 2-pole filter,
+followed by a 2-zero filter.
+</p>
+<p>The memory for the 2-pole filter is stored in a variable
+called <code>v</code>.
+</p>
+<div><b><i>&lt;&lt;sk_peakeq&gt;&gt;=</i></b></div><pre><code>SKFLT v[2];</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>eq-&gt;v[0] = 0;
+eq-&gt;v[1] = 0;</pre></code>
+<p></p>
+<p>The alpha and beta coefficients are stored as variables
+called <code>a</code> and <code>b</code>.
+</p>
+<div><b><i>&lt;&lt;sk_peakeq&gt;&gt;=</i></b></div><pre><code>SKFLT a;
+SKFLT b;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>eq-&gt;a = 0;
+eq-&gt;b = 0;</pre></code>
+<p></p>
+<p>The sampling rate is required to calculate new coefficients
+on-the-fly. A copy is stored in this struct.
+</p>
+<div><b><i>&lt;&lt;sk_peakeq&gt;&gt;=</i></b></div><pre><code>int sr;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>eq-&gt;sr = sr;</pre></code>
+
+<h3>Parameters</h3>
+
+
+<h4>Frequency</h4>
+
+<p>Set with <code>sk_peakeq_freq</code>. Used to set the center frequency
+of the filter, in units of Hz.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_peakeq_freq(sk_peakeq *eq, SKFLT freq);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_peakeq_freq(sk_peakeq *eq, SKFLT freq)
+{
+    eq-&gt;freq = freq;
+}</pre></code>
+<p></p>
+<p>This parameter uses caching to detect if the parameter
+changes.
+</p>
+<div><b><i>&lt;&lt;sk_peakeq&gt;&gt;=</i></b></div><pre><code>SKFLT freq;
+SKFLT pfreq;</pre></code>
+<p></p>
+<p><code>pfreq</code> is set to be a negative value to force initial
+coefficient calculation.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_peakeq_freq(eq, 1000);
+eq-&gt;pfreq = -1;</pre></code>
+
+<h4>Bandwidth</h4>
+
+<p>Set with <code>sk_peakeq_bandwidth</code>. This parameter sets the
+bandwidth of the EQ filter, in units of Hz.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_peakeq_bandwidth(sk_peakeq *eq, SKFLT bw);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_peakeq_bandwidth(sk_peakeq *eq, SKFLT bw)
+{
+    eq-&gt;bw = bw;
+}</pre></code>
+<p></p>
+<p>This parameter uses caching in order to detect if the
+parameter changes.
+</p>
+<div><b><i>&lt;&lt;sk_peakeq&gt;&gt;=</i></b></div><pre><code>SKFLT bw;
+SKFLT pbw;</pre></code>
+<p></p>
+<p>Like with freq, <code>pbw</code> is set to be a negative value to force
+coefficient calculation at the initial computation.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_peakeq_bandwidth(eq, 1000);
+eq-&gt;pbw = -1;</pre></code>
+
+<h4>Gain</h4>
+
+<p>This sets the gain of the filter. Positive values will cause
+a boost. Negative values will create a cut.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_peakeq_gain(sk_peakeq *eq, SKFLT gain);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_peakeq_gain(sk_peakeq *eq, SKFLT gain)
+{
+    eq-&gt;gain = gain;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_peakeq&gt;&gt;=</i></b></div><pre><code>SKFLT gain;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_peakeq_gain(eq, 1.0);</pre></code>
+
+<h3>Compute</h3>
+
+<p><code>sk_peakeq_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_peakeq_tick(sk_peakeq *eq, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_peakeq_tick(sk_peakeq *eq, SKFLT in)
+{
+    SKFLT out;
+    SKFLT v;
+    SKFLT y;
+    out = 0;
+
+    &lt;&lt;update_coefficients&gt;&gt;
+    &lt;&lt;compute_difference_equations&gt;&gt;
+    &lt;&lt;compute_gain&gt;&gt;
+    &lt;&lt;update_filter_state&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<p>Update coefficients, if needed. This happens at init time
+or when any of the parameters change.
+</p>
+<p>The coefficents computed are alpha and beta. The beta
+coefficient is the negative cosine of the center frequency
+in units of radians. The alpha coefficient is the expression
+<code>(1 - c) / (1 + c)</code>, where <code>c</code> is the tangent of the
+bandwidth, times <code>PI</code>, divided by the sampling rate. More
+details on the both coefficient derivations can be found in
+the original Regalia and Mitra paper.
+</p>
+<div><b><i>&lt;&lt;update_coefficients&gt;&gt;=</i></b></div><pre><code>if (eq-&gt;bw != eq-&gt;pbw || eq-&gt;freq != eq-&gt;pfreq) {
+    SKFLT c;
+    eq-&gt;b = -cos(2 * M_PI * eq-&gt;freq / eq-&gt;sr);
+    c = tan(M_PI * eq-&gt;bw / eq-&gt;sr);
+    eq-&gt;a = (1.0 - c) / (1.0 + c);
+
+    eq-&gt;pbw = eq-&gt;bw;
+    eq-&gt;pfreq = eq-&gt;freq;
+}</pre></code>
+<p></p>
+<p>Compute difference equations. First the 2-pole filter,
+followed by the 2-zero filter. The output of the 2-pole
+filter goes into the 2-zero filter. See the previous section
+on conversion to direct-form 2 for more information.
+</p>
+<div><b><i>&lt;&lt;compute_difference_equations&gt;&gt;=</i></b></div><pre><code>v = in - eq-&gt;b*(1.0 + eq-&gt;a)*eq-&gt;v[0] - eq-&gt;a*eq-&gt;v[1];
+y = eq-&gt;a*v + eq-&gt;b*(1.0 + eq-&gt;a)*eq-&gt;v[0] + eq-&gt;v[1];</pre></code>
+<p></p>
+<p>Compute the gain. This is done with the following equation:
+</p>
+<pre><code>$$
+y = {((x + f) + g (x - f) \over 2}
+$$</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;compute_gain&gt;&gt;=</i></b></div><pre><code>out = ((in + y) + eq-&gt;gain*(in - y)) * 0.5;</pre></code>
+<p></p>
+<p>Where $y$ is the output, $x$ is the input signal, $g$ is
+the gain amount, and <code>f</code> is the filtered version of <code>x</code>.
+</p>
+<p>Update filter state. The output of the 2-pole filter becomes
+<code>v[0]</code>, or $v(n - 1)$, and the previous <code>v[0]</code> becomes
+<code>v[1]</code>, or $v(n - 2)$.
+</p>
+<div><b><i>&lt;&lt;update_filter_state&gt;&gt;=</i></b></div><pre><code>eq-&gt;v[1] = eq-&gt;v[0];
+eq-&gt;v[0] = v;</pre></code>
+</div>
+</body>
+</html>
