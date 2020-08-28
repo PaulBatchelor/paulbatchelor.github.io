@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Bigverb</title>
+<h1>Bigverb</h1>
+
+<h3>Introduction</h3>
+
+<p>Bigverb is an implementation of a classic waveguide
+reverberator. It is composed up
+of 8 feedback delay lines running in parallel, in what is
+known as a <a href="https://ccrma.stanford.edu/~jos/cfdn/Feedback_Delay_Networks.html">Feedback Delay Network</a>. It is largely inspired by
+the works Julius O. Smith, and the work he did in using
+waveguide networks. In particular, this algorithm is based
+on ideas in a 1985 paper called "A New Approach to Digital
+Reverberation using Waveguide Networks".
+</p>
+<p>Bigverb, as the name implies, has a very nice warm sound
+when set to be a very large space, and is ideal for use in
+ambient style music. Bigverb is not designed to sound
+realistic, and is not an ideal choice for anything that
+needs room modelling.
+</p>
+
+<h3>Distinct Characterstics</h3>
+
+<p>The "sound" of this algorithm comes from a few major
+things.
+</p>
+
+<h4>Use of Jitter Modulation</h4>
+
+<p>Every delay line has a bit of jitter applied to
+the delay time, which causes a little of pitch modulation.
+Several schroeder and FDN-style reverb designs use this
+kind of modulation, such as the Mutable instruments
+clouds reverb, and the tank reverb described in the Dattorro
+paper "Effect design, part 1: reverberator and other filters".
+Such modulation creates the illusion of the reverb being
+a higher-order system than it actual (aka: a more complex
+reverb algorithm with more delay lines).
+While these designs tend to use a sinusoidal LFO on only a
+few delay lines, the Costello topology applies non-correlated
+modulation to every single delay line. As a result, you get
+a very dense-sounding reverb output.
+</p>
+
+<h4>Parameter Tunings</h4>
+
+<p>The parameter tunings of this reverb add to the
+particular character of this sound. All units are set in
+such a way so that they can be stored as integer values.
+</p>
+<p>The tuning consists of 8 parameter sets, corresponding to
+each delay line "unit". A set has the following parameters: delay time
+(<code>delay</code>) (in units of samples with a samplerate of
+44.1kHz), the amount of variation in delay time to apply
+(<code>drift</code>) (in units of tenth milliseconds, in order to use
+integer values), the random variation frequency (<code>randfreq</code>)
+(in Hz multiplied by 1000 to avoid decimals),
+as well as a starting seed for the internal RNG.
+</p>
+<p>The credit for these parameter tunings (and this topology)
+go to Sean Costello, who also originally designed this
+reverb algorithm in 1999. This work would later pave the way
+for his famous commercial reverb plugins and algorithms
+published by his company ValhallaDSP.
+</p>
+<div><b><i>&lt;&lt;parameter_set&gt;&gt;=</i></b></div><pre><code>struct bigverb_paramset {
+    int delay; /* in samples, 44.1 kHz */
+    int drift; /* 1/10 milliseconds */
+    int randfreq; /* Hertz * 1000 */
+    int seed;
+};
+
+static const struct bigverb_paramset params[8] = {
+    {0x09a9, 0x0a, 0xc1c, 0x07ae},
+    {0x0acf, 0x0b, 0xdac, 0x7333},
+    {0x0c91, 0x11, 0x456, 0x5999},
+    {0x0de5, 0x06, 0xf85, 0x2666},
+    {0x0f43, 0x0a, 0x925, 0x50a3},
+    {0x101f, 0x0b, 0x769, 0x5999},
+    {0x085f, 0x11, 0x37b, 0x7333},
+    {0x078d, 0x06, 0xc95, 0x3851}
+};</pre></code>
+
+<h4>Delay Line Configuration</h4>
+
+<p>Normally, this family of reverbs is a combination of allpass
+filters and comb filters in various series/parallel
+combinations. This implementation has a far simpler
+topology: it is essentially (but not <b>quite</b>) 8 feedback delay
+lines in parallel with a 1-pole lowpass IIR filter for tone
+control. If it weren't for the massive amount delay
+modulation, this would be a pretty metallic sounding reverb!
+</p>
+
+<h3>Top Level Files and Structs</h3>
+
+
+<h4>Files to Tangle To</h4>
+
+<p>This Bigverb document tanlges to two files:
+<code>bigverb.c</code> and <code>bigverb.h</code>.
+</p>
+<p><code>bigverb.h</code> contains typedefs, structs, and forward
+function declarations. To enable structs, define the
+macro <code>SK_BIGVERB_PRIV</code>.
+</p>
+<div><b><i>&lt;&lt;bigverb.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;math.h&gt;
+#define SK_BIGVERB_PRIV
+#include "bigverb.h"
+&lt;&lt;parameter_set&gt;&gt;
+&lt;&lt;fdelay_constants&gt;&gt;
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;bigverb.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_BIGVERB_H
+#define SK_BIGVERB_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_BIGVERB_PRIV
+&lt;&lt;main_struct&gt;&gt;
+#endif
+#endif</pre></code>
+
+<h4>The Bigverb Struct</h4>
+
+<p>An instance of Bigverb is contained inside of a struct
+called <code>sk_bigverb</code>.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_bigverb sk_bigverb;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;main_struct&gt;&gt;=</i></b></div><pre><code>&lt;&lt;delay_struct&gt;&gt;
+struct sk_bigverb {
+    int sr;
+    &lt;&lt;sk_bigverb&gt;&gt;
+};</pre></code>
+
+<h3>Setup and Cleanup</h3>
+
+<p>A new instance of bigverb is created with
+<code>sk_bigverb_new</code>. The only argument required is the sampling
+rate. If something goes wrong, this will return <code>NULL</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>sk_bigverb * sk_bigverb_new(int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>sk_bigverb * sk_bigverb_new(int sr)
+{
+    sk_bigverb *bv;
+
+    bv = calloc(1, sizeof(sk_bigverb));
+
+    bv-&gt;sr = sr;
+    &lt;&lt;init_variables&gt;&gt;
+    &lt;&lt;setup_delay_lines&gt;&gt;
+
+    return bv;
+}</pre></code>
+<p></p>
+<p>When it is done being used, bigverb must be cleanly freed
+with <code>sk_bigverb_del</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_del(sk_bigverb *bv);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_del(sk_bigverb *bv)
+{
+    &lt;&lt;cleanup&gt;&gt;
+    free(bv);
+    bv = NULL;
+}</pre></code>
+
+<h3>High level parameters</h3>
+
+<p>High level parametric control of bigverb includes
+"size" and "cutoff". Set parameters before computing
+audio. These are are just floating point values contained
+in the struct that can be indirectly set with setters in
+situations where the struct is opaque.
+</p>
+
+<h4>Size</h4>
+
+<p>Set the reverb size with <code>sk_bigverb_size</code>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_size(sk_bigverb *bv, SKFLT size);</pre></code>
+<p></p>
+<p>Size is a variable between 0-1, which
+controls the feedback level for the delay line.
+</p>
+<p>The <code>size</code> parameter is stored as a variable called
+<code>size</code>, and is set to be a pretty sounding value of
+<code>0.93</code>.
+</p>
+<div><b><i>&lt;&lt;sk_bigverb&gt;&gt;=</i></b></div><pre><code>SKFLT size;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init_variables&gt;&gt;=</i></b></div><pre><code>sk_bigverb_size(bv, 0.93);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_size(sk_bigverb *bv, SKFLT size)
+{
+    bv-&gt;size = size;
+}</pre></code>
+
+<h4>Cutoff</h4>
+
+<p>The tone of bigverb can be set with <code>sk_bigverb_cutoff</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_cutoff(sk_bigverb *bv, SKFLT cutoff);</pre></code>
+<p></p>
+<p><code>cutoff</code> is a parameter in Hz that determines the overall
+timbre of the reverb. This controls the cutoff frequency of
+the one pole lowpass filter applied to the reverb.
+</p>
+<p>It is set to be a default value of 10kHz, or 10,000 hz.
+</p>
+<div><b><i>&lt;&lt;init_variables&gt;&gt;=</i></b></div><pre><code>sk_bigverb_cutoff(bv, 10000.0);</pre></code>
+<p></p>
+<p>Cutoff uses caching in order to monitor if the parameter
+has changed. It does this in order to prevent needing to
+compute filter coefficients every sample. The main variable
+to be set is <code>cutoff</code>, and the cached variable is <code>pcutoff</code>.
+At the beginning, <code>pcutoff</code> is set to be a negative value,
+which will cause bigverb to calculate coefficients in the
+first call to the tick function after initialization.
+</p>
+<div><b><i>&lt;&lt;sk_bigverb&gt;&gt;=</i></b></div><pre><code>SKFLT cutoff;
+SKFLT pcutoff;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init_variables&gt;&gt;=</i></b></div><pre><code>bv-&gt;pcutoff = -1;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_cutoff(sk_bigverb *bv, SKFLT cutoff)
+{
+    bv-&gt;cutoff = cutoff;
+}</pre></code>
+
+<h3>Filter</h3>
+
+<p>State in a constant called <code>filt</code>.
+</p>
+<div><b><i>&lt;&lt;sk_bigverb&gt;&gt;=</i></b></div><pre><code>SKFLT filt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init_variables&gt;&gt;=</i></b></div><pre><code>bv-&gt;filt = 1.0;</pre></code>
+
+<h3>Computing Audio</h3>
+
+<p>After bigverb has been initialized, it is ready to
+process audio. This implementation uses what is known
+as a <code>tick</code> function, or a function that computes audio
+one sample at a time instead of one block at a time. This
+simplifies the implementation at the cost of a little bit
+of performance overhead, depending on the compiler and
+optimization settings.
+</p>
+
+<h4>Top-Level Tick Function</h4>
+
+<p>The function to tick one sample unit of audio is done with
+<code>sk_bigverb_tick</code>. It takes in two stereo input
+values, and returns two stereo output values.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_tick(sk_bigverb *bv,
+                     SKFLT inL, SKFLT inR,
+                     SKFLT *outL, SKFLT *outR);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_bigverb_tick(sk_bigverb *bv,
+                     SKFLT inL, SKFLT inR,
+                     SKFLT *outL, SKFLT *outR)
+{
+    /* TODO: implement */
+    SKFLT lsum, rsum;
+
+    lsum = 0;
+    rsum = 0;
+
+    &lt;&lt;update_filter_coefficients&gt;&gt;
+    &lt;&lt;calculate_junction_pressure&gt;&gt;
+    &lt;&lt;compute_delay_bank&gt;&gt;
+
+    *outL = lsum;
+    *outR = rsum;
+}</pre></code>
+
+<h4>Updating filter coefficients</h4>
+
+<p>Bigverb uses parameter caching for the <code>cutoff</code> parameter in
+order to save on computation time.
+</p>
+<p>Any time <code>cutoff</code> changes, the filter coefficients must be
+updated. This happens in the tick function, before any
+computation happens.
+</p>
+<p>The filter is a simple 1-pole IIR lowpass filter whose
+difference equation been reduced to only require a single
+parameter. This in turn then gets used in each filter delay
+line.
+</p>
+<div><b><i>&lt;&lt;update_filter_coefficients&gt;&gt;=</i></b></div><pre><code>if (bv-&gt;pcutoff != bv-&gt;cutoff) {
+    bv-&gt;pcutoff = bv-&gt;cutoff;
+    bv-&gt;filt = 2.0 - cos(bv-&gt;pcutoff * 2 * M_PI / bv-&gt;sr);
+    bv-&gt;filt = bv-&gt;filt - sqrt(bv-&gt;filt * bv-&gt;filt - 1.0);
+}</pre></code>
+
+<h4>Calculating Resultant Junction Pressure Amount</h4>
+
+<p>The resultant junction pressure amount is calculated from
+the delay bank, and then factored into the input signals.
+</p>
+<p>Sum of all the delay line signals, and scaled by 0.25, or
+2/N, where N is the number of delay lines (8).
+</p>
+<div><b><i>&lt;&lt;calculate_junction_pressure&gt;&gt;=</i></b></div><pre><code>{
+    int i;
+    SKFLT jp;
+
+    jp = 0;
+
+    for (i = 0; i &lt; 8; i++) {
+        jp += bv-&gt;delay[i].y;
+    }
+
+    jp *= 0.25;
+
+    inL = jp + inL;
+    inR = jp + inR;
+}</pre></code>
+
+<h4>Computing the delay bank</h4>
+
+<p>The delay bank is then computed. Each delay line is computed
+and summed with either the left or right input signal, and
+then sent to a corresponding left or right channel.
+</p>
+<p>At the end, a final scaling out of the output happens. This
+is hard coded to be 35 percent.
+</p>
+<div><b><i>&lt;&lt;compute_delay_bank&gt;&gt;=</i></b></div><pre><code>{
+    int i;
+    for (i = 0; i &lt; 8; i++) {
+        if (i & 1) {
+            rsum += delay_compute(&bv-&gt;delay[i],
+                                  inR,
+                                  bv-&gt;size,
+                                  bv-&gt;filt,
+                                  bv-&gt;sr);
+        } else {
+            lsum += delay_compute(&bv-&gt;delay[i],
+                                  inL,
+                                  bv-&gt;size,
+                                  bv-&gt;filt,
+                                  bv-&gt;sr);
+        }
+    }
+}
+rsum *= 0.35f;
+lsum *= 0.35f;</pre></code>
+
+<h3>The Feedback Delay Line Bank</h3>
+
+<p>8 delay units come together to make the delay line bank.
+Each is initialized using one of the parameter sets.
+</p>
+
+<h4>Memory Allocation + Setup</h4>
+
+<div><b><i>&lt;&lt;sk_bigverb&gt;&gt;=</i></b></div><pre><code>SKFLT *buf;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init_variables&gt;&gt;=</i></b></div><pre><code>bv-&gt;buf = NULL;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;setup_delay_lines&gt;&gt;=</i></b></div><pre><code>{
+unsigned long total_size;
+int i;
+SKFLT *buf;
+
+total_size = 0;
+buf = NULL;
+&lt;&lt;calculate_pool_size&gt;&gt;
+&lt;&lt;allocate_memory&gt;&gt;
+&lt;&lt;initialize_delay_banks&gt;&gt;
+}</pre></code>
+<p>The delay bank is the abstraction in charge of properly
+allocating all the memory needed for the buffers.
+</p>
+<p>Memory is allocated in one giant chunk, and then divied up
+to each delay line.
+</p>
+<p>The total memory size is obtained by summing all the delay
+times. These times are stored as fixed delay times in units
+of samples. These parameters assume a sampling rate of
+44.1kHz. If this is not the case, this value must be scaled
+accordingly, and then truncated to be an integer. This value
+is used again to properly slice up the big memory chunk.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int get_delay_size(const struct bigverb_paramset *p, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int get_delay_size(const struct bigverb_paramset *p, int sr)
+{
+    SKFLT sz;
+    sz = (SKFLT)p-&gt;delay/44100 + (p-&gt;drift * 0.0001) * 1.125;
+    return floor(16 + sz*sr);
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;calculate_pool_size&gt;&gt;=</i></b></div><pre><code>for (i = 0; i &lt; 8; i++) {
+    total_size += get_delay_size(&params[i], sr);
+}</pre></code>
+<p></p>
+<p>Allocation is done with <code>calloc</code>, which zeros out the memory
+as well. This memory will eventually be freed in
+<code>sk_bigverb_del</code>.
+</p>
+<div><b><i>&lt;&lt;allocate_memory&gt;&gt;=</i></b></div><pre><code>buf = calloc(1, sizeof(SKFLT) * total_size);
+bv-&gt;buf = buf;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>free(bv-&gt;buf);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_bigverb&gt;&gt;=</i></b></div><pre><code>sk_bigverb_delay delay[8];</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;initialize_delay_banks&gt;&gt;=</i></b></div><pre><code>{
+    unsigned long bufpos;
+    bufpos = 0;
+    for (i = 0; i &lt; 8; i++) {
+        unsigned int sz;
+        sz = get_delay_size(&params[i], sr);
+
+        delay_init(&bv-&gt;delay[i], &params[i],
+                   &buf[bufpos], sz, sr);
+        bufpos += sz;
+    }
+}</pre></code>
+
+<h4>A Single Delay Line Unit</h4>
+
+<p>A delay unit in a bank consists of variable delay line with
+cubic interpolation with a 1 pole low-pass filter for tone
+control, whose frequency is determined using a master
+parameter, as well as a jitter generator. Feedback as well.
+</p>
+
+<h5>Struct Declaration</h5>
+
+<p>A delay unit is known as a struct called <code>sk_bigverb_delay</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_bigverb_delay sk_bigverb_delay;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;delay_struct&gt;&gt;=</i></b></div><pre><code>struct sk_bigverb_delay {
+    &lt;&lt;bigverb_delay&gt;&gt;
+};</pre></code>
+
+<h5>Initialization</h5>
+
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void delay_init(sk_bigverb_delay *d,
+                       const struct bigverb_paramset *p,
+                       SKFLT *buf,
+                       size_t sz,
+                       int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void delay_init(sk_bigverb_delay *d,
+                       const struct bigverb_paramset *p,
+                       SKFLT *buf,
+                       size_t sz,
+                       int sr)
+{
+    SKFLT readpos;
+    &lt;&lt;delay_init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>Set up buffer + sz
+</p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>SKFLT *buf;
+size_t sz;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;delay_init&gt;&gt;=</i></b></div><pre><code>d-&gt;buf = buf;
+d-&gt;sz = sz;</pre></code>
+<p></p>
+<p>Initialize write position (0), abbreviated as <code>wpos</code>.
+</p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>int wpos;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;delay_init&gt;&gt;=</i></b></div><pre><code>d-&gt;wpos = 0;</pre></code>
+<p></p>
+<p>Initialize read position. Based on delay time, <code>drift</code> and
+initial seed. Read position has to components, an integer
+read position, and a floating point read position. These
+will be abbreviated <code>irpos</code> and <code>frpos</code>.
+</p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>int irpos;
+int frpos;</pre></code>
+<p></p>
+<p>Seed value is multiplied by the initial drift value, and then
+divided by 32767.
+</p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>int rng;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;delay_init&gt;&gt;=</i></b></div><pre><code>d-&gt;rng = p-&gt;seed;
+&lt;&lt;setup_readpos&gt;&gt;</pre></code>
+<p></p>
+<br>
+<p>The initial time is added to this.
+</p>
+<p><code>bufsize - (readpos * sr)</code> <-- this puts the read position at
+the end of the buffer.
+</p>
+<p>Truncate (using integer cast).'
+</p>
+<div><b><i>&lt;&lt;setup_readpos&gt;&gt;=</i></b></div><pre><code>readpos = ((SKFLT)p-&gt;delay / 44100);
+readpos += d-&gt;rng * (p-&gt;drift * 0.0001) / 32768.0;
+readpos = sz - (readpos * sr);
+d-&gt;irpos = floor(readpos);
+d-&gt;frpos = floor((readpos - d-&gt;irpos) * FRACSCALE);</pre></code>
+<p></p>
+<p>Create first random segments.
+</p>
+<div><b><i>&lt;&lt;delay_init&gt;&gt;=</i></b></div><pre><code>&lt;&lt;init_jitter&gt;&gt;
+generate_next_line(d, sr);</pre></code>
+
+<h5>Top-Level Compute</h5>
+
+<p>The delay line computation is done in a tick function. It
+takes in an input sample, returns an output sample. In
+addition to delay, filtering, feedback, and jittering
+happens as well.
+</p>
+<p>Because feedback + filtering are global options, these
+are passed in as parameters on the stack. What is required
+is the feedback amount, and the calculated filter
+coeffecient used in the filter.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT delay_compute(sk_bigverb_delay *d,
+                           SKFLT in,
+                           SKFLT fdbk,
+                           SKFLT filt,
+                           int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT delay_compute(sk_bigverb_delay *del,
+                           SKFLT in,
+                           SKFLT fdbk,
+                           SKFLT filt,
+                           int sr)
+{
+    SKFLT out;
+    SKFLT frac_norm;
+    SKFLT a, b, c, d;
+    SKFLT s[4];
+    out = 0;
+    &lt;&lt;write_to_buffer&gt;&gt;
+    &lt;&lt;increment_write_position&gt;&gt;
+    &lt;&lt;update_fractional_read_position&gt;&gt;
+    &lt;&lt;update_integer_read_position&gt;&gt;
+    &lt;&lt;normalize_fractional_component&gt;&gt;
+    &lt;&lt;calculate_interpolation_coefficients&gt;&gt;
+    &lt;&lt;read_from_buffer&gt;&gt;
+    &lt;&lt;compute_interpolation&gt;&gt;
+    &lt;&lt;increment_fractional_read_position&gt;&gt;
+    &lt;&lt;apply_feedback_and_filter&gt;&gt;
+    &lt;&lt;update_jitter&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<br>
+<p>The following things happen:
+</p>
+<p>Write the to delay buffer and pre-filter the input by
+subtracting the filter state <code>y</code>.
+</p>
+<div><b><i>&lt;&lt;write_to_buffer&gt;&gt;=</i></b></div><pre><code>del-&gt;buf[del-&gt;wpos] = in - del-&gt;y;</pre></code>
+<p></p>
+<p>Increment the write position. If this is greater than the
+buffer size, wrap around.
+</p>
+<div><b><i>&lt;&lt;increment_write_position&gt;&gt;=</i></b></div><pre><code>del-&gt;wpos++;
+if (del-&gt;wpos &gt;= del-&gt;sz) del-&gt;wpos -= del-&gt;sz;</pre></code>
+<p></p>
+<p>Update the fractional read position. If the read position
+exceeds the maximum fractional scale amount, it means it has
+bits that must carry over to the integer read position.
+After these bits have been carried over, mask out the upper
+bits to keep the range in bounds.
+</p>
+<div><b><i>&lt;&lt;update_fractional_read_position&gt;&gt;=</i></b></div><pre><code>if (del-&gt;frpos &gt;= FRACSCALE) {
+    del-&gt;irpos += del-&gt;frpos &gt;&gt; FRACNBITS;
+    del-&gt;frpos &= FRACMASK;
+}</pre></code>
+<p></p>
+<p>If needed, update the read position with wrap-around.
+</p>
+<div><b><i>&lt;&lt;update_integer_read_position&gt;&gt;=</i></b></div><pre><code>if (del-&gt;irpos &gt;= del-&gt;sz) del-&gt;irpos -= del-&gt;sz;</pre></code>
+<p></p>
+<p>Normalize the fractional component so that it is in range
+0 and 1. This is done by dividing the amount by fractional
+scaling factor <code>FRACSCALE</code>.
+</p>
+<div><b><i>&lt;&lt;normalize_fractional_component&gt;&gt;=</i></b></div><pre><code>frac_norm = del-&gt;frpos / (SKFLT)FRACSCALE;</pre></code>
+<p></p>
+<p>Calculate interpolation coefficients. These are 4
+pre-derived coefficents used to compute third-order
+lagrangian interpolation.
+Derivation of these is currently beyond the scope of this
+document. These will be called <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code>,
+respectively, and will correspond to <code>x(n - 1)</code>, <code>x(n)</code>,
+<code>x(n + 1)</code>, and <code>x(n + 2)</code>, respectively.
+</p>
+<div><b><i>&lt;&lt;calculate_interpolation_coefficients&gt;&gt;=</i></b></div><pre><code>{
+    SKFLT tmp[2];
+    d = ((frac_norm * frac_norm) - 1) / 6.0;
+    tmp[0] = ((frac_norm + 1.0) * 0.5);
+    tmp[1] = 3.0 * d;
+    a = tmp[0] - 1.0 - d;
+    c = tmp[0] - tmp[1];
+    b = tmp[1] - frac_norm;
+}</pre></code>
+<p></p>
+<p>Read the samples needed, based on the current playhead
+position. When the read position is in regular bounds, this
+means reading the previous, current, two next samples.
+Otherwise, this means the same thing, but with wrap-around
+and bounds checks.
+</p>
+<div><b><i>&lt;&lt;read_from_buffer&gt;&gt;=</i></b></div><pre><code>{
+    int n;
+    SKFLT *x;
+    n = del-&gt;irpos;
+    x = del-&gt;buf;
+
+    if (n &gt; 0 && n &lt; (del-&gt;sz - 2)) {
+        s[0] = x[n - 1];
+        s[1] = x[n];
+        s[2] = x[n + 1];
+        s[3] = x[n + 2];
+    } else {
+        int k;
+        n--;
+        if (n &lt; 0) n += del-&gt;sz;
+        s[0] = x[n];
+        for (k = 0; k &lt; 3; k++) {
+            n++;
+            if (n &gt;= del-&gt;sz) n -= del-&gt;sz;
+            s[k + 1] = x[n];
+        }
+    }
+}</pre></code>
+<p></p>
+<p>Calculate interpolation. Using the coefficents
+described above and the fractional component <code>f</code>, one can compute
+cubic interpolation with the following expression:
+</p>
+<p>$$
+y(n) = (a x(n - 1) + b x(n) + c x(n + 1) + d x(n + 2)) \cdot f + x(n)
+$$
+</p>
+<div><b><i>&lt;&lt;compute_interpolation&gt;&gt;=</i></b></div><pre><code>out = (a*s[0] + b*s[1] + c*s[2] + d*s[3]) * frac_norm + s[1];</pre></code>
+<p></p>
+<p>Increment fractional read position, as determined by the
+jitter.
+</p>
+<div><b><i>&lt;&lt;increment_fractional_read_position&gt;&gt;=</i></b></div><pre><code>del-&gt;frpos += del-&gt;inc;</pre></code>
+<p></p>
+<p>Apply feedback and filter. The feedback will scale the delay
+output. The filtering is a difference equation, optimized
+and factored to use a minimum number of arithmetic
+operations.
+</p>
+<div><b><i>&lt;&lt;apply_feedback_and_filter&gt;&gt;=</i></b></div><pre><code>out *= fdbk;
+out += (del-&gt;y - out) * filt;
+del-&gt;y = out;</pre></code>
+<p></p>
+<p>#
+#
+#
+</p>
+<p>Update jitter, if needed. When the counter zeros out
+(or worse), it is time to find a new random target to lerp
+to.
+</p>
+<div><b><i>&lt;&lt;update_jitter&gt;&gt;=</i></b></div><pre><code>del-&gt;counter--;
+if (del-&gt;counter &lt;= 0) {
+    generate_next_line(del, sr);
+}</pre></code>
+
+<h5>Feedback Fractional Delay Line</h5>
+
+<p>A delay line is initialized with a pre-allocated zeroed
+buffer its size. Memory will be managed outside of this
+abstraction.
+</p>
+<p>Being a fractional delay line means the read position has
+two components: an integer component and a fractional
+component. The integer component is the current position
+in the delay buffer. The fractional component tells how much
+it goes over into the next discrete sample position.
+In a way, interpolation can be thought of as the process of
+using these two values to make a really good guess of what
+lies in between the samples.
+</p>
+<p>The fractional delay component is maintained as a 28 bit
+integer. This is done to avoid some of the weirdness found
+in floating point operations. The remaining upper bits
+are "carry-over" samples, that get accumulated in integer
+component of the read position.
+</p>
+<p>A few constants are used to conveniently work with this
+fractional delay component.
+</p>
+<p><code>FRACSCALE</code> is the fractional scaling amount,
+which is $1^28$, or <code>0x10000000</code>. Multiplied with a uniform
+scalar, this is used to calculate the increment.
+</p>
+<div><b><i>&lt;&lt;fdelay_constants&gt;&gt;=</i></b></div><pre><code>#define FRACSCALE 0x10000000</pre></code>
+<p></p>
+<p><code>FRACMASK</code> is the bitmask used to keep the fractional
+position in 28-bit range. It is $1^28 - 1$, or <code>0xFFFFFFF</code>.
+This is in particular is used to filter out upper bits that
+get carried over to the integer read position.
+</p>
+<div><b><i>&lt;&lt;fdelay_constants&gt;&gt;=</i></b></div><pre><code>#define FRACMASK 0xFFFFFFF</pre></code>
+<p></p>
+<p><code>FRACNBITS</code> is the number of bits in the number. set to be
+28.
+</p>
+<div><b><i>&lt;&lt;fdelay_constants&gt;&gt;=</i></b></div><pre><code>#define FRACNBITS 28</pre></code>
+
+<h5>Jitter</h5>
+
+<p>Jitter in this context, is a random line segment
+generator. It linearly interpolates between random values in
+a given range, using random durations in a given range.
+</p>
+<p>A line generator stores a counter and increment amount.
+</p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>int inc;
+int counter;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init_jitter&gt;&gt;=</i></b></div><pre><code>d-&gt;inc = 0;
+d-&gt;counter = 0;</pre></code>
+<p></p>
+<p>The most significant thing to happen in the jitter signal is
+calculating the next random segment. This is done in a
+static function called <code>generate_next_line</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void generate_next_line(sk_bigverb_delay *d, int sr);</pre></code>
+<p></p>
+<p>To begin, another random value is created based on the
+previous random value.
+</p>
+<p>The RNG algorithm used is quite simple, and is used to
+produce a 16-bit value.
+</p>
+<p>$$x(n) = (5^{6}x(n - 1) + 1) \& 0xFFFF$$
+</p>
+<p>Before and after this equation, the value is balanced so that
+is a 16-bit bipolar signal.
+Before, it adds 0x10000 if the
+value is less than 0. After, it substracts 0x10000 if the
+seed value is greater than 0x8000.
+</p>
+<div><b><i>&lt;&lt;generate_random_number&gt;&gt;=</i></b></div><pre><code>if (d-&gt;rng &lt; 0) d-&gt;rng += 0x10000;
+/* 5^6 = 15625 */
+d-&gt;rng = (1 + d-&gt;rng * 0x3d09);
+d-&gt;rng &= 0xFFFF;
+if (d-&gt;rng &gt;= 0x8000) d-&gt;rng -= 0x10000;</pre></code>
+<p></p>
+<p>This new random value is used to produce the next random
+value in seconds.
+</p>
+<p>The line counter is reset. This value comes from the
+high-level parameter.
+</p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>int maxcount;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init_jitter&gt;&gt;=</i></b></div><pre><code>d-&gt;maxcount = round((sr / ((SKFLT)p-&gt;randfreq * 0.001)));</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;reset_counter&gt;&gt;=</i></b></div><pre><code>d-&gt;counter = d-&gt;maxcount;</pre></code>
+<p></p>
+<p>Compute delay time values. The current delay time,
+<code>curdel</code>, is obtained by subtracting the write + integer
+read positions, then adding in the fractional component.
+Wraparound is applied.
+</p>
+<div><b><i>&lt;&lt;compute_delay_values&gt;&gt;=</i></b></div><pre><code>curdel = d-&gt;wpos -
+    (d-&gt;irpos + (d-&gt;frpos/(SKFLT)FRACSCALE));
+while (curdel &lt; 0) curdel += d-&gt;sz;
+curdel /= sr;</pre></code>
+<p></p>
+<p>The next delay time to lerp to is derived from the RNG
+and drift amount.
+</p>
+<div><b><i>&lt;&lt;compute_delay_values&gt;&gt;=</i></b></div><pre><code>nxtdel = (d-&gt;rng * (d-&gt;drift * 0.0001) / 32768.0) + d-&gt;dels;</pre></code>
+<p></p>
+<p>The delay time, in seconds (<code>dels</code>).
+</p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>SKFLT dels;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init_jitter&gt;&gt;=</i></b></div><pre><code>d-&gt;dels = p-&gt;delay / 44100.0;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>SKFLT drift;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init_jitter&gt;&gt;=</i></b></div><pre><code>d-&gt;drift = p-&gt;drift;</pre></code>
+<p></p>
+<p>The linear increment value is the difference between the current
+and next delay times, divided by the number of steps needed
+to draw a line between them (<code>counter</code>). This value is then
+converted into samples. An extra sample is tacked on to
+prevent nil values.
+</p>
+<div><b><i>&lt;&lt;compute_increment&gt;&gt;=</i></b></div><pre><code>inc = ((curdel - nxtdel) / (SKFLT)d-&gt;counter)*sr;
+inc += 1;</pre></code>
+<p></p>
+<p>This increment value is truncated and converted to the
+fractional read.
+</p>
+<div><b><i>&lt;&lt;set_fractional_read&gt;&gt;=</i></b></div><pre><code>d-&gt;inc = floor(inc * FRACSCALE);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void generate_next_line(sk_bigverb_delay *d, int sr)
+{
+    SKFLT curdel;
+    SKFLT nxtdel;
+    SKFLT inc;
+    &lt;&lt;generate_random_number&gt;&gt;
+    &lt;&lt;reset_counter&gt;&gt;
+    &lt;&lt;compute_delay_values&gt;&gt;
+    &lt;&lt;compute_increment&gt;&gt;
+    &lt;&lt;set_fractional_read&gt;&gt;
+}</pre></code>
+
+<h5>Filter Memory</h5>
+
+<p>A one-pole lowpass filter such as the one used in the delay
+line requires one sample of memory, which stores the output
+of the previous filter. In a difference equation, this would
+be known as $y(n - 1)$. In C code, we abbreviate this as
+<code>y</code>.
+</p>
+<div><b><i>&lt;&lt;bigverb_delay&gt;&gt;=</i></b></div><pre><code>SKFLT y;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;delay_init&gt;&gt;=</i></b></div><pre><code>d-&gt;y = 0.0;</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>R-Line</title>
+<h1>R-Line</h1>
+
+<h3>Introduction</h3>
+
+<p>R-Line is a random line segment generator. It 
+produces random values at regular rate, and then
+linearly interpolates between them. The algorithm has
+audio-rate parametric control of the range of values, as
+well as the frequency that values change.
+</p>
+<p>This algorithm is a great little control signal generator
+that can add a bit of zest to a otherwise
+static parameter in a patch. It's a very efficient way to
+add a warm organic feel to a patch.
+</p>
+
+<h3>Notable Implementation Details</h3>
+
+<p>This particular algorithm uses a fixed-point phasor similar
+to the ones seen in <a href="/sndkit/osc">osc</a> and <a href="/sndkit/fmpair">fmpair</a>.
+Fixed point has very good numerical stability, which makes
+it ideal for a phasor algorithm.
+</p>
+<p>To keep things more portable, R-Line implements its own
+pseudo-Random Number Generator (pRNG), using a common
+algorithm generating random values known as
+<a href="https://en.wikipedia.org/wiki/Linear_congruential_generator">Linear Congruential Generator</a>, or an LCG. This is
+what most <code>rand</code> function
+implementations use under the hood. The modulus, multiplier,
+and and increment values come from the Microsoft
+Visual/Quick C/C++ library (as found on Wikipedia).
+</p>
+
+<h3>Tangled Files</h3>
+
+<p>R-Line tangles to a C file and a header file.
+</p>
+<p>The C file <code>rline.c</code> contains the core implementation
+code.
+</p>
+<div><b><i>&lt;&lt;rline.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_RLINE_PRIV
+#include "rline.h"
+&lt;&lt;macros&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<p>The header file <code>rline.h</code> contains forward function
+declarations. When <code>SK_RLINE_PRIV</code> is enabled, the structs
+are exposed. Otherwise, they are left as opaque.
+</p>
+<div><b><i>&lt;&lt;rline.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_RLINE_H
+#define SK_RLINE_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_RLINE_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+
+<h3>Core Struct</h3>
+
+<p>The core struct is called <code>sk_rline</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_rline sk_rline;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_rline {
+    &lt;&lt;sk_rline&gt;&gt;
+};</pre></code>
+
+<h3>Constants and Variables</h3>
+
+<p>The value from the LCG is often scaled to be normalized
+between 0 and 1. The constant required for this is
+$1/(2^31 - 1$, or <code>1/((1L<<31) - 1)</code>. This value is
+stored in a constant.
+</p>
+<div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>SKFLT rngscale;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;set_random_scaler&gt;&gt;=</i></b></div><pre><code>rl-&gt;rngscale = 1.0 / ((1L&lt;&lt;31) - 1);</pre></code>
+<p></p>
+<p>The current state of the random number generator is stored
+as an integer <code>rng</code>. It is initialized to be <code>seed</code>.
+</p>
+<div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>int rng;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>rl-&gt;rng = seed;
+&lt;&lt;set_random_scaler&gt;&gt;
+&lt;&lt;generate_initial_values&gt;&gt;</pre></code>
+<p></p>
+<p>The fixed point phasor has two major constants: the maximum
+length, as well as the masking value. Detailed explanation
+of these are beyond the scope of this document.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_RLINE_PHSLEN 0x1000000L
+#define SK_RLINE_PHSMSK 0xFFFFFFL</pre></code>
+<p></p>
+<p>The variable <code>maxlens</code> is maximum phasor length converted to
+units of seconds by dviding it by the sampling rate.
+Multipyling this value with a frequency will return an
+increment value in units of phasor, which is used
+as the phasor increment value.
+</p>
+<div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>SKFLT maxlens;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>rl-&gt;maxlens = (SKFLT)SK_RLINE_PHSLEN / sr;</pre></code>
+<p></p>
+<p>Phase position is stored in an unsigned long called
+<code>phspos</code>. When it needs to be converted for use in floating
+point operations , the constant <code>scale</code> is used.
+</p>
+<div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>unsigned long phasepos;
+SKFLT scale;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>rl-&gt;phasepos = 0;</pre></code>
+<p></p>
+<p>The scale value works by normalizing to be in the range 0-1
+by dividing by the max phase length <code>SK_RLINE_PHSLEN</code>, then
+scaling it to be the difference between the start/end point
+values. Doing this shaves off a divide operation later.
+</p>
+<div><b><i>&lt;&lt;calculate_initial_scale&gt;&gt;=</i></b></div><pre><code>rl-&gt;scale = (rl-&gt;end - rl-&gt;start) / SK_RLINE_PHSLEN;</pre></code>
+<p></p>
+<p>A line has two points: a start point, and an end point.
+These are stored as normalized floating point variables
+<code>start</code> and <code>end</code>, and then are dynamically scaled to the
+<code>min</code> and <code>max</code> values during computation.
+</p>
+<div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>SKFLT start;
+SKFLT end;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;generate_initial_values&gt;&gt;=</i></b></div><pre><code>rl-&gt;rng = LCG(rl-&gt;rng);
+rl-&gt;start = RNG(rl-&gt;rng) * rl-&gt;rngscale;
+rl-&gt;rng = LCG(rl-&gt;rng);
+rl-&gt;end = RNG(rl-&gt;rng) * rl-&gt;rngscale;
+&lt;&lt;calculate_initial_scale&gt;&gt;</pre></code>
+
+<h3>Linear Congruential Generator</h3>
+
+<p>An internal
+<a href="https://en.wikipedia.org/wiki/Linear_congruential_generator">Linear Congruential Generator</a> is
+used to generate sequences of pseudo-random numbers.
+</p>
+<p>It is the following equation
+</p>
+<p>$$
+y(n) = ((y(n - 1) * a + c) \gg 1)
+\& m
+$$
+</p>
+<p>Where $m$ is the masking value <code>0x7ffffff</code>, $a$ is a
+<code>multiplier</code>, and $c$ is the <code>increment</code>. In this
+implementation, $a$ will be <code>0x343fd</code>, and $c$ will be
+<code>0x2693ec3</code>. These constants come from the wikipedia page
+on LCGs, and originate the Microsoft Visual C/C++ standard
+library.
+</p>
+<p>The LCG here can be implemented as a stateless function or
+macro. In this case, we will go with the macro.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define LCG(y) (y * 0x343fd + 0x269ec3)</pre></code>
+<p></p>
+<p>The <code>LCG</code> operation only computes the next state state of
+the random-number generator. To actually get it within the
+correct bounds for this sytem, it has to be right-shifted
+to knock it down 1 bit, then masked by <code>0x7ffffff</code> as a kind
+of modulo operation.
+</p>
+<p>This macro operation <code>RNG</code> assumes that <code>y</code> is the current
+state of the LCG.
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define RNG(y) ((y &gt;&gt; 1) & 0x7fffffff)</pre></code>
+
+<h3>Initialization</h3>
+
+<p>Initialization is done with <code>sk_rline_init</code>.
+</p>
+<p>The main things needed for initialization are the sampling
+rate <code>sr</code>, as well as the initial seed value for the random
+number generator.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rline_init(sk_rline *rl, int sr, int seed);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rline_init(sk_rline *rl, int sr, int seed)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Parameters</h3>
+
+
+<h4>Minimum value</h4>
+
+<p>Set with <code>sk_rline_min</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rline_min(sk_rline *rl, SKFLT min);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rline_min(sk_rline *rl, SKFLT min)
+{
+    rl-&gt;min = min;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>SKFLT min;</pre></code>
+<p></p>
+<p>Initialized to be 0.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_rline_min(rl, 0);</pre></code>
+
+<h4>Maximum value</h4>
+
+<p>Set with <code>sk_rline_max</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rline_max(sk_rline *rl, SKFLT max);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rline_max(sk_rline *rl, SKFLT max)
+{
+    rl-&gt;max= max;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>SKFLT max;</pre></code>
+<p></p>
+<p>Initialized to be 1.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_rline_max(rl, 1);</pre></code>
+
+<h4>Rate</h4>
+
+<p>Set with <code>sk_rline_rate</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rline_rate(sk_rline *rl, SKFLT rate);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rline_rate(sk_rline *rl, SKFLT rate)
+{
+    rl-&gt;rate= rate;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>SKFLT rate;</pre></code>
+<p></p>
+<p>Initialized to be 1.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_rline_rate(rl, 1);</pre></code>
+
+<h3>Computing a sample</h3>
+
+<p>A single sample is computed with <code>sk_rline_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rline_tick(sk_rline *rl);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rline_tick(sk_rline *rl)
+{
+    SKFLT out;
+
+    out = 0;
+
+    &lt;&lt;compute_current_sample&gt;&gt;
+    &lt;&lt;update_phase&gt;&gt;
+    &lt;&lt;generate_next_line_segment&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<p>Compute the current sample. The line interpolation is
+calculated in a normalized space, then scaled to be
+in the min/max range. Doing it this way allows the min/max
+values to be dynamically changed over time without having
+to wait for the next line.
+</p>
+<p>The normalized output can be computed with the expression:
+</p>
+<p>$$
+y = x_1 + pc
+$$
+</p>
+<p>Where $x_1$ is the starting point of the line, $p$ is
+the current phase increment, represented in fixed point, and
+$c$ is the constant that normalizes and scales the phase to
+be the amount of progress to value $x_2$.
+</p>
+<div><b><i>&lt;&lt;compute_current_sample&gt;&gt;=</i></b></div><pre><code>out = rl-&gt;start + rl-&gt;phasepos*rl-&gt;scale;
+out = out * (rl-&gt;max - rl-&gt;min) + rl-&gt;min;</pre></code>
+<p></p>
+<br>
+<p>Update phase position. The phase is updated by incrementing
+it by a amount obtained by multilying the frequency by the
+maximum phase length in units of seconds. How this works is
+beyond the scope of this document, but is explained in <a href="/sndkit/osc">osc</a>.
+</p>
+<div><b><i>&lt;&lt;update_phase&gt;&gt;=</i></b></div><pre><code>rl-&gt;phasepos += floor(rl-&gt;rate * rl-&gt;maxlens);</pre></code>
+<p></p>
+<p>Generate next line segment. Preparation for a new line
+segment happens when the phase of the phasor reaches the
+end, and is greater than or equal to the max length.
+The phasor is masked in order to filter out upper
+bits and allow the lower bits to roll over. The the starting
+value is set to be the current end value, and a new end
+value is obtained using the random number generator.
+</p>
+<p>After the new points have been obtained, the constant used
+to normalize + scale the phasor value is computed. Dividing
+by the maximum phasor length normalizes the phasor to be in
+range 0 and 1. Multiplying by the difference of the two
+segment values scales this value to be in the correct range.
+This constant is useful because it shaves off a divide
+operation, which has traditionally been costly arithmetic
+computatoin compared to a multiply.
+</p>
+<div><b><i>&lt;&lt;generate_next_line_segment&gt;&gt;=</i></b></div><pre><code>if (rl-&gt;phasepos &gt;= SK_RLINE_PHSLEN) {
+    rl-&gt;phasepos &= SK_RLINE_PHSMSK;
+    rl-&gt;start = rl-&gt;end;
+    rl-&gt;rng = LCG(rl-&gt;rng);
+    rl-&gt;end = RNG(rl-&gt;rng) * rl-&gt;rngscale;
+    rl-&gt;scale = (rl-&gt;end - rl-&gt;start) / SK_RLINE_PHSLEN;
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Vardelay</title>
+<h1>Vardelay</h1>
+
+<h3>Overview</h3>
+
+<p>Vardelay is an implementation of a variable-length delay
+line, using third order <a href="https://ccrma.stanford.edu/~jos/pasp/Lagrange_Interpolation.html">Langrange Interpolation</a>.
+This delay time of this delay line can be adjusted over
+time. Because it uses interpolation, any adjustments can
+cause pitch shifting to occur. This itself is often a
+desirable artifact, and is the basis for audio effects
+like flanging and chorusing.
+</p>
+<p>In addition to delay time, a feedback parameter will also be
+supplied, as it is so often used with delay lines.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p><code>vardelay.c</code> and <code>vardelay.h</code> are the tangled files.
+</p>
+<div><b><i>&lt;&lt;vardelay.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include &lt;stdlib.h&gt;
+#define SK_VARDELAY_PRIV
+#include "vardelay.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<p>If <code>SK_VARDELAY_PRIV</code> is defined, private structs are made
+public.
+</p>
+<div><b><i>&lt;&lt;vardelay.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_VARDELAY_H
+#define SK_VARDELAY_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+#ifdef SK_VARDELAY_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+
+<h3>Initialization</h3>
+
+<p>Initialized with <code>sk_vardelay_init</code>. must supply your own
+buffer, with buffer size. This way, no internal memory
+allocation is required.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_init(sk_vardelay *vd, int sr,
+                      SKFLT *buf, unsigned long sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_init(sk_vardelay *vd, int sr,
+                      SKFLT *buf, unsigned long sz)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>Anything buffer size less than 4 samples is not enough
+to do third-order interpolation, so it returns an error.
+</p>
+
+<h3>Struct</h3>
+
+<p>Called <code>sk_vardelay</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_vardelay sk_vardelay;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_vardelay {
+    &lt;&lt;sk_vardelay&gt;&gt;
+};</pre></code>
+
+<h3>Constants and Variables</h3>
+
+
+<h4>Sample rate</h4>
+
+<p>a copy of the sampling rate is stored in the struct.
+It is used to convert delay time seconds to samples.
+</p>
+<div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>int sr;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>vd-&gt;sr = sr;</pre></code>
+
+<h4>Buffer, Buffer Size</h4>
+
+<p>The delay buffer is the chunk of memory where samples will
+be read/written. It is assumed to be neatly pre-allocated
+and zeroed out externally. The size is also assumed to be
+known ahead of time and correct.
+</p>
+<p>If the buffer size is less than 4, the delay line is
+disabled, as there aren't enough samples to do the
+interpolation.
+</p>
+<div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>SKFLT *buf;
+unsigned long sz;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>if (sz &lt; 4) {
+    vd-&gt;buf = NULL;
+    vd-&gt;buf = 0;
+} else {
+    vd-&gt;buf = buf;
+    vd-&gt;sz = sz;
+}</pre></code>
+
+<h4>Previous output</h4>
+
+<p>A variable is used to store the output of the previous delay
+in what is known as a single-sample delay or a unit delay.
+This delay is used to introduce feedback into the system.
+In discrete digital systems like this one, unit delays are
+inevitable for feedback, which is why they are referred to
+as <b>implicit</b> delays.
+</p>
+<div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>SKFLT prev;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>vd-&gt;prev = 0;</pre></code>
+
+<h4>Write Position</h4>
+
+<p>The write position is used to store the current index
+position in the buffer being written to. The write position
+starts at zero, moves forward until it reaches the end of
+the buffer, and then goes back to the beginning again. The
+delayed samples start the write position, and move backwards
+in time. If that position is a negative, it wraps around.
+</p>
+<p>Notably, the write position is a signed <code>long</code> to compensate
+for negative values. This is needed for the delay to read
+stuff back in time.
+</p>
+<div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>long writepos;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>vd-&gt;writepos = 0;</pre></code>
+
+<h3>Parameters</h3>
+
+
+<h4>Delay Time</h4>
+
+<p>Set with <code>sk_vardelay_delay</code>, In units of seconds.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_delay(sk_vardelay *vd, SKFLT delay);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_delay(sk_vardelay *vd, SKFLT delay)
+{
+    vd-&gt;delay = delay;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>SKFLT delay;</pre></code>
+<p></p>
+<p>The initial delay time is set to be half the delay time, in
+units of seconds.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_vardelay_delay(vd, ((SKFLT)sz / sr) * 0.5);</pre></code>
+
+<h4>Feedback</h4>
+
+<p>Set with <code>sk_vardelay_feedback</code>. Should be a value between
+0 and 1.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_feedback(sk_vardelay *vd, SKFLT feedback);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_feedback(sk_vardelay *vd, SKFLT feedback)
+{
+    vd-&gt;feedback = feedback;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>SKFLT feedback;</pre></code>
+<p></p>
+<p>No feedback by default.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_vardelay_feedback(vd, 0);</pre></code>
+
+<h3>Computation</h3>
+
+<p>Done with <code>sk_vardelay_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_vardelay_tick(sk_vardelay *vd, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_vardelay_tick(sk_vardelay *vd, SKFLT in)
+{
+    SKFLT out;
+    SKFLT dels;
+    SKFLT f;
+    long i;
+    SKFLT s[4];
+    unsigned long n[4];
+    SKFLT a, b, c, d;
+
+    out = 0;
+    &lt;&lt;return_if_empty&gt;&gt;
+    &lt;&lt;write_to_buffer&gt;&gt;
+    &lt;&lt;calculate_read_position&gt;&gt;
+    &lt;&lt;wrap_and_flip&gt;&gt;
+    &lt;&lt;read_samples&gt;&gt;
+    &lt;&lt;calculate_interpolation_coefficients&gt;&gt;
+    &lt;&lt;interpolate&gt;&gt;
+    &lt;&lt;update_position&gt;&gt;
+    &lt;&lt;update_feedback&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<p>If buffer is NULL or size is 0, return 0.
+</p>
+<div><b><i>&lt;&lt;return_if_empty&gt;&gt;=</i></b></div><pre><code>if (vd-&gt;buf == NULL || vd-&gt;sz == 0) return 0;</pre></code>
+<p></p>
+<p>Write to buffer with feedback.
+</p>
+<div><b><i>&lt;&lt;write_to_buffer&gt;&gt;=</i></b></div><pre><code>vd-&gt;buf[vd-&gt;writepos] = in + vd-&gt;prev * vd-&gt;feedback;</pre></code>
+<p></p>
+<p>Calculate the read position. This is two parts: a fractional
+component, and an integer component.
+</p>
+<p>Get floating point + integer components of delay time.
+The delay time position is set to be the write position
+<code>dels</code> samples in the past, where <code>dels</code> is the delay time
+in samples.
+</p>
+<div><b><i>&lt;&lt;calculate_read_position&gt;&gt;=</i></b></div><pre><code>dels = vd-&gt;delay * vd-&gt;sr;
+i = floor(dels);
+f = i - dels;
+i = vd-&gt;writepos - i;</pre></code>
+<p></p>
+<p>Because we're looking backwards, the fractional component is
+backwards too. A fractional value here is set to be
+negative (reaching back in time).
+</p>
+<p>If there is a fractional component that is negative, or the
+integer component is negative, these must be corrected.
+</p>
+<p>The fractional value is flipped to be positive by adding 1
+to itself. The integer position is set back in time one
+sample. This sets the interpolation up so that instead of
+taking a sample and interpolating backwards, you start with
+the previous sample and move forwards. The integer position
+is then set to be in bounds.
+</p>
+<p>By default, the position is wrapped around using addition
+until the sample is in bounds.
+</p>
+<div><b><i>&lt;&lt;wrap_and_flip&gt;&gt;=</i></b></div><pre><code>if ((f &lt; 0.0) || (i &lt; 0)) {
+    /* flip fractional component */
+    f = f + 1.0;
+    /* go backwards one sample */
+    i = i - 1;
+    while (i &lt; 0) i += vd-&gt;sz;
+} else while(i &gt;= vd-&gt;sz) i -= vd-&gt;sz;</pre></code>
+<p></p>
+<p>Read samples. This includes the current sample, the previous
+sample, and two samples in the future.
+</p>
+<div><b><i>&lt;&lt;read_samples&gt;&gt;=</i></b></div><pre><code>/* x(n) */
+n[1] = i;
+
+/* x(n + 1) */
+if (i == (vd-&gt;sz - 1)) n[2] = 0;
+else n[2] = n[1] + 1;
+
+/* x(n - 1) */
+if (i == 0) n[0] = vd-&gt;sz - 1;
+else n[0] = i - 1;
+
+if (n[2] == vd-&gt;sz - 1) n[3] = 0;
+else n[3] = n[2] + 1;
+
+{
+    int j;
+    for (j = 0; j &lt; 4; j++) s[j] = vd-&gt;buf[n[j]];
+}</pre></code>
+<p></p>
+<p>Calculate interpolation coefficients. These four
+coefficients correspond with the four samples read.
+</p>
+<div><b><i>&lt;&lt;calculate_interpolation_coefficients&gt;&gt;=</i></b></div><pre><code>{
+    SKFLT tmp[2];
+
+    d = ((f * f) - 1) * 0.1666666667;
+    tmp[0] = (f + 1.0) * 0.5;
+    tmp[1] = 3.0 * d;
+    a = tmp[0] - 1.0 - d;
+    c = tmp[0] - tmp[1];
+    b = tmp[1] - f;
+}</pre></code>
+<p></p>
+<p>Interpolate. This follows the following equation:
+</p>
+<p>$$
+y(n) = (a x(n - 1) + b x(n) + c x(n + 1) + d x(n + 2)) \cdot f + x(n)
+$$
+</p>
+<div><b><i>&lt;&lt;interpolate&gt;&gt;=</i></b></div><pre><code>out = (a*s[0] + b*s[1] + c*s[2] + d*s[3]) * f + s[1];</pre></code>
+<p></p>
+<p>Update position. Increment the write position, and wrap
+back to zero if it reaches the end of the delay buffer.
+</p>
+<div><b><i>&lt;&lt;update_position&gt;&gt;=</i></b></div><pre><code>vd-&gt;writepos++;
+if (vd-&gt;writepos == vd-&gt;sz) vd-&gt;writepos = 0;</pre></code>
+<p></p>
+<p>Update feedback. The current output is set to be the <code>prev</code>
+value in the delay line.
+</p>
+<div><b><i>&lt;&lt;update_feedback&gt;&gt;=</i></b></div><pre><code>vd-&gt;prev = out;</pre></code>
+</div>
+</body>
+</html>
