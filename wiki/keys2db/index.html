@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Keyscrape to SQLite converter</title>
+<h1>Keyscrape to SQLite converter</h1>
+<p>An awk script used to convert colon-delimited files
+from <code>keyscrape</code> into SQLite code.
+</p>
+<p>Use it in the following way:
+</p>
+<pre><code>./keys2db &lt; keys.txt | sqlite3 keys.db</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;keys2db&gt;&gt;=</i></b></div><pre><code>#!/usr/bin/awk -f
+BEGIN {
+    FS=":"
+    print("DROP TABLE IF EXISTS KEYWORDS;")
+    print("CREATE TABLE keywords(page TEXT, keyword TEXT, line INTEGER);")
+    print("BEGIN;");
+}
+
+{
+    print "INSERT INTO keywords(page, keyword, line) " \
+    "VALUES(\""$1"\",\""$2"\","$3");"
+}
+END {
+    print("COMMIT;");
+}</pre></code>
+</div>
+</body>
+</html>
