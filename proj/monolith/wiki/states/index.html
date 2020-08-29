@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>State Files in Monolith</title>
+<h1>State Files in Monolith</h1>
+<p>Monolith is able to save/load data in what is
+known as a "state file". State files were initial created as
+a way for Pages to have persistent data. When a page gets
+saved/loaded, a state file is used. State files are designed
+to be used for many pages at once. It is expected that one
+state file is used for an entire patch (or patches) created
+in Monolith.
+</p>
+<p>A state file is mostly used to read/write Page data. The way
+this happens is this: a state file is opened, page
+save/load operations happen, then the state file is closed.
+</p>
+<p>A state file is opened with <code>monolith:state-open</code> in Scheme,
+and <code>monolith/state-open</code> in Janet. There can be only one
+state opened at a time.
+</p>
+<p>A state file is closed with <code>monolith:state-close</code> in
+Scheme, or <code>monolith/state-close</code> in Janet.
+</p>
+<p>The file format of state file is a SQLite database. Every
+page has it's own table with a custom schema. It is not
+uncommon for pages to blobs of data in the msgpack
+serialization format. For encoding/decoding msgpack data,
+an embedded version of the cmp library is used.
+</p>
+<p>The version of Janet that is included in Monolith has
+both bindings for SQLite, as well as routines for decoding
+msgpack blobs stored (via cmp).
+</p>
+<p>This janet code below opens a state file "state.db", and
+reads the sequence data from some seq16 data save as
+"sequence".
+</p>
+<p>The function <code>monolith/msgpack-read</code> will parse a janet
+buffer with msgpack data, and then return a Janet data
+structure.
+</p>
+<pre><code>(defn parse-steps (buf)
+  (monolith/msgpack-read buf))
+
+(def db (sqlite3/open "state.db"))
+
+(def rows
+  (sqlite3/eval
+   db
+   "SELECT steps from seq16 where key is \"sequence\";"))
+
+(pp (parse-steps ((rows 0) "steps")))
+
+(sqlite3/close db)</pre></code>
+</div>
+</body>
+</html>

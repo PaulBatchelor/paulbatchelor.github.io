@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<div><b><i>&lt;&lt;A guide to Step&gt;&gt;=</i></b></div><p></p>
+<p>Step is a step sequencer powered by the monome Grid.
+</p>
+<p>Work in progress. Rough notes for now.
+</p>
+<p>Create a new step page:
+</p>
+<pre><code>(monolith:page-step "step")</pre></code>
+<p></p>
+<p>It can then be selected with:
+</p>
+<pre><code>(monolith:page-select "step")</pre></code>
+<p></p>
+<p>A handful of scheme helper functions function have been
+defined in "step.scm". This can be loaded with:
+</p>
+<pre><code>(monolith:load "step.scm")</pre></code>
+<p></p>
+<p>Before the step sequencer can be used in a patch, it must
+be synced to a clock signal. Something like <code>clock</code>,
+<code>dmetro</code>, or <code>metro</code> will generate such a clock signal. This
+synchronization is done via <code>stepclk</code>.
+</p>
+<pre><code>(stepclk "step" (clock 0 120 4))</pre></code>
+<p></p>
+<p>With any luck, this should cause the playhead to start
+going.
+</p>
+<p>The bottom row on the grid is the control panel.
+</p>
+<p>The leftmost button toggles playback of the sequence.
+</p>
+<p>The next button toggles playhead sync mode. When enabled,
+the playhead will synchronize with the currently playing
+pattern position. When disabled, these two items are
+decoupled. The playhead can then be used to select specific
+notes without disturbing the pattern playback.
+</p>
+<p>The third button turns on latch mode. Latch mode will
+remember the last programmed-in note by the user. When
+a pattern position is turned on, it will automatically
+set it to be the last programmed note. This created in the
+hopes of making it faster to key in notes.
+</p>
+<p>The fifth row is note sequencing row. The first 12 buttons
+outline a chromatic scale, the last 4 buttons indicate
+octave.
+</p>
+<p>The currently playing step note can be retrieved using
+<code>stepnt</code>. This will return integer values in the range of
+-12 to 24. This are usually meant to be biased with a
+constant to create audible pitches.
+</p>
+<pre><code>(sine
+ (mtof
+  (add
+   (stepnt "step")
+   (param 60))
+  (param 0.5)))</pre></code>
+<p></p>
+<p>To access the gate signal, use the <code>stepgt</code> function.
+</p>
+<p>Building on the previous example.
+</p>
+<pre><code>(sine
+ (mtof
+  (add
+   (stepnt "step")
+   (param 60))
+  (param 0.5)))
+(stepgt "step")
+(mul '() '())</pre></code>
+<p></p>
+<p>Using <code>stepnt</code> will not take into account gate, which may
+cause incorrect notes to fire. This can be rectified with
+the clock signal and a sample and hold generator.
+</p>
+<pre><code>(samphold
+ (mul (clock-get) (stepgt "step")
+ (stepnt "step")))</pre></code>
+<p></p>
+<p><code>monolith:step-wait-and-reset</code> can be used to set the
+playhead point back to zero. Used to sync things up
+between re-compilations.
+</p>
+<pre><code>(monolith:step-wait-and-reset "step")</pre></code>
+</div>
+</body>
+</html>

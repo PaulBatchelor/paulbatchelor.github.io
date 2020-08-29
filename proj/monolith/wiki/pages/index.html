@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Pages</title>
+<h1>Pages</h1>
+<p>This document will eventually introduce the concept of
+monolith "pages".
+</p>
+
+<h3>What are pages?</h3>
+
+<p>In Monolith, <code>pages</code> are special interactive interfaces.
+They are specifically designed so that multiple monome-y
+apps can exist at once.
+</p>
+<p>Only one page can be actively selected at a time.
+When a page is selected, they are able access to the
+hardware peripherals like the monome arc and grid.
+</p>
+<p>Pages are referred to as unique names.
+</p>
+
+<h3>Creating a page</h3>
+
+<p>Every page has their own custom page creator. Usually
+it takes the form <code>monolith:FOO-new</code>, and it takes in
+the name as an argument. For instance, to create a new
+grid page:
+</p>
+<pre><code>(monolith:grid-new "g")</pre></code>
+
+<h3>Selecting a page</h3>
+
+<p>Any page can be selected with <code>monolith:page-select</code>.
+</p>
+<p>For instance, to select a page called "g":
+</p>
+<pre><code>(monolith:page-select "g")</pre></code>
+
+<h3>Loading/Saving Pages</h3>
+
+<p>Pages are loaded/saved with the use of what are known
+as <code>state files</code>. State files need to be loaded with
+<code>monolith:state-open</code> before any load/save operations
+happen. After, the state can be closed with
+<code>monolith/state-close</code>.
+</p>
+<p>Pages are referenced with a unique name known as a "key".
+These need to be unique. It is not possible, for instance,
+to have two grid pages with the key "grid". It is, however,
+possible (but not advised) to have two pages of different
+types with the same name.
+</p>
+
+<h4>Saving a page</h4>
+
+<p>Pages can be saved to a state file with
+<code>monolith:page-save</code>. It takes in two arguments: the
+name of the page, and then the key of the page to save it
+as. The key should be unique.
+</p>
+<p>This example below attempts to save the current state of
+page "g" into a state file with the key "gridstate".
+</p>
+<pre><code>(monolith:state-open "state.db")
+(monolith:page-save "g" "gridstate")
+(monolith:state-close)</pre></code>
+
+<h4>Loading a page</h4>
+
+<p>Page data can be loaded using <code>monolith:page-load</code>. These
+take in the same ordered arguments as <code>monolith:page-save</code>:
+the page name (as it is seen in monolith), and the key as
+stored in the state file. Both the key and the page name
+need to exist for this to work.
+</p>
+<p>This example below attempts to load the data stored
+in "gridstate" into the page named "g".
+</p>
+<pre><code>(monolith:state-open "state.db")
+(monolith:page-load "g" "gridstate")
+(monolith:state-close)</pre></code>
+</div>
+</body>
+</html>

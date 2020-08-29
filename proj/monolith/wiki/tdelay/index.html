@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>TDelay</title>
+<h1>TDelay</h1>
+<p>TDelay is a trigger event delay.
+</p>
+<p>The interface is mostly controlled via Janet.
+</p>
+</p>
+
+<h3>Initial Example</h3>
+
+<div><b><i>&lt;&lt;tdelay_test.janet&gt;&gt;=</i></b></div><pre><code>(monolith/runt-loader)
+
+(def rvl monolith/runt-eval)
+
+(defn mtof (n)
+  (* 440 (math/pow 2 (/ (- n 69) 12))))
+
+(defn simplesine (note)
+  (rvl "0.005 0.01 0.2 tenvx")
+  (rvl (string (mtof note) " 0.3 sine"))
+  (rvl "mul"))
+
+
+(defn looper (td loop note)
+  (tdelay-loop-word td loop)
+  (rvl "bdup")
+  (simplesine note)
+  (rvl "bswap bdup samphold mul"))
+
+(do
+  (var base 60)
+  (rvl "patchwerk nodes")
+  (rvl "0 110 4 clock bhold 0 cabset")
+  (rvl "tick 0 cabget 2 0 tdiv 0.3 1 maygate add")
+  (rvl "bdup")
+  (rvl "0.8 0 cabget 8 0 tdiv 0.7 1 maygate 3 1 switch")
+  (rvl "0 cabget")
+  (var td (tdelay-word 6))
+
+  (tdelay-eps td 0.01)
+  (simplesine base)
+
+  (looper td 0 (+ base 2))
+
+  (looper td 1 (+ base 7))
+  (rvl "add")
+
+  (looper td 2 (+ base 11))
+  (rvl "add")
+
+  (looper td 3 (+ base 12))
+  (rvl "add")
+
+  (looper td 4 (+ base 14))
+  (rvl "add")
+
+  (looper td 5 (+ base 16))
+  (rvl "add")
+
+  (rvl "0.5 mul add")
+
+  (rvl "out")
+  (rvl "0 cabget bunhold")
+  (rvl "60 set_dur")
+  (rvl "write_wav"))</pre></code>
+<p></p>
+</p>
+
+<h3>Scheme Wrapper</h3>
+
+<p>A way to wrap things in scheme. Janet must be instantiated
+before calling this.
+</p>
+<p>Here is the mother node.
+</p>
+<pre><code>(define (tdelay-wrap in fdbk dly clk ndelay)
+  (param in)
+  (param fdbk)
+  (param dly)
+  (param clk)
+
+  (monolith:janet-eval
+   (string-append
+    "(monolith/runt-push-cptr (tdelay-word "
+    (number-&gt;string ndelay)
+    "))")))</pre></code>
+<p></p>
+<p>A word can be created like so:
+</p>
+<pre><code>(define (tdelay-loop-wrap td num)
+  (monolith:janet-eval
+   (string-append
+    "(tdelay-loop-word (monolith/runt-pop-cptr) "
+    (number-&gt;string num)
+    ")")))</pre></code>
+</div>
+</body>
+</html>

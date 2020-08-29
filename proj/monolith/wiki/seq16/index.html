@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Seq16</title>
+<h1>Seq16</h1>
+<p>Seq16 is a simple step sequencer for the grid.
+</p>
+<p>Make a new page with <code>monolith:seq16-new</code>
+
+<pre><code>(monolith:seq16-new "seq")</pre></code>
+<p></p>
+<p>Import seq16 wrappers into scheme with:
+</p>
+<pre><code>(monolith:load "seq16.scm")</pre></code>
+<p></p>
+<p>Before the seq16 page can be used, it must be
+clocked by an external clock source via <code>seq16clk</code>.
+</p>
+<pre><code>(seq16clk (clock 0 120 4) "seq")</pre></code>
+<p></p>
+<p>There are two kinds of signals provided: the value
+and the gate. These are provided with <code>seq16val</code> and
+<code>seq16gt</code>. All that's needed is the page name here.
+Be sure to call these <b>after</b> <code>seq16clk</code>.
+</p>
+<p>Playhead is turned off by default. Turn it on with
+<code>monolith:seq16-playhead</code>.
+</p>
+<pre><code>(monolith:seq16-playhead "seq" 1)</pre></code>
+<p></p>
+<p>Multiplying the main clock signal with <code>seq16gt</code> gets
+a trigger signal.
+</p>
+<p>Using this trigger signal with a <code>samphold</code> will make it
+suitable when using it for gated/articulated notes. Note
+that this means the signal output will go from 1-8, with
+0 being ignored.
+</p>
+<pre><code>(samphold (mul (seq-clk) (seq16gt "seq")) (seq16val "seq"))</pre></code>
+<p></p>
+<p>It is often useful to snap seq16 back to the beginning. Do
+this with <code>monolith:seq16-reset</code>.
+</p>
+</div>
+</body>
+</html>
