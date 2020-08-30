@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Wrap Trig</title>
+<h1>Wrap Trig</h1>
+<p>Super niche node. Takes an input signal
+(presumably a phasor), and sends a trigger when the phasor
+wraps around (aka, the current sample is less than previous
+sample).
+<div><b><i>&lt;&lt;wraptrig.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include "patchwerk.h"
+static void compute(pw_node *node)
+{
+    int blksize;
+    pw_cable *c[2];
+    int n;
+    PWFLT *last;
+
+    blksize = pw_node_blksize(node);
+    last = pw_node_get_data(node);
+
+    pw_node_get_cable(node, 0, &c[0]);
+    pw_node_get_cable(node, 1, &c[1]);
+
+    for (n = 0; n &lt; blksize; n++) {
+        PWFLT tick;
+        PWFLT in;
+        tick = 0;
+
+        in = pw_cable_get(c[0], n);
+
+        if (in &lt; *last) tick = 1;
+
+        pw_cable_set(c[1], n, tick);
+        *last = in;
+    }
+}
+
+static void destroy(pw_node *node)
+{
+    PWFLT *last;
+    last = pw_node_get_data(node);
+    pw_node_cables_free(node);
+    free(last);
+}
+
+int node_wraptrig(pw_node *node)
+{
+    PWFLT *last;
+
+    last = calloc(1, sizeof(PWFLT));
+    pw_node_cables_alloc(node, 2);
+    pw_node_set_block(node, 1);
+    pw_node_set_compute(node, compute);
+    pw_node_set_destroy(node, destroy);
+    pw_node_set_data(node, last);
+    return PW_OK;
+}</pre></code>
+</div>
+</body>
+</html>

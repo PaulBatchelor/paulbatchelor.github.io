@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. WIP Additional Menu Items (via Janet)</h3>
+
+<p><a id="wm_004_0294"></a>In order to promote additional functionality, such as
+loading/saving state data, a customizable menu will be
+created. This functionality will allow additional items
+to appear in their own submenu, which can be selected from
+the main menu.
+</p>
+<p>This aux menu is populated with a Janet array. This array is
+stored as a reference in the C struct, and must be set via
+a janet function <code>monolith/norns-menu-aux-set</code>.
+</p>
+<div><b><i>&lt;&lt;norns_aux_menu_data&gt;&gt;=</i></b></div><pre><code>JanetArray *aux_items;</pre></code>
+<div><b><i>&lt;&lt;norns_aux_menu_init&gt;&gt;=</i></b></div><pre><code>menu-&gt;aux_items = NULL;</pre></code>
+<p></p>
+<br>
+<div><b><i>&lt;&lt;norns_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/norns-menu-aux-set",
+j_norns_menu_aux_set,
+"Sets the array."
+},</pre></code>
+<div><b><i>&lt;&lt;norns_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_norns_menu_aux_set(int32_t argc, Janet *argv)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    JanetArray *a;
+    norns_main_menu *menu;
+
+    janet_fixarity(argc, 2);
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    str = (const char *)janet_unwrap_string(argv[0]);
+    a = janet_unwrap_array(argv[1]);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+
+    if (!rc) {
+        fprintf(stderr, "could not find page '%s'\n", str);
+        return janet_wrap_nil();
+    }
+
+    menu = monolith_page_data_get(pg);
+
+    norns_menu_aux_set(menu, a);
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>static void norns_menu_aux_set(norns_main_menu *m,
+                               JanetArray *a);</pre></code>
+<p></p>
+<p>TODO: implement.
+</p>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>static void norns_menu_aux_set(norns_main_menu *m,
+                               JanetArray *a)
+{
+    m-&gt;aux_items = a;
+}</pre></code>
+<p></p>
+<p>There is a risk that the garbage collector
+in Janet could free this prematurely, but the flexibility
+of using a Janet array makes it worth trying.
+</p>
+<p>The Janet array is expected to be an array of tuples.
+Each tuple contains the menu item name as a string, as well
+as a zero-parameter function that gets called when it is
+selected.
+</p>
+<p>Because this menu is dynamically populated using Janet
+structures, drawing and selection behavior happen
+differently. When the aux menu is selected, a special flag
+is turned on to channel this new behavior. Returning to the
+main menu causes this flag to be switched off.
+</p>
+<div><b><i>&lt;&lt;aux_menu_return&gt;&gt;=</i></b></div><pre><code>mm-&gt;aux_menu = 0;</pre></code>
+<div><b><i>&lt;&lt;norns_aux_menu_data&gt;&gt;=</i></b></div><pre><code>int aux_menu;</pre></code>
+<div><b><i>&lt;&lt;norns_aux_menu_init&gt;&gt;=</i></b></div><pre><code>menu-&gt;aux_menu = 0;</pre></code>
+<p></p>
+<p>Selection. Even though the aux menu plays by its own rules,
+it is still fundamentally using the <code>norns_menu</code> interface.
+When selected, the aux menu page will call on
+<code>norns_menu_reinit</code> similar to how the main and pages menu
+work. It will also flip on the <code>aux_menu</code> flag.
+</p>
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_aux_menu_select(norns_main_menu *menu);</pre></code>
+<p></p>
+<p>It is only when the aux menu is selected that the number of
+items is populated from the array. This keeps things simple
+and fast.
+</p>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;aux_menu_callbacks&gt;&gt;
+void norns_aux_menu_select(norns_main_menu *menu)
+{
+    norns_menu_reinit(&menu-&gt;menu,
+                      "Aux",
+                      NULL,
+                      1,
+                      menu);
+    menu-&gt;aux_menu = 1;
+&lt;&lt;set_aux_menu_callbacks&gt;&gt;
+
+    if (menu-&gt;aux_items != NULL) {
+        menu-&gt;menu.nitems += menu-&gt;aux_items-&gt;count;
+    }
+}</pre></code>
+<p></p>
+<p>When <code>norns_menu_reinit</code> is called, it sets a callback for
+for what to do when a knob is called. This particular
+callback needs to be replaced because this is where the
+redrawing occurs.
+</p>
+<div><b><i>&lt;&lt;set_aux_menu_callbacks&gt;&gt;=</i></b></div><pre><code>{
+    norns_poll_d *poll;
+    poll = monolith_norns_poll(menu-&gt;m);
+    norns_poll_cb_knob(poll, 1, aux_menu_knob, menu);
+    norns_poll_cb_key(poll, 1, aux_menu_key, menu);
+}</pre></code>
+<div><b><i>&lt;&lt;aux_menu_callbacks&gt;&gt;=</i></b></div><pre><code>void monolith_norns_draw(monolith_d *m);
+static void aux_menu_knob(void *ud, int pos)
+{
+    norns_main_menu *mm;
+    norns_menu *menu;
+
+    mm = ud;
+    menu = &mm-&gt;menu;
+
+    norns_menu_step(menu, pos);
+    norns_menu_janet_draw(menu, mm-&gt;aux_items);
+
+    monolith_norns_draw(monolith_data_get());
+}</pre></code>
+<p></p>
+<p>The button also needs to be changed to due to the behavior
+required.
+</p>
+<div><b><i>&lt;&lt;norns_static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void aux_menu_key(void *ud, int state);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>static void aux_menu_key(void *ud, int state)
+{
+    norns_main_menu *mm;
+    norns_menu *menu;
+    int selected;
+
+    if (state == 0) return;
+
+    mm = ud;
+    menu = &mm-&gt;menu;
+
+    selected = menu-&gt;selected;
+
+    if (selected == 1) {
+        /* void (*f)(norns_menu *, int); */
+        /* selected--; */
+        /* f = menu-&gt;items[selected].select; */
+        /* if (f != NULL) { */
+        /*     f(menu, selected); */
+        /* } */
+        return_to_main(menu, selected);
+    } else if (selected &gt; 1 && mm-&gt;aux_items != NULL) {
+        JanetArray *tuple;
+        JanetFunction *fun;
+        JanetArray *a;
+        a = mm-&gt;aux_items;
+        tuple = janet_unwrap_array(a-&gt;data[selected - 2]);
+        fun = janet_unwrap_function(tuple-&gt;data[1]);
+        janet_call(fun, 0, NULL);
+    }
+}</pre></code>
+<p></p>
+<p>Drawing. Menu items are read from a Janet array instead of
+the <code>norns_menu_item</code> struct. Item names are extracted from
+the array as a C string, and then drawn onto the screen.
+The first menu item is hardcoded to go back to the main menu
+screen.
+</p>
+<p>Regrettably, it would seem that the current drawing function
+does lend itself well for introducing a "Janet mode" for aux
+functions. Attempting to do so now would involving a lot of
+duplicate code and headache.
+</p>
+<p>Currently, a menu is drawn out using a self-contained
+function called <code>norns_menu_draw</code>. To draw things the new
+way, function called <code>norns_menu_janet_draw</code> will be used.
+As arguments, it will take in the Janet Array, in addition
+to the norns menu type.
+</p>
+<p>The <code>norns_menu_janet_draw</code> function will be built up of
+similar components as <code>norns_menu_draw</code> for things like
+the header, but replacing item drawing with the janet
+array instead of the internal array.
+</p>
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_menu_janet_draw(norns_menu *menu, JanetArray *a);</pre></code>
+<p></p>
+<p>For now, just call <code>norns_menu_draw</code> as a placeholder.
+</p>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_menu_janet_draw(norns_menu *menu, JanetArray *a)
+{
+    norns_videobuf_clear(menu-&gt;buf);
+    norns_menu_header(menu);
+&lt;&lt;draw_aux_menu_items&gt;&gt;
+}</pre></code>
+<p></p>
+<p>Selecting. Selecting an item is a matter of finding correct
+item in the array, extracting the function, and calling that
+function. If the selection is the first menu item, it will
+return to the main menu screen.
+</p>
+<div><b><i>&lt;&lt;draw_aux_menu_items&gt;&gt;=</i></b></div><pre><code>{
+    int i;
+    int item;
+    int x, y;
+    int selected;
+    unsigned char bg;
+    unsigned char fg;
+    int nrows;
+
+    selected = menu-&gt;selected;
+
+    nrows = menu-&gt;nitems - menu-&gt;offset;
+
+    if (nrows &gt; 6) nrows = 6;
+    if (nrows &lt; 0) nrows = 0;
+
+    for (i = 0; i &lt; nrows; i++) {
+        item = menu-&gt;offset + i;
+        if ((item + 1) == selected) {
+            fg = 0x00;
+            bg = 0xff;
+            for (y = 0; y &lt; 10; y++) {
+                for (x = 0; x &lt; 128; x++) {
+                    norns_videobuf_write(menu-&gt;buf,
+                                         x, (14 + 9*i) + y,
+                                         0xff);
+                }
+            }
+        } else {
+            fg = 0xff;
+            bg = 0x00;
+        }
+
+        if (item == 0) {
+            norns_draw_string(menu-&gt;buf,
+                            0, 15 + 9*0,
+                            fg, bg,
+                            "_ Main Menu");
+        } else {
+            JanetArray *tuple;
+            const char *str;
+            tuple = janet_unwrap_array(a-&gt;data[item - 1]);
+            str = (const char *)janet_unwrap_string(tuple-&gt;data[0]);
+            norns_draw_string(menu-&gt;buf,
+                            0, 15 + 9*i,
+                            fg, bg,
+                            str);
+        }
+    }
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>10. DONE Knobs Scheme Functions</h3>
+
+<p><a id="wm_008_0331"></a>CLOSED: [2019-12-06 Fri 17:32]
+</p>
+
+<h4>10.1. DONE Knobs Scheme Loader</h4>
+
+<p><a id="wm_008_0333"></a>CLOSED: [2019-12-06 Fri 11:42]
+The top-level scheme loader is called <code>s9_load_knobs</code>.
+<div><b><i>&lt;&lt;knobs_function_declarations&gt;&gt;=</i></b></div><pre><code>void s9_load_knobs(void);</pre></code>
+<div><b><i>&lt;&lt;knobs_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;knobs_scheme_functions&gt;&gt;
+static S9_PRIM knobs_primitives[] = {
+&lt;&lt;knobs_scheme_entries&gt;&gt;
+    {NULL}
+};
+void s9_load_knobs(void)
+{
+    monolith_scheme_add_primitives("monolith",
+                                   knobs_primitives);
+}</pre></code>
+
+<h4>10.2. DONE Create Knobs Page</h4>
+
+<p><a id="wm_008_0343"></a>CLOSED: [2019-12-06 Fri 11:42]
+A new knobs page is created with <code>monolith:knobs-new</code>.
+<div><b><i>&lt;&lt;knobs_scheme_entries&gt;&gt;=</i></b></div><pre><code>{
+    "monolith:knobs-new",
+    pp_knobs_new, 1, 1,
+    {S9_T_STRING, S9_T_ANY, S9_T_ANY}
+},</pre></code>
+<div><b><i>&lt;&lt;knobs_scheme_functions&gt;&gt;=</i></b></div><pre><code>static s9_cell pp_knobs_new(s9_cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    str = monolith_scheme_string(s9_car(x));
+
+    rc = monolith_dict_newpage(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return monolith_scheme_error(
+            "Could not create knobs page (maybe it already exists?)",
+            s9_car(x));
+    }
+
+    page_knobs(pg);
+    return S9_UNSPECIFIC;
+}</pre></code>
+
+<h4>10.3. DONE Set a Knob Value</h4>
+
+<p><a id="wm_008_0351"></a>CLOSED: [2019-12-06 Fri 17:31]
+<div><b><i>&lt;&lt;knobs_scheme_entries&gt;&gt;=</i></b></div><pre><code>{
+    "monolith:knobs-val",
+    pp_knobs_val, 5, 5,
+    {S9_T_STRING, S9_T_INTEGER, S9_T_INTEGER}
+},</pre></code>
+<div><b><i>&lt;&lt;knobs_scheme_functions&gt;&gt;=</i></b></div><pre><code>static s9_cell pp_knobs_val(s9_cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    page_knobs_d *knobs;
+    int rc;
+    int lane, xpos, ypos;
+    PWFLT val;
+    PWFLT *pval;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    str = monolith_scheme_string(s9_car(x));
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return monolith_scheme_error(
+            "Could not find step page",
+            s9_car(x));
+    }
+
+    x = s9_cdr(x);
+    lane = monolith_scheme_integer(NULL, s9_car(x));
+    if (lane &lt; 0 || lane &gt;= 4) {
+        return monolith_scheme_error(
+            "Lane out of bounds",
+            s9_car(x));
+    }
+    x = s9_cdr(x);
+    xpos = monolith_scheme_integer(NULL, s9_car(x));
+    if (xpos &lt; 0 || xpos &gt;= 4) {
+        return monolith_scheme_error(
+            "xpos out of bounds",
+            s9_car(x));
+    }
+    x = s9_cdr(x);
+    ypos = monolith_scheme_integer(NULL, s9_car(x));
+    if (ypos &lt; 0 || ypos &gt;= 8) {
+        return monolith_scheme_error(
+            "ypos out of bounds",
+            s9_car(x));
+    }
+    x = s9_cdr(x);
+
+    knobs = monolith_page_data_get(pg);
+
+    val = REAL2FLOAT(s9_car(x));
+
+    if (val &lt; 0 || val &gt;= 1) {
+        return monolith_scheme_error(
+            "value out of bounds",
+            s9_car(x));
+    }
+
+    pval = knobs_val(knobs, lane, xpos, ypos);
+
+    if (pval == NULL) {
+        printf("Weird NULL value.\n");
+        return S9_UNSPECIFIC;
+    }
+
+
+    *pval = val;
+
+    if (monolith_page_selected(pg)) {
+        knobs_draw_lane(knobs, lane);
+    }
+
+    return S9_UNSPECIFIC;
+}</pre></code>
+
+<h4>10.4. DONE Select a Knob</h4>
+
+<p><a id="wm_008_0357"></a>CLOSED: [2019-12-06 Fri 17:20]
+<div><b><i>&lt;&lt;knobs_scheme_entries&gt;&gt;=</i></b></div><pre><code>{
+    "monolith:knobs-select",
+    pp_knobs_select, 4, 4,
+    {S9_T_STRING, S9_T_INTEGER, S9_T_INTEGER}
+},</pre></code>
+<div><b><i>&lt;&lt;knobs_scheme_functions&gt;&gt;=</i></b></div><pre><code>static s9_cell pp_knobs_select(s9_cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    page_knobs_d *knobs;
+    int rc;
+    int lane, xpos, ypos;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    str = monolith_scheme_string(s9_car(x));
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if (!rc) {
+        return monolith_scheme_error(
+            "Could not find knobs page",
+            s9_car(x));
+    }
+
+    x = s9_cdr(x);
+    lane = monolith_scheme_integer(NULL, s9_car(x));
+    if (lane &lt; 0 || lane &gt;= 4) {
+        return monolith_scheme_error(
+            "Lane out of bounds",
+            s9_car(x));
+    }
+    x = s9_cdr(x);
+    xpos = monolith_scheme_integer(NULL, s9_car(x));
+    if (xpos &lt; 0 || xpos &gt;= 4) {
+        return monolith_scheme_error(
+            "xpos ane out of bounds",
+            s9_car(x));
+    }
+    x = s9_cdr(x);
+    ypos = monolith_scheme_integer(NULL, s9_car(x));
+    if (ypos &lt; 0 || ypos &gt;= 8) {
+        return monolith_scheme_error(
+            "ypos ane out of bounds",
+            s9_car(x));
+    }
+
+    knobs = monolith_page_data_get(pg);
+
+    knobs_select(knobs, lane, xpos, ypos);
+
+    if (monolith_page_selected(pg)) {
+        knobs_draw_lane(knobs, lane);
+    }
+    return S9_UNSPECIFIC;
+}</pre></code>
+
+<h4>10.5. DONE Assign Aux Knob</h4>
+
+<p><a id="wm_008_0363"></a>CLOSED: [2019-12-06 Fri 12:37]
+<div><b><i>&lt;&lt;knobs_scheme_entries&gt;&gt;=</i></b></div><pre><code>{
+    "monolith:knobs-aux-assign",
+    pp_knobs_aux_assign, 4, 4,
+    {S9_T_STRING, S9_T_INTEGER, S9_T_INTEGER}
+},</pre></code>
+<div><b><i>&lt;&lt;knobs_scheme_functions&gt;&gt;=</i></b></div><pre><code>static s9_cell pp_knobs_aux_assign(s9_cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    page_knobs_d *knobs;
+    int rc;
+    int lane, xpos, ypos;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    str = monolith_scheme_string(s9_car(x));
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return monolith_scheme_error(
+            "Could not find step page",
+            s9_car(x));
+    }
+
+    x = s9_cdr(x);
+    lane = monolith_scheme_integer(NULL, s9_car(x));
+    x = s9_cdr(x);
+    xpos = monolith_scheme_integer(NULL, s9_car(x));
+    x = s9_cdr(x);
+    ypos = monolith_scheme_integer(NULL, s9_car(x));
+
+    knobs = monolith_page_data_get(pg);
+
+    knobs_aux_knob(knobs, lane, xpos, ypos);
+    return S9_UNSPECIFIC;
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>7. DONE Seq16 State Management</h3>
+
+<p><a id="wm_013_0201"></a>CLOSED: [2019-12-10 Tue 12:30]
+</p>
+
+<h4>7.1. DONE Schema Contents</h4>
+
+<p><a id="wm_013_0203"></a>CLOSED: [2019-12-10 Tue 12:22]
+</p>
+
+<h5>7.1.1. DONE Steps</h5>
+
+<p><a id="wm_013_0205"></a>CLOSED: [2019-12-10 Tue 12:22]
+The step pattern data, encoded as a msgpack blob of 16
+8-bit ints.
+<div><b><i>&lt;&lt;seq16_schema_generation&gt;&gt;=</i></b></div><pre><code>monolith_param_mkblob(*schema, 0,
+                      "steps", 5,
+                      NULL, 0, NULL);</pre></code>
+
+<h6>7.1.1.1. msgpack generation</h6>
+
+<p><a id="wm_013_0210"></a></p>
+
+<h7>7.1.1.1.1. Write</h7>
+
+<p><a id="wm_013_0211"></a><div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static int seq16_data_write_seq(cmp_ctx_t *c, uint8_t *vals);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static int seq16_data_write_seq(cmp_ctx_t *c, uint8_t *vals)
+{
+    int i;
+    int rc;
+    if (!cmp_write_array(c, 16)) return 0;
+
+    for (i = 0; i &lt; 16; i++) {
+        rc = cmp_write_u8(c, vals[i]);
+        if (!rc) return 0;
+    }
+
+    return 1;
+}</pre></code>
+
+<h7>7.1.1.1.2. Read</h7>
+
+<p><a id="wm_013_0216"></a><div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static int seq16_data_read_seq(cmp_ctx_t *c, uint8_t *vals);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static int seq16_data_read_seq(cmp_ctx_t *c, uint8_t *vals)
+{
+    int i;
+    int rc;
+    uint32_t size;
+    if (!cmp_read_array(c, &size)) return 0;
+
+    if (size != 16) {
+        fprintf(stderr,
+                "size of 16 expected, got %d\n",
+                size);
+        return 0;
+    }
+
+    for (i = 0; i &lt; 16; i++) {
+        rc = cmp_read_u8(c, &vals[i]);
+        if (!rc) return 0;
+    }
+
+    return 1;
+}</pre></code>
+
+<h6>7.1.1.2. saving steps blob</h6>
+
+<p><a id="wm_013_0221"></a><div><b><i>&lt;&lt;seq16_data_save&gt;&gt;=</i></b></div><pre><code>{
+    cmp_ctx_t cmp;
+    moncmp_d m;
+    size_t sz;
+    uint8_t *buf;
+
+    sz = 0;
+    moncmp_init_getsize(&cmp, &sz);
+    seq16_data_write_seq(&cmp, seq16-&gt;seq);
+
+    buf = calloc(1, sz);
+    moncmp_init_write(&m, &cmp, buf);
+
+    seq16_data_write_seq(&cmp, seq16-&gt;seq);
+    monolith_param_setblob_default(schema, 0, buf, sz);
+}</pre></code>
+
+<h6>7.1.1.3. reading steps blob</h6>
+
+<p><a id="wm_013_0225"></a><div><b><i>&lt;&lt;seq16_data_load&gt;&gt;=</i></b></div><pre><code>{
+    size_t sz;
+    cmp_ctx_t cmp;
+    uint8_t *buf;
+    moncmp_d m;
+
+    sz = 0;
+    monolith_param_blob(schema, 0,
+                        (void **)&buf,
+                        (unsigned int *)&sz);
+
+    moncmp_init_read(&m, &cmp, buf, sz);
+    seq16_data_read_seq(&cmp, seq16-&gt;seq);
+}</pre></code>
+
+<h5>7.1.2. DONE Size</h5>
+
+<p><a id="wm_013_0229"></a>CLOSED: [2019-12-10 Tue 12:21]
+The set step size of the pattern.
+</p>
+
+<h6>7.1.2.1. Schema Entry</h6>
+
+<p><a id="wm_013_0231"></a><div><b><i>&lt;&lt;seq16_schema_generation&gt;&gt;=</i></b></div><pre><code>monolith_param_mkint(*schema, 1,
+                    "size", 4,
+                    seq16-&gt;size);</pre></code>
+
+<h6>7.1.2.2. Reading the Size</h6>
+
+<p><a id="wm_013_0234"></a><div><b><i>&lt;&lt;seq16_data_load&gt;&gt;=</i></b></div><pre><code>monolith_param_int(schema,
+                   1,
+                   &seq16-&gt;size);</pre></code>
+
+<h5>7.1.3. DONE Playhead State</h5>
+
+<p><a id="wm_013_0237"></a>CLOSED: [2019-12-10 Tue 12:21]
+Is it enabled? disabled?
+</p>
+
+<h6>7.1.3.1. Schema Entry</h6>
+
+<p><a id="wm_013_0239"></a><div><b><i>&lt;&lt;seq16_schema_generation&gt;&gt;=</i></b></div><pre><code>monolith_param_mkint(*schema, 2,
+                    "playhead", 8,
+                    seq16-&gt;playhead);</pre></code>
+
+<h6>7.1.3.2. Reading playhead state</h6>
+
+<p><a id="wm_013_0242"></a><div><b><i>&lt;&lt;seq16_data_load&gt;&gt;=</i></b></div><pre><code>monolith_param_int(schema,
+                   2,
+                   &seq16-&gt;playhead);</pre></code>
+
+<h4>7.2. DONE Seq16 Schema Generation</h4>
+
+<p><a id="wm_013_0245"></a>CLOSED: [2019-12-10 Tue 12:22]
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static int seq16_schema(page_seq16_d *seq16,
+                        monolith_state_schema **schema);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static int seq16_schema(page_seq16_d *seq16,
+                        monolith_state_schema **schema)
+{
+    monolith_state_schema_init(schema, 3);
+
+&lt;&lt;seq16_schema_generation&gt;&gt;
+    return 1;
+}</pre></code>
+
+<h4>7.3. DONE Seq16 State Save</h4>
+
+<p><a id="wm_013_0253"></a>CLOSED: [2019-12-10 Tue 12:22]
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static int seq16_save(monolith_page *pg,
+                      monolith_state *s,
+                      const char *key,
+                      unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static int seq16_save(monolith_page *pg,
+                      monolith_state *s,
+                      const char *key,
+                      unsigned int len)
+{
+    page_seq16_d *seq16;
+    monolith_state_schema *schema;
+    seq16 = monolith_page_data_get(pg);
+    seq16_schema(seq16, &schema);
+&lt;&lt;seq16_data_save&gt;&gt;
+    monolith_state_write_schema(s, schema,
+                                "seq16", 5,
+                                key, len);
+    monolith_state_schema_cleanup(&schema);
+    return 1;
+}</pre></code>
+<div><b><i>&lt;&lt;seq16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_save_set(pg, seq16_save);</pre></code>
+
+<h4>7.4. DONE Seq16 State Load</h4>
+
+<p><a id="wm_013_0263"></a>CLOSED: [2019-12-10 Tue 12:30]
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static int seq16_load(monolith_page *pg,
+                      monolith_state *s,
+                      const char *key,
+                      unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static int seq16_load(monolith_page *pg,
+                      monolith_state *s,
+                      const char *key,
+                      unsigned int len)
+{
+    page_seq16_d *seq16;
+    monolith_state_schema *schema;
+    int rc;
+
+    monolith_state_schema_init(&schema, 3);
+    seq16 = monolith_page_data_get(pg);
+
+    seq16_schema(seq16, &schema);
+    rc = monolith_state_read_schema(s, schema,
+                                    "seq16", 5,
+                                    key, len);
+    if (rc) {
+&lt;&lt;seq16_data_load&gt;&gt;
+        seq16_redraw(seq16);
+    }
+
+    monolith_state_schema_cleanup(&schema);
+    return rc;
+}</pre></code>
+<div><b><i>&lt;&lt;seq16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_load_set(pg, seq16_load);</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>7. Line16 Page Creation</h3>
+
+<p><a id="wm_012_0593"></a></p>
+
+<h4>7.1. Line16 Creation Main</h4>
+
+<p><a id="wm_012_0594"></a>A new line16 page is created with the function <code>page_line16</code>.
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_line16(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void page_line16(monolith_page *pg)
+{
+    page_line16_d *line16;
+    line16 = calloc(1, sizeof(page_line16_d));
+    if(line16 == NULL) return;
+    page_line16_init(pg, line16);
+    if(line16_type == 0) {
+        page_line16_runtime_init(monolith_page_monolith(pg));
+    }
+&lt;&lt;line16_assign_callbacks&gt;&gt;
+    monolith_page_data_set(pg, line16);
+}</pre></code>
+
+<h4>7.2. Line16 Set Typeflag</h4>
+
+<p><a id="wm_012_0602"></a><div><b><i>&lt;&lt;line16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_type_set(pg, line16_type);</pre></code>
+
+<h4>7.3. Line16 Open</h4>
+
+<p><a id="wm_012_0606"></a>When a line16 page is opened, the monome and arc states
+are recalled.
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_open(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_open(monolith_page *pg)
+{
+    page_line16_d *line16;
+    line16 = monolith_page_data_get(pg);
+    if(line16 == NULL) return;
+    monolith_page_mstate_recall(line16-&gt;mstate);
+    monolith_page_arcstate_recall(line16-&gt;arcstate);
+    line16_state_copy(line16);
+}</pre></code>
+<div><b><i>&lt;&lt;line16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_open_set(pg, line16_open);</pre></code>
+
+<h4>7.4. Line16 Free</h4>
+
+<p><a id="wm_012_0614"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_free(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_free(monolith_page *pg)
+{
+    page_line16_d *line16;
+    line16 = (page_line16_d *)monolith_page_data_get(pg);
+    if(line16 == NULL) return;
+    page_line16_cleanup(line16);
+    free(line16);
+}</pre></code>
+<div><b><i>&lt;&lt;line16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_free_set(pg, line16_free);</pre></code>
+
+<h4>7.5. Line16 Press Callback</h4>
+
+<p><a id="wm_012_0621"></a></p>
+
+<h5>7.5.1. Main Presser</h5>
+
+<p><a id="wm_012_0622"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_press(monolith_page *pg, int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_press(monolith_page *pg, int x, int y, int s)
+{
+    page_line16_d *l;
+
+    l = (page_line16_d *)monolith_page_data_get(pg);
+
+    if(s) line16_press_top(l, x, y);
+}</pre></code>
+<div><b><i>&lt;&lt;line16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_press_set(pg, line16_press);</pre></code>
+
+<h5>7.5.2. Actions</h5>
+
+<p><a id="wm_012_0629"></a>Actions and intersections are rolled up into one bundle.
+The structure consists of a set of conditionals. The program
+will go through all the conditionals until it one of them
+returns true.
+</p>
+
+<h6>7.5.2.1. Top Press</h6>
+
+<p><a id="wm_012_0631"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_press_top(page_line16_d *l,
+                             int x,
+                             int y);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_press_top(page_line16_d *l,
+                             int x,
+                             int y)
+{
+    if(y == 0) {
+        line16_press_select(l, x);
+    } else if(y &gt;= 1 && y &lt;= 5) {
+        line16_press_config(l, x, y);
+    } else if (y == 7) {
+        line16_press_control(l, x);
+    }
+}</pre></code>
+
+<h6>7.5.2.2. Select a Point</h6>
+
+<p><a id="wm_012_0636"></a>This is the top row. When a point is selected, the button
+associated with that columm will be lit up, and the values
+will be displayed on the arc.
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_press_select(page_line16_d *l, int val);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_press_select(page_line16_d *l, int val)
+{
+    line16_select_point(l, val);
+}</pre></code>
+
+<h6>7.5.2.3. Configure a Point</h6>
+
+<p><a id="wm_012_0642"></a>This is any point between the 2nd and 6th rows. Each column
+corresponds to a point on the line.
+</p>
+<p>The first button is a toggle that controls if the point is
+active or not.
+</p>
+<p>The next 4 buttons configure the slope of the line. Mode 1
+is linear, modes 2 is positive exponential, mode 3 is
+negative exponential, and mode 4 is bezier.
+</p>
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_press_config(page_line16_d *l,
+                                int x,
+                                int y);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_press_config(page_line16_d *l,
+                                int x,
+                                int y)
+{
+    int s;
+    if (y == 1) {
+        s = l-&gt;state[x];
+        s = s ? 0 : 1;
+        monolith_page_mstate_led_set(l-&gt;mstate,
+                                     x, y, s);
+        line16_state_set(l, x, s);
+    } else if (y &gt;= 2 || y &lt;= 5) {
+        line16_line *line;
+
+        switch(y) {
+            case 2:
+                s = SLOPE_LINEAR;
+                break;
+            case 3:
+                s = SLOPE_EXP_POSITIVE;
+                break;
+            case 4:
+                s = SLOPE_EXP_NEGATIVE;
+                break;
+            case 5:
+                s = SLOPE_BEZIER;
+                break;
+        }
+        line = &l-&gt;lines[l-&gt;selected_line];
+        line16_point_type_set(l, l-&gt;selected_line, x, s);
+        line16_draw_point_type(&line-&gt;points[x],
+                               x,
+                               l-&gt;mstate);
+    }
+}</pre></code>
+
+<h6>7.5.2.4. Control Panel</h6>
+
+<p><a id="wm_012_0648"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_press_control(page_line16_d *l, int x);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_press_control(page_line16_d *l, int x)
+{
+    line16_point *pt;
+    int t;
+    int tmp;
+    if (x == 0) {
+        pt = line16_get_point(l, l-&gt;selected_point);
+        if (pt != NULL) {
+            t = pt-&gt;type & (1&lt;&lt;2);
+            if (t == 0) t = 1;
+            else t = 0;
+            tmp = pt-&gt;type;
+            tmp &= ~(1&lt;&lt;2);
+            tmp |= (t&lt;&lt;2);
+            pt-&gt;type = tmp;
+            line16_draw_point_togmode(pt, l-&gt;mstate);
+        }
+    }
+
+    /* select a point in binary */
+
+    if (x &gt;= 12 && x &lt;= 15) {
+        int bit;
+        int selected;
+
+        bit = x - 12;
+        selected = l-&gt;selected_line;
+
+        if (selected & (1 &lt;&lt; bit)) {
+            selected &= ~(1 &lt;&lt; bit);
+        } else {
+            selected |= 1 &lt;&lt; bit;
+        }
+
+        l-&gt;selected_line = selected;
+        line16_state_copy(l);
+        line16_draw_selected_line(l-&gt;selected_line,
+                                  l-&gt;mstate);
+        line16_redraw_points(l);
+        line16_select_point(l, l-&gt;selected_point);
+
+
+        if (l-&gt;selected_line != l-&gt;playing_line) {
+            monolith_page_mstate_led_row16(l-&gt;mstate, 6, 0);
+        }
+    }
+}</pre></code>
+
+<h4>7.6. Line16 Turn Callback</h4>
+
+<p><a id="wm_012_0653"></a>This will change the global playback rate of the line,
+assuming the line isn't being controlled form patchwerk.
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_turn(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_turn(monolith_page *pg, int s)
+{
+    PWFLT rate;
+    page_line16_d *l;
+
+    l = (page_line16_d *)monolith_page_data_get(pg);
+
+    rate = l-&gt;rate;
+
+    rate += 0.1 * s;
+
+    if(rate &lt; 0) rate = 0;
+
+    if(rate &gt; 500) rate = 500;
+
+    l-&gt;rate = rate;
+}</pre></code>
+<div><b><i>&lt;&lt;line16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_turn_set(pg, line16_turn);</pre></code>
+
+<h4>7.7. Line16 Push Callback</h4>
+
+<p><a id="wm_012_0661"></a>The push callback will reset the global playback rate to be
+1.
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_push(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_push(monolith_page *pg, int s)
+{
+    page_line16_d *l;
+
+    l = (page_line16_d *)monolith_page_data_get(pg);
+
+    l-&gt;rate = 1;
+}</pre></code>
+<div><b><i>&lt;&lt;line16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_push_set(pg, line16_push);</pre></code>
+
+<h4>7.8. Line16 Delta Callback</h4>
+
+<p><a id="wm_012_0669"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_delta(monolith_page *pg, int n, int delta);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_delta(monolith_page *pg, int n, int delta)
+{
+    page_line16_d *l;
+    line16_point *pt;
+    PWFLT *val;
+    line16_line *line;
+
+    l = (page_line16_d *)monolith_page_data_get(pg);
+
+    line = &l-&gt;lines[l-&gt;selected_line];
+
+    if(l-&gt;selected_point &lt; 0) return;
+
+    pt = &line-&gt;points[l-&gt;selected_point];
+
+    val = NULL;
+    switch(n) {
+        case 0:
+            val = &pt-&gt;val;
+            break;
+        case 1:
+            val = &pt-&gt;dur;
+            break;
+        case 2:
+            val = &pt-&gt;aux[0];
+            break;
+        case 3:
+            val = &pt-&gt;aux[1];
+            break;
+    }
+
+    if(val == NULL) return;
+
+    *val = line16_increment(*val, delta);
+
+    monolith_arcstate_mapval(l-&gt;arcstate, n, *val);
+}</pre></code>
+<div><b><i>&lt;&lt;line16_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_delta_set(pg, line16_delta);</pre></code>
+</div>
+</body>
+</html>

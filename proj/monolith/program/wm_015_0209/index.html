@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>9. Jump Cell</h3>
+
+<p><a id="wm_015_0209"></a>A jump cell is used to jump to a particular cell. This wire
+is multifunctional, depending on the states of the command
+cell.
+</p>
+<p>Location is stored in the rightmost turned on bit in data.
+Each bit correspond to a location in the cell pool
+(of size 32). If no bits are turned on, the jump cell is
+is ignored.
+</p>
+<p>If the second command byte is zero, it will behave as a goto
+operation and immediately go to the cell location in the
+data word.
+</p>
+<p>If the second command byte is a non zero value, it will use
+the wire in the rightmost bit as a conditional. If the wire
+is non-zero, it will go to the location. Otherwise, it will
+continue on to the next cell in the VM.
+</p>
+<p>The third command byte will <b>eventually</b> be used to change the
+jumping behavior.
+</p>
+<p>The first alternate behavior <b>planned</b> is the N-way jump.
+When enabled, the jumper will randomly jump to any of the
+lit up bits in the data word. To accomplish this, some fancy
+bit twiddling black magic is summoned from Hackers Delight.
+First, the number of bits in the data word is counted using
+a divide-and-conquer algorithm found in the beginning of
+the "counting bits" chapter, which we will call <code>nchoices</code>.
+A random integer between <code>0</code> and <code>nchoices - 1</code> is obtained,
+which will be called <code>choice</code>.
+This choice is then turned into a location by turning off
+rightmost bits up to <code>choice</code>, masking, then performing
+<code>log2</code> on the bytes.
+</p>
+<div><b><i>&lt;&lt;exfuncs&gt;&gt;=</i></b></div><pre><code>static int countbits(unsigned long x) {
+    x = x - ((x &gt;&gt; 1) & 0x55555555);
+    x = (x & 0x33333333) + ((x &gt;&gt; 2) & 0x33333333);
+    x = (x + (x &gt;&gt; 4)) & 0x0F0F0F0F;
+    x = x + (x &gt;&gt; 8);
+    x = x + (x &gt;&gt; 16);
+
+    return x & 0x0000003F;
+}
+
+static int jump(trig_vm *vm,
+                int pos,
+                uint32_t cmd,
+                uint32_t data)
+{
+    int go;
+    int rbit;
+    int wire;
+    int alt;
+
+    if (data == 0) return (pos + 1) % 32;
+
+    rbit = (data & -data);
+
+    go = 0;
+
+    while (rbit &gt;&gt;= 1) go++;
+
+    wire = (cmd &gt;&gt; 8) & 0xFF;
+    alt = (cmd &gt;&gt; 16) & 0xFF;
+
+    if (alt == 1) {
+        int nchoices;
+        int choice;
+        uint32_t word;
+        int next;
+        int p;
+        /* Get number of on bits in data cell */
+
+        nchoices = countbits(data);
+
+        if (nchoices == 0) return (pos + 1) % 32;
+
+        choice = floor(((double)rand()/RAND_MAX)*nchoices);
+        word = data;
+
+        for (p = 0; p &lt; choice; p++) {
+            /* turn off rightmost bit */
+            word &= ~(word & -word);
+        }
+
+        /* isolate remaining rightmost bit */
+        word = (word & -word);
+        next = 0;
+
+        /* log2(word) to get position */
+        while (word &gt;&gt;= 1) next++;
+        return next;
+    } else {
+        if (wire == 0) {
+            return go % 32;
+        } else {
+            int wp;
+
+            rbit = wire & -wire;
+
+            wp = 0;
+            while (rbit &gt;&gt;= 1) wp++;
+
+            if (trig_vm_wire_get(vm, wp) != 0) return go % 32;
+        }
+    }
+
+    return (pos + 1) % 32;
+}</pre></code>
+</div>
+</body>
+</html>

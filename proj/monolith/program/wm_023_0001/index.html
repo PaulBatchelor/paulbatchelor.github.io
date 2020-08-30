@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>bitpwm</title>
+<h1>bitpwm</h1>
+<p>Creates a pulse wavetable with configurable width. Designed
+to be fed into an instance of <code>bitosc</code> as a wavetable
+parameter.
+</p>
+<p>The <code>bitpwm</code> itself takes in two paramters: position and
+wavetable size. Presumably, the size is the same size as
+the wavetable size in <code>bitosc</code>.
+</p>
+<div><b><i>&lt;&lt;bitpwm.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include "patchwerk.h"
+static int tick = 1;
+static void compute(pw_node *node)
+{
+    int blksize;
+    pw_cable *c[3];
+    int n;
+
+    blksize = pw_node_blksize(node);
+
+    for (n = 0; n &lt; 3; n++) {
+        pw_node_get_cable(node, n, &c[n]);
+    }
+
+    for (n = 0; n &lt; blksize; n++) {
+        int sz;
+        PWFLT pos;
+        int ipos;
+        unsigned long out;
+
+        pos = pw_cable_get(c[0], n);
+        sz = floor(pw_cable_get(c[1], n));
+
+        ipos = floor(pos * sz);
+
+        if (ipos == sz) ipos--;
+
+        out = (1 &lt;&lt; ipos) - 1;
+        if (tick) {
+            printf("out: %ld\n", out);
+            tick = 0;
+        }
+
+        pw_cable_set(c[2], n, (PWFLT)out);
+    }
+}
+
+int node_bitpwm(pw_node *node)
+{
+    pw_node_cables_alloc(node, 3);
+    pw_node_set_block(node, 2);
+    pw_node_set_compute(node, compute);
+    return PW_OK;
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. DONE Step Data</h3>
+
+<p><a id="wm_011_0032"></a>CLOSED: [2019-02-24 Sun 14:16]
+</p>
+
+<h4>3.1. DONE Step Data Contents</h4>
+
+<p><a id="wm_011_0034"></a>CLOSED: [2019-02-24 Sun 14:16]
+</p>
+
+<h5>3.1.1. DONE Step Monome State Data</h5>
+
+<p><a id="wm_011_0036"></a>CLOSED: [2019-02-16 Sat 20:09]
+The current monome state is maintained in a monome state data flag
+called <code>mstate</code>.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate *mstate;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate_new(pg, &s-&gt;mstate);</pre></code>
+<div><b><i>&lt;&lt;step_cleanup&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate_free(&s-&gt;mstate);</pre></code>
+
+<h5>3.1.2. DONE Step Playhead Position</h5>
+
+<p><a id="wm_011_0047"></a>CLOSED: [2019-02-16 Sat 20:03]
+The playhead position is a integer variable which holds the position
+in the pattern. It is updated everytime the clock happens.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int playpos;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>page_step_playpos_set(s, 0);</pre></code>
+<p>The playhead position can be retrieved using the function
+<code>page_step_playpos_get</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int page_step_playpos_get(page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int page_step_playpos_get(page_step_d *step)
+{
+    return step-&gt;playpos;
+}</pre></code>
+<p></p>
+<p>The playhead can be set using the function
+<code>page_step_playpos_set</code>. This function may update the playhead position when
+called. If JAM mode is disabled, the edit position is set here as well.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_step_playpos_set(page_step_d *step, int playpos);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void page_step_playpos_set(page_step_d *step, int playpos)
+{
+    step-&gt;playpos = playpos;
+    if(!page_step_jam_mode(step)) {
+        step-&gt;editpos = playpos;
+    }
+}</pre></code>
+
+<h5>3.1.3. DONE Step Edit Position</h5>
+
+<p><a id="wm_011_0065"></a>CLOSED: [2019-02-24 Sun 15:31]
+The edit position inidicates the currently edited note. Normally, this
+is identical to the playhead position, unless Jam Mode is turned on.
+The edit position is saved as a variable <code>editpos</code>.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int editpos;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>s-&gt;editpos = 0;</pre></code>
+<p>The edit position is handled using the functions <code>page_step_editpos_get</code> and
+<code>page_step_editpos_set</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int page_step_editpos_get(page_step_d *step);
+static void page_step_editpos_set(page_step_d *step, int pos);</pre></code>
+<p></p>
+<p>TODO: make sure <code>draw_playhead</code> is only called in <code>editpos_set</code> or
+<code>playhead_set</code>.
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int page_step_editpos_get(page_step_d *step)
+{
+    return step-&gt;editpos;
+}
+
+static void page_step_editpos_set(page_step_d *step, int pos)
+{
+    step-&gt;editpos = pos;
+    if(!page_step_jam_mode(step)) {
+        step-&gt;playpos = pos;
+    }
+    /* page_step_draw_playhead(step); */
+    /* page_step_draw_current_note(step); */
+}</pre></code>
+
+<h5>3.1.4. DONE Jam Mode Flag</h5>
+
+<p><a id="wm_011_0077"></a>CLOSED: [2019-02-24 Sun 15:31]
+Jam Mode allows a sequence to be edited while it is playing. Turning this
+mode on will decouple the edit and playhead position.
+Jam mode is disabled by default.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int jam_mode;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>s-&gt;jam_mode = 0;</pre></code>
+<p>To check of jam mode is on, the function <code>page_step_jam_mode</code>, and
+<code>page_step_jam_mode_get</code>.
+</p>
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int page_step_jam_mode(page_step_d *step);
+static int page_step_jam_mode_get(page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int page_step_jam_mode_get(page_step_d *step)
+{
+    return step-&gt;jam_mode;
+}
+static int page_step_jam_mode(page_step_d *step)
+{
+    return page_step_jam_mode_get(step);
+}</pre></code>
+
+<h5>3.1.5. TODO Latch Mode Flag</h5>
+
+<p><a id="wm_011_0088"></a>When Latch Mode is enabled, the sequencer will save the last selected or edited
+note. When a new note is create with the gate flag, it will set that note to
+that edited note.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int latch_mode;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>s-&gt;latch_mode = 0;</pre></code>
+<p>Latch mode is checked with <code>page_step_latch_mode</code>.
+</p>
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int page_step_latch_mode(page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int page_step_latch_mode(page_step_d *step)
+{
+    return step-&gt;latch_mode;
+}</pre></code>
+
+<h5>3.1.6. TODO Last Note</h5>
+
+<p><a id="wm_011_0099"></a>The last edited or selected note is stored in a variable called <code>last_note</code>.
+This value is used in Latch Mode.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>signed char last_note;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>s-&gt;last_note = 0;</pre></code>
+
+<h5>3.1.7. DONE Step Current Pattern</h5>
+
+<p><a id="wm_011_0105"></a>CLOSED: [2019-02-16 Sat 20:03]
+The currently selected pattern displayed is stored in an integer called
+<code>curpat</code>. By default, it is set to be at pattern 0, the first pattern.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int curpat;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>s-&gt;curpat = 0;</pre></code>
+
+<h5>3.1.8. DONE Step Pattern Bank</h5>
+
+<p><a id="wm_011_0111"></a>CLOSED: [2019-02-16 Sat 20:03]
+The step page has a pre-allocated set of patterns, for sequencing long-form
+songs. This maximum is defined by <code>MAXPAT</code>, which is currently set to be
+64.
+<div><b><i>&lt;&lt;step_macros&gt;&gt;=</i></b></div><pre><code>#define MAXPAT 64</pre></code>
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>step_pattern pat[MAXPAT];</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; MAXPAT; i++) step_pattern_init(&s-&gt;pat[i]);
+&lt;&lt;first_pattern_active&gt;&gt;</pre></code>
+<p></p>
+<p>By default, the first pattern is set to be active. This could change, when
+patterns and sequences start being used.
+<div><b><i>&lt;&lt;first_pattern_active&gt;&gt;=</i></b></div><pre><code>step_pattern_active_set(&s-&gt;pat[0], 1);</pre></code>
+
+<h5>3.1.9. TODO Step Number of Active Patterns</h5>
+
+<p><a id="wm_011_0126"></a></p>
+
+<h5>3.1.10. DONE Step Song Pattern Map</h5>
+
+<p><a id="wm_011_0127"></a>CLOSED: [2019-02-16 Sat 19:56]
+A "song" is a sequence of patterns.
+The step song map is an array of integers, each corresponding to a pattern
+number. The maximum song length is indidcated with <code>MAXSONGLEN</code> to be 128.
+<div><b><i>&lt;&lt;step_macros&gt;&gt;=</i></b></div><pre><code>#define MAXSONGLEN 128</pre></code>
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int songmap[MAXSONGLEN];</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; MAXSONGLEN; i++) s-&gt;songmap[i] = 0;</pre></code>
+
+<h5>3.1.11. DONE Step Song Length (number of patterns)</h5>
+
+<p><a id="wm_011_0135"></a>CLOSED: [2019-02-16 Sat 19:58]
+The length indicates how long the song is (aka how many song patterns to
+read).
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int song_len;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>s-&gt;song_len = 1;</pre></code>
+
+<h5>3.1.12. DONE Step Playing Flag</h5>
+
+<p><a id="wm_011_0141"></a>CLOSED: [2019-02-16 Sat 20:02]
+The <code>playing</code> flag is used to indicate whether or not the sequence is actually
+playing. This is just a 1 or 0 operation.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int playing;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>page_step_playing_set(s, 1);</pre></code>
+<p></p>
+<p>The <code>playing</code> variable is acessed with the function <code>page_step_playing_set</code>,
+<code>page_step_playing_get</code>, and <code>page_step_is_playing</code>.
+</p>
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>void page_step_playing_set(page_step_d *step, int s);
+int page_step_playing_get(page_step_d *step);
+int page_step_is_playing(page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>void page_step_playing_set(page_step_d *step, int s)
+{
+    step-&gt;playing = s;
+    page_step_draw_toolbar(step, 0, s);
+}
+
+int page_step_playing_get(page_step_d *step)
+{
+    return step-&gt;playing;
+}
+
+int page_step_is_playing(page_step_d *step)
+{
+    return page_step_playing_get(step);
+}</pre></code>
+
+<h5>3.1.13. TODO Step size</h5>
+
+<p><a id="wm_011_0152"></a>This variable indicates how much to jump. If negative, it
+will go backwards.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int step;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>page_step_step_set(s, 1);</pre></code>
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>void page_step_step_set(page_step_d *step, int s);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>void page_step_step_set(page_step_d *step, int s)
+{
+    step-&gt;step = s;
+}</pre></code>
+
+<h5>3.1.14. DONE Wait and reset flag</h5>
+
+<p><a id="wm_011_0162"></a>CLOSED: [2019-12-04 Wed 09:49]
+This flag is used with the wait and reset functionality.
+<div><b><i>&lt;&lt;step_contents&gt;&gt;=</i></b></div><pre><code>int wait_and_reset;</pre></code>
+<div><b><i>&lt;&lt;step_init&gt;&gt;=</i></b></div><pre><code>s-&gt;wait_and_reset = 0;</pre></code>
+
+<h4>3.2. Step Typedef Declaration</h4>
+
+<p><a id="wm_011_0168"></a>The top-level data struct for the step page is called <code>page_step_d</code>.
+<div><b><i>&lt;&lt;step_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct page_step_d page_step_d;</pre></code>
+<div><b><i>&lt;&lt;step_structs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;step_pattern_struct&gt;&gt;
+struct page_step_d {
+&lt;&lt;step_contents&gt;&gt;
+};</pre></code>
+
+<h4>3.3. DONE Step Data Allocation/Initialization</h4>
+
+<p><a id="wm_011_0180"></a>CLOSED: [2019-02-16 Sat 19:36]
+Step data is allocated and initialized with the function <code>page_step_create</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>void page_step_create(monolith_page *pg, page_step_d **step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>void page_step_create(monolith_page *pg, page_step_d **step)
+{
+    page_step_d *s;
+    int i;
+    s = calloc(1, sizeof(page_step_d));
+    *step = s;
+    /* TODO: implement */
+&lt;&lt;step_init&gt;&gt;
+    page_step_draw_playhead(*step);
+    page_step_draw_current_note(*step);
+}</pre></code>
+
+<h4>3.4. DONE Step Data Cleanup</h4>
+
+<p><a id="wm_011_0188"></a>CLOSED: [2019-02-16 Sat 19:37]
+Data is freed with the function <code>page_step_destroy</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>void page_step_destroy(page_step_d **step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>void page_step_destroy(page_step_d **step)
+{
+    page_step_d *s;
+    s = *step;
+&lt;&lt;step_cleanup&gt;&gt;
+    free(*step);
+}</pre></code>
+
+<h4>3.5. DONE Step Pattern</h4>
+
+<p><a id="wm_011_0196"></a>CLOSED: [2019-02-16 Sat 20:10]
+</p>
+
+<h5>3.5.1. DONE Step Pattern Struct Declaration</h5>
+
+<p><a id="wm_011_0198"></a>CLOSED: [2019-02-16 Sat 20:09]
+Data for a pattern sequenced with step is wrapped inside of a struct called
+<code>step_pattern</code>. This is done so that multiple patterns can be sequenced
+inside of a single instance of step.
+<div><b><i>&lt;&lt;step_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct step_pattern step_pattern;</pre></code>
+<div><b><i>&lt;&lt;step_pattern_struct&gt;&gt;=</i></b></div><pre><code>struct step_pattern {
+&lt;&lt;step_pattern_contents&gt;&gt;
+};</pre></code>
+
+<h5>3.5.2. DONE Step Pattern Initialization</h5>
+
+<p><a id="wm_011_0207"></a>CLOSED: [2019-02-16 Sat 20:08]
+A step pattern is initialized with the function <code>step_pattern_init</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>void step_pattern_init(step_pattern *pat);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>void step_pattern_init(step_pattern *pat)
+{
+    int i;
+&lt;&lt;step_pattern_init&gt;&gt;
+}</pre></code>
+
+<h5>3.5.3. DONE Step Pattern Size</h5>
+
+<p><a id="wm_011_0215"></a>CLOSED: [2019-02-16 Sat 19:46]
+The size of the pattern is stored as an integer value. At the moment,
+this value is set to be 32, which, for now, is also the maximum size
+<code>MAXSIZE</code>.
+<div><b><i>&lt;&lt;step_pattern_contents&gt;&gt;=</i></b></div><pre><code>int size;</pre></code>
+<div><b><i>&lt;&lt;step_macros&gt;&gt;=</i></b></div><pre><code>#define MAXSIZE 32</pre></code>
+<div><b><i>&lt;&lt;step_pattern_init&gt;&gt;=</i></b></div><pre><code>pat-&gt;size = MAXSIZE;</pre></code>
+<p>The pattern size can be retrieved with the function <code>step_pattern_size_get</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int step_pattern_size_get(step_pattern *pat);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int step_pattern_size_get(step_pattern *pat)
+{
+    return pat-&gt;size;
+}</pre></code>
+
+<h5>3.5.4. DONE Step Active Flag</h5>
+
+<p><a id="wm_011_0230"></a>CLOSED: [2019-04-07 Sun 22:12]
+A pattern has an internal <code>active</code> flag to inidicate if it is being used or not.
+This is specifically used so that when the page state is saved to disk, it
+only writes the used patterns.
+<div><b><i>&lt;&lt;step_pattern_contents&gt;&gt;=</i></b></div><pre><code>int active;</pre></code>
+<div><b><i>&lt;&lt;step_pattern_init&gt;&gt;=</i></b></div><pre><code>pat-&gt;active = 0;</pre></code>
+<p>The active flag can be manipulated with the function <code>step_pattern_active_set</code>
+and checked with <code>step_pattern_active</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void step_pattern_active_set(step_pattern *pat, int active);
+static int step_pattern_active(step_pattern *pat);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void step_pattern_active_set(step_pattern *pat, int active)
+{
+    pat-&gt;active = active;
+}
+static int step_pattern_active(step_pattern *pat)
+{
+    return pat-&gt;active;
+}</pre></code>
+
+<h5>3.5.5. DONE Step Note Data</h5>
+
+<p><a id="wm_011_0241"></a>CLOSED: [2019-02-16 Sat 19:46]
+Note data holds the relative pitch values. Nothing more than array here.
+Since they are expected
+to be in the range of -12 to 24, 8-bit signed <code>char</code> values are good enough.
+<div><b><i>&lt;&lt;step_pattern_contents&gt;&gt;=</i></b></div><pre><code>signed char notes[MAXSIZE];</pre></code>
+<div><b><i>&lt;&lt;step_pattern_init&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; MAXSIZE; i++) pat-&gt;notes[i] = 0;</pre></code>
+<p>A note can be retrieved using the function <code>step_pattern_note_get</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static signed char step_pattern_note_get(step_pattern *step, int pos);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static signed char step_pattern_note_get(step_pattern *step, int pos)
+{
+    if(pos &lt; 0 || pos &gt;= MAXSIZE) return 0;
+    if(step == NULL) return 0;
+    return step-&gt;notes[pos];
+}</pre></code>
+<p></p>
+<p>A note can be set using the function <code>step_pattern_note_set</code>. This will
+automatically truncate anything out of range of (-12, 25).
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void step_pattern_note_set(step_pattern *step,
+                                  int pos,
+                                  signed char note);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void step_pattern_note_set(step_pattern *step,
+                                  int pos,
+                                  signed char note)
+{
+    if(pos &lt; 0 || pos &gt;= MAXSIZE) return;
+    if(step == NULL) return;
+    if(note &lt; -12) note = -12;
+    if(note &gt; 35) note = 35;
+    step-&gt;notes[pos] = note;
+}</pre></code>
+
+<h5>3.5.6. DONE Step Gate Data</h5>
+
+<p><a id="wm_011_0257"></a>CLOSED: [2019-02-16 Sat 20:08]
+The gate determines the state of the note. 0 is off, 1 is on, and 2 might
+be a holdover value for long note values (aka this data could potentially
+instruct whether or not to (re)trigger values).
+<div><b><i>&lt;&lt;step_pattern_contents&gt;&gt;=</i></b></div><pre><code>signed char gates[MAXSIZE];</pre></code>
+<div><b><i>&lt;&lt;step_pattern_init&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; MAXSIZE; i++) pat-&gt;gates[i] = 0;</pre></code>
+<p>The value of a gate can be retrieved using the function
+<code>step_pattern_gate_get</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static unsigned int step_pattern_gate_get(step_pattern *pat, int pos);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static unsigned int step_pattern_gate_get(step_pattern *pat, int pos)
+{
+    if(pos &lt; 0) pos = 0;
+    if(pos &gt;= MAXSIZE) pos = MAXSIZE - 1;
+
+    return pat-&gt;gates[pos];
+}</pre></code>
+<p>The value of a gate can be set with the function
+<code>step_pattern_gate_set</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void step_pattern_gate_set(step_pattern *pat, int pos, unsigned char g);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void step_pattern_gate_set(step_pattern *pat, int pos, unsigned char g)
+{
+    if(pat == NULL) return;
+    if(pos &lt; 0) pos = 0;
+    if(pos &gt;= MAXSIZE) pos = MAXSIZE - 1;
+    pat-&gt;gates[pos] = g;
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. Printing Text</h3>
+
+<p><a id="wm_003_0096"></a>Monolith has (will have) an internal font used to print
+bitmap fonts.
+</p>
+
+<h4>3.1. Bitmap font data</h4>
+
+<p><a id="wm_003_0098"></a>To make things easy, a default 8x8 bitmap font is baked into
+the source code.
+<div><b><i>&lt;&lt;norns_default_font&gt;&gt;=</i></b></div><pre><code>#include "font.xbm.c"</pre></code>
+
+<h4>3.2. Writing a glyph to a video buffer</h4>
+
+<p><a id="wm_003_0103"></a>This takes an 8x8 glyph via XY coordinate and copies it to a
+location in the video buffer.
+</p>
+<p><code>gx</code> and <code>gy</code> are the XY coordinates of the glyph.
+</p>
+<p><code>ox</code> and <code>oy</code> are offset coordinates in the video buffer.
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_draw_glyph(norns_videobuf *buf,
+                      int gx, int gy,
+                      int ox, int oy,
+                      unsigned char fg, unsigned char bg);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_draw_glyph(norns_videobuf *buf,
+                      int gx, int gy,
+                      int ox, int oy,
+                      unsigned char fg, unsigned char bg)
+{
+    int x, y;
+    unsigned char v;
+    char b;
+    int stride;
+
+    stride = font_width / 8; /* divide by 8 */
+
+    for (y = 0; y &lt; 8; y++) {
+        for (x = 0; x &lt; 8; x++) {
+            b = font_bits[(8 * gy + y) * stride + gx];
+            v = ((b & (1 &lt;&lt; x)) != 0) ? fg : bg;
+            norns_videobuf_write(buf,
+                                 x + ox, y + oy,
+                                 v);
+        }
+    }
+}</pre></code>
+
+<h4>3.3. Writing a letter to a video buffer</h4>
+
+<p><a id="wm_003_0109"></a>This takes a 'letter', converts it to an XY location, and
+writes it to a video buffer.
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_draw_letter(norns_videobuf *buf,
+                       char c,
+                       int ox, int oy,
+                       unsigned char fg, unsigned char bg);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_draw_letter(norns_videobuf *buf,
+                       char c,
+                       int ox, int oy,
+                       unsigned char fg, unsigned char bg)
+{
+    int gx, gy;
+    char o;
+
+    o = c - ' '; /* start at 0 */
+
+    gx = o % (font_width &gt;&gt; 3);
+    gy = o / (font_width &gt;&gt; 3);
+
+    norns_draw_glyph(buf, gx, gy, ox, oy, fg, bg);
+}</pre></code>
+
+<h4>3.4. Writing a string to a video buffer</h4>
+
+<p><a id="wm_003_0115"></a>Takes in a string, and writes it to a location in a video
+buffer.
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_draw_string(norns_videobuf *buf,
+                       int x, int y,
+                       unsigned char fg, unsigned char bg,
+                       const char *str);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_draw_string(norns_videobuf *buf,
+                       int x, int y,
+                       unsigned char fg, unsigned char bg,
+                       const char *str)
+{
+    int len;
+    int n;
+    len = strlen(str);
+
+    for (n = 0; n &lt; len; n++) {
+        norns_draw_letter(buf, str[n], x + 8*n, y, fg, bg);
+    }
+}</pre></code>
+</div>
+</body>
+</html>

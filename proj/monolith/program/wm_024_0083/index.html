@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>5. Trigger Loops and Banks</h3>
+
+<p><a id="wm_024_0083"></a></p>
+
+<h4>5.1. Defining a Loop (data)</h4>
+
+<p><a id="wm_024_0084"></a>Each input trigger event is managed separately in what is
+referred to as a <code>loop</code>. A TDelay instance pre-allocates
+a fixed set of these at init time. This is known as a
+<code>bank</code>.
+</p>
+
+<h5>5.1.1. Struct Declaration</h5>
+
+<p><a id="wm_024_0086"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct tdelay_loop tdelay_loop;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct tdelay_loop {
+&lt;&lt;tdelay_loop&gt;&gt;
+};</pre></code>
+
+<h5>5.1.2. Init</h5>
+
+<p><a id="wm_024_0093"></a>A loop is initialized with <code>tdelay_loop_init</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void tdelay_loop_init(tdelay_loop *lp);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void tdelay_loop_init(tdelay_loop *lp)
+{
+&lt;&lt;tdelay_loop_init&gt;&gt;
+}</pre></code>
+
+<h5>5.1.3. Components</h5>
+
+<p><a id="wm_024_0101"></a>A loop has 4 major components.
+</p>
+
+<h6>5.1.3.1. State</h6>
+
+<p><a id="wm_024_0103"></a>The <code>state</code> holds one of three main states: <code>SLEEP</code>, <code>WAIT</code>,
+and <code>FIRE</code>
+
+<div><b><i>&lt;&lt;tdelay_loop&gt;&gt;=</i></b></div><pre><code>int state;</pre></code>
+<div><b><i>&lt;&lt;tdelay_loop_init&gt;&gt;=</i></b></div><pre><code>lp-&gt;state = SLEEP;</pre></code>
+<div><b><i>&lt;&lt;tdelay_loop_states&gt;&gt;=</i></b></div><pre><code>enum {
+    BEGIN,
+    SLEEP,
+    WAIT,
+    FIRE,
+    RELOAD
+};</pre></code>
+
+<h6>5.1.3.2. Energy</h6>
+
+<p><a id="wm_024_0114"></a>The <code>energy</code> level is used to determine whether or not
+a trigger should fire.
+</p>
+<div><b><i>&lt;&lt;tdelay_loop&gt;&gt;=</i></b></div><pre><code>PWFLT energy;</pre></code>
+<div><b><i>&lt;&lt;tdelay_loop_init&gt;&gt;=</i></b></div><pre><code>lp-&gt;energy = 0;</pre></code>
+
+<h6>5.1.3.3. Block Position</h6>
+
+<p><a id="wm_024_0120"></a>When a FIRE event does happen, the position in the block
+is noted with a variable <code>blockpos</code>.
+</p>
+<div><b><i>&lt;&lt;tdelay_loop&gt;&gt;=</i></b></div><pre><code>int blockpos;</pre></code>
+<div><b><i>&lt;&lt;tdelay_loop_init&gt;&gt;=</i></b></div><pre><code>lp-&gt;blockpos = 0;</pre></code>
+
+<h6>5.1.3.4. Counter</h6>
+
+<p><a id="wm_024_0126"></a>While in <code>WAIT</code> mode, the loop will burn down a <code>counter</code>.
+When it goes to zero, it will fire.
+</p>
+<div><b><i>&lt;&lt;tdelay_loop&gt;&gt;=</i></b></div><pre><code>int counter;</pre></code>
+<div><b><i>&lt;&lt;tdelay_loop_init&gt;&gt;=</i></b></div><pre><code>lp-&gt;counter = 0;</pre></code>
+
+<h4>5.2. Trigger Loop</h4>
+
+<p><a id="wm_024_0132"></a>When an event trigger happens, the next available trigger
+bank will be assigned to the event. If there isn't an
+available loop, it will go through and try to find the
+next available loop. If the slots are all filled, it will
+not even bother to look.
+</p>
+<p>---
+</p>
+<p>I believe the counter may need to be incremented by 1
+here for the first hit in order for the time to be
+correct.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void tdelay_trigger_loop(tdelay_d *td, int pos);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void tdelay_trigger_loop(tdelay_d *td, int pos)
+{
+    int loop_id;
+    if (td-&gt;nactive &gt;= td-&gt;nloops) {
+        return; /* full! */
+    }
+
+    loop_id = -1;
+
+    if (td-&gt;last_free &gt;= 0) {
+        loop_id = td-&gt;last_free;
+    } else {
+        int n;
+        tdelay_loop *bank;
+
+        bank = td-&gt;bank;
+
+        for (n = 0; n &lt; td-&gt;nloops; n++) {
+            if (bank[n].state == SLEEP) {
+                loop_id = n;
+                break;
+            }
+        }
+    }
+
+    if (loop_id &gt;= 0) {
+        tdelay_loop *lp;
+
+        lp = &td-&gt;bank[loop_id];
+
+        lp-&gt;state = BEGIN;
+        lp-&gt;counter = 0;
+        lp-&gt;energy = 1;
+
+        td-&gt;nactive++;
+        td-&gt;last_free = -1;
+    }
+}</pre></code>
+
+<h4>5.3. Updating The Loop Bank</h4>
+
+<p><a id="wm_024_0138"></a>When a clock trigger happens, the program will tick through
+the trigger bank and update states/times. Feedback +
+delay values will be cached as well.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void tdelay_update(tdelay_d *td, int pos);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void tdelay_update(tdelay_d *td, int pos)
+{
+    int n;
+
+    for (n = 0; n &lt; td-&gt;nloops; n++) {
+        tdelay_update_loop(td, n, pos);
+    }
+}</pre></code>
+
+<h4>5.4. Updating Loop State</h4>
+
+<p><a id="wm_024_0144"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void tdelay_update_loop(tdelay_d *td,
+                        int loop,
+                        int pos);</pre></code>
+<p></p>
+<p>A trigger delay loop goes through different states. For now,
+only one state change can happen per render block. To
+simplify the code, state changes for any given loop can only
+happen once per render block. In most practical cases, this
+should be enough. There are three main states: <code>SLEEP</code>,
+<code>WAIT</code>, and <code>FIRE</code>.
+</p>
+<p>As edge cases + bugs have been uncovered during development,
+extra states have also been added (<code>RELOAD</code>, <code>BEGIN</code>).
+</p>
+<p>A loop begins in SLEEP mode, until it is activated
+and used to delay a particular event, where it then will
+alternate between FIRE and WAIT. FIRE mode means that the
+loop will output a trigger in this render block at a given
+sample position in the block. WAIT means it is waiting to be
+fired. When a loop has decayed to nothing, it gets put back
+into SLEEP mode to be used again.
+</p>
+<p>A trigger loop can mostly be thought of as a counter that
+counts down. When it reaches zero, it fires and will
+subsequently be reset. (Note: this actually may mean that
+two sequential fires cannot happen between blocks. Given
+the block sizes, this is still okay).
+</p>
+<p>By the time a particular loop is being computed, no state
+needs to be modified at all. All the loop needs to do is
+check the block position and output a trigger if it is
+in FIRE mode for the block.
+</p>
+<p>When a clock triggers, each trigger loop in the bank gets
+updated. Depending on the mode, certain things can happen:
+</p>
+<p>When a event is first added, it is set to BEGIN. This is
+the chance for the loop to be properly intialized.
+</p>
+<p>For this to work, the event trigger needs to be processed
+before the loop states are processed.
+</p>
+<div><b><i>&lt;&lt;state_fire&gt;&gt;=</i></b></div><pre><code>case BEGIN:
+    lp-&gt;energy = 1;
+
+    lp-&gt;counter = floor(pw_cable_get(td-&gt;dly, pos)) - 1;
+
+    if (lp-&gt;counter &lt; 0) {
+        lp-&gt;counter = 0;
+    }
+
+    lp-&gt;state = WAIT;
+    break;</pre></code>
+<p></p>
+<br>
+<p>When in WAIT mode, a countdown happens. If the counter is
+zero, it gets set to FIRE mode. The block position is
+noted.
+</p>
+<div><b><i>&lt;&lt;state_wait&gt;&gt;=</i></b></div><pre><code>case WAIT:
+    if (lp-&gt;counter &lt;= 0) {
+        lp-&gt;state = FIRE;
+        lp-&gt;blockpos = pos;
+        td-&gt;ticked_last_block = 1;
+    } else {
+        lp-&gt;counter--;
+    }
+    break;</pre></code>
+<p></p>
+<p>A loop in FIRE mode means there was a trigger in the last
+render block. The counter is reset, and the energy is
+reduced by the feedback amount. If the energy level is about
+zero, then the loop mode is set to SLEEP. This loop will
+be on deck to be the next available slot. This will not
+be available until the next block starts. To make sure there
+is only one tick per block, there will be some sort of
+tick-lock to disable double event triggers. Because of this
+logic, you cannot have an two event triggers occur right
+next to eachother between render blocks. When working with
+small 64-sample blocks, this a non-issue.
+</p>
+<div><b><i>&lt;&lt;state_fire&gt;&gt;=</i></b></div><pre><code>case FIRE:
+case RELOAD:
+    lp-&gt;energy *= pw_cable_get(td-&gt;fdbk, pos);
+    if (lp-&gt;energy &lt; td-&gt;eps) {
+        lp-&gt;state = SLEEP;
+        td-&gt;last_free = loop;
+        td-&gt;nactive--;
+    } else {
+        lp-&gt;counter = floor(pw_cable_get(td-&gt;dly, pos)) - 1;
+
+        if (lp-&gt;counter &lt;= 0) {
+            lp-&gt;counter = 0;
+            lp-&gt;state = FIRE;
+            lp-&gt;blockpos = pos;
+            td-&gt;ticked_last_block = 1;
+        } else {
+            lp-&gt;counter--;
+            lp-&gt;state = WAIT;
+        }
+    }
+    break;</pre></code>
+<p></p>
+<p>A loop in SLEEP mode will just be skipped. There is nothing
+that needs to be done here.
+<div><b><i>&lt;&lt;state_sleep&gt;&gt;=</i></b></div><pre><code>case SLEEP:
+default:
+    break;</pre></code>
+<p></p>
+<p>After a TDelay node is instantiated (called the Mother
+Node), triggers for each loop in the bank must be accessed
+via other nodes with access to the TDelay state data for
+that loop. The loop node treats the state as read-only, so
+it can be called many times.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void tdelay_update_loop(tdelay_d *td,
+                        int loop,
+                        int pos)
+{
+    tdelay_loop *lp;
+    lp = &td-&gt;bank[loop];
+
+    switch (lp-&gt;state) {
+&lt;&lt;state_wait&gt;&gt;
+&lt;&lt;state_fire&gt;&gt;
+&lt;&lt;state_sleep&gt;&gt;
+    }
+}</pre></code>
+</div>
+</body>
+</html>

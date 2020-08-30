@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>10. WIP Trig Runt Words</h3>
+
+<p><a id="wm_014_0415"></a></p>
+
+<h4>10.1. DONE Runt Loader</h4>
+
+<p><a id="wm_014_0416"></a>CLOSED: [2020-04-19 Sun 18:53]
+All runt words are loaded with the function <code>trig_runt_loader</code>. It is loaded
+at init time.
+<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int trig_runt_loader(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;trig_runt_functions&gt;&gt;
+static int trig_runt_loader(monolith_d *m)
+{
+&lt;&lt;trig_runt_keywords&gt;&gt;
+    monolith_runt_mark_set(m);
+    return RUNT_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;trig_runtime_init&gt;&gt;=</i></b></div><pre><code>trig_runt_loader(m);</pre></code>
+
+<h4>10.2. DONE Trigclk Word</h4>
+
+<p><a id="wm_014_0428"></a>CLOSED: [2020-04-19 Sun 18:53]
+<div><b><i>&lt;&lt;trig_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "trigclk", 7, rproc_trigclk, m);</pre></code>
+<div><b><i>&lt;&lt;trig_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_trigclk(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    rpw_param in;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    monolith_page *pg;
+    page_trig_d *trig;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = rpw_get_param(vm, &in);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m,
+                                   name, "trig",
+                                   is_trig, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    trig = monolith_page_data_get(pg);
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    node_trigclk(node, trig);
+
+    rpw_set_param(vm, node, &in, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>10.3. Trigex Word</h4>
+
+<p><a id="wm_014_0436"></a><div><b><i>&lt;&lt;trig_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "trigex", 6, rproc_trigex, m);</pre></code>
+<div><b><i>&lt;&lt;trig_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_trigex(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    monolith_page *pg;
+    page_trig_d *trig;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = runt_monolith_lookup_page(vm, m,
+                                   name, "trig",
+                                   is_trig, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    trig = monolith_page_data_get(pg);
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    node_trigex(node, trig);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>10.4. Trigwget Word</h4>
+
+<p><a id="wm_014_0441"></a><div><b><i>&lt;&lt;trig_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "trigwget", 8, rproc_trigwget, m);</pre></code>
+<div><b><i>&lt;&lt;trig_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_trigwget(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    monolith_page *pg;
+    page_trig_d *trig;
+    rpw_param pwire;
+    int wire;
+    runt_stacklet *out;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = runt_monolith_lookup_page(vm, m,
+                                   name, "trig",
+                                   is_trig, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = rpw_get_param(vm, &pwire);
+    RUNT_ERROR_CHECK(rc);
+
+    if (!rpw_param_is_constant(&pwire)) {
+        runt_print(vm, "wire must be a constant\n");
+        return RUNT_NOT_OK;
+    }
+
+    wire = rpw_param_get_constant(&pwire);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    trig = monolith_page_data_get(pg);
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    rc = node_trigwget(node, trig, wire);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rpw_push_output(vm, node, out, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>10.5. Trigrex Word</h4>
+
+<p><a id="wm_014_0446"></a><div><b><i>&lt;&lt;trig_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "trigrex", 7, rproc_trigrex, m);</pre></code>
+<div><b><i>&lt;&lt;trig_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_trigrex(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    monolith_page *pg;
+    page_trig_d *trig;
+    rpw_param pos;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = runt_monolith_lookup_page(vm, m,
+                                   name, "trig",
+                                   is_trig, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = rpw_get_param(vm, &pos);
+    RUNT_ERROR_CHECK(rc);
+
+    trig = monolith_page_data_get(pg);
+
+    if (!rpw_param_is_constant(&pos)) {
+        runt_print(vm, "trigrex: pos must be a constant\n");
+        return RUNT_NOT_OK;
+    }
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    node_trigrex(node, trig, rpw_param_get_constant(&pos));
+    return RUNT_OK;
+}</pre></code>
+</div>
+</body>
+</html>
