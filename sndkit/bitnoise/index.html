@@ -241,12 +241,18 @@ bit position. ANDing with 1 then isolates that last bit.
 </p>
 <div><b><i>&lt;&lt;extract_bit&gt;&gt;=</i></b></div><pre><code>y = (bn-&gt;lfsr &gt;&gt; bn-&gt;pos) & 1;</pre></code>
 <p></p>
-<p>Since it's binary, scaling can be done with a ternerary
-operator. No multiplies necessary.
+<p>The value is scaled to be in between -1 and 1. Because
+it is binary, one could be tempted to use a ternary value
+like <code>y ? 1.0 : -1.0</code>. However, according to
+[[https://godbold.org][godbolt], <code>y * 2 - 1</code> takes about 3
+instructions to do in x86_64 (<code>mov</code>, <code>mul</code>, <code>sub</code>), and
+<code>y ? 1.0 : -1.0</code> takes instructions (<code>cmp</code>, <code>je</code>, <code>mov</code>,
+<code>jmp</code>, <code>mov</code>). (I'm pretty sure the one with less
+instructions is more efficient).
 </p>
 <p>This computed output is cached for later use in <code>saved</code>.
 </p>
-<div><b><i>&lt;&lt;scale_and_store&gt;&gt;=</i></b></div><pre><code>bn-&gt;saved = y ? 1.0 : -1.0;</pre></code>
+<div><b><i>&lt;&lt;scale_and_store&gt;&gt;=</i></b></div><pre><code>bn-&gt;saved = y * 2 - 1;</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;update_LFSR&gt;&gt;=</i></b></div><pre><code>if (bn-&gt;phs &gt;= SK_BITNOISE_PHSMAX) {
     SKFLT y;
