@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Bitnoise</title>
+<h1>Bitnoise</h1>
+
+<h3>Introduction</h3>
+
+<p><code>bitnoise</code> is a 1-bit noise generator, based on the
+one found on the <a href="https://wiki.nesdev.com/w/index.php/APU_Noise">NES APU</a>.
+It features a 15-bit linear feedback shift register
+(abbreviated as <code>LFSR</code>), mode toggle switch, and a
+rate parameter for speed control.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p>Bitnoise tangles to two files: <code>bitnoise.c</code> and
+<code>bitnoise.h</code>.
+</p>
+<div><b><i>&lt;&lt;bitnoise.c&gt;&gt;=</i></b></div><pre><code>/* tangled from sndkit. do not edit by hand */
+#include &lt;stdint.h&gt;
+#include &lt;math.h&gt;
+#define SK_BITNOISE_PRIV
+#include "bitnoise.h"
+&lt;&lt;macros&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<p>If <code>SK_BITNOISE_PRIV</code> is enabled, it
+exposes the struct in the header. Otherwise, it is
+left as an opaque struct.
+</p>
+<div><b><i>&lt;&lt;bitnoise.h&gt;&gt;=</i></b></div><pre><code>/* tangled from sndkit. do not edit by hand */
+#ifndef SK_BITNOISE_H
+#define SK_BITNOISE_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_BITNOISE_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+#endif</pre></code>
+
+<h3>Structs</h3>
+
+<p>All parameters are contained in a struct called
+<code>sk_bitnoise</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_bitnoise sk_bitnoise;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_bitnoise {
+    &lt;&lt;sk_bitnoise&gt;&gt;
+};</pre></code>
+
+<h3>Init</h3>
+
+<p>Bitnoise is initialized with <code>sk_bitnoise_init</code>. The
+sampling rate must be supplied here.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_bitnoise_init(sk_bitnoise *bn, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_bitnoise_init(sk_bitnoise *bn, int sr)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Variables, Constants, and State</h3>
+
+
+<h4>Phasor Constants and State</h4>
+
+<p>A fixed-point phasor is used to manage clocking and
+frequency control, similar to the one found in <a href="/sndkit/rline">rline</a>.
+</p>
+<p>Defined constants <code>SK_BITNOISE_PHSMAX</code> and
+<code>SK_BITNOISE_PHSMSK</code> are used to wrap.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_BITNOISE_PHSMAX 0x1000000L
+#define SK_BITNOISE_PHSMSK 0x0FFFFFFL</pre></code>
+<p></p>
+<p>To calculate the increment amount, a calculated constant
+called <code>maxlens</code> is used, which is the maximum phase length
+in units of seconds. When multiplied by the rate paramter,
+this provides a value (in units of cycles) that tells the
+phasor how much to increment.
+</p>
+<div><b><i>&lt;&lt;sk_bitnoise&gt;&gt;=</i></b></div><pre><code>SKFLT maxlens;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>bn-&gt;maxlens = SK_BITNOISE_PHSMAX / (SKFLT) sr;</pre></code>
+<p></p>
+<p>The phasor position itself is stored in a long integer
+called <code>phs</code>, and is set to be 0.
+</p>
+<div><b><i>&lt;&lt;sk_bitnoise&gt;&gt;=</i></b></div><pre><code>uint32_t phs;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>bn-&gt;phs = 0;</pre></code>
+
+<h4>Linear Feedback Shift Register State</h4>
+
+<p>Stored in a 16-bit unsigned integer called <code>lfsr</code>.
+</p>
+<div><b><i>&lt;&lt;sk_bitnoise&gt;&gt;=</i></b></div><pre><code>uint16_t lfsr;</pre></code>
+<p></p>
+<p>According to the APU specs, this is initialized to be 1.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>bn-&gt;lfsr = 1;</pre></code>
+
+<h4>Bit Position</h4>
+
+<p>The current bit position in the register is kept track of in
+an integer called <code>pos</code>.
+</p>
+<div><b><i>&lt;&lt;sk_bitnoise&gt;&gt;=</i></b></div><pre><code>int pos;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>bn-&gt;pos = 0;</pre></code>
+
+<h4>Saved Value</h4>
+
+<p>The last computed sample is stored in a variable called
+<code>saved</code>.
+</p>
+<div><b><i>&lt;&lt;sk_bitnoise&gt;&gt;=</i></b></div><pre><code>SKFLT saved;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>bn-&gt;saved = 0;</pre></code>
+
+<h3>Parameters</h3>
+
+
+<h4>Rate</h4>
+
+<p>The <code>rate</code> parameter changes the speed at which the noise
+generator updates, similar to how a sample-and-hold works.
+This is supplied in units of Hz.
+</p>
+<p>Set the rate parameter with <code>sk_bitnoise_rate</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_bitnoise_rate(sk_bitnoise *bn, SKFLT rate);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_bitnoise_rate(sk_bitnoise *bn, SKFLT rate)
+{
+    bn-&gt;rate = rate;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_bitnoise&gt;&gt;=</i></b></div><pre><code>SKFLT rate;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_bitnoise_rate(bn, 1000);</pre></code>
+
+<h4>Mode</h4>
+
+<p>The <code>mode</code> parameter is a toggle value which changes the
+behavior of LFSR. It is either 1 or 0. When 0, the LFSR
+should be set up to produce a sequence that is 32767 steps
+long. When 1, it should produce 31 or 91 steps, depending on
+the state of the shift register.
+</p>
+<p>Set the mode parameter with <code>sk_bitnoise_mode</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_bitnoise_mode(sk_bitnoise *bn, int mode);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_bitnoise_mode(sk_bitnoise *bn, int mode)
+{
+    bn-&gt;m = mode;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_bitnoise&gt;&gt;=</i></b></div><pre><code>int m;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_bitnoise_mode(bn, 0);</pre></code>
+
+<h3>Compute</h3>
+
+<p>A single sample is initialized with <code>sk_bitnoise_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_bitnoise_tick(sk_bitnoise *bn);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_bitnoise_tick(sk_bitnoise *bn)
+{
+    SKFLT out;
+
+    out = 0;
+    &lt;&lt;update_phasor&gt;&gt;
+    &lt;&lt;update_LFSR&gt;&gt;
+    &lt;&lt;write_output&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<p>To begin, the fixed phasor is updated. It is incremented by
+an amount determined by multiplying the constant <code>maxlens</code>
+with the <code>rate</code> parameter.
+</p>
+<div><b><i>&lt;&lt;update_phasor&gt;&gt;=</i></b></div><pre><code>bn-&gt;phs += floor(bn-&gt;rate * bn-&gt;maxlens);</pre></code>
+<p></p>
+<p>When the phasor reaches the or goes beyond the upper limit,
+it needs to wrap around again. Also, the state of the shift
+register may need to be updated.
+</p>
+<p>Wrap around of the phasor is done by AND-ing it with the
+phase mask <code>SK_BITNOISE_PHSMSK</code>.
+</p>
+<p>The shift register will need to get updated if it bit
+position reaches the end (it exceeds 14).
+</p>
+<p>According to the <a href="https://wiki.nesdev.com/w/index.php/APU_Noise">NES dev wiki</a>,
+the LFSR is computed in the following way:
+</p>
+<p>Compute feedback as the exclusive OR of bit 0 and
+one other bit. Depending on the mode flag, this
+bit is either bit 1 (mode OFF) or bit 6 (mode ON).
+</p>
+<p>The register is right-shifted by 1.
+</p>
+<p>The calculated feedback bit is set to be bit 14
+(the leftmost bit) of the new register.
+</p>
+<div><b><i>&lt;&lt;calculate_LFSR&gt;&gt;=</i></b></div><pre><code>x = bn-&gt;lfsr;
+f = (x & 1) ^ ((x &gt;&gt; (bn-&gt;m ? 6:1)) & 1);
+x &gt;&gt;= 1;
+x |= f &lt;&lt; 14;
+bn-&gt;lfsr = x;</pre></code>
+<p></p>
+<p>The actual noise output is done by extracting the current
+bit from the shift register, and then scaling that state
+to be in range -1,1.
+</p>
+<p>The bitwise operations below work together to "pop" the
+current bit out of the register. First, the register
+is right-shifted so that the desired bit is in the lowest
+bit position. ANDing with 1 then isolates that last bit.
+</p>
+<div><b><i>&lt;&lt;extract_bit&gt;&gt;=</i></b></div><pre><code>y = (bn-&gt;lfsr &gt;&gt; bn-&gt;pos) & 1;</pre></code>
+<p></p>
+<p>Since it's binary, scaling can be done with a ternerary
+operator. No multiplies necessary.
+</p>
+<p>This computed output is cached for later use in <code>saved</code>.
+</p>
+<div><b><i>&lt;&lt;scale_and_store&gt;&gt;=</i></b></div><pre><code>bn-&gt;saved = y ? 1.0 : -1.0;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;update_LFSR&gt;&gt;=</i></b></div><pre><code>if (bn-&gt;phs &gt;= SK_BITNOISE_PHSMAX) {
+    SKFLT y;
+    bn-&gt;phs &= SK_BITNOISE_PHSMSK;
+    if (bn-&gt;pos &gt; 14) {
+        uint16_t f;
+        uint16_t x;
+        bn-&gt;pos = 0;
+        &lt;&lt;calculate_LFSR&gt;&gt;
+    }
+
+    &lt;&lt;extract_bit&gt;&gt;
+    &lt;&lt;scale_and_store&gt;&gt;
+    bn-&gt;pos++;
+}</pre></code>
+<p></p>
+<p>The cached value <code>saved</code> is what is returned in the output.
+</p>
+<div><b><i>&lt;&lt;write_output&gt;&gt;=</i></b></div><pre><code>out = bn-&gt;saved;</pre></code>
+</div>
+</body>
+</html>
