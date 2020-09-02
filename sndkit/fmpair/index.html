@@ -169,8 +169,10 @@ It contains all the forward declarations. If
 #endif
 #endif</pre></code>
 
-<h3>Struct</h3>
+<h3>Structs</h3>
 
+<p>The main FM oscillator algorithm is encapsulated in a struct
+called <code>sk_fmpair</code>.
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_fmpair sk_fmpair;</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_fmpair {
@@ -450,6 +452,101 @@ value.
 </p>
 <div><b><i>&lt;&lt;update_phase_positions&gt;&gt;=</i></b></div><pre><code>fmp-&gt;clphs += floor(cfreq * fmp-&gt;maxlens);
 fmp-&gt;mlphs += floor(mfreq * fmp-&gt;maxlens);</pre></code>
+
+<h3>Feedback FM Variation</h3>
+
+<p>The original FM pair algorithm can be slightly modified to
+include <code>feedback</code>. To do this, the <code>sk_fmpair</code> struct is
+encapsulated in a new struct called <code>sk_fmpair_fdbk</code>.
+</p>
+<p>Feedback FM is based on the Two-oscillator feedback FM
+design outlined on page 248 of the Computer Music Tutorial
+by Curtis Roads.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_fmpair_fdbk sk_fmpair_fdbk;</pre></code>
+<p></p>
+<p>Appenended to the new struct are two new values: <code>feedback</code>,
+and <code>prev</code>. The <code>feedback</code> variable controls the feedback
+amount, while the <code>prev</code> variable stores the state of the
+last oscillator.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_fmpair_fdbk {
+    sk_fmpair fmpair;
+    SKFLT prev;
+    SKFLT feedback;
+};</pre></code>
+<p></p>
+<p>It is initialized with <code>sk_fmpair_fdbk_init</code> just like
+<code>sk_fmpair_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_fmpair_fdbk_init(sk_fmpair_fdbk *fmp, int sr,
+                         SKFLT *ctab, int csz, SKFLT ciphs,
+                         SKFLT *mtab, int msz, SKFLT miphs);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_fmpair_fdbk_init(sk_fmpair_fdbk *fmp, int sr,
+                         SKFLT *ctab, int csz, SKFLT ciphs,
+                         SKFLT *mtab, int msz, SKFLT miphs)
+{
+    sk_fmpair_init(&fmp-&gt;fmpair, sr,
+                   ctab, csz, ciphs,
+                   mtab, msz, miphs);
+    fmp-&gt;prev = 0;
+    fmp-&gt;feedback = 0;
+}</pre></code>
+<p></p>
+<p>The feedback amount can be set with <code>sk_fmpair_fdbk_amt</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_fmpair_fdbk_amt(sk_fmpair_fdbk *f, SKFLT amt);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_fmpair_fdbk_amt(sk_fmpair_fdbk *f, SKFLT amt)
+{
+    f-&gt;feedback = amt;
+}</pre></code>
+<p></p>
+<p>Computation of the FM pair feedback is done with
+<code>sk_fmpair_fdbk_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_fmpair_fdbk_tick(sk_fmpair_fdbk *fmp);</pre></code>
+<p></p>
+<p>This re-uses many named codeblocks seen in the
+<code>sk_fmpair_tick</code>: <<calculate_frequencies>>,
+<<tableformodulator_output>>,
+<<modulatefrequency>>,
+<<tablefor_modulator>>, and
+<<updatepositions>>.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_fmpair_fdbk_tick(sk_fmpair_fdbk *f)
+{
+    SKFLT out;
+    SKFLT cfreq, mfreq;
+    SKFLT modout;
+    int ipos;
+    SKFLT frac;
+    SKFLT x[2];
+    sk_fmpair *fmp;
+    out = 0;
+    fmp = &f-&gt;fmpair;
+
+    &lt;&lt;calculate_frequencies&gt;&gt;
+    &lt;&lt;table_lookup_for_modulator&gt;&gt;
+    &lt;&lt;scale_modulator_output&gt;&gt;
+
+    /* feedback-oscillator specific */
+    &lt;&lt;apply_feedback&gt;&gt;
+
+    &lt;&lt;modulate_carrier_frequency&gt;&gt;
+    &lt;&lt;table_lookup_for_carrier&gt;&gt;
+    &lt;&lt;update_phase_positions&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<p>In this function, feedback is added right after the
+modulator is scaled.
+</p>
+<p>This modulated value is then stored in the <code>prev</code> sample.
+</p>
+<div><b><i>&lt;&lt;apply_feedback&gt;&gt;=</i></b></div><pre><code>modout += f-&gt;prev * f-&gt;feedback;
+f-&gt;prev = modout;</pre></code>
 
 <h3>C:M Ratio tips</h3>
 
