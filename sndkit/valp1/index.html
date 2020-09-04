@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>valp1</title>
+<h1>valp1</h1>
+
+<h3>Overview</h3>
+
+<p><code>valp1</code> implements a <code>one-pole</code> <code>virtual-analog</code>
+<code>lowpass filter</code>, based on the implementation defined in
+"The Art of VA Filter Design" by Vadim Zavalishin.
+This particular filter id discretized using the
+<code>topology-preserving bilinear transform</code>, abbreviated
+as <code>TPBLT</code> or <code>TPT</code>.
+</p>
+<p>The full derivation of this filter is available in chapter 3
+of book. To keep things short and sweet, only the last
+of the implementation is mentioned here.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p>As per usual, a single C and Header file is provided called
+<code>valp1.c</code> and <code>valp1.h</code>. Defining <code>SK_VALP1_PRIV</code> will expose
+the core struct used in this algorithm.
+</p>
+<div><b><i>&lt;&lt;valp1.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_VALP1_PRIV
+#include "valp1.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;valp1.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_VALP1_H
+#define SK_VALP1_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_VALP1_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+#endif</pre></code>
+
+<h3>Struct</h3>
+
+<p>Called <code>sk_valp1</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_valp1 sk_valp1;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_valp1 {
+    &lt;&lt;sk_valp1&gt;&gt;
+};</pre></code>
+
+<h3>Cutoff Frequency</h3>
+
+<p>The only parameter is the cutoff frequency. It is set with
+<code>sk_valp1_freq</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_valp1_freq(sk_valp1 *lp, SKFLT freq);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_valp1_freq(sk_valp1 *lp, SKFLT freq)
+{
+    lp-&gt;freq = freq;
+}</pre></code>
+<p></p>
+<p>Caching is used so coefficients need not be re-calculated
+every sample.
+</p>
+<div><b><i>&lt;&lt;sk_valp1&gt;&gt;=</i></b></div><pre><code>SKFLT freq;
+SKFLT pfreq;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_valp1_freq(lp, 1000);
+lp-&gt;pfreq = -1;</pre></code>
+
+<h3>Filter Variables</h3>
+
+
+<h4>Filter Memory</h4>
+
+<p>Filter memory is stored in a value called <code>s</code>, which is
+the same variable name used in the textbook implementation.
+</p>
+<div><b><i>&lt;&lt;sk_valp1&gt;&gt;=</i></b></div><pre><code>SKFLT s;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>lp-&gt;s = 0;</pre></code>
+
+<h4>Gain coefficient</h4>
+
+<p>The gain coefficent <code>G</code> is a cached value used to compute
+the filter. It gets updated every time the frequency
+changes.
+</p>
+<div><b><i>&lt;&lt;sk_valp1&gt;&gt;=</i></b></div><pre><code>SKFLT G;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>lp-&gt;G = 0;</pre></code>
+
+<h4>Big T (1 / sr)</h4>
+
+<p><code>T</code>, otherwise known as "big T", is the sampling rate
+converted to seconds, or <code>1/sr</code>.
+It is needed in order to compute the gain
+coefficient <code>G</code>.
+</p>
+<div><b><i>&lt;&lt;sk_valp1&gt;&gt;=</i></b></div><pre><code>SKFLT T;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>lp-&gt;T = 1.0 / (SKFLT)sr;</pre></code>
+
+<h3>Initialization</h3>
+
+<p>Done with <code>sk_valp1_init</code>. Sampling rate is all that is
+needed.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_valp1_init(sk_valp1 *lp, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_valp1_init(sk_valp1 *lp, int sr)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Computation</h3>
+
+<p>A single sample is computed with <code>sk_valp1_tick</code>.
+The computation itself only requires a few short lines of
+very simple C code. However, the steps required to get it to
+this point were not as
+simple a matter. Often this is the case for filter
+implementations. By the time a filter design reaches C
+code, all you are left with is a handful of arithmetic
+and trig operations.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_valp1_tick(sk_valp1 *lp, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_valp1_tick(sk_valp1 *lp, SKFLT in)
+{
+    SKFLT out;
+    SKFLT v;
+    out = 0;
+    &lt;&lt;update_coefficient&gt;&gt;
+    &lt;&lt;compute&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<p>In the chapter, Zavalishin does a wonderful job showing how
+take the filter topology of a analog 1-pole lowpass filter
+and faithfully digitize it in a delay-free way using the
+<code>bilinear transform</code>. This approach, which
+Zavalishin calls <code>TPT</code>, differs from the more
+traditional direct form approach, which involves taking
+a transfer function for an analogue filter in the <code>s-plane</code>,
+then plugging-and-chugging in the BLT to convert it to
+a transfer function in the discrete time (digital) <code>z-plane</code>.
+</p>
+<p>After all the song and dance about things like
+time discretization methods and zero-delay feedback loops,
+the final equation looks like this:
+</p>
+<p>$$
+y = v + s
+$$
+</p>
+<p>Where $y$ is the filter output, $v$ can be considered to be
+the estimated output of $y$, and $s$ is the feedback. This
+will be returned to in a moment.
+</p>
+<p>Before computing the filter equation, the coefficient
+<code>G</code> must be updated if the frequency has been updated.
+</p>
+<p><code>G</code> is computed as <code>g/(1 + g)</code>. Little <code>g</code> is the gain
+amount.
+</p>
+<br>
+<p>where <code>g</code> is the <code>gain</code> amount $\omega_a T \over 2$,
+where $\omega_a$ is the <code>prewarped</code> filter cutoff frequency,
+in units radians/second. To get this value, first the cutoff
+frequency is multiplied by 2pi to convert it to units of
+radians per second, which will be called $\omega_c$, or
+<code>wc</code> in C. This then gets put through a transformation:
+</p>
+<p>$$
+\omegac T \over 2)
+$$
+</p>
+<p>This sort of operation is very common when using the BLT
+in filter design, and it is known <code>prewarping</code>.
+</p>
+<p>Basically, the BLT is a process for getting analogue filters
+digitized, but it doesn't come for free. The behavior of
+the cutoff frequency in the filter gets skewed a bit.
+This is known as <code>frequency warping</code>.
+The prewarping
+controls the warp in such a way that the cutoff frequency
+has a perfect mapping from the analog space, leaving
+everything around it to warp.
+</p>
+<div><b><i>&lt;&lt;update_coefficient&gt;&gt;=</i></b></div><pre><code>if (lp-&gt;pfreq != lp-&gt;freq) {
+    SKFLT wc;
+    SKFLT wa;
+    SKFLT g;
+
+    wc = 2.0 * M_PI * lp-&gt;freq;
+    wa = (2.0/lp-&gt;T) * tan(wc * lp-&gt;T * 0.5);
+    g = wa * lp-&gt;T * 0.5;
+    lp-&gt;G = g / (1.0 + g);
+
+    lp-&gt;pfreq = lp-&gt;freq;
+}</pre></code>
+<p></p>
+<p>Next comes computation.
+</p>
+<p>The $v$, or predicted part of the equation is computed and
+stored in a variable called <code>v</code> as <code>(x - s) * G</code>, where
+<code>x</code> is the input signal, <code>s</code> is the filter memory state, and
+<code>G</code> is the computed scaling parameter used in the <code>BLT</code>.
+</p>
+<p>The final filter output <code>y</code> can be computed as <code>v + s</code>.
+</p>
+<p>The filter memory state <code>s</code> is updated to be <code>y + v</code>.
+</p>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>v = (in - lp-&gt;s) * lp-&gt;G;
+out = v + lp-&gt;s;
+lp-&gt;s = out + v;</pre></code>
+</div>
+</body>
+</html>
