@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Effect Sends</title>
+<h1>Effect Sends</h1>
+
+<h3>What Are Sends?</h3>
+
+<p>A <code>send</code> in monolith is pretty much what a send would be in
+your typical DAW. It's a thing that allows you to send one
+or more audio signals to some sort of audio effect to be
+processed. Common examples of this include a reverb and
+delay.
+</p>
+<p>The gist of making a send in monolith involves making a
+send cable, writing stuff to that send cable, then sending
+the output of that cable to some kind of audio processor.
+</p>
+
+<h3>The Nitty Gritty Bits</h3>
+
+<p>Usually sending is done with scheme code, which calls runt
+code, which makes calls to patchwerk C library.
+</p>
+<p>At the patchwerk level, a send is a cable containing an
+audio buffer that gets thrown around a patch after it
+has been created.
+</p>
+<p>The "send" aspect is the unique part of all this. When
+a signal gets sent to the send cable, it's really taking
+the buffer contents of the signal, and adding it the
+contents of send cable buffer. The send amount attenuates
+the signal being copied.
+</p>
+<p>By the time, the send cable reaches the processor, the
+buffer contains the sum of all signals ready to be
+processed.
+</p>
+<p>When the patch goes around again to compute another block of
+audio, the send cable buffer is zeroed out before anything
+is written to it, and the process begins again.
+</p>
+
+<h3>Example: A reverb Send</h3>
+
+<p>Say you want to make a reverb send.
+</p>
+<p>The first thing you need to do is create a send cable, and
+save it to a register. A new cable can be created with
+<code>cabtmp</code>. <code>cabtmp</code> creates a cable with a buffer. to prevent
+buffers from being overwritten, they must be held with
+<code>bhold</code> (if the buffer is not from the pool, this will be
+ignored). <code>cabset</code> stores the cable in the register
+<code>REG-REV</code>.
+</p>
+<pre><code>(define REG-REV 0)
+(define (rev-init)
+  (cabset (bhold (cabtmp (const 0))) (param REG-REV)))</pre></code>
+<p></p>
+<p>Throw a signal with <code>rev-throw</code>. This function will pop
+the last signal on the stack and mix it into the send
+cable.
+</p>
+<p>The actual sending is done with a thing called <code>cthrow</code>.
+</p>
+<pre><code>(define (rev-throw amt)
+  (cthrow
+   zz
+   (amt)
+   (lambda () (cabget REG-REV))))</pre></code>
+<p></p>
+<p>Finally, process the values from the send cable, and clear
+the send cable. Cables <b>must</b> be cleared with <code>cabclr</code>,
+otherwise buffers from the buffer pools will be unable
+to be reclaimed. <code>cabclr</code> is mixes the behavior of <code>cabget</code>
+and <code>bunhold</code>. It expects a register ID where the cable is,
+and not the cable itself.
+</p>
+<pre><code>(define (rev-process)
+  (cabget REG-REV)
+  (cabget REG-REV)
+  (revsc zz zz (param 0.95) (param 10000))
+  (bdrop)
+  (dcblock zz)
+  (mul zz 0.5)
+  (cabclr REG-REV))</pre></code>
+</div>
+</body>
+</html>
