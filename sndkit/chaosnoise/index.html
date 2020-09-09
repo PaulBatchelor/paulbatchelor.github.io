@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>ChaosNoise</title>
+<h1>ChaosNoise</h1>
+
+<h3>Overview</h3>
+
+<p>The <code>chaosnoise</code> algorithm is noise generator that uses
+a chaos function to it's sound.
+</p>
+<p>At the core, chaosnoise is a essentially a 2-pole filter
+with an unstable filter coefficient and a nonlinearity.
+In other words, it gets its noise doing things DSP engineers
+work very hard to avoid under normal circumstances.
+</p>
+<p>The underlying chaos function is largely based on the one
+found in the Crackle Ugen found in SuperCollider. In this
+implementation, however, there is an added <code>rate</code> parameter
+similar to the one found in <a href="/sndkit/bitnoise">bitnoise</a>. This
+is can be used to change the tone quality of the algorithm.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p>This tangles to <code>chaosnoise.c</code> and <code>chaosnoise.h</code>. Defining
+<code>SK_CHAOSNOISE_PRIV</code> will expose the core struct in the
+header file.
+</p>
+<div><b><i>&lt;&lt;chaosnoise.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_CHAOSNOISE_PRIV
+#include "chaosnoise.h"
+&lt;&lt;macros&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;chaosnoise.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_CHAOSNOISE_H
+#define SK_CHAOSNOISE_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_CHAOSNOISE_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+#endif</pre></code>
+
+<h3>Struct</h3>
+
+<p>Data for ChaosNoise is contained in a struct called
+<code>sk_chaosnoise</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_chaosnoise sk_chaosnoise;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_chaosnoise {
+    &lt;&lt;sk_chaosnoise&gt;&gt;
+};</pre></code>
+
+<h3>Filter Memory</h3>
+
+<p>chaosnoise is technically a 2-pole filter, requiring
+memory for 2 samples of signal.
+</p>
+<div><b><i>&lt;&lt;sk_chaosnoise&gt;&gt;=</i></b></div><pre><code>SKFLT y[2];</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>cn-&gt;y[0] = init;
+cn-&gt;y[1] = 0;</pre></code>
+
+<h3>Sample and Hold Constants and Parameters</h3>
+
+<p>The signal is clocked with a sample and hold generator. This
+sample and hold will use a fixed-point phasor to keep track
+of time, similar to the ones found in <a href="/sndkit/bitnoise">bitnoise</a> and
+<a href="/sndkit/rline">rline</a>. More details on how this works can be
+found in these pages.
+</p>
+<p>A 32-bit integer called <code>phs</code> keeps track of the phase
+position.
+</p>
+<div><b><i>&lt;&lt;sk_chaosnoise&gt;&gt;=</i></b></div><pre><code>long phs;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>cn-&gt;phs = 0;</pre></code>
+<p></p>
+<p>The constant <code>SK_CHAOSNOISE_PHSMAX</code> defines the maximum
+length (and resolution) of the phasor, set to be
+<code>0x1000000</code>.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_CHAOSNOISE_PHSMAX 0x1000000L</pre></code>
+<p></p>
+<p>The constant <code>SK_CHAOSNOISE_PHSMSK</code> defines the masking
+value of the phasor, set to be <code>0x0FFFFFF</code>.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_CHAOSNOISE_PHSMSK 0x0FFFFFFL</pre></code>
+<p></p>
+<p>The floating point value <code>maxlens</code> is
+<code>SK_CHAOSNOISE_PHSMAX</code>, converted to seconds. It is used
+to calculate the increment amount for the phase position.
+When a rate value (in units of Hz, or cycles/second) get
+multiplied by this value, the result is a value in units
+of phase cycles.
+</p>
+<div><b><i>&lt;&lt;sk_chaosnoise&gt;&gt;=</i></b></div><pre><code>SKFLT maxlens;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>cn-&gt;maxlens = SK_CHAOSNOISE_PHSMAX / (SKFLT) sr;</pre></code>
+
+<h3>Parameters</h3>
+
+
+<h4>Chaos</h4>
+
+<p>The <code>chaos</code> parameter is variable that controls the chaos
+level. It is typically a value between 1 and 2.
+</p>
+<p>It can be set with <code>sk_chaosnoise_chaos</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_chaosnoise_chaos(sk_chaosnoise *cn, SKFLT chaos);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_chaosnoise_chaos(sk_chaosnoise *cn, SKFLT chaos)
+{
+    cn-&gt;chaos = chaos;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_chaosnoise&gt;&gt;=</i></b></div><pre><code>SKFLT chaos;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_chaosnoise_chaos(cn, 1.5);</pre></code>
+
+<h4>Rate</h4>
+
+<p>The <code>rate</code> value controls the rate of computation. This
+is a value measure in Hertz.
+</p>
+<p>It can be set with <code>sk_chaosnoise_rate</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_chaosnoise_rate(sk_chaosnoise *cn, SKFLT rate);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_chaosnoise_rate(sk_chaosnoise *cn, SKFLT rate)
+{
+    cn-&gt;rate = rate;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_chaosnoise&gt;&gt;=</i></b></div><pre><code>SKFLT rate;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_chaosnoise_rate(cn, 8000);</pre></code>
+
+<h3>Initialization</h3>
+
+<p>Initialized with <code>sk_chaosnoise_init</code>. Sampling rate and an
+initial value must be supplied as arguments. The initial
+value is a floating point value that expects to be in range
+0-1.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_chaosnoise_init(sk_chaosnoise *cn, int sr, SKFLT init);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_chaosnoise_init(sk_chaosnoise *cn, int sr, SKFLT init)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Computation</h3>
+
+<p>A single sample of audio is computed with
+<code>sk_chaosnoise_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_chaosnoise_tick(sk_chaosnoise *cn);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_chaosnoise_tick(sk_chaosnoise *cn)
+{
+    SKFLT out;
+    out = 0;
+
+    &lt;&lt;update_phasor&gt;&gt;
+    &lt;&lt;compute_noise&gt;&gt;
+    &lt;&lt;copy_to_out&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<p>First, the phasor value is updated by an increment value,
+computed with <code>rate*maxlens</code>.
+</p>
+<div><b><i>&lt;&lt;update_phasor&gt;&gt;=</i></b></div><pre><code>cn-&gt;phs += floor(cn-&gt;rate * cn-&gt;maxlens);</pre></code>
+<p></p>
+<p>If the phasor reaches (or goes above) the end, a new
+sample gets computed.
+</p>
+<p>This uses the following difference equation:
+</p>
+<p>$$
+y(n) = | c y(n - 1) - y(n - 2) - \gamma |
+$$
+</p>
+<p>Where $c$ is the chaos value, and $\gamma$ is a nonlinearity
+set to be <code>0.05</code>.
+</p>
+<p>After the output value is computed, the coefficients are
+updated.
+</p>
+<div><b><i>&lt;&lt;compute_noise&gt;&gt;=</i></b></div><pre><code>if (cn-&gt;phs &gt;= SK_CHAOSNOISE_PHSMAX) {
+    SKFLT y;
+
+    cn-&gt;phs &= SK_CHAOSNOISE_PHSMSK;
+    y = fabs(cn-&gt;chaos * cn-&gt;y[0] - cn-&gt;y[1] - 0.05);
+    cn-&gt;y[1] = cn-&gt;y[0];
+    cn-&gt;y[0] = y;
+}</pre></code>
+<p></p>
+<p>The output is always set to be the filter memory variable
+<code>y[0]</code>.
+</p>
+<div><b><i>&lt;&lt;copy_to_out&gt;&gt;=</i></b></div><pre><code>out = cn-&gt;y[0];</pre></code>
+</div>
+</body>
+</html>
