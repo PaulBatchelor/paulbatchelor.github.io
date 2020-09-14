@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>F-Table Lists</title>
+<h1>F-Table Lists</h1>
+<p>An F-Table list, or <code>ftlist</code>, is an array of ftables.
+ftlists are useful for things like building up chord
+progressions and making sequences of sequences for
+arpegiators.
+</p>
+<p>Here is an example of how to use an ftlist. Save this
+to a file called <code>ftlist.rnt</code> and run with
+<code>monolith runt ftlist.rnt</code>. This will generate a 10-second
+long file called <code>test.wav</code>.
+</p>
+<pre><code>patchwerk nodes
+
+8 metro bhold 0 cabset
+
+ftlist_new 1 regset
+
+1 ftnew "0 2 5 7" gen_vals
+1 regget ftlist_append
+1 ftnew "2 5 9 10" gen_vals
+1 regget ftlist_append
+1 ftnew "4 7 12 14 16 12 14 7" gen_vals
+1 regget ftlist_append
+
+# append a sine table to test ftlist_get
+8192 ftnew gen_sine
+1 regget ftlist_append
+
+0 1 regget ftlist_choose
+
+# make a progression of first 3 sequences
+0 cabget 16 0 tdiv bdup
+0 1 ftnew "0 1 2 1" gen_vals tseq 1 regget tchoose
+
+# use tlseq to arpegiate notes
+0 cabget 1 regget tlseq
+58 add mtof 0.001 port
+0.2 0
+# index 3 is a sine wave table
+3 1 regget ftlist_get
+osc
+
+"test.wav" wavout bdrop
+
+10 sr * _compute rep
+
+0 cabget bunhold</pre></code>
+<p></p>
+<p>More info on ftlists can be found at <a href="/proj/monolith/program/wm_026">ftlist.c</a>.
+</p>
+</div>
+</body>
+</html>
