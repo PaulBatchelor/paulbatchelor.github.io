@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>9. tlseq</h3>
+
+<p><a id="wm_026_0259"></a>The <code>tlseq</code> node provides a sample sequencer node similar to
+<code>tseq</code> that takes in ftlist directly. This example is
+designed to showcase the sample accurate choosing
+capabilities.
+</p>
+
+<h4>9.1. Struct</h4>
+
+<p><a id="wm_026_0261"></a><div><b><i>&lt;&lt;tlseq_struct&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    pw_cable *trig;
+    pw_cable *out;
+    sp_ftlist *ftl;
+    PWFLT last;
+    int pos;
+} tlseq;</pre></code>
+
+<h4>9.2. Node</h4>
+
+<p><a id="wm_026_0265"></a><div><b><i>&lt;&lt;tlseq_funcdefs&gt;&gt;=</i></b></div><pre><code>int node_tlseq(pw_node *node, sp_ftlist *ftl);</pre></code>
+<div><b><i>&lt;&lt;tlseq_funcs&gt;&gt;=</i></b></div><pre><code>int node_tlseq(pw_node *node, sp_ftlist *ftl)
+{
+    tlseq *seq;
+    void *mem;
+    pw_patch *patch;
+    int rc;
+
+    rc = pw_node_get_patch(node, &patch);
+
+    if (rc != PW_OK) return rc;
+
+    rc = pw_memory_alloc(patch, sizeof(tlseq), &mem);
+    if (rc != PW_OK) return rc;
+
+    seq = mem;
+
+    seq-&gt;ftl = ftl;
+    seq-&gt;pos = -1;
+    seq-&gt;last = 0;
+    pw_node_cables_alloc(node, 2);
+    pw_node_set_block(node, 1);
+    pw_node_get_cable(node, 0, &seq-&gt;trig);
+    pw_node_get_cable(node, 1, &seq-&gt;out);
+
+    pw_node_set_data(node, seq);
+    pw_node_set_compute(node, compute);
+    pw_node_set_destroy(node, destroy);
+    return PW_OK;
+}</pre></code>
+<p></p>
+<p>The computation is reasonably straight forward. Read the
+trigger and position cables. Any time the trigger is
+non-zero, run <code>sp_ftlist_choose</code>.
+</p>
+<div><b><i>&lt;&lt;tlseq_static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void compute(pw_node *node);</pre></code>
+<div><b><i>&lt;&lt;tlseq_funcs&gt;&gt;=</i></b></div><pre><code>static void compute(pw_node *node)
+{
+    int blksize;
+    tlseq *seq;
+    int n;
+
+    blksize = pw_node_blksize(node);
+    seq = pw_node_get_data(node);
+
+    for (n = 0; n &lt; blksize; n++) {
+        PWFLT t;
+
+        t = pw_cable_get(seq-&gt;trig, n);
+
+        if (t != 0) {
+            sp_ftbl *ft;
+            ft = sp_ftlist_target_sa(seq-&gt;ftl, n);
+            seq-&gt;pos++;
+
+            while (seq-&gt;pos &gt;= ft-&gt;size) {
+                seq-&gt;pos -= ft-&gt;size;
+            }
+
+            seq-&gt;last = ft-&gt;tbl[seq-&gt;pos];
+        }
+
+        pw_cable_set(seq-&gt;out, n, seq-&gt;last);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;tlseq_static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void destroy(pw_node *node);</pre></code>
+<div><b><i>&lt;&lt;tlseq_funcs&gt;&gt;=</i></b></div><pre><code>static void destroy(pw_node *node)
+{
+    int rc;
+    pw_patch *patch;
+    void *mem;
+
+
+    pw_node_cables_free(node);
+
+    rc = pw_node_get_patch(node, &patch);
+    if (rc != PW_OK) return;
+
+    mem = pw_node_get_data(node);
+    pw_memory_free(patch, &mem);
+}</pre></code>
+
+<h4>9.3. Runt Loader</h4>
+
+<p><a id="wm_026_0282"></a>tlseq is loaded as a runt word using the function
+<code>load_tlseq</code>.
+</p>
+<div><b><i>&lt;&lt;tlseq_funcdefs&gt;&gt;=</i></b></div><pre><code>int load_tlseq(runt_vm *vm, runt_ptr pw);</pre></code>
+<div><b><i>&lt;&lt;tlseq_funcs&gt;&gt;=</i></b></div><pre><code>int load_tlseq(runt_vm *vm, runt_ptr pw)
+{
+    runt_cell *c;
+    runt_keyword_define(vm, "tlseq", 5, rproc_tlseq, &c);
+    runt_cell_data(vm, c, pw);
+    return runt_is_alive(vm);
+}</pre></code>
+
+<h4>9.4. Runt Word</h4>
+
+<p><a id="wm_026_0288"></a><div><b><i>&lt;&lt;tlseq_static_funcdefs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_tlseq(runt_vm *vm, runt_ptr p);</pre></code>
+<div><b><i>&lt;&lt;tlseq_funcdefs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_tlseq(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    pw_patch *patch;
+    rpw_param trig;
+    sp_ftlist *ftlst;
+    pw_node *node;
+    runt_stacklet *out;
+
+    rc = rpw_get_ftlist(vm, &ftlst);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = rpw_get_param(vm, &trig);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    patch = rpw_get_patch(p);
+
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+
+
+    node_tlseq(node, ftlst);
+
+    rpw_set_param(vm, node, &trig, 0);
+    rpw_push_output(vm, node, out, 1);
+
+    return RUNT_OK;
+}</pre></code>
+</div>
+</body>
+</html>

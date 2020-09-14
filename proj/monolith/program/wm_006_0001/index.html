@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>1. Runt Word Search</h3>
+
+<p><a id="wm_006_0001"></a>This file implements a quick means to look up words using regex.
+<div><b><i>&lt;&lt;ws_c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+#include &lt;runt.h&gt;
+#include &lt;regex.h&gt;
+
+static char msgbuf[100];
+
+static int compare(runt_vm *vm, regex_t *re, runt_entry *e, runt_int *cnt)
+{
+    const char *str;
+    int rc;
+
+    str = runt_to_string(e-&gt;p);
+
+    rc = regexec(re, str, 0, NULL, 0);
+
+    if(!rc) {
+        runt_print(vm, "%s\n", str);
+        *cnt = *cnt + 1;
+    } else if(rc != REG_NOMATCH) {
+        regerror(rc, re, msgbuf, sizeof(msgbuf));
+        runt_print(vm, "%s\n", msgbuf);
+        return RUNT_NOT_OK;
+    }
+
+    return RUNT_OK;
+}
+
+static runt_int rproc_ws(runt_vm *vm, runt_ptr p)
+{
+    const char *re;
+    runt_stacklet *s;
+    runt_int rc;
+    int reti;
+    int cnt;
+    regex_t regex;
+    runt_int w, e;
+    runt_entry *entry;
+    runt_dict *dict;
+    runt_list *list;
+    runt_int nentry;
+
+    cnt = 0;
+    nentry = 0;
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    re = runt_to_string(s-&gt;p);
+
+    reti =  regcomp(&regex, re, 0);
+
+    if(reti) {
+        runt_print(vm, "Could not compile regex\n");
+        return RUNT_NOT_OK;
+    }
+
+    dict = runt_dictionary_get(vm);
+
+    list = dict-&gt;list;
+    for(w = 0; w &lt; RUNT_DICT_SIZE; w++) {
+        entry = runt_list_top(&list[w]);
+        nentry = list[w].size;
+        for(e = 0; e &lt; nentry ; e++) {
+            rc = compare(vm, &regex, entry, &cnt);
+            if(rc != RUNT_OK) return RUNT_NOT_OK;
+            entry = entry-&gt;next;
+        }
+    }
+
+    if(cnt == 0) {
+        runt_print(vm, "Query returned no results.\n");
+    } else if(cnt == 1) {
+        runt_print(vm, "Query returned 1 result.\n");
+    } else {
+        runt_print(vm, "Query returned %d results.\n", cnt);
+    }
+
+    regfree(&regex);
+
+    return RUNT_OK;
+}
+
+void load_ws(runt_vm *vm)
+{
+    runt_keyword_define(vm, "ws", 2, rproc_ws, NULL);
+}</pre></code>
+</div>
+</body>
+</html>

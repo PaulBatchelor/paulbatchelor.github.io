@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Trig Page Creation</h3>
+
+<p><a id="wm_014_0175"></a></p>
+
+<h4>6.1. DONE Trig Creation Main</h4>
+
+<p><a id="wm_014_0176"></a>CLOSED: [2020-04-19 Sun 17:24]
+A new trig page is created with the function <code>page_trig</code>.
+<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_trig(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>static void page_trig(monolith_page *pg)
+{
+    page_trig_d *trig;
+    trig = calloc(1, sizeof(page_trig_d));
+    if(trig == NULL) return;
+    page_trig_init(pg, trig);
+    if(trig_type == 0) page_trig_runtime_init(monolith_page_monolith(pg));
+&lt;&lt;trig_assign_callbacks&gt;&gt;
+    monolith_page_data_set(pg, trig);
+    redraw(trig);
+}</pre></code>
+
+<h4>6.2. DONE Trig Set Typeflag</h4>
+
+<p><a id="wm_014_0184"></a>CLOSED: [2020-04-19 Sun 17:24]
+<div><b><i>&lt;&lt;trig_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_type_set(pg, trig_type);</pre></code>
+
+<h4>6.3. DONE Trig Open</h4>
+
+<p><a id="wm_014_0189"></a>CLOSED: [2020-04-19 Sun 17:24]
+When a trig page is opened, the monome state is set.
+<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static void trig_open(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>static void trig_open(monolith_page *pg)
+{
+    page_trig_d *trig;
+    trig = monolith_page_data_get(pg);
+    if(trig == NULL) return;
+    monolith_page_mstate_recall(trig-&gt;mstate);
+}</pre></code>
+<div><b><i>&lt;&lt;trig_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_open_set(pg, trig_open);</pre></code>
+
+<h4>6.4. DONE Trig Free</h4>
+
+<p><a id="wm_014_0197"></a>CLOSED: [2020-04-19 Sun 17:24]
+<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static void trig_free(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>static void trig_free(monolith_page *pg)
+{
+    page_trig_d *trig;
+    trig = (page_trig_d *)monolith_page_data_get(pg);
+    if(trig == NULL) return;
+    page_trig_cleanup(trig);
+    free(trig);
+}</pre></code>
+<div><b><i>&lt;&lt;trig_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_free_set(pg, trig_free);</pre></code>
+
+<h4>6.5. DONE Trig Press Callback</h4>
+
+<p><a id="wm_014_0205"></a>CLOSED: [2020-04-19 Sun 17:24]
+<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static void trig_press(monolith_page *pg, int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>static void trig_press(monolith_page *pg, int x, int y, int s)
+{
+
+    if (y == 7 && (x == 0 || x == 1)) {
+        page_trig_d *t;
+        t = monolith_page_data_get(pg);
+        if (s) {
+            t-&gt;reset_state |= 1 &lt;&lt; x;
+
+            if (t-&gt;reset_state == 3) {
+                t-&gt;please_reset = 1;
+            }
+        } else {
+            t-&gt;reset_state &= ~(1 &lt;&lt; x);
+        }
+        return;
+    }
+
+    if (s) {
+        page_trig_d *t;
+        t = monolith_page_data_get(pg);
+        trig_press_top(t, x, y);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;trig_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_press_set(pg, trig_press);</pre></code>
+
+<h4>6.6. TODO Trig Turn Callback</h4>
+
+<p><a id="wm_014_0213"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static void trig_turn(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>static void trig_turn(monolith_page *pg, int s)
+{
+    /* fprintf(stderr, "Trig turn: %d\n", s); */
+}</pre></code>
+<div><b><i>&lt;&lt;trig_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_turn_set(pg, trig_turn);</pre></code>
+
+<h4>6.7. TODO Trig Push Callback</h4>
+
+<p><a id="wm_014_0220"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static void trig_push(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>static void trig_push(monolith_page *pg, int s)
+{
+    fprintf(stderr, "Trig push: %d\n", s);
+}</pre></code>
+<div><b><i>&lt;&lt;trig_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_push_set(pg, trig_push);</pre></code>
+
+<h4>6.8. TODO Trig Delta Callback</h4>
+
+<p><a id="wm_014_0227"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static void trig_delta(monolith_page *pg, int n, int delta);</pre></code>
+<div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>static void trig_delta(monolith_page *pg, int n, int delta)
+{
+    /* fprintf(stderr, "Trig delta: %d, %d\n", n, delta); */
+}</pre></code>
+<div><b><i>&lt;&lt;trig_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_delta_set(pg, trig_delta);</pre></code>
+</div>
+</body>
+</html>

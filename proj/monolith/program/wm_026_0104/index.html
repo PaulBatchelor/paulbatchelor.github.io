@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Sample Accuracy</h3>
+
+<p><a id="wm_026_0104"></a>FTable lists can support sample accurate changes for ftable
+changes that occur once per block. This is done by keeping
+track of the index position in the block where the change
+happens. From then on, any samples before the block position
+use the previously selected entry found in <code>prev</code>, and then
+the <code>next</code> entry anything at or after the block position.
+</p>
+<div><b><i>&lt;&lt;sp_ftlist&gt;&gt;=</i></b></div><pre><code>int blockpos;
+int prev, next;</pre></code>
+<p></p>
+<p>The <code>blockpos</code>, <code>prev</code>, and <code>next</code> values are all set to be
+negative as indicator that they are uninitialized or unset.
+</p>
+<p>A negative <code>blockpos</code> value indicates that no switch has
+occured, and to use the <code>next</code> value. If both <code>prev</code> and
+<code>next</code> are negative, the <code>target</code> ftable is used as a
+fallback.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>ftl-&gt;blockpos = -1;
+ftl-&gt;next = -1;
+ftl-&gt;prev = -1;</pre></code>
+<p></p>
+<p>In order for this kind of sample accuracy to work, the
+ftlist must be reset at the beginning of each loop
+(presumably inside of a node controlling it, such as the
+sample <code>tchoose</code> node provided).
+</p>
+<p>A reset can be done with <code>sp_ftlist_reset</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sp_ftlist_reset(sp_ftlist *ftlst);</pre></code>
+<p></p>
+<p>A reset will clear any block positions set in the previous
+block. It will also update the <code>prev</code> and <code>next</code> values.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sp_ftlist_reset(sp_ftlist *ftlst)
+{
+    ftlst-&gt;blockpos = -1;
+    ftlst-&gt;prev = ftlst-&gt;next;
+}</pre></code>
+</div>
+</body>
+</html>

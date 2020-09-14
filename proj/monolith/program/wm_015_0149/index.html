@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. VM State</h3>
+
+<p><a id="wm_015_0149"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct trig_state trig_state;</pre></code>
+<p>The idea here is to have a component that allows multiple
+readers to read from one pool. This sort of functionality
+would make it easier for a single Trig instance to play
+multiple sequences.
+</p>
+<p>It is initialized with <code>trig_state_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void trig_state_init(trig_state *ts);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void trig_state_init(trig_state *ts)
+{
+&lt;&lt;trig_state_init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>Two big things that an independent VM state would need:
+counter + cell position.
+</p>
+<p>For convenience purposes, an optional pointer holding
+<code>trig_vm</code> is also part of the state. This makes it easier
+to wrap a patchwerk node around a reader.
+</p>
+<div><b><i>&lt;&lt;trig_state&gt;&gt;=</i></b></div><pre><code>struct trig_state {
+    int counter;
+    int pos;
+    int ipos;
+    void *ud;
+};</pre></code>
+<div><b><i>&lt;&lt;trig_state_init&gt;&gt;=</i></b></div><pre><code>ts-&gt;counter = -1;
+ts-&gt;pos = 0;
+ts-&gt;ipos = 0;
+ts-&gt;ud = NULL;</pre></code>
+<p></p>
+<p>The data in the <code>trig_state</code> struct can be set/get with
+<code>trig_state_ud_set</code> and <code>trig_state_ud_get</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void trig_state_ud_set(trig_state *state, void *ud);
+void * trig_state_ud_get(trig_state *state);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void trig_state_ud_set(trig_state *state, void *ud)
+{
+    state-&gt;ud = ud;
+}
+
+void * trig_state_ud_get(trig_state *state)
+{
+    return state-&gt;ud;
+}</pre></code>
+<p></p>
+<p>If vm is not empty, <code>trig_state_step</code> can run
+<code>trig_vm_state_step</code> internally.
+</p>
+<p>An initial position, <code>ipos</code>, dictates where to start.
+Internally, this is represented as an 0-indexed array
+offset. Externally, the values are 1-indexed in order
+for it to make it align more with the visuals.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void trig_state_ipos(trig_state *state, int ipos);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void trig_state_ipos(trig_state *state, int ipos)
+{
+    if (ipos &lt; 1 || ipos &gt; 32) return;
+    state-&gt;ipos = ipos - 1;
+}</pre></code>
+<p></p>
+<p>A state can be reset with <code>trig_state_reset</code>. This sets
+the pos to be <code>ipos</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void trig_state_reset(trig_state *state);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void trig_state_reset(trig_state *state)
+{
+    state-&gt;pos = state-&gt;ipos;
+    state-&gt;counter = -1;
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. Algorithm</h3>
+
+<p><a id="wm_016_0017"></a>The recipe for a basic crossfade loop is pretty simple:
+Apply a linear fade in N seconds long at the
+beginning of the sample. Fade out the last N seconds.
+Take those last N seconds and mix it into the beginning
+of the file. Boom. Crossfade loop.
+</p>
+<p>In my version of this crossfade algorith, the loop time
+is relative to the sample. More often than not, it makes
+more musical sense to think it relative terms than in
+precise seconds. When the crossfade loop time is 100% of
+the file, it means that the fade in/out times add up to
+the total duration of the file, making the fade time
+half the file. A 50% loop time would therefore be quarter
+the file duration for the fade times.
+</p>
+<div><b><i>&lt;&lt;cfloop_top&gt;&gt;=</i></b></div><pre><code>#define BUFSIZE 1024
+
+int do_cfloop(const char *in, const char *out, float cf)
+{
+    float buf[BUFSIZE];
+    float endbuf[BUFSIZE];
+    drwav infile;
+    drwav *outfile;
+    drwav_data_format format;
+    int rc;
+    int count;
+    unsigned long dur;
+    unsigned long fade;
+    unsigned long pos;
+    unsigned long n;
+    unsigned long endpos;
+
+    rc = drwav_init_file(&infile, in);
+
+    if (!rc) {
+        fprintf(stderr, "Error opening %s\n", in);
+        return 1;
+    }
+
+    format.container = drwav_container_riff;
+    format.format = DR_WAVE_FORMAT_IEEE_FLOAT;
+    /* format.format = DR_WAVE_FORMAT_PCM; */
+    format.channels = 1;
+    format.sampleRate = infile.sampleRate;
+    format.bitsPerSample = 32;
+    outfile = drwav_open_file_write(out, &format);
+
+    dur = infile.totalSampleCount;
+    fade = floor(dur * cf * 0.5);
+    dur -= fade;
+    endpos = dur;
+
+    pos = 0;
+
+    while (1) {
+        count = drwav_read_f32(&infile, BUFSIZE, buf);
+
+        if (pos &lt; fade) {
+&lt;&lt;read_end&gt;&gt;
+        }
+
+        for (n = 0; n &lt; count; n++) {
+            if (pos &lt; fade) {
+&lt;&lt;scale_and_sum&gt;&gt;
+            }
+            pos++;
+        }
+
+        if (pos &gt;= dur) {
+            count -= (pos - dur);
+            drwav_write(outfile, count, buf);
+            break;
+        } else {
+            drwav_write(outfile, count, buf);
+        }
+    }
+
+    drwav_uninit(&infile);
+    drwav_close(outfile);
+    return 0;
+}</pre></code>
+</div>
+</body>
+</html>

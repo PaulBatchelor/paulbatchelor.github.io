@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>8. DONE Step Page Creation</h3>
+
+<p><a id="wm_011_0437"></a>CLOSED: [2019-08-25 Sun 05:42]
+</p>
+
+<h4>8.1. DONE Step Page Creation Main</h4>
+
+<p><a id="wm_011_0439"></a>CLOSED: [2019-02-18 Mon 18:32]
+A new step page is created with the function <code>page_step</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_step(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void page_step(monolith_page *pg)
+{
+    page_step_d *step;
+    page_step_create(pg, &step);
+    if(step_type == 0) page_step_runtime_init(monolith_page_monolith(pg));
+&lt;&lt;step_assign_callbacks&gt;&gt;
+    monolith_page_data_set(pg, step);
+}</pre></code>
+
+<h4>8.2. DONE Step Typeflag (Setting)</h4>
+
+<p><a id="wm_011_0447"></a>CLOSED: [2019-02-18 Mon 18:39]
+<div><b><i>&lt;&lt;step_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_type_set(pg, step_type);</pre></code>
+
+<h4>8.3. DONE Step Open</h4>
+
+<p><a id="wm_011_0452"></a>CLOSED: [2019-02-18 Mon 18:39]
+When a step page is opened, the monome state is applied.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void step_open(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void step_open(monolith_page *pg)
+{
+    page_step_d *step;
+    step = monolith_page_data_get(pg);
+    if(step == NULL) return;
+    monolith_page_mstate_recall(step-&gt;mstate);
+}</pre></code>
+<div><b><i>&lt;&lt;step_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_open_set(pg, step_open);</pre></code>
+
+<h4>8.4. DONE Step Free</h4>
+
+<p><a id="wm_011_0460"></a>CLOSED: [2019-02-18 Mon 18:40]
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void step_free(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void step_free(monolith_page *pg)
+{
+    page_step_d *step;
+    step = (page_step_d *)monolith_page_data_get(pg);
+    if(step == NULL) return;
+    page_step_destroy(&step);
+}</pre></code>
+<div><b><i>&lt;&lt;step_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_free_set(pg, step_free);</pre></code>
+
+<h4>8.5. DONE Step Press</h4>
+
+<p><a id="wm_011_0468"></a>CLOSED: [2019-02-18 Mon 18:38]
+All monome presses are handled with the function <code>step_press</code>. This callback
+is forwarded to the function <code>step_input</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void step_press(monolith_page *pg, int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void step_press(monolith_page *pg, int x, int y, int s)
+{
+    page_step_d *step;
+    if(s == 0) return;
+    step = monolith_page_data_get(pg);
+    step_input(step, x, y);
+}</pre></code>
+<div><b><i>&lt;&lt;step_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_press_set(pg, step_press);</pre></code>
+
+<h4>8.6. DONE Step State Management</h4>
+
+<p><a id="wm_011_0476"></a>CLOSED: [2019-08-24 Sat 11:24]
+</p>
+
+<h5>8.6.1. DONE Step Schema</h5>
+
+<p><a id="wm_011_0478"></a>CLOSED: [2019-08-24 Sat 11:24]
+</p>
+
+<h6>8.6.1.1. Step cmp callbacks</h6>
+
+<p><a id="wm_011_0480"></a>These are the callbacks passed into cmp, the third-party C library
+for working with the msgpack interface.
+</p>
+<p>Someday, these may be moved out of here to be used by other pages wishing
+to use msgpack. Since step is patient zero, they are here for now.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static size_t get_size(cmp_ctx_t *ctx, const void *ud, size_t count);
+static size_t memwrite(cmp_ctx_t *ctx, const void *ud, size_t count);
+static bool memread(cmp_ctx_t *ctx, void *data, size_t limit);
+static int write_pattern(page_step_d *step, cmp_ctx_t *cmp);
+static int read_pattern(page_step_d *step, cmp_ctx_t *cmp);</pre></code>
+<div><b><i>&lt;&lt;step_structs&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    uint8_t *buf;
+    size_t pos;
+} memwrapper;</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static size_t get_size(cmp_ctx_t *ctx, const void *ud, size_t count)
+{
+    size_t *size;
+    size = (size_t *)ctx-&gt;buf;
+    /* this thing below is hack so it doesn't insert a comma after *. GRR */
+    /* */ *size += count;
+    return count;
+}
+
+static size_t memwrite(cmp_ctx_t *ctx, const void *ud, size_t count)
+{
+    size_t n;
+    memwrapper *mw;
+    const uint8_t *bytes;
+
+    mw = ctx-&gt;buf;
+    bytes = ud;
+    for(n = 0; n &lt; count; n++) {
+        mw-&gt;buf[mw-&gt;pos + n] = bytes[n];
+    }
+    mw-&gt;pos += count;
+    return count;
+}
+
+static bool memread(cmp_ctx_t *ctx, void *data, size_t limit)
+{
+    size_t n;
+    memwrapper *mw;
+    uint8_t *bytes;
+
+    mw = ctx-&gt;buf;
+    bytes = data;
+    for(n = 0; n &lt; limit; n++) {
+        bytes[n] = mw-&gt;buf[mw-&gt;pos + n];
+    }
+    mw-&gt;pos += limit;
+    return true;
+}</pre></code>
+
+<h6>8.6.1.2. DONE Step Schema Generation</h6>
+
+<p><a id="wm_011_0488"></a>CLOSED: [2019-08-24 Sat 11:24]
+The Schema used to read/write step state can be created
+with the function <code>step_schema</code>.
+</p>
+<p>The parameters are saved in the following order:
+</p>
+<p>- Monome State Data
+- Song Map
+- Step Pattern Data
+</p>
+<p>The monome state data is stored using an internal monolith
+protocol.
+</p>
+<p>The song map and step pattern data are stored in the msgpack
+format as a SQLite binary blob.
+</p>
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int step_schema(page_step_d *slide,
+                       monolith_state_schema **schema);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int step_schema(page_step_d *slide,
+                       monolith_state_schema **schema)
+{
+    monolith_state_schema_init(schema, 3);
+
+    monolith_param_mkmstate(*schema, 0, "mstate", 6, slide-&gt;mstate);
+    monolith_param_mkblob(*schema, 1, "songmap", 7, NULL, 0, NULL);
+    monolith_param_mkblob(*schema, 2, "patterns", 8, NULL, 0, NULL);
+    return 1;
+}</pre></code>
+
+<h6>8.6.1.3. DONE Saving/Loading the song map</h6>
+
+<p><a id="wm_011_0494"></a>CLOSED: [2019-08-24 Sat 11:24]
+The song map gets translated in msgpack to a map of integers, whose size
+is determined by the internal song length.
+Since the song map hasn't yet been implemented, this is just a map with a
+size of 1, pointing to the first pattern.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int save_song_map(page_step_d *step,
+                         monolith_state_schema *schema);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int write_song_map(page_step_d *step, cmp_ctx_t *cmp)
+{
+    uint32_t songlen;
+
+    songlen = 1; /* TODO: replace with actual value */
+
+    /* for now, just create an array of size 1 */
+    if (!cmp_write_array(cmp, songlen)) return 0;
+
+    /* just write a zero value for now */
+    if (!cmp_write_u8(cmp, 0)) return 0;
+    return 1;
+}
+
+static int save_song_map(page_step_d *step,
+                         monolith_state_schema *schema)
+{
+    size_t sz;
+    cmp_ctx_t cmp;
+    uint8_t *buf;
+    memwrapper mw;
+    int rc;
+
+    sz = 0;
+
+    /* first, get total size */
+
+    cmp_init(&cmp, &sz, NULL, NULL, get_size);
+
+    if(!write_pattern(step, &cmp)) return 0;
+
+    /* allocate bytes, and write the data */
+
+    buf = calloc(1, sz);
+
+    /* write the data */
+
+    mw.buf = buf;
+    mw.pos = 0;
+    cmp_init(&cmp, &mw, NULL, NULL, memwrite);
+    rc = write_song_map(step, &cmp);
+
+    /* save the data to a blob */
+
+    monolith_param_setblob_default(schema, 1, buf, sz);
+
+    if(!rc) {
+        fprintf(stderr, "There was a problem saving the step page.\n");
+    }
+
+    return rc;
+}</pre></code>
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int load_song_map(page_step_d *step,
+                         monolith_state_schema *schema);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int read_song_map(page_step_d *step, cmp_ctx_t *cmp)
+{
+    /* for now, just make sure the song map is an 1-element zero array */
+    uint32_t songlen;
+    uint8_t val;
+    if (!cmp_read_array(cmp, (uint32_t *)&songlen)) return 0;
+    if(songlen != 1) return 0;
+    if (!cmp_read_u8(cmp, &val)) return 0;
+    if(val != 0) return 0;
+    return 1;
+}
+
+static int load_song_map(page_step_d *step,
+                         monolith_state_schema *schema)
+{
+    cmp_ctx_t cmp;
+    uint8_t *buf;
+    memwrapper mw;
+    int rc;
+
+    monolith_param_blob(schema, 1, (void **)&buf, NULL);
+
+    mw.pos = 0;
+    mw.buf = buf;
+    cmp_init(&cmp, &mw, memread, NULL, NULL);
+    rc = read_song_map(step, &cmp);
+
+    return rc;
+}</pre></code>
+
+<h6>8.6.1.4. DONE Saving/Loading Pattern Data</h6>
+
+<p><a id="wm_011_0504"></a>CLOSED: [2019-05-09 Thu 07:47]
+The pattern data is a map of patterns. Each pattern has is a keyword map
+with the following keys and values (in this order):
+</p>
+<p>- id: the pattern id (index in the pattern bank)
+- size: the pattern size
+- notes: the pitch data, stored as a map of integers
+- gates: the gate data, stored as a map of integers
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int save_pattern_data(page_step_d *step,
+                             monolith_state_schema *schema);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int write_pattern(page_step_d *step, cmp_ctx_t *cmp)
+{
+    step_pattern *pat;
+    int patsize;
+    int nactive;
+
+    int p;
+    int count;
+    int i;
+
+    count = 0;
+    nactive = 1; /* TODO: this will be an actual variable */
+
+
+    if (!cmp_write_array(cmp, nactive)) return 0;
+
+    for(p = 0; p &lt; MAXPAT; p++) {
+        if(step_pattern_active(&step-&gt;pat[p])) {
+            count++;
+            pat = &step-&gt;pat[p];
+            patsize = step_pattern_size_get(pat);
+            /* begin new array, holding 4 parameters */
+            if (!cmp_write_array(cmp, 4)) return 0;
+            /* write the id value */
+            if (!cmp_write_u16(cmp, p)) return 0;
+            /* write the pattern size */
+            if (!cmp_write_u16(cmp, patsize)) return 0;
+            /* write the note data */
+            if (!cmp_write_array(cmp, patsize)) return 0;
+            for(i = 0; i &lt; patsize; i++) {
+                if (!cmp_write_s8(cmp, step_pattern_note_get(pat, i))) return 0;
+            }
+            if (!cmp_write_array(cmp, patsize)) return 0;
+            /* write the gate data */
+            for(i = 0; i &lt; patsize; i++) {
+                if (!cmp_write_s8(cmp, step_pattern_gate_get(pat, i))) return 0;
+            }
+        }
+
+        if(count &gt;= nactive) break;
+    }
+    return 1;
+}
+
+static int save_pattern_data(page_step_d *step,
+                             monolith_state_schema *schema)
+{
+    size_t sz;
+    cmp_ctx_t cmp;
+    uint8_t *buf;
+    memwrapper mw;
+    int rc;
+
+    /* create array to store active patterns */
+
+    sz = 0;
+
+    /* first, get total size */
+
+    cmp_init(&cmp, &sz, NULL, NULL, get_size);
+
+    if(!write_pattern(step, &cmp)) return 0;
+
+    /* allocate bytes, and write the data */
+
+    buf = calloc(1, sz);
+
+    /* write the data */
+
+    mw.buf = buf;
+    mw.pos = 0;
+    cmp_init(&cmp, &mw, NULL, NULL, memwrite);
+    rc = write_pattern(step, &cmp);
+
+    /* save the data to a blob, no free needed */
+
+    monolith_param_setblob_default(schema, 2, buf, sz);
+
+    /* /\* verify the data *\/ */
+    /* mw.pos = 0; */
+    /* cmp_init(&cmp, &mw, memread, NULL, NULL); */
+    /* rc = read_pattern(step, &cmp); */
+
+    /* if(!rc) { */
+    /*     fprintf(stderr, "Could not verify pattern: %s\n", cmp_strerror(&cmp)); */
+    /* } */
+    return rc;
+}</pre></code>
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int load_pattern_data(page_step_d *step,
+                             monolith_state_schema *schema);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int read_pattern(page_step_d *step, cmp_ctx_t *cmp)
+{
+    step_pattern *pat;
+    uint16_t patsize;
+    uint32_t nactive;
+    uint32_t p;
+    int i;
+    uint32_t tmp;
+    uint16_t id;
+    int8_t x;
+
+    nactive = 1; /* TODO: this will be an actual variable */
+
+    if (!cmp_read_array(cmp, (uint32_t *)&nactive)) return 0;
+
+    for(p = 0; p &lt; nactive; p++) {
+        if (!cmp_read_array(cmp, &tmp)) return 0;
+        if(tmp != 4) return 0;
+        if (!cmp_read_u16(cmp, &id)) return 0;
+        pat = &step-&gt;pat[id];
+        if(id &gt; MAXPAT) return 0;
+        if (!cmp_read_u16(cmp, &patsize)) return 0;
+        if (!cmp_read_array(cmp, &tmp)) return 0;
+        for(i = 0; i &lt; patsize; i++) {
+            if (!cmp_read_s8(cmp, &x)) return 0;
+            step_pattern_note_set(pat, i, x);
+        }
+        if (!cmp_read_array(cmp, &tmp)) return 0;
+        for(i = 0; i &lt; patsize; i++) {
+            if (!cmp_read_s8(cmp, &x)) return 0;
+            step_pattern_gate_set(pat, i, x);
+        }
+    }
+
+    return 1;
+}
+
+static int load_pattern_data(page_step_d *step,
+                             monolith_state_schema *schema)
+{
+    size_t sz;
+    cmp_ctx_t cmp;
+    uint8_t *buf;
+    memwrapper mw;
+    int rc;
+
+    monolith_param_blob(schema, 2, (void **)&buf, (unsigned int *)&sz);
+
+    mw.pos = 0;
+    mw.buf = buf;
+    cmp_init(&cmp, &mw, memread, NULL, NULL);
+    rc = read_pattern(step, &cmp);
+
+    if(!rc) {
+        fprintf(stderr, "Could not verify pattern: %s\n", cmp_strerror(&cmp));
+    }
+    return rc;
+}</pre></code>
+
+<h5>8.6.2. DONE Step State Save</h5>
+
+<p><a id="wm_011_0514"></a>CLOSED: [2019-05-12 Sun 10:16]
+The step data is save callback is done the function <code>step_save</code>.
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int step_save(monolith_page *pg,
+                         monolith_state *s,
+                         const char *key,
+                         unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int step_save(monolith_page *pg,
+                     monolith_state *s,
+                     const char *key,
+                     unsigned int len)
+{
+    page_step_d *step;
+    monolith_state_schema *schema;
+    step = monolith_page_data_get(pg);
+    step_schema(step, &schema);
+    save_song_map(step, schema);
+    save_pattern_data(step, schema);
+    monolith_state_write_schema(s, schema, "step", 4, key, len);
+    monolith_state_schema_cleanup(&schema);
+    return 1;
+}</pre></code>
+<div><b><i>&lt;&lt;step_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_save_set(pg, step_save);</pre></code>
+
+<h5>8.6.3. DONE Step State Load</h5>
+
+<p><a id="wm_011_0522"></a>CLOSED: [2019-08-24 Sat 11:24]
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static int step_load(monolith_page *pg,
+                     monolith_state *s,
+                     const char *key,
+                     unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static int step_load(monolith_page *pg,
+                     monolith_state *s,
+                     const char *key,
+                     unsigned int len)
+{
+    page_step_d *step;
+    monolith_state_schema *schema;
+    int rc;
+
+    step = monolith_page_data_get(pg);
+    step_schema(step, &schema);
+    rc = monolith_state_read_schema(s, schema, "step", 4, key, len);
+    load_song_map(step, schema);
+    load_pattern_data(step, schema);
+    page_step_draw_pattern(step, &step-&gt;pat[step-&gt;curpat]);
+    monolith_state_schema_cleanup(&schema);
+    return rc;
+}</pre></code>
+<div><b><i>&lt;&lt;step_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_load_set(pg, step_load);</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Scrambler</title>
+<h1>Scrambler</h1>
+<p>A simple scrambler CLI utility built around <code>sp_scramber</code>.
+</p>
+<div><b><i>&lt;&lt;scramber.c&gt;&gt;=</i></b></div><pre><code>#include &lt;time.h&gt;
+#include "soundpipe.h"
+#include "dr_wav/dr_wav.h"
+
+int scrambler_main(int argc, char *argv[])
+{
+    sp_data *sp;
+    sp_ftbl *src;
+    sp_ftbl *dst;
+    int rc;
+    drwav *wav;
+    drwav infile;
+    int sr;
+    drwav_data_format format;
+
+    if (argc &lt; 3) {
+        printf("Usage: %s in.wav out.wav\n", argv[0]);
+        return 1;
+    }
+
+    sp_create(&sp);
+    sp_srand(sp, time(NULL));
+    src = NULL;
+    dst = NULL;
+    wav = NULL;
+    rc = sp_ftbl_loadwav(sp, &src, argv[1]);
+
+
+    if (rc != SP_OK) {
+        printf("Could not load %s\n", argv[1]);
+        rc = 1;
+        goto cleanup;
+    }
+
+    /* get samplerate */
+
+    drwav_init_file(&infile, argv[1]);
+    sr = infile.sampleRate;
+    drwav_uninit(&infile);
+
+    sp_gen_scrambler(sp, src, &dst);
+
+    format.container = drwav_container_riff;
+    format.format = DR_WAVE_FORMAT_IEEE_FLOAT;
+    format.channels = 1;
+    format.sampleRate = sr;
+    format.bitsPerSample = 32;
+    wav = drwav_open_file_write(argv[2], &format);
+
+    drwav_write(wav, dst-&gt;size, dst-&gt;tbl);
+
+    rc = 0;
+    cleanup:
+    if (dst != NULL) sp_ftbl_destroy(&dst);
+    if (src != NULL) sp_ftbl_destroy(&src);
+    if (wav != NULL) {
+        drwav_close(wav);
+    }
+    sp_destroy(&sp);
+    return rc;
+}</pre></code>
+</div>
+</body>
+</html>

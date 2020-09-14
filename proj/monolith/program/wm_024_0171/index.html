@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Nodes</h3>
+
+<p><a id="wm_024_0171"></a></p>
+
+<h4>6.1. Mother Node</h4>
+
+<p><a id="wm_024_0172"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>tdelay_d * node_tdelay_mother(pw_node *node, int nloops);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void tdelay_compute(pw_node *node)
+{
+    tdelay_d *td;
+    int blksize;
+    int n;
+    int clock_tick;
+    int event_tick;
+    int rc;
+
+    td = pw_node_get_data(node);
+    blksize = pw_node_blksize(node);
+
+    event_tick = 0;
+    clock_tick = 0;
+
+    if (td-&gt;ticked_last_block) {
+        tdelay_loop *bank;
+        bank = td-&gt;bank;
+        td-&gt;ticked_last_block = 0;
+        for (n = 0; n &lt; td-&gt;nloops; n++) {
+            if (bank[n].state == FIRE) {
+                 bank[n].state = RELOAD;
+            }
+        }
+    }
+
+    for (n = 0; n &lt; blksize; n++) {
+
+        rc = pw_cable_get(td-&gt;in, n) != 0 && !event_tick;
+
+        if (rc) {
+            event_tick = 1;
+            tdelay_trigger_loop(td, n);
+        }
+
+        rc = pw_cable_get(td-&gt;clk, n) != 0 && !clock_tick;
+
+        if (rc) {
+            clock_tick = 1;
+            tdelay_update(td, n);
+        }
+    }
+}
+
+static void tdelay_destroy(pw_node *node)
+{
+    tdelay_d *td;
+    void *mem;
+    pw_patch *patch;
+    int rc;
+    pw_node_cables_free(node);
+
+    rc = pw_node_get_patch(node, &patch);
+    if (rc != PW_OK) return;
+
+    td = pw_node_get_data(node);
+    if (td == NULL) return;
+    mem = td-&gt;bank;
+    rc = pw_memory_free(patch, &mem);
+    if (rc != PW_OK) return;
+    mem = td;
+    pw_memory_free(patch, &mem);
+}
+
+tdelay_d * node_tdelay_mother(pw_node *node, int nloops)
+{
+    tdelay_d *td;
+    pw_patch *patch;
+    int rc;
+    void *mem;
+    int i;
+
+    rc = pw_node_get_patch(node, &patch);
+    if (rc != PW_OK) return NULL;
+
+    mem = NULL;
+    rc = pw_memory_alloc(patch, sizeof(tdelay_d), &mem);
+
+    if (rc != PW_OK) return NULL;
+    td = mem;
+
+    rc = pw_memory_alloc(patch,
+                         sizeof(tdelay_loop) * nloops,
+                         &mem);
+
+    if (rc != PW_OK) {
+        mem = td;
+        pw_memory_free(patch, &mem);
+        return NULL;
+    }
+
+    td-&gt;bank = mem;
+    td-&gt;nloops = nloops;
+    td-&gt;last_free = -1;
+    td-&gt;nactive = 0;
+    td-&gt;ticked_last_block = 0;
+    td-&gt;eps = 0.001;
+
+    for (i = 0; i &lt; nloops; i++) {
+        tdelay_loop_init(&td-&gt;bank[i]);
+    }
+
+    pw_node_cables_alloc(node, 4);
+&lt;&lt;bind_cables&gt;&gt;
+
+    pw_node_set_data(node, td);
+    pw_node_set_destroy(node, tdelay_destroy);
+    pw_node_set_compute(node, tdelay_compute);
+    return td;
+}</pre></code>
+
+<h4>6.2. Loop Node</h4>
+
+<p><a id="wm_024_0179"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int node_tdelay_loop(pw_node *node, tdelay_d *td, int loop);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void loop_compute(pw_node *node)
+{
+    int n;
+    int blksize;
+    pw_cable *out;
+    PWFLT tick;
+    tdelay_loop *lp;
+
+    pw_node_get_cable(node, 0, &out);
+    blksize = pw_node_blksize(node);
+    lp = pw_node_get_data(node);
+
+    for (n = 0; n &lt; blksize; n++) {
+        tick = 0;
+
+        if (lp-&gt;state == FIRE && n == lp-&gt;blockpos) {
+            tick = lp-&gt;energy;
+        }
+
+        pw_cable_set(out, n, tick);
+    }
+}
+
+int node_tdelay_loop(pw_node *node, tdelay_d *td, int loop)
+{
+    if (loop &gt;= td-&gt;nloops) {
+        return PW_NOT_OK;
+    }
+    pw_node_cables_alloc(node, 1);
+    pw_node_set_block(node, 0);
+    pw_node_set_data(node, &td-&gt;bank[loop]);
+    pw_node_set_compute(node, loop_compute);
+    return PW_OK;
+}</pre></code>
+</div>
+</body>
+</html>

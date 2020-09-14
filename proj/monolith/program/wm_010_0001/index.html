@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>1. Sliders</h3>
+
+<p><a id="wm_010_0001"></a>The Sliders Page provides a slider bank of 8 sliders that exist on the rows
+of the grid controller. The monome is used to visualize these sliders, as well
+as do coarse adjustments and select active sliders. The griffin knob is used to
+do more fine-tuned adjustments.
+</p>
+
+<h4>1.1. Top-Level Files for Sliders</h4>
+
+<p><a id="wm_010_0003"></a><div><b><i>&lt;&lt;sliders-top&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+#include &lt;runt.h&gt;
+#include &lt;patchwerk.h&gt;
+#include &lt;runt_patchwerk.h&gt;
+#include &lt;math.h&gt;
+#include &lt;stdint.h&gt;
+#include "s9core.h"
+#include "s9import.h"
+#include "s9ext.h"
+#include "monolith.h"
+&lt;&lt;sliders_typeflag&gt;&gt;
+&lt;&lt;sliders_typedefs&gt;&gt;
+&lt;&lt;sliders_struct&gt;&gt;
+&lt;&lt;sliders_function_declarations&gt;&gt;
+&lt;&lt;sliders_functions&gt;&gt;</pre></code>
+
+<h4>1.2. Sliders Data</h4>
+
+<p><a id="wm_010_0018"></a></p>
+
+<h5>1.2.1. Sliders Data Declaration</h5>
+
+<p><a id="wm_010_0019"></a>All sliders page data is contained in a struct called <code>page_sliders_d</code>.
+<div><b><i>&lt;&lt;sliders_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct page_sliders_d page_sliders_d;</pre></code>
+<div><b><i>&lt;&lt;sliders_struct&gt;&gt;=</i></b></div><pre><code>struct page_sliders_d {
+&lt;&lt;page_sliders_contents&gt;&gt;
+};</pre></code>
+
+<h5>1.2.2. Sliders Data Initialization</h5>
+
+<p><a id="wm_010_0029"></a>Sliders data is initiatlized with the function <code>page_sliders_init</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_sliders_init(monolith_page *pg, page_sliders_d *sl);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void page_sliders_init(monolith_page *pg, page_sliders_d *sl)
+{
+    int i;
+&lt;&lt;sliders_init&gt;&gt;
+}</pre></code>
+
+<h5>1.2.3. Sliders Data Cleanup</h5>
+
+<p><a id="wm_010_0039"></a>Sliders data is freed with the funciton <code>page_sliders_free</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_sliders_cleanup(page_sliders_d *sl);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void page_sliders_cleanup(page_sliders_d *sl)
+{
+&lt;&lt;sliders_cleanup&gt;&gt;
+}</pre></code>
+
+<h5>1.2.4. Sliders Data Contents</h5>
+
+<p><a id="wm_010_0047"></a></p>
+
+<h6>1.2.4.1. Monome State Data</h6>
+
+<p><a id="wm_010_0048"></a><div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate *mstate;</pre></code>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate_new(pg, &sl-&gt;mstate);</pre></code>
+<div><b><i>&lt;&lt;sliders_cleanup&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate_free(&sl-&gt;mstate);</pre></code>
+
+<h6>1.2.4.2. Arc State Data</h6>
+
+<p><a id="wm_010_0058"></a><div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>monolith_page_arcstate *arcstate;</pre></code>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>monolith_page_arcstate_new(pg, &sl-&gt;arcstate);</pre></code>
+<div><b><i>&lt;&lt;sliders_cleanup&gt;&gt;=</i></b></div><pre><code>monolith_page_arcstate_free(&sl-&gt;arcstate);</pre></code>
+
+<h6>1.2.4.3. Sliders Values</h6>
+
+<p><a id="wm_010_0065"></a>Slider values are stored as uniform (0-1) floating point (PWFLT) values in an
+array. There are 8 slider values, each corresponding to a row on the monome.
+At runtime, they are all explicitely set to be 0.
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>PWFLT vals[8];</pre></code>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; 8; i++) {
+    sl-&gt;vals[i] = 0;
+}</pre></code>
+
+<h6>1.2.4.4. Increment Amounts</h6>
+
+<p><a id="wm_010_0071"></a>The increment value is how much to increase or decrease a
+slider value when a knob is turned. There are two different
+kinds of knobs, thus two increment types.
+</p>
+
+<h7>1.2.4.4.1. Griffin Increment</h7>
+
+<p><a id="wm_010_0073"></a>The increment amount anytime the griffin knob is turned.
+By default, it is set to be 0.01.
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>PWFLT inc;</pre></code>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;inc = 0.01;</pre></code>
+<p>The increment can be set using the function
+<code>page_sliders_increment_set</code>
+#+NAME: slidersdeclarations
+<pre><code>static void page_sliders_increment_set(page_sliders_d *slide, PWFLT inc);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void page_sliders_increment_set(page_sliders_d *slide, PWFLT inc)
+{
+    slide-&gt;inc = inc;
+}</pre></code>
+
+<h7>1.2.4.4.2. Arc Increment</h7>
+
+<p><a id="wm_010_0084"></a>The Arc was introduced later on in the development of the
+sliders page. It initially used the griffin increment
+amount, but it was found to move too quickly. For this
+reason, the Arc uses a separate (and smaller) increment
+value.
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>PWFLT arc_inc;</pre></code>
+<p></p>
+<p>The default value used for the increment amount is 0.001,
+This was emperically found to be a value that has an
+approximate 1:1 relationship to the turn of the encoder.
+</p>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;arc_inc = 0.001;</pre></code>
+<p></p>
+<p>The arc increment value can be set using the function
+<code>page_sliders_arc_increment_set</code>.
+</p>
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_sliders_arc_increment_set(page_sliders_d *slide,
+                                           PWFLT inc);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void page_sliders_arc_increment_set(page_sliders_d *slide,
+                                           PWFLT inc)
+{
+    slide-&gt;arc_inc = inc;
+}</pre></code>
+
+<h6>1.2.4.5. Previous Position</h6>
+
+<p><a id="wm_010_0096"></a>The previous XY location is stored. This logic is used in order to get a slider
+to zero (pressing the left-most row twice). It is initialized to negative
+values.
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int px, py;</pre></code>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;px = -1;
+sl-&gt;py = -1;</pre></code>
+
+<h6>1.2.4.6. Selected Slider</h6>
+
+<p><a id="wm_010_0102"></a>The currently selected slider value is stored as an integer <code>curslider</code>.
+It is automatically set when
+you control a particular slider from the monome. This value tells the griffin
+knob which slider to adjust.
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int curslider;</pre></code>
+<p>The sliders value is set to be a negative value to indicate that no slider has
+been selected.
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;curslider = -1;</pre></code>
+
+<h6>1.2.4.7. Internal Gate</h6>
+
+<p><a id="wm_010_0109"></a>When the griffin knob is pushed down, the internal state data is stored inside
+of a value called <code>gate</code>.
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int gate;</pre></code>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;gate = 0;</pre></code>
+
+<h6>1.2.4.8. Griffin Lock</h6>
+
+<p><a id="wm_010_0115"></a>An integer boolean value that locks the griffin to
+the currently selected slider. By default, this is disabled.
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int griffin_lock;</pre></code>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;griffin_lock = 0;</pre></code>
+<p>It is set using <code>page_sliders_griffin_lock</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_sliders_griffin_lock(page_sliders_d *slide,
+                                      int state);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void page_sliders_griffin_lock(page_sliders_d *slide,
+                                      int state)
+{
+    slide-&gt;griffin_lock = state;
+}</pre></code>
+
+<h6>1.2.4.9. Arc Slider Positions</h6>
+
+<p><a id="wm_010_0126"></a>These store which sliders the Arc is controlling.
+By default, it is the first 4 sliders.
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int arc_slider[4];</pre></code>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;arc_slider[0] = 0;
+sl-&gt;arc_slider[1] = 1;
+sl-&gt;arc_slider[2] = 2;
+sl-&gt;arc_slider[3] = 3;</pre></code>
+<p></p>
+<p>An arc value can be assigned using
+<code>page_sliders_arc_set</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_sliders_arc_set(page_sliders_d *slide,
+                                 int arc,
+                                 int slider);</pre></code>
+<p>Bounds checking is done here so it doesn't have to be
+done anywhere else.
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void page_sliders_arc_set(page_sliders_d *slide,
+                                 int arc,
+                                 int slider)
+{
+    if(arc &lt; 0 || arc &gt;= 4) return;
+    if(slider &lt; 0 || slider &gt;= 8) return;
+
+    slide-&gt;arc_slider[arc] = slider;
+}</pre></code>
+
+<h4>1.3. Sliders Runtime Initialization</h4>
+
+<p><a id="wm_010_0138"></a>At runtime, the sliders page is initialized with the function
+<code>page_sliders_runtime_init</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>void page_sliders_runtime_init(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>void page_sliders_runtime_init(monolith_d *m)
+{
+&lt;&lt;sliders_runtime_init&gt;&gt;
+}</pre></code>
+
+<h4>1.4. Sliders Page Creation</h4>
+
+<p><a id="wm_010_0146"></a></p>
+
+<h5>1.4.1. Sliders Page Creation Main</h5>
+
+<p><a id="wm_010_0147"></a>A new sliders page is created with the function <code>page_sliders</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_sliders(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void page_sliders(monolith_page *pg)
+{
+    page_sliders_d *slide;
+    slide = calloc(1, sizeof(page_sliders_d));
+    if(slide == NULL) return;
+    page_sliders_init(pg, slide);
+    if(sliders_type == 0) page_sliders_runtime_init(monolith_page_monolith(pg));
+&lt;&lt;sliders_assign_callbacks&gt;&gt;
+    monolith_page_data_set(pg, slide);
+}</pre></code>
+
+<h5>1.4.2. Sliders Typeflag (setting)</h5>
+
+<p><a id="wm_010_0155"></a><div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_type_set(pg, sliders_type);</pre></code>
+
+<h5>1.4.3. Sliders Open</h5>
+
+<p><a id="wm_010_0159"></a>When a sliders page is opened, the monome state is set.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void sliders_open(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void sliders_open(monolith_page *pg)
+{
+    page_sliders_d *slide;
+    slide = monolith_page_data_get(pg);
+    if(slide == NULL) return;
+    monolith_page_mstate_recall(slide-&gt;mstate);
+    monolith_page_arcstate_recall(slide-&gt;arcstate);
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_open_set(pg, sliders_open);</pre></code>
+
+<h5>1.4.4. Sliders Free</h5>
+
+<p><a id="wm_010_0167"></a><div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void sliders_free(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void sliders_free(monolith_page *pg)
+{
+    page_sliders_d *slide;
+    slide = (page_sliders_d *)monolith_page_data_get(pg);
+    if(slide == NULL) return;
+    page_sliders_cleanup(slide);
+    free(slide);
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_free_set(pg, sliders_free);</pre></code>
+
+<h5>1.4.5. Sliders Press Callback</h5>
+
+<p><a id="wm_010_0174"></a>Any time the monome is pressed, a slider value is set. The Y value determines
+which slider is set, and the X value determines the value to be set. The value
+is normalized using the fucntion (x + 1)/16, where x is a value between 0 and
+15. The zero value is obtained when the left-most row is pressed twice in a row.
+In order to do this, the previous point is stored.
+</p>
+<p>The currently selected slider is set here as well. It is usually the same as
+the Y value, but this is not always the case.
+</p>
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void sliders_press(monolith_page *pg, int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void sliders_press(monolith_page *pg, int x, int y, int s)
+{
+    page_sliders_d *slide;
+    if(s == 0) return;
+    slide = monolith_page_data_get(pg);
+    if(slide == NULL) return;
+
+    if(x == 0 && slide-&gt;px == x && slide-&gt;py == y) {
+        slide-&gt;vals[y] = 0;
+        x = -1; /* so it can be toggled back to 1 */
+        monolith_page_mstate_led_row(slide-&gt;mstate, 0, y, 0);
+    } else {
+        slide-&gt;vals[y] = (PWFLT)(x + 1) / 16.0;
+        monolith_page_mstate_led_row(slide-&gt;mstate, 0, y, (1 &lt;&lt; (x + 1)) - 1);
+    }
+
+    if(x &gt;= 8) {
+        x -= 8;
+        monolith_page_mstate_led_row(slide-&gt;mstate, 255, y, (1 &lt;&lt; (x + 1)) - 1);
+    } else {
+        monolith_page_mstate_led_row(slide-&gt;mstate, 255, y, 0);
+    }
+
+
+    sliders_update_arc(slide, y, slide-&gt;vals[y]);
+    slide-&gt;px = x;
+    slide-&gt;py = y;
+    if(!slide-&gt;griffin_lock) slide-&gt;curslider = y;
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_press_set(pg, sliders_press);</pre></code>
+
+<h5>1.4.6. Sliders Turn Callback</h5>
+
+<p><a id="wm_010_0182"></a>The turn callback does fine tuning of the slider value. The slider it increments
+is the last selected slider, as indicated by the <code>curslider</code> variable.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void sliders_turn(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void sliders_turn(monolith_page *pg, int s)
+{
+    page_sliders_d *slide;
+    PWFLT *val;
+
+    slide = monolith_page_data_get(pg);
+    if(slide == NULL) return;
+    if(slide-&gt;curslider &lt; 0) return;
+
+    val = &slide-&gt;vals[slide-&gt;curslider];
+
+    *val = *val + s*slide-&gt;inc;
+    if(*val &gt; 1.0) *val = 1.0;
+    if(*val &lt; 0.0) *val = 0.0;
+
+    sliders_update_monome(slide, slide-&gt;curslider, *val);
+    sliders_update_arc(slide, slide-&gt;curslider, *val);
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_turn_set(pg, sliders_turn);</pre></code>
+<p></p>
+<p>The slider is updated on the monome with the function <code>sliders_update_monome</code>.
+It is turned into a function because it is also needed for the scheme function
+<code>monolith:sliders-set</code>.
+</p>
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void sliders_update_monome(page_sliders_d *slide, int slider, PWFLT val);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void sliders_update_monome(page_sliders_d *slide, int slider, PWFLT val)
+{
+    unsigned short *grid;
+    unsigned short newval;
+    int cs;
+
+    grid = monolith_page_mstate_data_get(slide-&gt;mstate);
+    cs = slider;
+
+    if(val &lt; 0.01) {
+        newval = 0; /* basically 0. turn off row entirely. */
+    } else {
+        newval = floor(val * 16);
+        newval = (1 &lt;&lt; (newval)) - 1;
+    }
+
+    if(newval != grid[cs]) {
+        monolith_page_mstate_led_row(slide-&gt;mstate, 0, cs, newval & 255);
+        monolith_page_mstate_led_row(slide-&gt;mstate, 255, cs, newval &gt;&gt; 8);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void sliders_update_arc(page_sliders_d *slide, int slider, PWFLT val);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void sliders_update_arc(page_sliders_d *slide, int slider, PWFLT val)
+{
+    int i;
+
+    for(i = 0; i &lt; 4; i++) {
+
+        if(slider == slide-&gt;arc_slider[i]) {
+            monolith_arcstate_mapval(slide-&gt;arcstate,
+                                     i,
+                                     val);
+        }
+    }
+}</pre></code>
+
+<h5>1.4.7. Sliders Push Callback</h5>
+
+<p><a id="wm_010_0199"></a>The griffin push callback sets a local gate variable, which
+can then be read by a patch via the function <code>slidergate</code>.
+</p>
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void sliders_push(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void sliders_push(monolith_page *pg, int s)
+{
+    page_sliders_d *slide;
+
+    slide = monolith_page_data_get(pg);
+    if(slide == NULL) return;
+
+    slide-&gt;gate = s;
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_push_set(pg, sliders_push);</pre></code>
+
+<h5>1.4.8. Sliders Delta Callback</h5>
+
+<p><a id="wm_010_0207"></a>Arc Encoders. Eventually, this will be an alternative way to control slider
+levels.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static void sliders_delta(monolith_page *pg, int n, int delta);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static void sliders_delta(monolith_page *pg, int n, int delta)
+{
+    page_sliders_d *slide;
+    PWFLT *val;
+    int s;
+
+    slide = monolith_page_data_get(pg);
+    if(slide == NULL) return;
+
+    s = slide-&gt;arc_slider[n];
+    val = &slide-&gt;vals[s];
+
+    *val = *val + delta*slide-&gt;arc_inc;
+    if(*val &gt; 1.0) *val = 1.0;
+    if(*val &lt; 0.0) *val = 0.0;
+
+    sliders_update_monome(slide, s, *val);
+    sliders_update_arc(slide, s, *val);
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_delta_set(pg, sliders_delta);</pre></code>
+
+<h5>1.4.9. Sliders State Management Callbacks</h5>
+
+<p><a id="wm_010_0215"></a></p>
+
+<h6>1.4.9.1. Slider Schema Generation</h6>
+
+<p><a id="wm_010_0216"></a>A new sliders schema is created with the function <code>sliders_schema</code>. It
+must be freed manually.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static int sliders_schema(page_sliders_d *slide,
+                          monolith_state_schema **schema);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static int sliders_schema(page_sliders_d *slide,
+                          monolith_state_schema **schema)
+{
+    int n;
+    char buf[4];
+    monolith_state_schema_init(schema, 9);
+
+    monolith_param_mkmstate(*schema, 0, "mstate", 6, slide-&gt;mstate);
+    buf[0] = 'p';
+    buf[2] = 0;
+    for(n = 1; n &lt; 9; n++) {
+        buf[1] = n + 48; /* convert to ascii */
+        monolith_param_mkfloat(*schema, n, buf, 2, slide-&gt;vals[n - 1]);
+    }
+    return 1;
+}</pre></code>
+
+<h6>1.4.9.2. Sliders Save Callback</h6>
+
+<p><a id="wm_010_0222"></a><div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static int sliders_save(monolith_page *pg,
+                         monolith_state *s,
+                         const char *key,
+                         unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static int sliders_save(monolith_page *pg,
+                         monolith_state *s,
+                         const char *key,
+                         unsigned int len)
+{
+    page_sliders_d *slide;
+    monolith_state_schema *schema;
+    slide = monolith_page_data_get(pg);
+    sliders_schema(slide, &schema);
+    monolith_state_write_schema(s, schema, "sliders", 7, key, len);
+    monolith_state_schema_cleanup(&schema);
+    return 1;
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_save_set(pg, sliders_save);</pre></code>
+
+<h6>1.4.9.3. Sliders Load Callback</h6>
+
+<p><a id="wm_010_0229"></a><div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static int sliders_load(monolith_page *pg,
+                         monolith_state *s,
+                         const char *key,
+                         unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static int sliders_load(monolith_page *pg,
+                         monolith_state *s,
+                         const char *key,
+                         unsigned int len)
+{
+    page_sliders_d *slide;
+    monolith_state_schema *schema;
+    int rc;
+    int n;
+
+    slide = monolith_page_data_get(pg);
+
+    sliders_schema(slide, &schema);
+    rc = monolith_state_read_schema(s, schema, "sliders", 7, key, len);
+    if(rc) {
+        monolith_param_mstate(schema, 0, slide-&gt;mstate);
+        for(n = 0; n &lt; 8; n++) {
+            monolith_param_float(schema, n+1, &slide-&gt;vals[n]);
+            sliders_update_monome(slide, n, slide-&gt;vals[n]);
+            sliders_update_arc(slide, n, slide-&gt;vals[n]);
+        }
+    }
+    monolith_state_schema_cleanup(&schema);
+    return rc;
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_load_set(pg, sliders_load);</pre></code>
+
+<h4>1.5. Sliders Type Flag</h4>
+
+<p><a id="wm_010_0236"></a></p>
+
+<h5>1.5.1. Typeflag Declaration</h5>
+
+<p><a id="wm_010_0237"></a>The typeflag for sliders is stored as a global variable called <code>sliders_type</code>.
+It initialized to be 0.
+<div><b><i>&lt;&lt;sliders_typeflag&gt;&gt;=</i></b></div><pre><code>static int sliders_type = 0;</pre></code>
+
+<h5>1.5.2. Setting the sliders type</h5>
+
+<p><a id="wm_010_0242"></a><div><b><i>&lt;&lt;sliders_runtime_init&gt;&gt;=</i></b></div><pre><code>sliders_type = monolith_dict_newtype(monolith_dict_get(m));</pre></code>
+
+<h5>1.5.3. Check if page is sliders type</h5>
+
+<p><a id="wm_010_0246"></a>A page is checked if it is of type "sliders" via the funciton <code>is_sliders</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_sliders(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>static int is_sliders(monolith_page *pg)
+{
+    int type;
+    type = monolith_page_type_get(pg);
+    if(type == 0) return 0;
+    return type == sliders_type;
+}</pre></code>
+
+<h4>1.6. Sliders Scheme Functions</h4>
+
+<p><a id="wm_010_0252"></a></p>
+
+<h5>1.6.1. Scheme Loader</h5>
+
+<p><a id="wm_010_0253"></a>The top-level scheme loader is called <code>s9_load_sliders</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>void s9_load_sliders(void);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;sliders_scheme_functions&gt;&gt;
+static S9_PRIM sliders_primitives[] = {
+&lt;&lt;sliders_scheme_entries&gt;&gt;
+    {NULL}
+};
+void s9_load_sliders(void)
+{
+    add_primitives("monolith", sliders_primitives);
+}</pre></code>
+
+<h5>1.6.2. Create New Sliders Page</h5>
+
+<p><a id="wm_010_0263"></a>A new sliders page is created with <code>monolith:grid-new</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-new", pp_sliders_new, 1, 1, {STR, ___, ___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_new(cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    str = string(car(x));
+
+    rc = monolith_dict_newpage(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not create sliders page (maybe it already exists?)",
+            car(x));
+    }
+
+    page_sliders(pg);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>1.6.3. Select Slider</h5>
+
+<p><a id="wm_010_0271"></a>In Scheme, the slider can be selected in scheme using the function
+<code>monolith:sliders-select</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-select", pp_sliders_select, 2, 2, {STR,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_select(cell x)
+{
+    const char *str;
+    cell cstr;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    int slider;
+    char name[] = "monolith:sliders-select";
+    page_sliders_d *slide;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    slider = integer_value(name, car(x));
+
+    if(slider &lt; 0 || slider &gt;= 8) {
+        return error("Slider number is out of range", car(x));
+    }
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+    slide-&gt;curslider = slider;
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>1.6.4. Set Slider Value</h5>
+
+<p><a id="wm_010_0277"></a>In Scheme, the value of a particular slider can be selected using the function
+<code>monolith:sliders-set</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-set", pp_sliders_set, 3, 3, {STR,INT,REA}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_set(cell x)
+{
+    const char *str;
+    cell cstr;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    int slider;
+    page_sliders_d *slide;
+    int mantissa;
+    int exponent;
+    cell real;
+    char name[] = "monolith:sliders-set";
+    PWFLT val;
+    s9_cell cslider;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    cslider = car(x);
+    slider = integer_value(name, cslider);
+    x = cdr(x);
+    real = car(x);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    if(slider &lt; 0 || slider &gt;= 8) {
+        return error("Slider number is out of range", cslider);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    mantissa = s9_bignum_to_int(s9_real_mantissa(real));
+    exponent = s9_real_exponent(real);
+
+    val = mantissa * pow(10, exponent);
+
+    if(val &lt; 0) val = 0;
+    if(val &gt; 1) val = 1;
+
+    slide-&gt;vals[slider] = val;
+
+    sliders_update_monome(slide, slider, val);
+    sliders_update_arc(slide, slider, val);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>1.6.5. Get Slider Value</h5>
+
+<p><a id="wm_010_0283"></a>In Scheme, the value of a particular slider can be retreived using the function
+<code>monolith:sliders-get</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-get", pp_sliders_get, 2, 2, {STR,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_get(cell x)
+{
+    const char *str;
+    cell cstr;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    int slider;
+    page_sliders_d *slide;
+    PWFLT val;
+    unsigned int ival;
+    s9_cell cslider;
+    char name[] = "monolith:sliders-get";
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    cslider = car(x);
+    slider = integer_value(name, cslider);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    if(slider &lt; 0 || slider &gt;= 8) {
+        return error("Slider value is out of range", cslider);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    val = slide-&gt;vals[slider];
+    ival = floor(val); /* get non-decimal part */
+    val = floor(1e4 * (ival + (val - ival))); /* get 4 decimal places */
+    return s9_make_real(1, -4, s9_make_integer(val));
+}</pre></code>
+
+<h5>1.6.6. Set Increment</h5>
+
+<p><a id="wm_010_0289"></a>In Scheme, the incrementer can be set with the function
+<code>monolith:sliders-increment-set</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-increment-set", pp_sliders_increment_set, 2, 2, {STR,REA,___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_increment_set(cell x)
+{
+    const char *str;
+    cell cstr;
+    cell real;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    page_sliders_d *slide;
+    PWFLT val;
+    int mantissa;
+    int exponent;
+    int rc;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    real = car(x);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    mantissa = s9_bignum_to_int(s9_real_mantissa(real));
+    exponent = s9_real_exponent(real);
+    val = mantissa * pow(10, exponent);
+
+    page_sliders_increment_set(slide, val);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>1.6.7. Griffin Lock</h5>
+
+<p><a id="wm_010_0295"></a><div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-griffin-lock",
+pp_sliders_griffin_lock,
+2, 2,
+{STR,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_griffin_lock(cell x)
+{
+    page_sliders_d *slide;
+    monolith_dict *dict;
+    monolith_page *pg;
+    monolith_d *m;
+    int state;
+    int rc;
+    const char *str;
+    cell cstr;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    state = integer_value("monolith:sliders-griffin-lock",
+                           car(x));
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+    page_sliders_griffin_lock(slide, state);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>1.6.8. Arc Slider Set</h5>
+
+<p><a id="wm_010_0300"></a><div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-arc-set",
+pp_sliders_arc_set,
+3, 3,
+{STR,INT,INT}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_arc_set(cell x)
+{
+    page_sliders_d *slide;
+    monolith_dict *dict;
+    monolith_page *pg;
+    monolith_d *m;
+    int arc;
+    int slider;
+    int rc;
+    const char *str;
+    cell cstr;
+    char name[] = "monolith:sliders-arc-set";
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    arc = integer_value(name, car(x));
+    x = cdr(x);
+
+    slider = integer_value(name, car(x));
+    x = cdr(x);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    page_sliders_arc_set(slide, arc, slider);
+    sliders_update_arc(slide, slider, slide-&gt;vals[slider]);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>1.6.9. Set Arc Increment</h5>
+
+<p><a id="wm_010_0305"></a>In Scheme, the incrementer can be set with the function
+<code>monolith:sliders-increment-set</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{
+    "monolith:sliders-arc-increment-set",
+    pp_sliders_arc_increment_set,
+    2, 2,
+    {STR,REA,___}
+},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_arc_increment_set(cell x)
+{
+    const char *str;
+    cell cstr;
+    cell real;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    page_sliders_d *slide;
+    PWFLT val;
+    int mantissa;
+    int exponent;
+    int rc;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    real = car(x);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    mantissa = s9_bignum_to_int(s9_real_mantissa(real));
+    exponent = s9_real_exponent(real);
+    val = mantissa * pow(10, exponent);
+
+    page_sliders_arc_increment_set(slide, val);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h4>1.7. Sliders Patchwerk Nodes</h4>
+
+<p><a id="wm_010_0311"></a></p>
+
+<h5>1.7.1. Sliderval</h5>
+
+<p><a id="wm_010_0312"></a>Sliderval is a patchwerk node which reads a slider value from a sliders page.
+The slider selected can be changed at audio-rate.
+</p>
+
+<h6>1.7.1.1. Sliderval Node Function</h6>
+
+<p><a id="wm_010_0314"></a>This node can be created with the function <code>node_sliderval</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_sliderval(pw_node *node, monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;sliderval_node_functions&gt;&gt;
+static int node_sliderval(pw_node *node, monolith_page *pg)
+{
+    pw_node_cables_alloc(node, 2);
+    pw_node_set_block(node, 1);
+    pw_node_set_data(node, pg);
+    pw_node_set_destroy(node, sliderval_destroy);
+    pw_node_set_compute(node, sliderval_compute);
+    return PW_OK;
+}</pre></code>
+
+<h6>1.7.1.2. Sliderval Compute</h6>
+
+<p><a id="wm_010_0322"></a><div><b><i>&lt;&lt;sliderval_node_functions&gt;&gt;=</i></b></div><pre><code>static void sliderval_compute(pw_node *n)
+{
+    int blksize;
+    int s;
+    int icurslider;
+    pw_cable *curslider;
+    pw_cable *out;
+    PWFLT tmp;
+    page_sliders_d *slide;
+    monolith_page *pg;
+
+    blksize = pw_node_blksize(n);
+    pg = pw_node_get_data(n);
+
+    slide = monolith_page_data_get(pg);
+
+    pw_node_get_cable(n, 0, &curslider);
+    pw_node_get_cable(n, 1, &out);
+
+    for(s = 0; s &lt; blksize; s++) {
+        tmp = 0;
+        icurslider = floor(pw_cable_get(curslider, s));
+        if(icurslider &gt;= 0 && icurslider &lt; 8) {
+            tmp = slide-&gt;vals[icurslider];
+        }
+        pw_cable_set(out, s, tmp);
+    }
+
+}</pre></code>
+
+<h6>1.7.1.3. Sliderval Destroy</h6>
+
+<p><a id="wm_010_0326"></a><div><b><i>&lt;&lt;sliderval_node_functions&gt;&gt;=</i></b></div><pre><code>static void sliderval_destroy(pw_node *node)
+{
+     /* TODO: "unpin" page here */
+     pw_node_cables_free(node);
+}</pre></code>
+
+<h5>1.7.2. Slidergate</h5>
+
+<p><a id="wm_010_0329"></a>Slidergate is a patchwerk node which reads the griffin "gate" signal as
+an audio-rate signal.
+</p>
+
+<h6>1.7.2.1. Slidergate Node Function</h6>
+
+<p><a id="wm_010_0331"></a>This node can be created with the function <code>node_slidergate</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_slidergate(pw_node *node, monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;slidergate_node_functions&gt;&gt;
+static int node_slidergate(pw_node *node, monolith_page *pg)
+{
+    pw_node_cables_alloc(node, 1);
+    pw_node_set_block(node, 0);
+    pw_node_set_data(node, pg);
+    pw_node_set_destroy(node, slidergate_destroy);
+    pw_node_set_compute(node, slidergate_compute);
+    return PW_OK;
+}</pre></code>
+
+<h6>1.7.2.2. Slidergate Compute</h6>
+
+<p><a id="wm_010_0339"></a><div><b><i>&lt;&lt;slidergate_node_functions&gt;&gt;=</i></b></div><pre><code>static void slidergate_compute(pw_node *n)
+{
+    int blksize;
+    int s;
+    pw_cable *out;
+    page_sliders_d *slide;
+    monolith_page *pg;
+    int gate;
+
+    blksize = pw_node_blksize(n);
+    pg = pw_node_get_data(n);
+
+    slide = monolith_page_data_get(pg);
+
+    pw_node_get_cable(n, 0, &out);
+    gate = slide-&gt;gate;
+    for(s = 0; s &lt; blksize; s++) {
+        pw_cable_set(out, s, gate);
+    }
+
+}</pre></code>
+
+<h6>1.7.2.3. Sliderval Destroy</h6>
+
+<p><a id="wm_010_0343"></a><div><b><i>&lt;&lt;slidergate_node_functions&gt;&gt;=</i></b></div><pre><code>static void slidergate_destroy(pw_node *node)
+{
+     /* TODO: "unpin" page here */
+     pw_node_cables_free(node);
+}</pre></code>
+
+<h4>1.8. Sliders Runt Words</h4>
+
+<p><a id="wm_010_0346"></a></p>
+
+<h5>1.8.1. Runt Loader</h5>
+
+<p><a id="wm_010_0347"></a>All runt words are loaded with the function <code>sliders_runt_loader</code>. It is loaded
+at init time.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>static int sliders_runt_loader(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;sliders_runt_functions&gt;&gt;
+static int sliders_runt_loader(monolith_d *m)
+{
+&lt;&lt;sliders_runt_keywords&gt;&gt;
+    monolith_runt_mark_set(m);
+    return RUNT_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;sliders_runtime_init&gt;&gt;=</i></b></div><pre><code>sliders_runt_loader(m);</pre></code>
+
+<h5>1.8.2. Sliderval Word</h5>
+
+<p><a id="wm_010_0359"></a>The sliderval word is a wrapper around the sliderval node.
+<div><b><i>&lt;&lt;sliders_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "sliderval", 9, rproc_sliderval, m);</pre></code>
+<div><b><i>&lt;&lt;sliders_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_sliderval(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    rpw_param pos;
+    const char *name;
+    runt_stacklet *s;
+    runt_stacklet *out;
+    monolith_page *pg;
+    pw_patch *patch;
+    pw_node *node;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = rpw_get_param(vm, &pos);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m, name,
+                                   "sliders",
+                                   is_sliders, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    patch = monolith_patchwerk_get(m);
+
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    node_sliderval(node, pg);
+
+    rpw_set_param(vm, node, &pos, 0);
+    rpw_push_output(vm, node, out, 1);
+
+    return RUNT_OK;
+}</pre></code>
+
+<h5>1.8.3. Slidergate Word</h5>
+
+<p><a id="wm_010_0367"></a><div><b><i>&lt;&lt;sliders_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "slidergate", 10, rproc_slidergate, m);</pre></code>
+<div><b><i>&lt;&lt;sliders_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_slidergate(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    const char *name;
+    runt_stacklet *s;
+    runt_stacklet *out;
+    monolith_page *pg;
+    pw_patch *patch;
+    pw_node *node;
+
+    m = runt_to_cptr(p);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    name = runt_to_string(s-&gt;p);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m, name,
+                                   "sliders",
+                                   is_sliders, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    patch = monolith_patchwerk_get(m);
+
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    node_slidergate(node, pg);
+
+    rpw_push_output(vm, node, out, 0);
+
+    return RUNT_OK;
+}</pre></code>
+</div>
+</body>
+</html>

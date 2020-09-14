@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. Callbacks for cmp</h3>
+
+<p><a id="wm_002_0030"></a>CMP uses a callback interface to allow the messaging
+system to be read/written to in many ways. The callbacks
+below are written specifically to be useful for monolith.
+</p>
+
+<h4>3.1. get_size</h4>
+
+<p><a id="wm_002_0032"></a>The <code>get_size</code> callback is used when determining how many
+bytes are required to be allocated. Instead of writing to
+a buffer, <code>get_size</code> will increment an integer variable.
+<div><b><i>&lt;&lt;moncmp_callbacks&gt;&gt;=</i></b></div><pre><code>static size_t get_size(cmp_ctx_t *ctx,
+                       const void *ud,
+                       size_t count)
+{
+    size_t *size;
+    size = (size_t *)ctx-&gt;buf;
+    *size += count;
+    return count;
+}</pre></code>
+
+<h4>3.2. memwrite</h4>
+
+<p><a id="wm_002_0037"></a>This callback is used for writing values to a memory buffer.
+<div><b><i>&lt;&lt;moncmp_callbacks&gt;&gt;=</i></b></div><pre><code>static size_t memwrite(cmp_ctx_t *ctx, const void *ud, size_t count)
+{
+    size_t n;
+    moncmp_d *m;
+    const uint8_t *bytes;
+
+    m = ctx-&gt;buf;
+    bytes = ud;
+    for(n = 0; n &lt; count; n++) {
+        m-&gt;buf[m-&gt;pos + n] = bytes[n];
+    }
+    m-&gt;pos += count;
+    return count;
+}</pre></code>
+
+<h4>3.3. memread</h4>
+
+<p><a id="wm_002_0041"></a>Used to read values from a buffer.
+<div><b><i>&lt;&lt;moncmp_callbacks&gt;&gt;=</i></b></div><pre><code>static bool memread(cmp_ctx_t *ctx, void *data, size_t limit)
+{
+    size_t n;
+    moncmp_d *m;
+    uint8_t *bytes;
+
+    m = ctx-&gt;buf;
+    bytes = data;
+
+    if (m-&gt;pos + limit &gt; m-&gt;sz) {
+        fprintf(stderr,
+                "Read %ld out of range of size %ld\n",
+                m-&gt;pos + limit, m-&gt;sz);
+        return false;
+    }
+
+    for (n = 0; n &lt; limit; n++) {
+        bytes[n] = m-&gt;buf[m-&gt;pos + n];
+    }
+    m-&gt;pos += limit;
+    return true;
+}</pre></code>
+</div>
+</body>
+</html>

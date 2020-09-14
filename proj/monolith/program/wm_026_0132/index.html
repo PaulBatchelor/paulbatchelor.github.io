@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Operations</h3>
+
+<p><a id="wm_026_0132"></a></p>
+
+<h4>6.1. Append</h4>
+
+<p><a id="wm_026_0133"></a>Append an ftable with <code>sp_ftlist_append</code>. Returns the
+index position of the table.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sp_ftlist_append(sp_ftlist *ftlst, sp_ftbl *ft);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sp_ftlist_append(sp_ftlist *ftlst, sp_ftbl *ft)
+{
+    int pos;
+    if (ftlst-&gt;size == 0) {
+        ftlst-&gt;size = 1;
+        ftlst-&gt;list = malloc(sizeof(sp_ftbl *));
+    } else {
+        ftlst-&gt;size++;
+        ftlst-&gt;list = realloc(ftlst-&gt;list,
+                              sizeof(sp_ftbl *) * ftlst-&gt;size);
+    }
+
+    pos = ftlst-&gt;size - 1;
+    ftlst-&gt;list[pos] = ft;
+
+    return pos;
+}</pre></code>
+<p></p>
+<p>This is implemented as a runt word called <code>ftlist_append</code>.
+It will push the table position to the stack.
+</p>
+<div><b><i>&lt;&lt;words&gt;&gt;=</i></b></div><pre><code>runt_keyword_define(vm,
+                    "ftlist_append",
+                    13,
+                    rproc_ftlist_append,
+                    NULL);</pre></code>
+<div><b><i>&lt;&lt;wordfuncs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_ftlist_append(runt_vm *vm, runt_ptr p)
+{
+    int rc;
+    sp_ftbl *ft;
+    sp_ftlist *ftlst;
+
+    rc = rpw_get_ftlist(vm, &ftlst);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = rpw_get_ftable(vm, &ft);
+    RUNT_ERROR_CHECK(rc);
+
+    sp_ftlist_append(ftlst, ft);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>6.2. Choose</h4>
+
+<p><a id="wm_026_0146"></a>Set the target ftable with <code>sp_ftlist_choose</code>. This takes
+in an integer value, which is the table position of the
+table to be chosen. If the table is out of bounds, no
+operation happens.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sp_ftlist_choose(sp_ftlist *ftlst, int index);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sp_ftlist_choose(sp_ftlist *ftlst, int index)
+{
+    sp_ftbl *ft;
+
+    if (index &lt; 0 || index &gt;= ftlst-&gt;size) return;
+
+    ft = ftlst-&gt;list[index];
+    ftlst-&gt;target.tbl = ft-&gt;tbl;
+    ftlst-&gt;target.size = ft-&gt;size;
+}</pre></code>
+<p></p>
+<p>This is implemented as a runt word called <code>ftlist_choose</code>.
+</p>
+<div><b><i>&lt;&lt;words&gt;&gt;=</i></b></div><pre><code>runt_keyword_define(vm,
+                    "ftlist_choose", 13,
+                    rproc_ftlist_choose,
+                    &c);
+runt_cell_data(vm, c, pw);</pre></code>
+<div><b><i>&lt;&lt;wordfuncs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_ftlist_choose(runt_vm *vm, runt_ptr p)
+{
+    int rc;
+    sp_ftlist *ftlst;
+    int index;
+    runt_stacklet *s;
+
+    rc = rpw_get_ftlist(vm, &ftlst);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    index = floor(s-&gt;f);
+
+    sp_ftlist_choose(ftlst, index);
+
+    return RUNT_OK;
+}</pre></code>
+<p></p>
+<p>A sample accurate choose is done with <code>sp_ftlist_choose_sa</code>.
+In this argument, the block position must be provided.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sp_ftlist_choose_sa(sp_ftlist *ftlst, int index, int pos);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sp_ftlist_choose_sa(sp_ftlist *ftlst, int index, int pos)
+{
+    ftlst-&gt;blockpos = pos;
+    ftlst-&gt;next = index;
+    sp_ftlist_choose(ftlst, index);
+}</pre></code>
+
+<h4>6.3. Target</h4>
+
+<p><a id="wm_026_0162"></a>This returns the target ftable.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>sp_ftbl* sp_ftlist_target(sp_ftlist *ftlst);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>sp_ftbl* sp_ftlist_target(sp_ftlist *ftlst)
+{
+    return &ftlst-&gt;target;
+}</pre></code>
+<p></p>
+<p>It is implemented as a word called <code>ftlist_target</code>, which
+takes in an ftlist and pushes the ftable onto the stack.
+</p>
+<div><b><i>&lt;&lt;words&gt;&gt;=</i></b></div><pre><code>runt_keyword_define(vm,
+                    "ftlist_target",
+                    13,
+                    rproc_ftlist_target,
+                    &c);
+runt_cell_data(vm, c, pw);</pre></code>
+<div><b><i>&lt;&lt;wordfuncs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_ftlist_target(runt_vm *vm, runt_ptr p)
+{
+    sp_ftlist *ftlst;
+    sp_ftbl *ft;
+    int rc;
+    runt_stacklet *out;
+
+    rc = rpw_get_ftlist(vm, &ftlst);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    ft = sp_ftlist_target(ftlst);
+    rpw_stacklet_ftable(vm, out, ft);
+
+    return RUNT_OK;
+}</pre></code>
+<p></p>
+<p>A sample accurate target is retrieved using the function
+<code>sp_ftlist_target_sa</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>sp_ftbl* sp_ftlist_target_sa(sp_ftlist *ftlst, int pos);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>sp_ftbl* sp_ftlist_target_sa(sp_ftlist *ftlst, int pos)
+{
+    sp_ftbl *ft;
+
+    ft = &ftlst-&gt;target;
+
+    if (ftlst-&gt;blockpos &gt;= 0) {
+        if (pos &lt; ftlst-&gt;blockpos) {
+            if (ftlst-&gt;prev &gt;= 0) {
+                ft = ftlst-&gt;list[ftlst-&gt;prev];
+            }
+        } else if (ftlst-&gt;next &gt;= 0) {
+                ft = ftlst-&gt;list[ftlst-&gt;next];
+        }
+    }
+
+    return ft;
+}</pre></code>
+
+<h4>6.4. Get</h4>
+
+<p><a id="wm_026_0178"></a>Gets an ftable at a specified position. Returns <code>NULL</code> on
+error.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>sp_ftbl* sp_ftlist_get(sp_ftlist *ftl, int index);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>sp_ftbl* sp_ftlist_get(sp_ftlist *ftl, int index)
+{
+    if (index &lt; 0 || index &gt;= ftl-&gt;size) return NULL;
+    return ftl-&gt;list[index];
+}</pre></code>
+<p></p>
+<p>Implemented as a runt word <code>ftlist_get</code>.
+</p>
+<div><b><i>&lt;&lt;words&gt;&gt;=</i></b></div><pre><code>runt_keyword_define(vm,
+                    "ftlist_get", 10,
+                    rproc_ftlist_get, &c);
+runt_cell_data(vm, c, pw);</pre></code>
+<div><b><i>&lt;&lt;wordfuncs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_ftlist_get(runt_vm *vm, runt_ptr p)
+{
+    sp_ftlist *ftlst;
+    sp_ftbl *ft;
+    int rc;
+    int index;
+    runt_stacklet *s;
+    runt_stacklet *out;
+
+    rc = rpw_get_ftlist(vm, &ftlst);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    index = floor(s-&gt;f);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    ft = sp_ftlist_get(ftlst, index);
+
+    if (ft == NULL) {
+        runt_print(vm, "ftlist_get: invalid index %d\n", index);
+        return RUNT_NOT_OK;
+    }
+
+    rpw_stacklet_ftable(vm, out, ft);
+    return RUNT_OK;
+}</pre></code>
+</div>
+</body>
+</html>

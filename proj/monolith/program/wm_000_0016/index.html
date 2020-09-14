@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. Top-level</h3>
+
+<p><a id="wm_000_0016"></a></p>
+
+<h4>3.1. Header File</h4>
+
+<p><a id="wm_000_0017"></a><div><b><i>&lt;&lt;header&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_H
+#define MONOLITH_H
+&lt;&lt;enums&gt;&gt;
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;callback_prototypes&gt;&gt;
+&lt;&lt;function_declarations&gt;&gt;
+#endif</pre></code>
+
+<h4>3.2. C file</h4>
+
+<p><a id="wm_000_0030"></a>To start things off, we create an s9 interpreter with a
+single function added.
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+
+#ifndef MONOLITH_SIMPLE
+#include &lt;jack/jack.h&gt;
+#endif
+
+#include &lt;math.h&gt;
+&lt;&lt;system_includes&gt;&gt;
+#include "runt.h"
+#include "patchwerk.h"
+#include "soundpipe.h"
+#include "runt_patchwerk.h"
+#include "runt_ftbl.h"
+#include "s9core.h"
+#include "s9import.h"
+#include "s9ext.h"
+
+#ifdef MONOLITH_NORNS
+#include &lt;linux/input.h&gt;
+#include "norns.h"
+#endif
+
+#include "monolith.h"
+#include "jan.h"
+
+&lt;&lt;aux_includes&gt;&gt;
+
+#ifndef MONOLITH_BLKSIZE
+#define MONOLITH_BLKSIZE 64 /* blocksize for patchwerk */
+#endif
+
+#ifndef CROSSFADE_SIZE
+#define CROSSFADE_SIZE 512
+#endif
+
+&lt;&lt;macros&gt;&gt;
+
+int s9_main_with_loader(int argc, char *argv[], void (*loader)(void));
+int janet_main(int argc, char *argv[]);
+&lt;&lt;structs&gt;&gt;
+&lt;&lt;global_struct&gt;&gt;
+&lt;&lt;static_function_declarations&gt;&gt;
+&lt;&lt;scheme_functions&gt;&gt;
+&lt;&lt;primitive_table&gt;&gt;
+&lt;&lt;loader&gt;&gt;
+&lt;&lt;functions&gt;&gt;
+int monolith_main(int argc, char *argv[])
+{
+    int rc;
+&lt;&lt;check_for_keywords&gt;&gt;
+    monolith_init(&g_monolith);
+    rc = s9_main_with_loader(argc, argv, loader);
+    monolith_cleanup(&g_monolith);
+    return rc;
+}</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_main(int argc, char *argv[]);</pre></code>
+
+<h4>3.3. main.c</h4>
+
+<p><a id="wm_000_0061"></a>This is generated separately from the rest of the gang, in
+order for a libmonolith to exist.
+<div><b><i>&lt;&lt;main.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+#include "runt.h"
+#include "patchwerk.h"
+#include "monolith.h"
+
+int main(int argc, char *argv[])
+{
+    return monolith_main(argc, argv);
+}</pre></code>
+
+<h4>3.4. Version Number</h4>
+
+<p><a id="wm_000_0067"></a>The version number is determined with the macro
+<code>MONOLITH_VERSION</code>. It is sourced from the current fossil
+checkout hash, and the macro is using CFLAGS inside the
+Makefile. The version string can be retrieved using the
+function <code>monolith:version</code>.
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:version", pp_version, 0, 0, {CHR,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_version(cell x) {
+    return s9_make_string(MONOLITH_VERSION, strlen(MONOLITH_VERSION));
+}</pre></code>
+
+<h4>3.5. Checking for Keywords</h4>
+
+<p><a id="wm_000_0075"></a>Monolith has a few sub programs that can be run from the
+commandline, using a style similar to that of git.
+<div><b><i>&lt;&lt;check_for_keywords&gt;&gt;=</i></b></div><pre><code>if(argc &gt; 1) {
+&lt;&lt;start_sqlar&gt;&gt;
+&lt;&lt;start_runt&gt;&gt;
+#ifdef USE_JANET
+&lt;&lt;start_janet&gt;&gt;
+#endif
+&lt;&lt;start_mkimg&gt;&gt;
+&lt;&lt;start_stretcher&gt;&gt;
+#ifdef USE_JANET
+&lt;&lt;start_jpm&gt;&gt;
+#endif
+&lt;&lt;start_cfloop&gt;&gt;
+&lt;&lt;start_scrambler&gt;&gt;
+}</pre></code>
+
+<h5>3.5.1. Check for SQLar</h5>
+
+<p><a id="wm_000_0096"></a>Embedded in Monolith is SQLar, the SQLite archiver. This is a special
+third party utility that can utilize SQLite as an archive file. The SQLar
+program can be instantiated with the function <code>sqlar_main</code>.
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>int sqlar_main(int argc, char **argv);</pre></code>
+<p></p>
+<p>The sqlar program can be run using the command <code>monolith sqlar</code>. When this
+happens, the sqlar CLI will run instead of the default monolith REPL. Arguments
+passed after that will be treated as command line arguments to SQLar.
+</p>
+<div><b><i>&lt;&lt;start_sqlar&gt;&gt;=</i></b></div><pre><code>if (!strncmp(argv[1], "sqlar", 5)) {
+    return sqlar_main(argc - 1, argv + 1);
+}</pre></code>
+
+<h5>3.5.2. Check for Runt</h5>
+
+<p><a id="wm_000_0105"></a>The runt interpretor for Monolith can be loaded explicitely
+using the word "runt". This will start an irunt interpretor
+via <code>irunt_begin</code>. This can be used to run runt code
+directly, rather than through the scheme interface.
+<div><b><i>&lt;&lt;start_runt&gt;&gt;=</i></b></div><pre><code>if (!strncmp(argv[1], "runt", 4)) {
+    return irunt_begin(argc - 1, argv + 1, runt_monolith_loader);
+}</pre></code>
+
+<h5>3.5.3. Check for Janet</h5>
+
+<p><a id="wm_000_0110"></a>Runs the janet interpreter.
+<div><b><i>&lt;&lt;start_janet&gt;&gt;=</i></b></div><pre><code>if (!strncmp(argv[1], "janet", 5)) {
+    return janet_main(argc - 1, argv + 1);
+}</pre></code>
+
+<h5>3.5.4. mkimg</h5>
+
+<p><a id="wm_000_0115"></a>Used to generated a monolith image.
+<div><b><i>&lt;&lt;start_mkimg&gt;&gt;=</i></b></div><pre><code>if (!strncmp(argv[1], "mkimg", 5)) {
+    int img_argc = 5;
+    char *img_argv[] = {
+        "monolith",
+        "-i", "-",
+        "-d", "monolith.image"
+    };
+    printf("Attempting to generate monolith.image\n");
+    return s9_main_with_loader(img_argc, img_argv, loader);
+}</pre></code>
+
+<h5>3.5.5. Stretcher</h5>
+
+<p><a id="wm_000_0120"></a>Stretcher is a small command line utility used to apply the
+paulstretch algorithm to audio files. This is only enabled
+if <code>MONOLITH_STRETCHER</code> is defined.
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_STRETCHER
+int stretcher_main(int argc, char *argv[]);
+#endif</pre></code>
+<div><b><i>&lt;&lt;start_stretcher&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_STRETCHER
+if (!strcmp(argv[1], "stretcher")) {
+    return stretcher_main(argc - 1, argv + 1);
+}
+#endif</pre></code>
+
+<h5>3.5.6. JPM (Janet Plugin Manager)</h5>
+
+<p><a id="wm_000_0127"></a>The Janet Plugin Manager is used to build janet plugins.
+This version of JPM is built to run internally inside
+of monolith.
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_STRETCHER
+int monolith_jpm(int argc, char *argv[]);
+#endif</pre></code>
+<div><b><i>&lt;&lt;start_jpm&gt;&gt;=</i></b></div><pre><code>if (!strcmp(argv[1], "jpm")) {
+    return monolith_jpm(argc - 1, argv + 1);
+}</pre></code>
+
+<h5>3.5.7. cfloop</h5>
+
+<p><a id="wm_000_0134"></a>cfloop is a tiny crossfade looper generator for wav files.
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_CFLOOP
+int run_cfloop(int argc, char *argv[]);
+#endif</pre></code>
+<div><b><i>&lt;&lt;start_cfloop&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_CFLOOP
+if (!strcmp(argv[1], "cfloop")) {
+    return run_cfloop(argc - 1, argv + 1);
+}
+#endif</pre></code>
+
+<h5>3.5.8. scrambler</h5>
+
+<p><a id="wm_000_0141"></a>scrambler is an offline FFT scrambler.
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_SCRAMBLER
+int scrambler_main(int argc, char *argv[]);
+#endif</pre></code>
+<div><b><i>&lt;&lt;start_scrambler&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_SCRAMBLER
+if (!strcmp(argv[1], "scrambler")) {
+    return scrambler_main(argc - 1, argv + 1);
+}
+#endif</pre></code>
+</div>
+</body>
+</html>

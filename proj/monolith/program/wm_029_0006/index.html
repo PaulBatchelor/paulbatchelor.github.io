@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. Overview of Color Blend</h3>
+
+<p><a id="wm_029_0006"></a>Blending is still fundamentally a linear interpolation
+between between to RGB colors. But, these colors need to be
+normalized and converted to linear RGB values.
+</p>
+<p>Monolith encodes color as a pretty standard 32-bit RGBA
+color, each channel being 8-bits, or a value between 0
+and 255. The process of normalizing is dividing each 8-bit
+Red, Green, and Blue component by 255 to get them in range
+0 and 1.
+</p>
+<div><b><i>&lt;&lt;normalize_colors&gt;&gt;=</i></b></div><pre><code>c0_n[0] = c0.r * oned255;
+c0_n[1] = c0.g * oned255;
+c0_n[2] = c0.b * oned255;
+c1_n[0] = c1.r * oned255;
+c1_n[1] = c1.g * oned255;
+c1_n[2] = c1.b * oned255;</pre></code>
+<p></p>
+<p>Once they have been normalized, the RGB components can be
+converted in to linear values. This is done by undoing the
+gamma non-linearity added.
+</p>
+<div><b><i>&lt;&lt;ungamma_stuff&gt;&gt;=</i></b></div><pre><code>c0_n[0] = ungammait(c0_n[0]);
+c0_n[1] = ungammait(c0_n[1]);
+c0_n[2] = ungammait(c0_n[2]);
+c1_n[0] = ungammait(c1_n[0]);
+c1_n[1] = ungammait(c1_n[1]);
+c1_n[2] = ungammait(c1_n[2]);</pre></code>
+<p></p>
+<p>The function that inverts the gamma function <code>ungammait</code>, is
+defined below.
+</p>
+<p>This mathematical process was
+adopted from the equation found on the <a href="https://en.wikipedia.org/wiki/SRGB#Specification_of_the_transformation">Wikipedia Page on sRGB</a>.
+This un-gamma-fying processing is applied to each channel.
+</p>
+<p>(This gamma nonlinearity is a process I do not fully
+understand. It's full of magic numbers of which I do not
+know how they were derived.)
+</p>
+<div><b><i>&lt;&lt;gammafuncs&gt;&gt;=</i></b></div><pre><code>/* gets normalized sRGB to linear RGB */
+static float ungammait(float u)
+{
+    float y;
+    y = 0;
+
+    if (u &lt;= 0.04045) {
+        y = u / 12.92;
+    } else {
+        y = pow((u + 0.055)/1.055, 2.4);
+    }
+
+    return y;
+}</pre></code>
+<p></p>
+<p>Linear interpolation between the colors can now finally
+happen. For those more included to music production, think
+of it as a cross-fade.
+</p>
+<div><b><i>&lt;&lt;lerpit&gt;&gt;=</i></b></div><pre><code>out_n[0] = (1 - a) * c0_n[0] + a * c1_n[0];
+out_n[1] = (1 - a) * c0_n[1] + a * c1_n[1];
+out_n[2] = (1 - a) * c0_n[2] + a * c1_n[2];</pre></code>
+<p></p>
+<p>The new interpolated color needs to get returned to sRGB
+color space. First the color needs to get gamma-fied; the
+gamma non-linearity that was previously removed gets
+re-introduced again. Then, each component is properly scaled
+and truncated to be an 8-bit value.
+</p>
+<div><b><i>&lt;&lt;regamma_stuff&gt;&gt;=</i></b></div><pre><code>out_n[0] = gammait(out_n[0]);
+out_n[1] = gammait(out_n[1]);
+out_n[2] = gammait(out_n[2]);</pre></code>
+<p></p>
+<p>Applying the gamma function for each RGB channel brings
+it back to normalize sRGB space.
+</p>
+<div><b><i>&lt;&lt;gammafuncs&gt;&gt;=</i></b></div><pre><code>static float gammait(float u)
+{
+    float y;
+    y = 0;
+
+    if (u &lt;= 0.0031308) {
+        y = u * 12.92;
+    } else {
+        y = pow(u, 1.0/2.4) * 1.055 - 0.055;
+    }
+
+    return y;
+}</pre></code>
+<p></p>
+<p>The final step involves storing this in the output color'
+point. Check for null values first!
+</p>
+<div><b><i>&lt;&lt;scale_and_store&gt;&gt;=</i></b></div><pre><code>if (out != NULL) {
+    out-&gt;r = floor(out_n[0] * 255);
+    out-&gt;g = floor(out_n[1] * 255);
+    out-&gt;b = floor(out_n[2] * 255);
+}</pre></code>
+<p></p>
+<p>And that's it!
+</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>5. msgpack and janet</h3>
+
+<p><a id="wm_002_0066"></a>janet functions for msgpack will be loaded using
+the funciton <code>monolith_janet_msgpack</code>.
+</p>
+<div><b><i>&lt;&lt;moncmp_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;moncmp_janet_functions&gt;&gt;
+static const JanetReg cfuns[] = {
+      {"monolith/msgpack-read", j_msgpack_read,
+       "Reads a msgpack buffer loaded in Janet.",
+      },
+      {NULL, NULL, NULL}
+};
+void monolith_janet_msgpack(JanetTable *env)
+{
+    janet_cfuns(env, NULL, cfuns);
+}</pre></code>
+<p></p>
+<p>A function that converts a valid msgpack stream
+(encoded in a buffer) to a janet array. This function
+will be called <code>monolith/msgpack-read</code>.
+</p>
+<div><b><i>&lt;&lt;moncmp_janet_functions&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    JanetBuffer *buf;
+    size_t pos;
+} j_mp_d;
+
+static bool read_bytes(void *data, size_t sz, j_mp_d *jmp)
+{
+    size_t n;
+    uint8_t *bytes;
+    uint8_t *in;
+
+    bytes = data;
+    in = (uint8_t *)jmp-&gt;buf-&gt;data;
+
+    if (jmp-&gt;pos + sz &gt; jmp-&gt;buf-&gt;count) {
+        /* fprintf(stderr, */
+        /*         "Read %ld out of range of size %d\n", */
+        /*         jmp-&gt;pos + sz, jmp-&gt;buf-&gt;count); */
+        return false;
+    }
+
+    for (n = 0; n &lt; sz; n++) {
+        bytes[n] = in[jmp-&gt;pos + n];
+    }
+
+    jmp-&gt;pos += sz;
+    return true;
+}
+
+/* instead of copying, return pointer directly, then move
+ ,* position. Used for things like strings.
+ ,*/
+static uint8_t * get_data(j_mp_d *jmp, size_t sz)
+{
+    uint8_t *in;
+    size_t pos;
+    in = (uint8_t *)jmp-&gt;buf-&gt;data;
+    pos = jmp-&gt;pos;
+    jmp-&gt;pos += sz;
+    return &in[pos];
+}
+
+static bool j_mp_read(cmp_ctx_t *ctx, void *data, size_t limit)
+{
+    return read_bytes(data, limit, (j_mp_d *)ctx-&gt;buf);
+}
+
+/* static void error_and_exit(const char *msg) */
+/* { */
+/*     fprintf(stderr, "%s\n\n", msg); */
+/* } */
+
+static int append_object(cmp_ctx_t *cmp,
+                         JanetArray *array,
+                         j_mp_d *jmp)
+{
+    cmp_object_t obj;
+
+    if (!cmp_read_object(cmp, &obj)) {
+        if (jmp-&gt;pos &gt;= jmp-&gt;buf-&gt;count) return 0;
+
+        return 0;
+    }
+
+    switch (obj.type) {
+        case CMP_TYPE_POSITIVE_FIXNUM:
+        case CMP_TYPE_UINT8:
+            janet_array_push(array,
+                                janet_wrap_integer(obj.as.u8));
+            break;
+        case CMP_TYPE_FIXMAP:
+        case CMP_TYPE_MAP16:
+        case CMP_TYPE_MAP32:
+            printf("Map: %u\n", obj.as.map_size);
+            break;
+        case CMP_TYPE_FIXARRAY:
+        case CMP_TYPE_ARRAY16:
+        case CMP_TYPE_ARRAY32: {
+            int n;
+            size_t cap;
+            JanetArray *a;
+            cap = obj.as.array_size;
+            a = janet_array(cap);
+            for (n = 0; n &lt; cap; n++) {
+                append_object(cmp, a, jmp);
+            }
+            janet_array_push(array, janet_wrap_array(a));
+            break;
+        }
+        case CMP_TYPE_FIXSTR:
+        case CMP_TYPE_STR8:
+        case CMP_TYPE_STR16:
+        case CMP_TYPE_STR32: {
+            const uint8_t *str;
+            str = get_data(jmp, obj.as.str_size);
+            janet_array_push(array,
+                                janet_wrap_string(
+                                    janet_string(str,
+                                                obj.as.str_size)));
+            break;
+        }
+        /* case CMP_TYPE_BIN8: */
+        /* case CMP_TYPE_BIN16: */
+        /* case CMP_TYPE_BIN32: */
+        /*     memset(sbuf, 0, sizeof(sbuf)); */
+        /*     if (!read_bytes(sbuf, obj.as.bin_size, jmp)) { */
+        /*         error_and_exit(strerror(errno)); */
+        /*         break; */
+        /*     } */
+        /*     printf("Binary: %s\n", sbuf); */
+        /*     break; */
+        case CMP_TYPE_NIL:
+            janet_array_push(array, janet_wrap_nil());
+            break;
+        case CMP_TYPE_BOOLEAN:
+            janet_array_push(array,
+                                janet_wrap_boolean(obj.as.boolean));
+            break;
+        /* case CMP_TYPE_EXT8: */
+        /* case CMP_TYPE_EXT16: */
+        /* case CMP_TYPE_EXT32: */
+        /* case CMP_TYPE_FIXEXT1: */
+        /* case CMP_TYPE_FIXEXT2: */
+        /* case CMP_TYPE_FIXEXT4: */
+        /* case CMP_TYPE_FIXEXT8: */
+        /* case CMP_TYPE_FIXEXT16: */
+        /*     if (obj.as.ext.type == 1) { /\* Date object *\/ */
+        /*         if (!read_bytes(&year, sizeof(uint16_t), jmp)) { */
+        /*             error_and_exit(strerror(errno)); */
+        /*             break; */
+        /*         } */
+
+        /*         if (!read_bytes(&month, sizeof(uint8_t), jmp)) { */
+        /*             error_and_exit(strerror(errno)); */
+        /*             break; */
+        /*         } */
+
+        /*         if (!read_bytes(&day, sizeof(uint8_t), jmp)) { */
+        /*             error_and_exit(strerror(errno)); */
+        /*             break; */
+        /*         } */
+
+        /*         printf("Date: %u/%u/%u\n", year, month, day); */
+        /*     } */
+        /*     else { */
+        /*         printf("Extended type {%d, %u}: ", */
+        /*             obj.as.ext.type, obj.as.ext.size */
+        /*         ); */
+        /*         while (obj.as.ext.size--) { */
+        /*             read_bytes(sbuf, sizeof(uint8_t), jmp); */
+        /*             printf("%02x ", sbuf[0]); */
+        /*         } */
+        /*         printf("\n"); */
+        /*     } */
+        /*     break; */
+        case CMP_TYPE_FLOAT:
+            janet_array_push(array,
+                                janet_wrap_number(obj.as.flt));
+            break;
+        case CMP_TYPE_DOUBLE:
+            janet_array_push(array,
+                                janet_wrap_number(obj.as.dbl));
+            break;
+        case CMP_TYPE_UINT16:
+            janet_array_push(array,
+                                janet_wrap_integer(obj.as.u16));
+            break;
+        case CMP_TYPE_UINT32:
+            janet_array_push(array,
+                                janet_wrap_integer(obj.as.u32));
+            break;
+        case CMP_TYPE_UINT64:
+            janet_array_push(array,
+                                janet_wrap_integer(obj.as.u64));
+            break;
+        case CMP_TYPE_NEGATIVE_FIXNUM:
+        case CMP_TYPE_SINT8:
+            janet_array_push(array,
+                                janet_wrap_integer(obj.as.s8));
+            break;
+        case CMP_TYPE_SINT16:
+            janet_array_push(array,
+                                janet_wrap_integer(obj.as.s16));
+            break;
+        case CMP_TYPE_SINT32:
+            janet_array_push(array,
+                                janet_wrap_integer(obj.as.s32));
+            break;
+        case CMP_TYPE_SINT64:
+            janet_array_push(array,
+                                janet_wrap_integer(obj.as.s64));
+            break;
+        default:
+            printf("Unrecognized object type %u\n", obj.type);
+            break;
+    }
+
+    return 1;
+
+}
+
+static void parse_data(cmp_ctx_t *cmp,
+                       JanetArray *array,
+                       j_mp_d *jmp)
+{
+
+    /* uint16_t year = 1983; */
+    /* uint8_t month = 5; */
+    /* uint8_t day = 28; */
+    /* char sbuf[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; */
+
+    while (1) {
+        if (!append_object(cmp, array, jmp)) break;
+        /* cmp_object_t obj; */
+
+        /* if (!cmp_read_object(cmp, &obj)) { */
+        /*     if (jmp-&gt;pos &gt;= jmp-&gt;buf-&gt;count) break; */
+
+        /*     error_and_exit(cmp_strerror(cmp)); */
+        /*     break; */
+        /* } */
+
+        /* switch (obj.type) { */
+        /*     case CMP_TYPE_POSITIVE_FIXNUM: */
+        /*     case CMP_TYPE_UINT8: */
+        /*         printf("Unsigned Integer: %u\n", obj.as.u8); */
+        /*         break; */
+        /*     case CMP_TYPE_FIXMAP: */
+        /*     case CMP_TYPE_MAP16: */
+        /*     case CMP_TYPE_MAP32: */
+        /*         printf("Map: %u\n", obj.as.map_size); */
+        /*         break; */
+        /*     case CMP_TYPE_FIXARRAY: */
+        /*     case CMP_TYPE_ARRAY16: */
+        /*     case CMP_TYPE_ARRAY32: */
+        /*         printf("Array: %u\n", obj.as.array_size); */
+        /*         break; */
+        /*     case CMP_TYPE_FIXSTR: */
+        /*     case CMP_TYPE_STR8: */
+        /*     case CMP_TYPE_STR16: */
+        /*     case CMP_TYPE_STR32: { */
+        /*         const uint8_t *str; */
+        /*         str = get_data(jmp, obj.as.str_size); */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_string( */
+        /*                              janet_string(str, */
+        /*                                           obj.as.str_size))); */
+        /*         break; */
+        /*     } */
+        /*     case CMP_TYPE_BIN8: */
+        /*     case CMP_TYPE_BIN16: */
+        /*     case CMP_TYPE_BIN32: */
+        /*         memset(sbuf, 0, sizeof(sbuf)); */
+        /*         if (!read_bytes(sbuf, obj.as.bin_size, jmp)) { */
+        /*             error_and_exit(strerror(errno)); */
+        /*             break; */
+        /*         } */
+        /*         printf("Binary: %s\n", sbuf); */
+        /*         break; */
+        /*     case CMP_TYPE_NIL: */
+        /*         janet_array_push(array, janet_wrap_nil()); */
+        /*         break; */
+        /*     case CMP_TYPE_BOOLEAN: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_boolean(obj.as.boolean)); */
+        /*     case CMP_TYPE_EXT8: */
+        /*     case CMP_TYPE_EXT16: */
+        /*     case CMP_TYPE_EXT32: */
+        /*     case CMP_TYPE_FIXEXT1: */
+        /*     case CMP_TYPE_FIXEXT2: */
+        /*     case CMP_TYPE_FIXEXT4: */
+        /*     case CMP_TYPE_FIXEXT8: */
+        /*     case CMP_TYPE_FIXEXT16: */
+        /*         if (obj.as.ext.type == 1) { /\* Date object *\/ */
+        /*             if (!read_bytes(&year, sizeof(uint16_t), jmp)) { */
+        /*                 error_and_exit(strerror(errno)); */
+        /*                 break; */
+        /*             } */
+
+        /*             if (!read_bytes(&month, sizeof(uint8_t), jmp)) { */
+        /*                 error_and_exit(strerror(errno)); */
+        /*                 break; */
+        /*             } */
+
+        /*             if (!read_bytes(&day, sizeof(uint8_t), jmp)) { */
+        /*                 error_and_exit(strerror(errno)); */
+        /*                 break; */
+        /*             } */
+
+        /*             printf("Date: %u/%u/%u\n", year, month, day); */
+        /*         } */
+        /*         else { */
+        /*             printf("Extended type {%d, %u}: ", */
+        /*                 obj.as.ext.type, obj.as.ext.size */
+        /*             ); */
+        /*             while (obj.as.ext.size--) { */
+        /*                 read_bytes(sbuf, sizeof(uint8_t), jmp); */
+        /*                 printf("%02x ", sbuf[0]); */
+        /*             } */
+        /*             printf("\n"); */
+        /*         } */
+        /*         break; */
+        /*     case CMP_TYPE_FLOAT: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_number(obj.as.flt)); */
+        /*         break; */
+        /*     case CMP_TYPE_DOUBLE: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_number(obj.as.dbl)); */
+        /*         break; */
+        /*     case CMP_TYPE_UINT16: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_integer(obj.as.u16)); */
+        /*         break; */
+        /*     case CMP_TYPE_UINT32: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_integer(obj.as.u32)); */
+        /*         break; */
+        /*     case CMP_TYPE_UINT64: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_integer(obj.as.u64)); */
+        /*         break; */
+        /*     case CMP_TYPE_NEGATIVE_FIXNUM: */
+        /*     case CMP_TYPE_SINT8: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_integer(obj.as.s8)); */
+        /*         break; */
+        /*     case CMP_TYPE_SINT16: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_integer(obj.as.s16)); */
+        /*         break; */
+        /*     case CMP_TYPE_SINT32: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_integer(obj.as.s32)); */
+        /*         break; */
+        /*     case CMP_TYPE_SINT64: */
+        /*         janet_array_push(array, */
+        /*                          janet_wrap_integer(obj.as.s64)); */
+        /*         break; */
+        /*     default: */
+        /*         printf("Unrecognized object type %u\n", obj.type); */
+        /*         break; */
+        /* } */
+    }
+}
+
+static Janet j_msgpack_read(int32_t argc, Janet *argv)
+{
+    JanetArray *array;
+    JanetBuffer *buf;
+    cmp_ctx_t cmp;
+    j_mp_d data;
+
+    janet_fixarity(argc, 1);
+    buf = janet_getbuffer(argv, 0);
+    array = janet_array(16);
+    data.buf = buf;
+    data.pos = 0;
+
+    cmp_init(&cmp, &data, j_mp_read, NULL, NULL);
+
+    parse_data(&cmp, array, &data);
+    return janet_wrap_array(array);
+}
+</pre></code>
+<p></p>
+<p>CMP has the ability to read through a msgpack buffer
+as a stream of objects via the function <code>cmp_read_object</code>.
+</p>
+<p>A giant case switch would then parse the type flag in the
+object and react accordingly. For janet, this means pushing
+decoding + pushing values onto an array that get returned.
+</p>
+</div>
+</body>
+</html>
