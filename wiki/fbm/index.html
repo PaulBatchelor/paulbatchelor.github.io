@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>FBM in Monolith</title>
+<h1>FBM in Monolith</h1>
+<p>This little snippet shows how to use the Monolith C API
+to build <code>Fractal Brownian Motion</code> with <code>Domain warping</code>.
+This program will generate <a href="https://vimeo.com/458182024">this video</a>.
+</p>
+<p>This program uses code adapated from the <a href="https://thebookofshaders.com/13/">book of shaders</a>.
+Instead of shader code and the GPU, this code uses <code>ANSI C</code>
+code and the CPU. rgb pixels are written to the monolith
+<code>framebuffer</code>, and then this framebuffer is sent off to the
+<code>x264</code> to be encoded into <code>h264</code> video.
+</p>
+<p>After the program runs, the generated h264 video can be
+wrapped into an mp4 video using <code>ffmpeg</code>.
+</p>
+<p>Below is the C code for the program:
+</p>
+<div><b><i>&lt;&lt;fbm.c&gt;&gt;=</i></b></div><pre><code>/* fractal brownian motion
+ * Based on code found in the Book of Shaders
+ *
+ * https://thebookofshaders.com/13/
+ */
+#include &lt;math.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;x264.h&gt;
+#include "patchwerk.h"
+#include "runt.h"
+#define MONOLITH_H264
+#include "monolith.h"
+#include "gfx.h"
+
+void monolith_gfx_blend(monolith_pixel c0,
+                        monolith_pixel c1,
+                        float a,
+                        monolith_pixel *out);
+
+/* some hastily written 2d vector operations */
+
+typedef struct {
+    float x, y;
+} vec2;
+
+/* creates a new vector */
+
+vec2 mkvec2(float x, float y)
+{
+    vec2 v;
+    v.x = x;
+    v.y = y;
+    return v;
+}
+
+/* computes dot product */
+
+float dot(vec2 a, vec2 b)
+{
+    return a.x*b.x + a.y*b.y;
+}
+
+/* fractional component */
+
+float fract(float x) {
+    return x - floor(x);
+}
+
+/* RNG used in original shader code */
+float random(vec2 st) {
+    return fract(sin(dot(st,
+                         mkvec2(12.9898,78.233)))*
+        43758.5453123);
+}
+
+/* lerp a value */
+float mix(float x, float y, float a)
+{
+    return x * (1 -a) + y * a;
+}
+
+/* multiply a vectory with a scaler */
+vec2 vec2_muls(vec2 a, float s)
+{
+    vec2 out;
+    out.x = a.x * s;
+    out.y = a.y * s;
+    return out;
+}
+
+/* multiply two vectors */
+vec2 vec2_mul(vec2 a, vec2 b)
+{
+    vec2 out;
+    out.x = a.x * b.x;
+    out.y = a.y * b.y;
+    return out;
+}
+
+/* add two vectors */
+vec2 vec2_add(vec2 a, vec2 b)
+{
+    vec2 out;
+
+    out.x = a.x + b.x;
+    out.y = a.y + b.y;
+
+    return out;
+}
+
+/* add a vector with a scaler */
+vec2 vec2_adds(vec2 a, float s)
+{
+    vec2 out;
+
+    out.x = a.x + s;
+    out.y = a.y + s;
+
+    return out;
+}
+
+/* 2d noise based on Morgan McGuire */
+float noise(vec2 st) {
+    vec2 i;
+    vec2 f;
+
+    float a, b, c, d;
+
+    vec2 u;
+
+    i.x = floor(st.x);
+    i.y = floor(st.y);
+
+    f.x = fract(st.x);
+    f.y = fract(st.y);
+
+    a = random(i);
+    b = random(vec2_add(i, mkvec2(1.0, 0.0)));
+    c = random(vec2_add(i, mkvec2(0.0, 1.0)));
+    d = random(vec2_add(i, mkvec2(1.0, 1.0)));
+
+    /* f * f * (3.0 - 2.0 * f) */
+    /* f * f */
+    u = vec2_mul(f, f);
+    /* -2f + (3) */
+    u = vec2_mul(u, vec2_adds(vec2_muls(f, -2), 3));
+    return mix(a, b, u.x) +
+            (c - a)* u.y * (1.0 - u.x) +
+            (d - b) * u.x * u.y;
+}
+
+#define OCTAVES 5
+float fbm(vec2 st) {
+    float value;
+    float amplitude;
+    int i;
+
+    value = 0;
+    amplitude = 0.5;
+
+    for (i = 0; i &lt; OCTAVES; i++) {
+        value += amplitude * noise(st);
+        st = vec2_muls(st, 2);
+        amplitude *= 0.6;
+    }
+
+    return value;
+}
+
+int main(int argc, char *argv[])
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int width, height;
+    int x, y;
+    monolith_pixel c0;
+    monolith_pixel c1;
+    monolith_pixel out;
+    monolith_h264 *vid;
+    int f;
+    double u_time;
+    double timestep;
+    int fps;
+
+    fps = 60;
+    u_time = 0;
+
+    timestep = (double)1.0/60;
+
+    m = monolith_data_get();
+
+    /* monolith_init(m); */
+
+    monolith_gfx_fb_init(m);
+    vid = monolith_h264_get(m);
+
+    fb = monolith_fb_get(m);
+
+    monolith_h264_init(vid);
+
+    width = monolith_gfx_width(fb);
+    height = monolith_gfx_height(fb);
+
+    monolith_gfx_fill(fb, monolith_pixel_make(0, 0, 128, 255));
+
+    /* contrasting colors generated from randoma11y */
+
+    /* 'black' */
+    c1 = monolith_pixel_make(0x07, 0x04, 0x07, 255);
+    /* steel blue */
+    c0 = monolith_pixel_make(0x01, 0x82, 0xba, 255);
+
+    out = monolith_pixel_make(0, 0, 0, 255);
+
+    monolith_h264_begin(vid, fb, "fbm.h264", fps);
+
+    for (f = 0; f &lt; 60 * 10; f++) {
+        printf("frame %d\n", f);
+        for (y = 0; y &lt; height; y++) {
+            for (x = 0; x &lt; width; x++) {
+                float amp;
+                vec2 st;
+                vec2 p;
+                float f_a;
+                float f_b;
+
+                st.x = (float)x/width;
+                st.y = (float)y/height;
+                st.x *= (float)width/height;
+                st = vec2_muls(st, 4);
+                p = st;
+
+                /* fbm equation is esentially/
+                 * f(p) = fbm(p + fbm(p + fbm(p)))/
+                 */
+
+                /* add some time-based motion */
+                f_a = fbm(p);
+                f_a *= 0.25 * u_time;
+
+                f_b = fbm(vec2_adds(p, f_a));
+                amp = fbm(vec2_adds(p, f_b));
+
+                /* clamp ranges */
+                amp = amp &lt; 0 ? 0 : amp;
+                amp = amp &gt; 1 ? 1 : amp;
+
+                /* gamma blend two colors based on amp */
+
+                monolith_gfx_blend(c0, c1, amp, &out);
+                monolith_gfx_pixel_set(fb, x, y, out);
+            }
+        }
+        u_time += timestep;
+        monolith_h264_append(vid, fb);
+    }
+
+    monolith_h264_clean(vid);
+
+    monolith_gfx_fb_clean(m);
+    /* monolith_cleanup(m); */
+    return 0;
+}</pre></code>
+<p></p>
+<p>The associated Makefile to build the project and encode
+to mp4 can be found here:
+</p>
+<div><b><i>&lt;&lt;Makefile&gt;&gt;=</i></b></div><pre><code># Location of monolith project directory
+MONOLITH_PATH?=$(HOME)/proj/monolith
+
+# Runt installation path. Default is ~/.runt
+RUNT_PATH?= $(HOME)/.runt/
+CFLAGS=-I$(MONOLITH_PATH)
+CFLAGS+=-I$(RUNT_PATH)/include
+CFLAGS+=-O3
+CFLAGS+=-std=c89
+CFLAGS+=-Wall -pedantic
+
+LDFLAGS+=-L$(MONOLITH_PATH)
+LDFLAGS+=-Wl,--gc-sections
+
+LIBS+=-lmonolith
+LIBS+=-lx264
+
+default: fbm.mp4
+
+fbm: fbm.c
+	$(CC) $(CFLAGS) $&lt; -o $@ $(LDFLAGS) $(LIBS)
+
+fbm.h264: fbm
+	./fbm
+
+fbm.mp4: fbm.h264
+	ffmpeg -i $&lt; $@
+
+clean:
+	$(RM) fbm
+	$(RM) fbm.mp4
+	$(RM) fbm.h264</pre></code>
+</div>
+</body>
+</html>
