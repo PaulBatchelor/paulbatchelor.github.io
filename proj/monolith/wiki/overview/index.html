@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Overview</title>
+<h1>Overview</h1>
+
+<h3>Overview (of the Overview)</h3>
+
+<p>This pages attempts to provide a birds-eye view of what
+Monolith is and what it does. Things will start with
+a very high-level description, then immediately build up
+to this starting from the lowest-level principles covered
+within the scope of monolith.
+</p>
+
+<h3>The Tippy Top</h3>
+
+<p>Monolith is the name of software that I (Paul) use top
+create computer generated sound and music.
+</p>
+<p>Monolith is a <code>live-coding</code> environment for sound, that
+typically is spawned inside of the <code>Emacs</code> text editor.
+In this setup, I write code (a dialect of <code>Scheme</code>), and
+this is sent to Monolith to tell it to create sound.
+</p>
+<p>In addition to code, I also use a number of interfaces with
+my setup. Most notably the <code>monome</code> <code>grid</code> and <code>arc</code>, and
+sometimes the griffin powermate USB, which I refer to as
+the '<code>griffin</code>'. These are tightly integrated with Monolith,
+and an important aspect of Monolith's design.
+</p>
+<p>In some words: music, computers, real-time, live-coding,
+interfaces.
+</p>
+
+<h3>The Bottom of the Monolith: Soundpipe</h3>
+
+<p>The bottom layer of Monolith is a library called Soundpipe.
+</p>
+<p>Right before it reaches your speaker and comes out as sound
+waves, sound is a bunch of discrete numbers. These numbers
+produced using something known as digital signal processing,
+or <code>DSP</code>.
+</p>
+<p>The majority of DSP is handled with Soundpipe, a library
+written in portable C code.
+</p>
+<p>Because it's written in C, it's very hard to be creative in
+Soundpipe. For every musical thought, several of lines of
+C code need to be written. This takes time to do, too much
+time.
+</p>
+<p>To fix this, a few constructs will be written on top of
+Soundpipe. Historically, this was a language called Sporth.
+Spiritually, Sporth lives on in two components: Patchwerk
+and Runt.
+</p>
+
+<h3>Making structures with Patchwerk</h3>
+
+<p><code>patchwerk</code> is another C library used on top of Soundpipe.
+It solves one problem: how to connect self-contained DSP
+algorithms (like the ones seen in Soundpipe).
+</p>
+<p>Patchwerk constructs what electronic musicians would call a
+<code>patch</code>, and computer scientists would call a directed audio
+graph. A patch is made up of small building blocks of sound
+called <code>nodes</code>, and nodes talk to one another using virtual
+<code>cables</code>. There's a bit more, but that's the gist.
+</p>
+<p>Patchwerk gives Soundpipe a generalized way to talk to
+itself, and with other DSP code converted to patchwerk.
+Every Soundpipe DSP module gets wrapped up in a Patchwerk
+node. It's very useful, but it's still very tedious to
+write Patchwerk C code by hand. Sometimes, it's even more
+tedious!
+</p>
+<p>Luckily, things in Patchwerk are tedious <b>and</b> predictable.
+It is trivial (and encouraged!) to build things on top of
+Patchwerk to make things a bit more manageable.
+</p>
+<p>The next layer immediately following Patchwerk is Runt.
+</p>
+
+<h3>Higher-level control with Runt</h3>
+
+<p><code>runt</code> is a funny little stack-based language written in C.
+It is designed to be very portable, every easy to embed,
+and very easy to extend.
+</p>
+<p>Like most stack based languages and Forths, Runt maintains
+a list of keywords known as <code>words</code> in a <code>dictionary</code>. The
+Runt C API allows programs to add new words to the
+dictionary at run time. Patchwerk API has a number of words
+that it adds to Runt. Every Patchwerk node gets
+wrapped around a Runt word.
+</p>
+<p>Runt allows patches in patchwerk to be described in a very
+terse way. Patchwerk is also quite stack-oriented like Runt,
+so the flow really makes sense.
+</p>
+<p>Up to this point, only DSP code has been discussed. Actually
+hearing what this DSP code produces is another matter.
+In Monolith, sound needs to be heard in realtime. Also, it
+wants to be adjusted in realtime. This is where the core
+monolith layer comes in.
+</p>
+<p>There's also the issue of Runt code itself: Runt is a very
+terse language, and after about a page things get very hard
+to keep track of. Also, Runt doesn't have a very great REPL
+needed for live coding. Both of these problems get solved
+when scheme is used to evaluate Runt code.
+</p>
+
+<h3>Realtime audio and interfaces with Monolith</h3>
+
+<p>The core monolith application layer is written in C, and is
+the heartbeat of the monolith system. It does many things,
+but the two biggest things it does are handling real-time
+audio and hardware interfaces like the <code>arc</code> and <code>monome</code>.
+</p>
+<p>For sound, Monolith uses JACK. It creates a jack client that
+connects to an existing server, and then a callback that
+sits on top of that. This callback renders audio generated
+from a patchwerk patch. it also impelements a thing called
+<code>hot-swapping</code> in patchwerk, which makes it possible to
+throw out and old patchwerk patch and replace it with a new
+one. hot-swapping is the key element that makes live-coding
+possible.
+</p>
+<p>monolith also implements a <code>hardware listener</code> that listens
+for events from plugged in interfaces. <code>libmonome</code> is used
+to poll events from the arc and grid, and <code>libusb</code> and
+a internal fork of <code>libhidapi</code> are used to manage everything
+else. Monome users should note that I'm not using OSC layer,
+but the api abstractions underneath that OSC layer. OSC
+and liblo caused more troubles than they were worth, and
+removing it ended up making things way more responsive
+and predictable.
+</p>
+<p>There's a thin layer between the actual
+hardware and monolith. Someday, this may make it easier
+build virtual versions of the hardware interfaces. Nothing
+much done here yet, but it's there.
+</p>
+<p>Special monolith applications are written for the arc and
+grid using what is called a <code>page</code> interface, which allow
+hardware interfaces to be used in different configurations
+within in the same patch. When a page is selected, it gains
+control of the hardware. Only one page can be selected at a
+time. Pages also the ability to save and load state data
+using a combination of SQLite and MSGPack blobs.
+</p>
+<p>This conceptually encompasses most of what Monolith is:
+a mother hen written C that takes care of all her various
+little chicks: realtime audio, hot swapping, pages. The
+kernel of it all.
+</p>
+<p>But, Monolith is not usually directly controlled from C.
+Instead, it is controlled using scripting languages like
+Scheme, and sometimes Janet.
+</p>
+
+<h3>Abstraction and expressiveness with Scheme/Janet</h3>
+
+<p>Monolith is mostly controlled using the Scheme programming
+language. Specifically it is forked from an implementation
+known as <code>s9</code> scheme, or s9fes, or scheme 9 from extended
+space.
+</p>
+<p>Monolith commands in C are bound to s9 scheme functions.
+The s9 scheme interpreter is most often run as a REPL, which
+can be run inside of process controlled by emacs.
+</p>
+<p>From emacs, blocks of scheme code can be sent to the REPL to
+be evaluated and processed.
+</p>
+<p>Scheme is a great language that lends itself well for
+live-coding. It's also a very elegant language for building
+abstractions on top of the fundamental monolith API
+functions from C.
+</p>
+<p>Not only does Scheme controlling the Monolith API, it can
+also evaluate runt code as if it were inline code.
+In this regard, one can think of Scheme as a very powerful
+macro language for Runt. Scheme makes it possible to build
+reusable synths and sounds. Scheme also enables more complex
+patches to be built than if it were written in Runt.
+</p>
+
+<h3>Oh, there's also graphics too</h3>
+
+<p>Monolith has a very limited graphics interface. Monolith
+implements a small framebuffer interface with RGB color with
+a maximum 320x200 resolution. In addition, monolith
+also has a few basic drawing operations, and some less basic
+ones.
+</p>
+<p>Instead of using Scheme, drawing operations use the <code>Janet</code>
+programming language. (This was done because I wanted to try
+out Janet).
+</p>
+<p>Using <code>libx264</code>, framebuffer data can be encoded into h264
+video. Monolith sound buffers can also be rendered offline
+simultaneously. The <code>ffmpeg</code> application is then used to
+stitch them up together and create video.
+</p>
+<p>For audio-visual works, the Janet VM gets controlled inside
+Scheme.
+</p>
+
+<h3>In conclusion</h3>
+
+<p>Monolith roughly works out to be:
+</p>
+<p>music->computers->real-time->live-coding->hardware interfaces.
+</p>
+<p>The software layers rougly work out to be:
+</p>
+<p>emacs->scheme->runt->patchwerk->soundpipe->C->JACK.
+</p>
+</div>
+</body>
+</html>
