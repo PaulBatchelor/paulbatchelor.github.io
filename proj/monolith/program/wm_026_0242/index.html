@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>8. tchoose</h3>
+
+<p><a id="wm_026_0242"></a><code>tchoose</code> is a triggerable ftable chooser for an ftlist.
+It takes in a trigger signal and table position as
+audio-rate parameters. When triggered, it will update the
+choose ftable one of the ftables from the list based
+on the index position.
+</p>
+
+<h4>8.1. Node</h4>
+
+<p><a id="wm_026_0244"></a>A new tchoose node is created with <code>node_tchoose</code>.
+It needs to take in an ftlist as an argument.
+</p>
+<div><b><i>&lt;&lt;tchoose_funcdefs&gt;&gt;=</i></b></div><pre><code>int node_tchoose(pw_node *node, sp_ftlist *ftl);</pre></code>
+<div><b><i>&lt;&lt;tchoose_funcs&gt;&gt;=</i></b></div><pre><code>int node_tchoose(pw_node *node, sp_ftlist *ftl)
+{
+    pw_node_cables_alloc(node, 2);
+    pw_node_set_data(node, ftl);
+    pw_node_set_compute(node, compute);
+    return PW_OK;
+}</pre></code>
+<p></p>
+<p>The computation is reasonably straight forward. Read the
+trigger and position cables. Any time the trigger is
+non-zero, run <code>sp_ftlist_choose</code>.
+</p>
+<div><b><i>&lt;&lt;tchoose_static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void compute(pw_node *node);</pre></code>
+<div><b><i>&lt;&lt;tchoose_funcs&gt;&gt;=</i></b></div><pre><code>static void compute(pw_node *node)
+{
+    int blksize;
+    pw_cable *trig;
+    pw_cable *index;
+    sp_ftlist *ftlst;
+    int n;
+
+    blksize = pw_node_blksize(node);
+
+    pw_node_get_cable(node, 0, &trig);
+    pw_node_get_cable(node, 1, &index);
+
+    ftlst = pw_node_get_data(node);
+
+    sp_ftlist_reset(ftlst);
+    for (n = 0; n &lt; blksize; n++) {
+        PWFLT t;
+
+        t = pw_cable_get(trig, n);
+
+        if (t != 0) {
+            int i;
+            i = floor(pw_cable_get(index, n));
+            sp_ftlist_choose_sa(ftlst, i, n);
+        }
+    }
+}</pre></code>
+
+<h4>8.2. Runt Loader</h4>
+
+<p><a id="wm_026_0258"></a>tchoose is loaded as a runt word using the function
+<code>load_tchoose</code>.
+</p>
+<div><b><i>&lt;&lt;tchoose_funcdefs&gt;&gt;=</i></b></div><pre><code>int load_tchoose(runt_vm *vm, runt_ptr pw);</pre></code>
+<div><b><i>&lt;&lt;tchoose_funcs&gt;&gt;=</i></b></div><pre><code>int load_tchoose(runt_vm *vm, runt_ptr pw)
+{
+    runt_cell *c;
+    runt_keyword_define(vm, "tchoose", 7, rproc_tchoose, &c);
+    runt_cell_data(vm, c, pw);
+    return runt_is_alive(vm);
+}</pre></code>
+
+<h4>8.3. Runt Word</h4>
+
+<p><a id="wm_026_0264"></a><div><b><i>&lt;&lt;tchoose_static_funcdefs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_tchoose(runt_vm *vm, runt_ptr p);</pre></code>
+<div><b><i>&lt;&lt;tchoose_funcdefs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_tchoose(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    pw_patch *patch;
+    rpw_param trig;
+    rpw_param index;
+    sp_ftlist *ftlst;
+    pw_node *node;
+
+    rc = rpw_get_ftlist(vm, &ftlst);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = rpw_get_param(vm, &index);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = rpw_get_param(vm, &trig);
+    RUNT_ERROR_CHECK(rc);
+
+    patch = rpw_get_patch(p);
+
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    node_tchoose(node, ftlst);
+
+    rpw_set_param(vm, node, &trig, 0);
+    rpw_set_param(vm, node, &index, 1);
+
+    return RUNT_OK;
+}</pre></code>
+</div>
+</body>
+</html>

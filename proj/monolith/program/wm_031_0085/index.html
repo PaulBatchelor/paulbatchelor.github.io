@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Janet Code</h3>
+
+<p><a id="wm_031_0085"></a></p>
+
+<h4>4.1. Loader + Boilerplate</h4>
+
+<p><a id="wm_031_0086"></a><div><b><i>&lt;&lt;funclist&gt;&gt;=</i></b></div><pre><code>#ifndef BUILD_FUZZYDOT_PLUGIN
+#define NAME(s) "monolith/gfx-"s
+#else
+#define NAME(s) s
+#endif
+
+static const JanetReg cfuns[] = {
+    {NAME("fuzzydot"),
+     j_fuzzydot,
+     "Creates a fuzzy dot!"},
+    {NULL, NULL, NULL}
+};</pre></code>
+<div><b><i>&lt;&lt;plugin_entry&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_fuzzydot_loader(JanetTable *env,
+                                const char *name)
+{
+    janet_cfuns(env, name, cfuns);
+}
+
+#ifdef BUILD_FUZZYDOT_PLUGIN
+JANET_MODULE_ENTRY(JanetTable *env)
+{
+    monolith_gfx_fuzzydot_loader(env, "fuzzydot");
+}
+#endif</pre></code>
+
+<h4>4.2. The Function</h4>
+
+<p><a id="wm_031_0093"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet j_fuzzydot(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;janet_function&gt;&gt;=</i></b></div><pre><code>static Janet j_fuzzydot(int32_t argc, Janet *argv)
+{
+    int x, y;
+    float rad;
+    float feather;
+    float blend;
+    int powslope;
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    monolith_pixel c;
+
+    janet_fixarity(argc, 9);
+    m = monolith_data_get();
+    x = janet_getinteger(argv, 0);
+    y = janet_getinteger(argv, 1);
+    rad = janet_getnumber(argv, 2);
+    feather = janet_getnumber(argv, 3);
+    powslope = janet_getnumber(argv, 4);
+
+    c.r = janet_getinteger(argv, 5);
+    c.g = janet_getinteger(argv, 6);
+    c.b = janet_getinteger(argv, 7);
+    blend = janet_getinteger(argv, 8);
+
+    fb = monolith_fb_get(m);
+
+    monolith_gfx_fuzzydot(fb, x, y, rad, feather, blend, powslope, c);
+    return janet_wrap_nil();
+}</pre></code>
+</div>
+</body>
+</html>
