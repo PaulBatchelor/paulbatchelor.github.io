@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Fractional Brownian Motion</title>
+<h1>Fractional Brownian Motion</h1>
+
+<h3>Overview</h3>
+
+<p><a href="https://en.wikipedia.org/wiki/Fractional_Brownian_motion">Fractional Brownian Motion</a> is a 2d noise algorithm used
+in computer graphics to produce textures.
+</p>
+<p>Monolith implements an fBM based on shader code found
+in the <a href="https://thebookofshaders.com/13/">Book of Shaders</a>. When used with,
+<a href="https://www.iquilezles.org/www/articles/warp/warp.htm">Domain Warping</a>, fBM can be used to produce very complex
+textures out of a simple set of rules. When time is
+a factor, the textures can even move and swirl like
+some kind of cloudy liquid.
+</p>
+
+<h3>Sample Code</h3>
+
+<p>The following Janet code uses <code>monolith/fbm</code> to render
+a 320x200 PNG image of a black and white fractal brownian
+motion texture.
+</p>
+<div><b><i>&lt;&lt;test_fbm.janet&gt;&gt;=</i></b></div><pre><code>(def width 320)
+(def height 200)
+(def noctaves 5)
+(def white @(255 255 255))
+(def black @(0 0 0))
+
+(monolith/gfx-fb-init)
+(monolith/gfx-setsize 320 200)
+
+(defn color [x y c]
+    (monolith/gfx-pixel-set
+     x y (math/floor (c 0)) (math/floor (c 1)) (math/floor (c 2)) 255))
+
+(defn colorlerp [c1 c2 a]
+  (array
+   (+ (* a (c2 0)) (* (- 1 a) (c1 0)))
+   (+ (* a (c2 1)) (* (- 1 a) (c1 1)))
+   (+ (* a (c2 2)) (* (- 1 a) (c1 2)))))
+
+
+(for ypos 0 height
+  (for xpos 0 width
+    (var x (/ xpos width))
+    (var y (/ ypos height))
+    (set x (* x (/ width height)))
+
+    (set y (* y 4))
+    (set x (* x 4))
+
+    (var fa (monolith/fbm x y noctaves))
+    (var fb (monolith/fbm (+ x fa) (+ y fa) noctaves))
+
+    (var amp (monolith/fbm (+ x fb) (+ y fb) noctaves))
+    (color xpos ypos (colorlerp black white amp))))
+
+(monolith/gfx-write-png "fbm.png")</pre></code>
+
+<h3>A deeper dive</h3>
+
+<p><code>monolith_fbm</code>, the core C function behind the Janet
+function <code>monolith/fbm</code> can be found in
+<a href="/proj/monolith/program/wm_028">fbm.c</a>. Janet bindings can be found in
+<a href="/proj/monolith/program/wm_028">j_fbm.c</a>.
+</p>
+</div>
+</body>
+</html>
