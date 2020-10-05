@@ -15,7 +15,6 @@ Soundpipe. It is configured to work as a subprogram.
 <div><b><i>&lt;&lt;stretcher.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;string.h&gt;
-/* #include &lt;sndfile.h&gt; */
 #include "soundpipe.h"
 
 #if 0
@@ -30,40 +29,18 @@ static void process(sp_data *sp, void *ud)
 }
 #endif
 
-/* TODO: use drwav instead of libsndfile */
-/* a little kluge to get file info */
-static int get_info(const char *fname,
-                    int *sr,
-                    unsigned long *len)
-{
-    return 0;
-    /* SF_INFO info; */
-    /* SNDFILE *snd; */
-
-    /* snd = sf_open(fname, SFM_READ, &info); */
-    /* if (snd == NULL) return 0; */
-
-    /* *sr = info.samplerate; */
-    /* *len = info.frames; */
-    /* sf_close(snd); */
-    /* return 1; */
-}
-
 int stretcher_main(int argc, char *argv[])
 {
     sp_data *sp;
     sp_ftbl *ft;
     sp_paulstretch *ps;
+    sp_wavout *wavout;
 
     SPFLOAT stretch;
     SPFLOAT window;
     const char *fin;
     const char *fout;
-    int rc;
-
-    fprintf(stderr,
-            "stretcher is BROKEN until sp_process can be fixed\n");
-    return 1;
+    unsigned long s;
 
     if(argc &lt; 5) {
         fprintf(stderr,
@@ -78,40 +55,37 @@ int stretcher_main(int argc, char *argv[])
     printf("samplerate = %d\n", atoi(argv[1]));
 
     sp_paulstretch_create(&ps);
+    sp_wavout_create(&wavout);
 
     fin = argv[3];
     fout = argv[4];
-    rc = get_info(fin, &sp-&gt;sr, &sp-&gt;len);
-
-    if (!rc) {
-        printf("There was a problem with the file '%s'\n",
-               fin);
-        goto cleanup;
-    }
 
     printf("window = %g\n", atof(argv[1]));
     window = atof(argv[1]);
     printf("stretch = %g\n", atof(argv[2]));
     stretch = atof(argv[2]);
-    sp-&gt;len *= stretch;
+    sp_ftbl_loadwav(sp, &ft, fin);
+    sp-&gt;len = ft-&gt;size * stretch;
     printf("total dur = %gs\n", (SPFLOAT)sp-&gt;len / sp-&gt;sr);
     printf("input = %s\n", fin);
-    sp_ftbl_loadfile(sp, &ft, fin);
     printf("output = %s\n", fout);
 
     strncpy(sp-&gt;filename, fout, 60);
 
     sp_paulstretch_init(sp, ps, ft, window, stretch);
+    sp_wavout_init(sp, wavout, fout);
 
     ps-&gt;wrap = 0;
 
-    /* TODO: bring back */
-    /* sp_process(sp, ps, process); */
-
-    cleanup:
+    for (s = 0; s &lt; sp-&gt;len; s++) {
+        SPFLOAT p, w;
+        sp_paulstretch_compute(sp, ps, NULL, &p);
+        sp_wavout_compute(sp, wavout, &p, &w);
+    }
 
     sp_ftbl_destroy(&ft);
     sp_paulstretch_destroy(&ps);
+    sp_wavout_destroy(&wavout);
     sp_destroy(&sp);
     return 0;
 }</pre></code>
