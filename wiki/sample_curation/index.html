@@ -14,8 +14,8 @@
 
 <h3>The Sample Curation Problem</h3>
 
-<p>A on-going problem of mine: how does one efficient manage
-or curate a large database of samples?
+<p>A on-going problem of mine: how does one efficiently manage
+or <code>curate</code> a large database of <code>samples</code>?
 </p>
 <p>My compositions up to this point in time have been largely
 vacant of samples for this reason. I do have sample
@@ -31,7 +31,7 @@ a arbitrarily limited subset, etc).
 
 <h3>A Potential Solution</h3>
 
-<p>For many years now, I figured I could use SQLite somehow,
+<p>For many years now, I figured I could use <code>SQLite</code> somehow,
 especially with the use of something like
 <a href="/wiki/sqlar">sqlar</a>.
 </p>
@@ -44,7 +44,7 @@ a free-form way. This freedom is important for this sort of
 creative task. It's hard to know what a system will look
 like until you try it out.
 </p>
-<p>Wiki pages and scripts can be managed using Fossil, an SCM
+<p>Wiki pages and scripts can be managed using <code>Fossil</code>, an SCM
 that also gets saved to a SQLite database.
 </p>
 <p>In the future, my hope is to develop an interface that
@@ -52,6 +52,115 @@ allows one to easily tie an arbitary amount of keywords and
 notes to a particular sample, to be saved as a structure
 inside of the database. WeeWiki pages + Janet Scripts
 could then be used to dynamically display said content.
+</p>
+
+<h3>Sample Curation Actions</h3>
+
+<p>Last updated on [2020-10-06 Tue 09:03].
+</p>
+
+<h4>Software Convergence</h4>
+
+<p>(There's a hand-drawn scribbled flowchart with this.)
+</p>
+<p>This working concept encompasses the idea of <a href="/wiki/convergence">sofware convergence</a>, leveraging many
+already-existing pieces of software I've written.
+</p>
+<p>The act of curated samples can be broken down into the
+following actions below.
+</p>
+
+<h4>Listen</h4>
+
+<p>you gotta hear it! and you gotta hear lots of them.
+</p>
+<p>I currently use <a href="/wiki/monolith">monolith</a> for my interactive
+audio needs. Being able to build something on top of that
+could save me from re-implementing mundane stuff, and it
+could also be an interesting way to hook into my composition
+environment.
+</p>
+<p>There's still the issue of interface, which I don't think
+monolith addresses right now. <a href="https://github.com/paulbatchelor/noice">noice</a> has been
+my go-to interface, with a few modifications. <code>noice</code>
+reduces the task of listening to files down to a few
+keystrokes and is quite ergonomic to use.
+</p>
+
+<h4>Browse</h4>
+
+<p>the ability to somehow navigate a collection of samples.
+In noice, one is able to navigate a file tree and play wav
+files using only a few keystrokes. I like this approach
+quite a bit.
+</p>
+<p>Noice is written using <code>ncurses</code>, so the display is only
+limited to text-based displays. Text isn't always the best
+way to see a sound at-a-glance: sometimes you want waveforms
+and spectrograms. For that, you'd need something that can do
+both text AND bitmaps.
+</p>
+<p>For text and bitmaps, the <code>1bit</code> graphics library <a href="/wiki/btprnt">btprnt</a> is a pretty good starting point. It offers just
+enough graphics to be useful without getting too crazy with
+it. Text is, after all, quite a powerful thing and easy to
+overlook when there are shiny things around.
+</p>
+<p>btprnt ain't enough. There'll need to be some SDL layer in
+order to make it interactive.
+</p>
+
+<h4>Annotate</h4>
+
+<p>taking notes on a sample, and storing it in a meaningful
+way.
+</p>
+<p>Annotation is about writing stuff down. Both long and
+short-form writing is needed.
+</p>
+<p>For long-form writing, there's <code>weewiki</code>. <a href="/wiki/weewiki">weewiki</a>strengths include the org markup syntax and the links.
+High-level ideas can be encapsulated in this format, which
+can lead to thoughtful ways to organize and curate sounds.
+</p>
+<p>For short term writing, there are log-formats like <code>twtxt</code>.
+The <a href="/wiki/twtxt">twtxt</a> protocol has proven to be very effective
+for quickly jotting down small ideas and thoughts. It's
+power comes from being very granular and time stamped, which
+complement the long-form wiki format quite well. Things like
+hashtags could also extend the format.
+</p>
+<p>Short-term annotations need to be quick and painless. The
+same transactional cost one gets from tooting from mastodon.
+</p>
+<p>Both long and short term writings will often benefit from
+writing about a particular file or files, so employing some
+kind of <code>UUID</code> system in <code>sqlite</code> would probably a good
+idea. Maybe just a filename path could do it.
+</p>
+
+<h4>Store</h4>
+
+<p>A meaningful way to store and organize samples and metadata.
+</p>
+<p>The <a href="/wiki/sqlar">sqlar</a> library has always been attractive for
+me because the SQLite format makes it easy to build
+structures on top of it. Also, I personally like having
+everything self-contained. There are performance trade-offs,
+but it's a cost I'm willing to pay at this personal scale.
+</p>
+<p>Programs like <a href="/wiki/monolith">monolith</a> already have the ability
+to read directly from SQLar files.
+</p>
+
+<h4>Query</h4>
+
+<p>This refers to being able to find sampels given some sort
+of parametric constraints.
+</p>
+<p>SQLite very conveniently gives a nice querying interface
+that would be nice to leverage somehow. I believe in
+manually cataloguing sample data over automated solutions,
+so the effectiveness of querying really comes down to how
+well annotation goes.
 </p>
 </div>
 </body>
