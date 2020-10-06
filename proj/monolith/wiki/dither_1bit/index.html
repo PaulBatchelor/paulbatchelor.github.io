@@ -10,8 +10,13 @@
 <div id="main">
 <title>1-bit dither</title>
 <h1>1-bit dither</h1>
+
+<h3>Overview</h3>
+
 <p>1-bit dithering, such as <code>Atkinson Dither</code>, can be used
-as an aesthetic. The monolith janet function
+as an aesthetic.
+</p>
+<p>The monolith janet function
 <code>monolith/gfx-dither</code> takes a region in the <code>framebuffer</code>
 and applies an Atkinson Dither filter using two arbitrary
 RGB colors.
@@ -19,17 +24,94 @@ RGB colors.
 <p>The arguments are x, y, width, height, RGB color 1, and RGB
 color 2.
 </p>
-<p>The following janet code creates a 1-bit dither region of
-size 16x64 at position (32,0) with the colors blood red
-(102, 0, 0), and NCS red (192, 2, 51).
+
+<h3>Example Snippet</h3>
+
+<p>The following janet function <code>colorbar</code> creates a 1-bit
+dither region of size 16x64 at position (32,0) with the
+colors blood red (102, 0, 0), and NCS red (192, 2, 51).
 </p>
-<pre><code>(monolith/gfx-dither
- 32 0 16 64
- # Blood Red
- 102 0 0
- # NCS red
- 192 2 51)</pre></code>
-<p></p>
+<div><b><i>&lt;&lt;colorbar&gt;&gt;=</i></b></div><pre><code>(defn colorbar []
+  (monolith/gfx-dither
+   32 0 16 64
+   # Blood Red
+   102 0 0
+   # NCS red
+   192 2 51))</pre></code>
+
+<h3>A full example</h3>
+
+<p>The following example uses the previous <code>colorbar</code> function
+on a texture created using <a href="/proj/monolith/wiki/fbm">fractal brownianmotion</a>. The resulting output is a 128x4 picture zoomed 3x
+that looks like this:
+</p>
+<p><img src="/proj/monolith/wiki/img/dithertest.png"nil>
+</p>
+<div><b><i>&lt;&lt;dithertest.janet&gt;&gt;=</i></b></div><pre><code>(defn colorlerp [c1 c2 a]
+  (array
+   (+ (* a (c2 0)) (* (- 1 a) (c1 0)))
+   (+ (* a (c2 1)) (* (- 1 a) (c1 1)))
+   (+ (* a (c2 2)) (* (- 1 a) (c1 2)))))
+
+(def noctaves 5)
+(def white @(255 255 255))
+(def black @(0 0 0))
+
+(defn color [x y c]
+    (monolith/gfx-pixel-set
+     x y
+     (math/floor (c 0))
+     (math/floor (c 1))
+     (math/floor (c 2)) 255))
+
+(defn fbm []
+  (var height (monolith/gfx-height))
+  (var width (monolith/gfx-width))
+  (for ypos 0 height
+    (for xpos 0 width
+      (var x (/ xpos width))
+      (var y (/ ypos height))
+      (set x (* x (/ width height)))
+
+      (set y (* y 4))
+      (set x (* x 4))
+
+      (var ut 0)
+
+      (var qx (monolith/fbm (+ x ut) (+ y ut) noctaves))
+      (var qy (monolith/fbm (+ x 1) (+ y 1) noctaves))
+
+      (var rx
+           (monolith/fbm
+            (+ x qx 1.7 (* 0.15 ut))
+            (+ y qy 9.2 (* 0.15 ut))
+            noctaves))
+      (var ry
+           (monolith/fbm
+            (+ x qx 8.3 (* 0.126 ut))
+            (+ y qy 2.8 (* 0.126 ut))
+            noctaves))
+
+      (var amp (monolith/fbm (+ x rx) (+ y ry) noctaves))
+
+      (if (&gt; amp 1) (set amp 1))
+      (if (&lt; amp 0) (set amp 0))
+
+      (color xpos ypos (colorlerp black white amp)))))
+
+# colorbar function goes here
+
+&lt;&lt;colorbar&gt;&gt;
+
+(monolith/gfx-fb-init)
+(monolith/gfx-setsize 128 64)
+(monolith/gfx-zoom 3)
+(fbm)
+(colorbar)
+(monolith/gfx-write-png "dithertest.png")</pre></code>
+
+<h3>Algorithm and C implementation</h3>
+
 <p>More information on the implemtnation can be found at
 <a href="/proj/monolith/program/wm_029">dither.c</a>, with the main
 algorithm outlined at <a href="/proj/monolith/program/wm_029_0035">4. The Dither Algorithm</a>.
