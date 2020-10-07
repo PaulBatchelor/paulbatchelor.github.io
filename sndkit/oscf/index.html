@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>oscf</title>
+<h1>oscf</h1>
+
+<h3>Overview</h3>
+
+<p><code>oscf</code> is a table-lookup oscillator using floating point
+precision and linear interpolation. This is nearly identical
+to <a href="/sndkit/osc">osc</a>, except that the internal phasor used to
+keep track of table position is a floating point value
+<code>SKFLT</code> instead of a fixed point integer. What this enables
+is oscillator sizes that aren't power-of-two. This allows
+usage of waveforms like the <a href="https://www.adventurekid.se/akrt/waveforms/adventure-kid-waveforms/">Adventure Kid Waveforms</a>.
+</p>
+<p>Compared to fixed point, floating point numerical
+representation is quite complicated and has some gotchas.
+The author will attempt to navigate the known gotchas as
+best as possible.
+</p>
+
+<h3>Files</h3>
+
+<p><code>oscf</code> tanlges to two files: <code>oscf.h</code> and <code>oscf.c</code>. If
+<code>SK_OSCF_PRIV</code> is defined, the struct is exposed.
+</p>
+<div><b><i>&lt;&lt;oscf.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_OSCF_H
+#define SK_OSCF_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+#ifdef SK_OSCF_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;oscf.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_OSCF_PRIV
+#include "oscf.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h3>Struct and Contents</h3>
+
+
+<h4>Declaration</h4>
+
+<p>Everything is wrapped inside of a struct called <code>sk_osc</code>.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_oscf sk_oscf;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_oscf {
+    &lt;&lt;sk_oscf&gt;&gt;
+};</pre></code>
+
+<h4>Phasor</h4>
+
+<p>The heartbeat of an oscillator is what is known as an
+<code>phasor</code>: a ramp signal that goes from 0-1 at a specified
+frequency.
+</p>
+<p>Phasor state is stored in a value called <code>phs</code>.
+</p>
+<div><b><i>&lt;&lt;sk_oscf&gt;&gt;=</i></b></div><pre><code>SKFLT phs;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>oscf-&gt;phs = iphs;</pre></code>
+<p></p>
+<p>The <code>phs</code> value gets incremented by a floating point value
+<code>inc</code> every sample.
+</p>
+<div><b><i>&lt;&lt;sk_oscf&gt;&gt;=</i></b></div><pre><code>SKFLT inc;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>oscf-&gt;inc = 0;</pre></code>
+
+<h4>Table</h4>
+
+<p>The table is stored in a value called <code>tab</code> with a size
+<code>sz</code>.
+</p>
+<div><b><i>&lt;&lt;sk_oscf&gt;&gt;=</i></b></div><pre><code>SKFLT *tab;
+unsigned long sz;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>oscf-&gt;tab = tab;
+oscf-&gt;sz = sz;</pre></code>
+
+<h4>Sampling Rate</h4>
+
+<p>A copy of the sampling rate is stored. It is needed in order
+to compute the incrementor component in the phasor.
+</p>
+<div><b><i>&lt;&lt;sk_oscf&gt;&gt;=</i></b></div><pre><code>unsigned int sr;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>oscf-&gt;sr = sr;</pre></code>
+
+<h3>Initialization</h3>
+
+<p>oscf is initialized with <code>sk_oscf_init</code>. It expects a
+pre-allocated table <code>tab</code> and known size <code>sz</code>, as well
+as an initial phase <code>iphs</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_oscf_init(sk_oscf *oscf,
+                  unsigned int sr,
+                  SKFLT *tab,
+                  unsigned long sz,
+                  SKFLT iphs);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_oscf_init(sk_oscf *oscf,
+                  unsigned int sr,
+                  SKFLT *tab,
+                  unsigned long sz,
+                  SKFLT iphs)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Frequency</h3>
+
+<p>The frequency of oscf can be set with <code>sk_oscf_freq</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_oscf_freq(sk_oscf *oscf, SKFLT freq);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_oscf_freq(sk_oscf *oscf, SKFLT freq)
+{
+    oscf-&gt;freq = freq;
+}</pre></code>
+<p></p>
+<p>freq uses parameter caching to update internal values
+when the frequency is changed.
+</p>
+<div><b><i>&lt;&lt;sk_oscf&gt;&gt;=</i></b></div><pre><code>SKFLT freq;
+SKFLT lfreq;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_oscf_freq(oscf, 440);
+oscf-&gt;lfreq = -1;</pre></code>
+
+<h3>Computation</h3>
+
+<p>A single sample of audio is computed with <code>sk_oscf_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_oscf_tick(sk_oscf *oscf);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_oscf_tick(sk_oscf *oscf)
+{
+    SKFLT out;
+    unsigned long ipos;
+    SKFLT fpos;
+    SKFLT x[2];
+
+    &lt;&lt;update_freq&gt;&gt;
+    &lt;&lt;get_position&gt;&gt;
+    &lt;&lt;get_values&gt;&gt;
+    &lt;&lt;interpolate&gt;&gt;
+    &lt;&lt;update_phase&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<p>To begin, the frequency parameter is checked to see if the
+incrementor needs to be updated.
+</p>
+<p>This is one way to think about computing the increment
+amount:
+</p>
+<p>The phasor needs to move at a certain rate, which means it
+needs to go from 0 to 1 over a certain period of time.
+</p>
+<p>Inverting the frequency value gives the cycle time in
+seconds.
+</p>
+<p>Multiplying by the sampling rate converts it into units of
+samples.
+</p>
+<p>Inverting it again divides it into equal chunks that add up
+1: our incrementor value.
+</p>
+<p>But wait! That's a lot of operations. Back-tracking, this
+whole operation can be simplified to: <code>f/sr</code>. where <code>f</code> is
+the frequency, and <code>sr</code> is the sampling rate.
+</p>
+<div><b><i>&lt;&lt;update_freq&gt;&gt;=</i></b></div><pre><code>if (oscf-&gt;lfreq != oscf-&gt;freq) {
+    oscf-&gt;lfreq = oscf-&gt;freq;
+
+    oscf-&gt;inc = oscf-&gt;freq / (SKFLT)oscf-&gt;sr;
+}</pre></code>
+<p></p>
+<p>Next up is to get the table lookup position. There
+are two parts. The fractional component <code>fpos</code> and
+the integer component <code>ipos</code>. The position is obtained
+by scaling the phasor value.
+</p>
+<p>Fun fact: keeping the phasor in a unit range and scaling
+this way is numerically ideal for floating point.
+</p>
+<div><b><i>&lt;&lt;get_position&gt;&gt;=</i></b></div><pre><code>fpos = oscf-&gt;phs * oscf-&gt;sz;
+ipos = floor(fpos);
+fpos = fpos - ipos;</pre></code>
+<p></p>
+<p>Table positions at <code>ipos</code> and <code>ipos + 1</code> are retrieved
+from <code>tab</code>. If <code>ipos</code> is at the end of the table, it wraps
+around.
+</p>
+<p>The phasor is set to be in range 0 and 1 exactly by the time
+it is here, so there is no reason to normally expect
+out-of-bounds samples here.
+</p>
+<div><b><i>&lt;&lt;get_values&gt;&gt;=</i></b></div><pre><code>x[0] = oscf-&gt;tab[ipos];
+
+if (ipos == oscf-&gt;sz) {
+    x[1] = oscf-&gt;tab[0];
+} else {
+    x[1] = oscf-&gt;tab[ipos + 1];
+}</pre></code>
+<p></p>
+<p>This is your run-of-the-mill linear interpolation. A
+crossfade in some circles.
+</p>
+<div><b><i>&lt;&lt;interpolate&gt;&gt;=</i></b></div><pre><code>out = fpos * x[1] + (1 - fpos) * x[0];</pre></code>
+<p></p>
+<p>Update the internal phase state. Care must be done to ensure
+that the phase is within the range 0 and 1. while loops
+are used in place of things like <code>fmod</code> because they are
+less expensive.
+</p>
+<div><b><i>&lt;&lt;update_phase&gt;&gt;=</i></b></div><pre><code>oscf-&gt;phs += oscf-&gt;inc;
+while (oscf-&gt;phs &gt; 1) oscf-&gt;phs--;
+while (oscf-&gt;phs &lt; 0) oscf-&gt;phs++;</pre></code>
+</div>
+</body>
+</html>
