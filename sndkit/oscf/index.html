@@ -153,12 +153,18 @@ oscf-&gt;lfreq = -1;</pre></code>
     unsigned long ipos;
     SKFLT fpos;
     SKFLT x[2];
+    SKFLT phs;
+
+    phs = oscf-&gt;phs;
 
     &lt;&lt;update_freq&gt;&gt;
     &lt;&lt;get_position&gt;&gt;
     &lt;&lt;get_values&gt;&gt;
     &lt;&lt;interpolate&gt;&gt;
     &lt;&lt;update_phase&gt;&gt;
+    &lt;&lt;bounds_checking&gt;&gt;
+
+    oscf-&gt;phs = phs;
 
     return out;
 }</pre></code>
@@ -199,7 +205,7 @@ by scaling the phasor value.
 <p>Fun fact: keeping the phasor in a unit range and scaling
 this way is numerically ideal for floating point.
 </p>
-<div><b><i>&lt;&lt;get_position&gt;&gt;=</i></b></div><pre><code>fpos = oscf-&gt;phs * oscf-&gt;sz;
+<div><b><i>&lt;&lt;get_position&gt;&gt;=</i></b></div><pre><code>fpos = phs * oscf-&gt;sz;
 ipos = floor(fpos);
 fpos = fpos - ipos;</pre></code>
 <p></p>
@@ -213,7 +219,7 @@ out-of-bounds samples here.
 </p>
 <div><b><i>&lt;&lt;get_values&gt;&gt;=</i></b></div><pre><code>x[0] = oscf-&gt;tab[ipos];
 
-if (ipos == oscf-&gt;sz) {
+if (ipos &gt;= (oscf-&gt;sz - 1)) {
     x[1] = oscf-&gt;tab[0];
 } else {
     x[1] = oscf-&gt;tab[ipos + 1];
@@ -224,14 +230,51 @@ crossfade in some circles.
 </p>
 <div><b><i>&lt;&lt;interpolate&gt;&gt;=</i></b></div><pre><code>out = fpos * x[1] + (1 - fpos) * x[0];</pre></code>
 <p></p>
-<p>Update the internal phase state. Care must be done to ensure
+<p>Update the internal phase state using the incrementor.
+</p>
+<div><b><i>&lt;&lt;update_phase&gt;&gt;=</i></b></div><pre><code>phs += oscf-&gt;inc;</pre></code>
+<p></p>
+<p>Care must be done to ensure
 that the phase is within the range 0 and 1. while loops
 are used in place of things like <code>fmod</code> because they are
 less expensive.
 </p>
-<div><b><i>&lt;&lt;update_phase&gt;&gt;=</i></b></div><pre><code>oscf-&gt;phs += oscf-&gt;inc;
-while (oscf-&gt;phs &gt; 1) oscf-&gt;phs--;
-while (oscf-&gt;phs &lt; 0) oscf-&gt;phs++;</pre></code>
+<div><b><i>&lt;&lt;bounds_checking&gt;&gt;=</i></b></div><pre><code>while (phs &gt; 1) phs--;
+while (phs &lt; 0) phs++;</pre></code>
+
+<h3>Variation: external phase control</h3>
+
+<p><a id="external_phase_control"></a>The function <code>sk_oscf_tick_extphs</code> can be used in place
+of <code>sk_oscf_tick</code> to compute a sample of of oscf with an
+external phasor. This can be used to implement things like
+hard sync and <a href="/sndkit/phasewarp">phase distortion synthesis</a>. Note that internal
+frequency control is disabled in this mode.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_oscf_tick_extphs(sk_oscf *oscf, SKFLT phs);</pre></code>
+<p></p>
+<p>The function re-uses many of the same codeblocks used
+in <code>sk_oscf_tick</code>. The big change is that bounds checking
+happens <b>before</b> the computation, rather than after. This
+allows intentional wrap-around for things like hard sync
+oscillation.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_oscf_tick_extphs(sk_oscf *oscf, SKFLT phs)
+{
+    SKFLT out;
+    unsigned long ipos;
+    SKFLT fpos;
+    SKFLT x[2];
+
+    out = 0;
+
+    &lt;&lt;bounds_checking&gt;&gt;
+    &lt;&lt;update_freq&gt;&gt;
+    &lt;&lt;get_position&gt;&gt;
+    &lt;&lt;get_values&gt;&gt;
+    &lt;&lt;interpolate&gt;&gt;
+
+    return out;
+}</pre></code>
 </div>
 </body>
 </html>
