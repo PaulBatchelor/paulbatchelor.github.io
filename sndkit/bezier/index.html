@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Bezier</title>
+<h1>Bezier</h1>
+
+<h3>Overview</h3>
+
+<p><code>bezier</code> implements a quadratic <a href="https://en.wikipedia.org/wiki/B%C3%A9zier_curve">bezier curve</a></p>
+<p>mapper. An input value between 0 and 1 goes in,
+and a bezier curve output comes out. The control
+point is controlled via X and Y parameters, presumably in
+the normalized range 0-1.
+</p>
+
+<h3>Tangled Files</h3>
+
+<div><b><i>&lt;&lt;bezier.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include "bezier.h"
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;bezier.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_BEZIER_H
+#define SK_BEZIER_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+
+<h3>A bit of math</h3>
+
+<p>The equation for a quadratic Bezier curve is the following:
+</p>
+<p><img src="/sndkit/_fig/bezier_eqn.png" alt="B(t) = (1 - t)^2 P_0 + 2(1 - t)tP_1 + t^2 P_2"srcset="/sndkit/_fig/bezier_eqn.png 1x,/sndkit/_fig/bezier_eqn2x.png 2x,">
+</p>
+<p>Where <img src="/sndkit/_fig/bezier_t.png"nilnil>
+ is a normalized time
+value between 0 and 1,
+and <img src="/sndkit/_fig/bezier_pn.png" alt="P_n"nil>
+ refers to a
+2-dimensional point with a (x,y) coordinate.
+</p>
+<p>The issue with the classic equation above is that the value
+is derived from <img src="/sndkit/_fig/bezier_t.png"nilnil>
+, allowing
+<img src="/sndkit/_fig/bezier_x.png" alt="x"nil>
+ to be fractional. This is
+problematic because the system implemented here is
+discrete, restricted to whole-integer values of <img src="/sndkit/_fig/bezier_x.png"nilnil>
+.
+</p>
+<p>The solution to this problem is to rework the equation
+above to solve for $t$ in terms of the current sample
+position <img src="/sndkit/_fig/bezier_xn.png"nilnil>
+. Once $t$ is found, it can be used to
+compute the result, which is the y component of the bezier
+curve in terms of t.
+</p>
+<p>The Bezier x component <img src="/sndkit/_fig/bezier_bx.png" alt="B_x"nil>
+ can
+be rearranged to be a quadratic equation for <img src="/sndkit/_fig/bezier_t.png" alt="t"nil>
+, given the x bezier control points
+<img src="/sndkit/_fig/bezier_x0.png" alt="x_0"nil>
+,
+<img src="/sndkit/_fig/bezier_x1.png" alt="x_1"nil>
+, and
+<img src="/sndkit/_fig/bezier_x2.png" alt="x_2"nil>
+, as well as the current
+sample position <img src="/sndkit/_fig/bezier_xn.png" alt="x_n"nil>
+.
+</p>
+<p><img src="/sndkit/_fig/bezier_derive.png" alt="\eqalign{    x_n &= (1 - t)^2 x_0 + 2(1 - t)tx_1 + t^2 x_2 \cr        &= (1 - 2t + t^2)x_0 + (2t - 2t^2)x_1 + t^2x_2 \cr        &= x_0 - 2tx_0 + t^2x_0 + 2tx_1 - 2t^2x_1 + t^2x_2 \cr        &= (x_0 - 2x_1 + x_2)t^2 + 2(-x_0 + x_1)t + x_0 \cr      0 &= (x_0 - 2x_1 + x_2)t^2 + 2(-x_0 + x_1)t + x_0 - x_n\cr}"srcset="/sndkit/_fig/bezier_derive.png 1x,/sndkit/_fig/bezier_derive2x.png 2x,">
+</p>
+<p>This yields the following
+</p>
+<p><img src="/sndkit/_fig/bezier_a.png" alt="a"nil>
+,
+<img src="/sndkit/_fig/bezier_b.png" alt="b"nil>
+, and
+<img src="/sndkit/_fig/bezier_c.png" alt="c"nil>
+ quadratic equation
+coefficients:
+</p>
+<p><img src="/sndkit/_fig/bezier_coefs.png" alt="\eqalign{    a &= x_0 - 2x_1 + x2 \cr    b &= 2(-x_0 + x_1), \cr    c &= x_0 - x_n \cr}"srcset="/sndkit/_fig/bezier_coefs.png 1x,/sndkit/_fig/bezier_coefs2x.png 2x,">
+</p>
+<p>Using those variables and the quadratic equation, the value
+of <img src="/sndkit/_fig/bezier_t.png"nilnil>
+ can be found if it is a real
+value.
+</p>
+<p>This value is implemented in a C function called <code>find_t</code>,
+along with a quadratic equation <code>quadratic_equation</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT find_t(SKFLT x0, SKFLT x1, SKFLT x2, SKFLT x);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT find_t(SKFLT x0, SKFLT x1, SKFLT x2, SKFLT x)
+{
+    SKFLT a, b, c;
+
+    a = (x0 - 2.0 * x1 + x2);
+    b = 2.0 * (-x0 + x1);
+    c = x0 - x;
+
+    if (a) {
+        return quadratic_equation(a, b, c);
+    } else {
+        return (x - x0) / b;
+    }
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT quadratic_equation(SKFLT a, SKFLT b, SKFLT c);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT quadratic_equation(SKFLT a, SKFLT b, SKFLT c)
+{
+    SKFLT det; /* determinant */
+
+    det = b*b - 4*a*c;
+
+    if (det &gt;= 0) {
+        return ((-b + sqrt(det))/(2.0*a));
+    } else {
+        return 0;
+    }
+}</pre></code>
+
+<h3>Bezier Compute</h3>
+
+<p>Now, with all the mathematical derivations out of the way,
+a bezier curve can be computed given an x position <code>xpos</code>,
+and a control point at <code>cx</code> and <code>cy</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_bezier_tick(SKFLT xpos, SKFLT cx, SKFLT cy);</pre></code>
+<p></p>
+<p>In total the bezier takes in 3 points, with the
+middle point being the control point, and the end
+points being with the normalized ranges (0, 0) and
+(1, 1).
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_bezier_tick(SKFLT xpos, SKFLT cx, SKFLT cy)
+{
+    SKFLT x[3];
+    SKFLT y[3];
+    SKFLT t;
+    SKFLT val;
+
+    x[0] = 0;
+    x[1] = cx;
+    x[2] = 1;
+
+    y[0] = 0;
+    y[1] = cy;
+    y[2] = 1;
+
+    t = find_t(x[0], x[1], x[2], xpos);
+
+    val = (1.0-t)*(1.0-t)*y[0] + 2.0*(1 - t)*t*y[1] + t*t*y[2];
+    return val;
+}</pre></code>
+</div>
+</body>
+</html>
