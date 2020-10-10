@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Raw SQLite query</h3>
+
+<p><a id="wm_007_0066"></a>The function <code>sqlar:sql</code> performs raw SQL commands on an
+input file.
+</p>
+
+<h4>6.1. Raw SQLite in C</h4>
+
+<p><a id="wm_007_0068"></a><div><b><i>&lt;&lt;static_sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>static int sqlar_sql(char *db, char *sql);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>static int callback(void *notused,
+                    int argc,
+                    char **argv,
+                    char **azcolname)
+{
+    int i;
+    for(i = 0; i &lt; argc; i++) {
+        printf("%s = %s\n",
+               azcolname[i],
+               argv[i] ? argv[i] : "NULL");
+    }
+    printf("\n");
+    return 0;
+}
+static int sqlar_sql(char *filename, char *sql)
+{
+    int rc;
+    sqlite3 *db;
+    char *errmsg;
+
+    errmsg = NULL;
+
+    rc = sqlite3_open(filename, &db);
+
+    if(rc) {
+        fprintf(stderr,
+                "Can't open database: %s\n",
+                sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return 1;
+    }
+
+    rc = sqlite3_exec(db, sql, callback, 0, &errmsg);
+
+    if(rc != SQLITE_OK) {
+        fprintf(stderr, "SQLite error: %s\n", errmsg);
+        sqlite3_free(errmsg);
+    }
+    sqlite3_close(db);
+    return 0;
+}</pre></code>
+
+<h4>6.2. Raw SQLite in Scheme</h4>
+
+<p><a id="wm_007_0073"></a>Raw sqlite commands can be executed in Scheme using the function <code>sqlar:sql</code>.
+<div><b><i>&lt;&lt;sqlar_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"sqlar:sql", pp_sql, 2, 2, {STR,STR,___}},</pre></code>
+<div><b><i>&lt;&lt;sqlar_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sql(cell x)
+{
+    char *db;
+    char *sql;
+    int rc;
+    cell cstr;
+
+    cstr = car(x);
+    db = string(car(x));
+    x = cdr(x);
+    sql = string(car(x));
+    rc = sqlar_sql(db, sql);
+
+    if(rc != 0) {
+        error("SQLite error", cstr);
+    }
+
+    return UNSPECIFIC;
+}</pre></code>
+</div>
+</body>
+</html>

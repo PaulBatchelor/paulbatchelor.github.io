@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Adding a single file to a SQLar archive</h3>
+
+<p><a id="wm_007_0032"></a></p>
+
+<h4>4.1. Adding a file in C</h4>
+
+<p><a id="wm_007_0033"></a></p>
+
+<h5>4.1.1. sqlar_add_file</h5>
+
+<p><a id="wm_007_0034"></a><div><b><i>&lt;&lt;static_sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>static int sqlar_add_file(const char *sqlar,
+                          const char *file,
+                          const char *name);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;compress_function&gt;&gt;
+static int sqlar_add_file(const char *sqlar,
+                          const char *file,
+                          const char *name)
+{
+    sqlite3 *db;
+    int rc;
+    sqlite3_stmt *stmt;
+    struct stat x;
+    char *zc;
+    int sz_orig;
+    int sz_compr;
+
+    sz_orig = 0;
+    sz_compr = 0;
+
+    rc = stat(file, &x);
+    if(rc) return SQLITE_CANTOPEN;
+    rc = sqlite3_open(sqlar, &db);
+    if(rc) return rc;
+    rc = sqlite3_exec(db,
+                      "CREATE TABLE IF NOT EXISTS sqlar(\n"
+                      "  name TEXT PRIMARY KEY,\n"
+                      "  mode INT,\n"
+                      "  mtime INT,\n"
+                      "  sz INT,\n"
+                      "  data BLOB\n"
+                      ");", 0, 0, 0);
+    rc = sqlite3_exec(db, "SELECT 1 FROM sqlar LIMIT 1", 0, 0, 0);
+    if(rc) {
+        fprintf(stderr, "File %s is not a SQLar archive\n", sqlar);
+        sqlite3_close(db);
+        return rc;
+    }
+    sqlite3_prepare(db,
+                    "REPLACE INTO sqlar(name,mode,mtime,sz,data)"
+                    " VALUES(?1,?2,?3,?4,?5)",
+                    -1,
+                    &stmt,
+                    NULL);
+
+    sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, x.st_mode);
+    sqlite3_bind_int64(stmt, 3, x.st_mtime);
+
+    zc = read_file(file, &sz_orig, &sz_compr);
+    sqlite3_bind_int(stmt, 4, sz_orig);
+    sqlite3_bind_blob(stmt, 5, zc, sz_compr, sqlite3_free);
+
+    sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return SQLITE_OK;
+}</pre></code>
+
+<h5>4.1.2. Compress Function</h5>
+
+<p><a id="wm_007_0042"></a><div><b><i>&lt;&lt;compress_function&gt;&gt;=</i></b></div><pre><code>static char *read_file(const char *filename, int *size_orig, int *size_compr)
+{
+    FILE *in;
+    char *zin;
+    long int nin;
+    char *zcompr;
+    unsigned long int ncompr;
+    int rc;
+
+    in = fopen(filename, "rb");
+
+    if(in==0) {
+        fprintf(stderr, "cannot open \"%s\" for reading\n", filename);
+        return NULL;
+    }
+
+    fseek(in, 0, SEEK_END);
+    nin = ftell(in);
+    rewind(in);
+    zin = sqlite3_malloc( nin+1 );
+
+    if(zin==0) {
+        fprintf(stderr, "cannot malloc for %ld bytes\n", nin+1);
+        return NULL;
+    }
+
+    if( nin&gt;0 && fread(zin, nin, 1, in)!=1 ){
+        fprintf(stderr, "unable to read %ld bytes of file %s\n", nin, filename);
+        return NULL;
+    }
+
+    fclose(in);
+    ncompr = 13 + nin + (nin+999)/1000;
+    zcompr = sqlite3_malloc(ncompr+1);
+
+    if(zcompr==0) {
+        fprintf(stderr, "cannot malloc for %ld bytes\n", ncompr+1);
+        return NULL;
+    }
+
+    rc = compress((Bytef*)zcompr, &ncompr, (const Bytef*)zin, nin);
+
+    if( rc!=Z_OK ) {
+        fprintf(stderr, "Cannot compress %s\n", filename);
+        return NULL;
+    }
+
+    if(nin&gt;ncompr){
+        sqlite3_free(zin);
+        *size_orig = nin;
+        *size_compr = (int)ncompr;
+        return zcompr;
+    }else{
+        sqlite3_free(zcompr);
+        *size_orig = *size_compr = nin;
+        return zin;
+    }
+}</pre></code>
+
+<h4>4.2. Adding a file in Scheme</h4>
+
+<p><a id="wm_007_0046"></a><div><b><i>&lt;&lt;sqlar_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"sqlar:add-file", pp_add_file, 3, 3, {STR,STR,STR}},</pre></code>
+<div><b><i>&lt;&lt;sqlar_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_add_file(cell x)
+{
+    const char *db;
+    const char *file;
+    const char *name;
+    int rc;
+    cell cstr;
+
+    cstr = car(x);
+    db = string(car(x));
+    x = cdr(x);
+    file = string(car(x));
+    x = cdr(x);
+    name = string(car(x));
+    rc = sqlar_add_file(db, file, name);
+
+    if(rc != SQLITE_OK) {
+        error("Could not add file to sqlar archive", cstr);
+    }
+    return UNSPECIFIC;
+}</pre></code>
+</div>
+</body>
+</html>

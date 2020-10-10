@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>7. Extracting SQLar file to buffer</h3>
+
+<p><a id="wm_007_0079"></a></p>
+
+<h4>7.1. Via SQLar filename</h4>
+
+<p><a id="wm_007_0080"></a><div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>int sqlar_extract_to_buffer(const char *sqlar,
+                            const char *name,
+                            char **out,
+                            int *size);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>int sqlar_extract_to_buffer(const char *sqlar,
+                            const char *name,
+                            char **out,
+                            int *size)
+{
+    int rc;
+    sqlite3 *db;
+
+    if (access(sqlar, F_OK) == -1) {
+        fprintf(stderr,
+                "SQLar: could not find db %s\n",
+                sqlar);
+        return SQLITE_NOTFOUND;
+    }
+
+    rc = sqlite3_open(sqlar, &db);
+
+    if (rc) {
+        fprintf(stderr, "SQLar: %s\n", sqlite3_errmsg(db));
+        return rc;
+    }
+
+    rc = sqlar_extract_to_buffer_db(db, name, out, size);
+
+    sqlite3_close(db);
+    return rc;
+}</pre></code>
+
+<h4>7.2. Via Sqlite3 db handle</h4>
+
+<p><a id="wm_007_0085"></a><div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>int sqlar_extract_to_buffer_db(sqlite3 *db,
+                               const char *name,
+                               char **out,
+                               int *size);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>int sqlar_extract_to_buffer_db(sqlite3 *db,
+                               const char *name,
+                               char **out,
+                               int *size)
+{
+    char *output;
+    unsigned long int out_size;
+    int rc;
+    sqlite3_stmt *stmt;
+    int sz;
+    const char *data;
+    int data_sz;
+
+    rc = sqlite3_exec(db,
+                      "CREATE TABLE IF NOT EXISTS sqlar(\n"
+                      "  name TEXT PRIMARY KEY,\n"
+                      "  mode INT,\n"
+                      "  mtime INT,\n"
+                      "  sz INT,\n"
+                      "  data BLOB\n"
+                      ");", 0, 0, 0);
+
+
+    sqlite3_prepare(db,
+                    "SELECT name, mode, mtime, sz, data FROM sqlar"
+                    " WHERE name is ?1",
+                    -1,
+                    &stmt,
+                    NULL);
+
+    sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
+
+    rc = sqlite3_step(stmt);
+
+    if(rc != SQLITE_ROW) {
+        fprintf(stderr,
+                "SQLar: could find file %s\n",
+                name);
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return rc;
+    }
+
+    sz = sqlite3_column_int(stmt,3);
+    data = sqlite3_column_blob(stmt,4);
+    data_sz = sqlite3_column_bytes(stmt,4);
+
+    output = calloc(1, sz + 1);
+    if(sz != data_sz) {
+        out_size = sz;
+
+        rc = uncompress((Bytef*)output,
+                        &out_size,
+                        (const Bytef*)data,
+                        data_sz);
+        if(rc != Z_OK) {
+            fprintf(stderr,
+                    "Error: could not uncompress data\n");
+            return SQLITE_ERROR;
+        }
+    } else {
+        memcpy(output, data, sz);
+    }
+
+    *size = sz;
+    *out = output;
+    sqlite3_finalize(stmt);
+    return SQLITE_OK;
+}</pre></code>
+</div>
+</body>
+</html>

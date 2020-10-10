@@ -11,31 +11,25 @@
 
 <h3>1. Overview</h3>
 
-<p><a id="wm_026_0002"></a>In this document, we will outline and implement a data
-structure that will be known as an ftable list. In addition,
-a simple ftable sequencer known will be built to demonstrate
-the musical possibilities that the ftable list will provide.
+<p><a id="wm_026_0002"></a>Signal Verification is a fancy name given for what boils
+down to doing md5 checksums on in-memory buffers of
+audio-rate signals. Signal verification ensures that
+the outputs of a DSP algorithms are numerically identical
+between platforms, refactoring, and other such changes.
 </p>
-<p>The ftable list is a dynamically expanding array of ftable
-pointer locations. They are created via appending created
-ftables to the list.
+<p>Such a system has been used quite succesfully for years in
+the Soundpipe library and the AudioKit framework. The system
+used in monolith has been adapated from the one in
+Soundpipe, and modified to integrate better with Monolith.
 </p>
-<p>Ftable lists can be an ideal way to dynamically switch
-between ftables while a patch is running.
+<p>Verification in Monolith works by rendering a number of
+samples of the current patchwerk patch to an allocated
+buffer. Then the md5 hash is then taken of the buffer.
 </p>
-<p>As a simple use case for an ftable list would be an ftable
-sequencer. Such an item would take in a clock signal and
-a ftable list, and then synthesizes an ouput ftable. Every
-time the clock triggers, it goes to the next item in the
-ftable list, and copies the data and length over into
-the output ftable. This ftable could then treated and read
-like any normal ftable.
-</p>
-<p>The big downside with the implementation is that it only
-works with block-rate clocks, or clock signals that only
-trigger at the beginning of blocks. To compensate for this,
-some thought about the trigger signal may have to be
-considered.
+<p>A note that endianness is a factor. Monolith up to this
+point has only been run on little-endian systems. Test
+suites using signal verifcation on a little endian system
+will probably break on a big endian system.
 </p>
 </div>
 </body>

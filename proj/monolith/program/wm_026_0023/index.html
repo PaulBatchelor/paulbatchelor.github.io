@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Verification in Scheme</h3>
+
+<p><a id="wm_026_0023"></a>The functionality of <code>monolith_verify</code> is wrapped in a
+scheme function called <code>monolith:verify</code>, and loaded
+with a function called <code>s9_monolith_verify</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_monolith_verify(void);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static cell pp_verify(cell p)
+{
+    monolith_d *m;
+    char md5[32];
+    int size;
+    m = monolith_data_get();
+    /* TODO: make this a parameter */
+    size = 44100 * 4; /* 5 seconds at 44.1 kHz */
+    monolith_verify(m, size, md5);
+    return UNSPECIFIC;
+}
+
+static S9_PRIM verify_primitives[] = {
+    {"monolith:verify",
+     pp_verify, 1, 1,
+     {S9_T_INTEGER,S9_T_ANY,S9_T_ANY}},
+    {NULL}
+};
+
+void s9_monolith_verify(void)
+{
+    monolith_scheme_add_primitives("monolith", verify_primitives);
+}</pre></code>
+</div>
+</body>
+</html>

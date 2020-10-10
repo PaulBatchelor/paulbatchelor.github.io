@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. Janet Loader</h3>
+
+<p><a id="wm_029_0025"></a>The janet fbm functions are loaded with
+<code>monolith_janet_fbm</code>.
+</p>
+<div><b><i>&lt;&lt;janet_loader&gt;&gt;=</i></b></div><pre><code>/* not currently included in the janet header file */
+JANET_API void janet_cfuns_prefix(JanetTable *env,
+                                  const char *regprefix,
+                                  const JanetReg *cfuns);
+
+&lt;&lt;janfuncs&gt;&gt;
+
+static const JanetReg cfuns[] = {
+    {"fbm", j_fbm,
+        "(monolith/fbm x y oct)\n\n"
+        "Computes fractional brownian motion, given a normalized xy "
+        "coordinate and an octave level."
+    }
+};
+
+void monolith_janet_fbm(JanetTable *env)
+{
+    janet_cfuns_prefix(env, "monolith", cfuns);
+}</pre></code>
+<div><b><i>&lt;&lt;janfuncs&gt;&gt;=</i></b></div><pre><code>float monolith_fbm(float x, float y, int oct);
+static Janet j_fbm(int32_t argc, Janet *argv)
+{
+    float x, y;
+    int oct;
+    float amp;
+
+    janet_fixarity(argc, 3);
+    x = janet_unwrap_number(argv[0]);
+    y = janet_unwrap_number(argv[1]);
+    oct = janet_unwrap_integer(argv[2]);
+
+    amp = monolith_fbm(x, y, oct);
+    return janet_wrap_number(amp);
+}</pre></code>
+</div>
+</body>
+</html>

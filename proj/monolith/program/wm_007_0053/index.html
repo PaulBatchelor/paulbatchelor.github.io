@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>5. Extracting a single file from a SQLar archive</h3>
+
+<p><a id="wm_007_0053"></a></p>
+
+<h4>5.1. Extracting a file in C</h4>
+
+<p><a id="wm_007_0054"></a></p>
+
+<h5>5.1.1. sqlar_extract_file</h5>
+
+<p><a id="wm_007_0055"></a>The function <code>sqlar_extract_file</code> is used to extract a file from a sqlar
+archive.
+<div><b><i>&lt;&lt;static_sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>static int sqlar_extract_file(const char *sqlar,
+                              const char *name,
+                              const char *out);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>static int sqlar_extract_file(const char *sqlar,
+                              const char *name,
+                              const char *out)
+{
+    FILE *fp;
+    char *output;
+    unsigned long int out_size;
+    int rc;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int imode;
+    int sz;
+    const char *data;
+    int data_sz;
+
+    rc = sqlite3_open(sqlar, &db);
+    if(rc) return rc;
+
+    rc = sqlite3_exec(db,
+                      "CREATE TABLE IF NOT EXISTS sqlar(\n"
+                      "  name TEXT PRIMARY KEY,\n"
+                      "  mode INT,\n"
+                      "  mtime INT,\n"
+                      "  sz INT,\n"
+                      "  data BLOB\n"
+                      ");", 0, 0, 0);
+
+
+    sqlite3_prepare(db,
+                    "SELECT name, mode, mtime, sz, data FROM sqlar"
+                    " WHERE name is ?1",
+                    -1,
+                    &stmt,
+                    NULL);
+
+    sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
+
+    rc = sqlite3_step(stmt);
+
+    if(rc != SQLITE_ROW) {
+        fprintf(stderr, "Could find file %s\n", name);
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return rc;
+    }
+
+    imode = sqlite3_column_int(stmt,1);
+    sz = sqlite3_column_int(stmt,3);
+    data = sqlite3_column_blob(stmt,4);
+    data_sz = sqlite3_column_bytes(stmt,4);
+
+    fp = fopen(out, "wb");
+    if(fp == NULL) {
+        fprintf(stderr, "Could not open output file %s for writing\n", out);
+        return SQLITE_CANTOPEN;
+    }
+
+    if(sz == data_sz) {
+        fwrite(data, 1, data_sz, fp);
+    } else {
+        output = sqlite3_malloc(sz+1);
+        out_size = sz;
+
+        rc = uncompress((Bytef*)output,
+                        &out_size,
+                        (const Bytef*)data,
+                        data_sz);
+        if(rc != Z_OK) {
+            fprintf(stderr, "Error: could not uncompress data\n");
+            return SQLITE_ERROR;
+        }
+        fwrite(output, out_size, 1, fp);
+        sqlite3_free(output);
+    }
+    fclose(fp);
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    rc = chmod(out, imode&0777);
+    return SQLITE_OK;
+}</pre></code>
+
+<h4>5.2. Extracting a file in Scheme</h4>
+
+<p><a id="wm_007_0061"></a><div><b><i>&lt;&lt;sqlar_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"sqlar:extract-file", pp_extract_file, 3, 3, {STR,STR,STR}},</pre></code>
+<div><b><i>&lt;&lt;sqlar_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_extract_file(cell x)
+{
+    const char *db;
+    const char *file;
+    const char *name;
+    int rc;
+    cell cstr;
+
+    cstr = car(x);
+    db = string(car(x));
+    x = cdr(x);
+    file = string(car(x));
+    x = cdr(x);
+    name = string(car(x));
+    rc = sqlar_extract_file(db, file, name);
+
+    if(rc != SQLITE_OK) {
+        error("Could not extract file from sqlar archive", cstr);
+    }
+    return UNSPECIFIC;
+}</pre></code>
+</div>
+</body>
+</html>

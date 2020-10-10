@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. DONE sqlar_wavread</h3>
+
+<p><a id="wm_025_0029"></a>CLOSED: [2020-10-07 Wed 12:21]
+Reads from wav file via drwav, and loads it into an existing
+ftable (without allocating).
+</p>
+<p>This was created for the sole purpose of loading/unloading
+wavetables.
+</p>
+
+<h4>3.1. DONE sqlar-wavread in C</h4>
+
+<p><a id="wm_025_0031"></a>CLOSED: [2020-01-06 Mon 10:53]
+There are two functions here. <code>sqlar_wavread</code> is the
+low-level version, that only requires a DB handle and a
+ftable. The high-level (simple) version opens the DB handle
+and finds the ftable internally; all that is needed are the
+db filename, wav filename, and keyword.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sqlar_wavread(sqlite3 *db,
+                  const char *name,
+                  sp_ftbl *ft);
+int sqlar_wavread_simple(monolith_d *m,
+                         const char *db,
+                         const char *wav,
+                         const char *ftname);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int sqlar_wavread(sqlite3 *db,
+                  const char *name,
+                  sp_ftbl *ft)
+{
+    char *buf;
+    int sz;
+    drwav wav;
+    int rc;
+
+    sz = 0;
+    buf = NULL;
+    rc = sqlar_extract_to_buffer_db(db, name, &buf, &sz);
+
+    if (rc != SQLITE_OK) {
+        if (buf != NULL) free(buf);
+        fprintf(stderr, "SQLite problems\n");
+        return MONOLITH_NOTOK;
+    }
+
+    if (!drwav_init_memory(&wav, buf, sz)) {
+        fprintf(stderr, "drwav could not initialize\n");
+        free(buf);
+        return MONOLITH_NOTOK;
+    }
+
+    drwav_read_f32(&wav, ft-&gt;size, ft-&gt;tbl);
+    drwav_uninit(&wav);
+    return MONOLITH_OK;
+}
+</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int sqlar_wavread_simple(monolith_d *m,
+                         const char *sqlar,
+                         const char *wav,
+                         const char *ftname)
+{
+    int rc;
+    sqlite3 *db;
+    sp_ftbl *ft;
+
+    /* Open database */
+
+    if (access(sqlar, F_OK) == -1) {
+        fprintf(stderr,
+                "SQLar: could not find db %s\n",
+                sqlar);
+        return MONOLITH_NOTOK;
+    }
+
+    rc = sqlite3_open(sqlar, &db);
+
+    if (rc) {
+        fprintf(stderr, "SQLar: %s\n", sqlite3_errmsg(db));
+        return MONOLITH_NOTOK;
+    }
+
+    /* find ftable */
+    rc = monolith_ftbl_get(m, ftname, strlen(ftname), &ft);
+
+    if (rc != MONOLITH_OK) {
+        fprintf(stderr,
+                "Could not find table %s\n",
+                ftname);
+        sqlite3_close(db);
+        return MONOLITH_NOTOK;
+    }
+
+    rc = sqlar_wavread(db, wav, ft);
+
+    sqlite3_close(db);
+    return rc;
+}</pre></code>
+
+<h4>3.2. DONE sqlar wavread in scheme</h4>
+
+<p><a id="wm_025_0039"></a>CLOSED: [2020-10-07 Wed 12:21]
+Known as <code>monolith:sqlar-wavread</code>.
+</p>
+<p>Loaded as <code>s9_load_sqlar_wavread</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_sqlar_wavread(void);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;scheme_functions&gt;&gt;
+void s9_load_sqlar_wavread(void)
+{
+    S9_PRIM primitives[] = {
+&lt;&lt;scheme_entries&gt;&gt;
+        {NULL}
+    };
+    monolith_scheme_add_primitives("monolith", primitives);
+}</pre></code>
+<div><b><i>&lt;&lt;scheme_entries&gt;&gt;=</i></b></div><pre><code>{
+    "monolith:sqlar-wavread",
+    pp_sqlar_wavread, 3, 3,
+    {S9_T_STRING, S9_T_STRING, S9_T_STRING}
+},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static s9_cell pp_sqlar_wavread(s9_cell x)
+{
+    const char *db;
+    const char *wav;
+    const char *ftname;
+    monolith_d *m;
+
+    m = monolith_data_get();
+
+    db = monolith_scheme_string(s9_car(x));
+    x = s9_cdr(x);
+    wav = monolith_scheme_string(s9_car(x));
+    x = s9_cdr(x);
+    ftname = monolith_scheme_string(s9_car(x));
+
+    sqlar_wavread_simple(m, db, wav, ftname);
+    return S9_UNSPECIFIC;
+}</pre></code>
+</div>
+</body>
+</html>

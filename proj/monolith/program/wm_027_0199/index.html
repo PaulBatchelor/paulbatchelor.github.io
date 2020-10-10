@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>7. Runt Functionality</h3>
+
+<p><a id="wm_027_0199"></a>These are core words and functions designed to integrate
+ftlists into runt and patchwerk.
+</p>
+
+<h4>7.1. loader</h4>
+
+<p><a id="wm_027_0201"></a>The loader for all the runt words is done with
+<code>load_ftlist</code>. Like all runt patchwerk loaders, this expects
+the patchwerk runt pointer <code>pw</code>.
+</p>
+<div><b><i>&lt;&lt;runt_funcdefs&gt;&gt;=</i></b></div><pre><code>int load_ftlist(runt_vm *vm, runt_ptr pw);</pre></code>
+<div><b><i>&lt;&lt;runt_funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;wordfuncs&gt;&gt;
+int load_ftlist(runt_vm *vm, runt_ptr pw)
+{
+    runt_cell *c;
+&lt;&lt;words&gt;&gt;
+    return RUNT_OK;
+}</pre></code>
+
+<h4>7.2. ftlist_new</h4>
+
+<p><a id="wm_027_0213"></a>The runt word <code>ftlist_new</code> allocates a new ftlist using
+patchwerk, then pushes it onto the stack.
+</p>
+<div><b><i>&lt;&lt;words&gt;&gt;=</i></b></div><pre><code>runt_keyword_define(vm,
+                    "ftlist_new",
+                    10,
+                    rproc_ftlist_new,
+                    &c);
+runt_cell_data(vm, c, pw);</pre></code>
+<div><b><i>&lt;&lt;wordfuncs&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_ftlist_new(runt_vm *vm, runt_ptr p)
+{
+    pw_patch *patch;
+    sp_ftlist *ftlst;
+    int rc;
+    runt_stacklet *s;
+
+    patch = rpw_get_patch(p);
+    rc = runt_ppush(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    ftlst = malloc(sp_ftlist_sizeof());
+    sp_ftlist_init(ftlst);
+
+    rpw_append_ftlist(patch, ftlst);
+    rpw_stacklet_ftlist(vm, s, ftlst);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>7.3. rpw_get_ftlist</h4>
+
+<p><a id="wm_027_0219"></a>Pops an ftlist from the runt stack, and does some light
+type checking.
+<div><b><i>&lt;&lt;runt_funcdefs&gt;&gt;=</i></b></div><pre><code>runt_int rpw_get_ftlist(runt_vm *vm, sp_ftlist **ftl);</pre></code>
+<div><b><i>&lt;&lt;runt_funcs&gt;&gt;=</i></b></div><pre><code>runt_int rpw_get_ftlist(runt_vm *vm, sp_ftlist **ftl)
+{
+    runt_int rc;
+    runt_stacklet *s;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    if(s-&gt;t != FTLIST_TYPE) {
+        runt_print(vm, "Parameter does not seem to be an ftlist\n");
+        *ftl = NULL;
+        return RUNT_NOT_OK;
+    }
+    *ftl = runt_to_cptr(s-&gt;p);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>7.4. rpw_append_ftlist</h4>
+
+<p><a id="wm_027_0225"></a>Allocates and appends an ftlist to the current patchwerk
+pointer list.
+</p>
+<div><b><i>&lt;&lt;runt_funcdefs&gt;&gt;=</i></b></div><pre><code>void rpw_append_ftlist(pw_patch *patch, sp_ftlist *ftl);</pre></code>
+<div><b><i>&lt;&lt;runt_funcs&gt;&gt;=</i></b></div><pre><code>static void free_ftlist(pw_pointer *p)
+{
+    sp_ftlist *ftlst;
+
+    ftlst = pw_pointer_data(p);
+    sp_ftlist_clean(ftlst);
+    free(ftlst);
+}
+void rpw_append_ftlist(pw_patch *patch, sp_ftlist *ftl)
+{
+    pw_patch_append_userdata(patch, free_ftlist, ftl);
+}</pre></code>
+
+<h4>7.5. type id</h4>
+
+<p><a id="wm_027_0231"></a>The type id is used inside the stacklet as a means for soft
+type checking. It it send to be <code>END + 111</code>, where <code>END</code>
+is the the last id of the default ugens (retrived via
+<code>rpw_get_end</code>).
+</p>
+<p>This type ID represented as a macro <code>FTLIST_TYPE</code>.
+</p>
+<div><b><i>&lt;&lt;runt_macros&gt;&gt;=</i></b></div><pre><code>#define FTLIST_TYPE (rpw_get_end() + 111)</pre></code>
+
+<h4>7.6. rpw_stacklet_ftlist</h4>
+
+<p><a id="wm_027_0236"></a>Configures a runt stacklet (presumably being pushed) to
+encapsulate an ftlist. The most important thing here is
+the type id, which is set to be <code>FTLIST_TYPE</code>.
+</p>
+<div><b><i>&lt;&lt;runt_funcdefs&gt;&gt;=</i></b></div><pre><code>void rpw_stacklet_ftlist(runt_vm *vm,
+                         runt_stacklet *s,
+                         sp_ftlist *ftl);</pre></code>
+<div><b><i>&lt;&lt;runt_funcs&gt;&gt;=</i></b></div><pre><code>void rpw_stacklet_ftlist(runt_vm *vm,
+                         runt_stacklet *s,
+                         sp_ftlist *ftl)
+{
+    s-&gt;p = runt_mk_cptr(vm, ftl);
+    s-&gt;t = FTLIST_TYPE;
+}</pre></code>
+</div>
+</body>
+</html>
