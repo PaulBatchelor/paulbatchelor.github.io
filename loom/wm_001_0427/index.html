@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>9. Run</h3>
+
+<p><a id="wm_001_0427"></a>A block of serial code can be run with the function
+<code>txtvm_run</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_run(txtvm *vm, const char *buf, unsigned long sz);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+int txtvm_run(txtvm *vm, const char *buf, unsigned long sz)
+{
+    int rc;
+    txtvm_io_readbuf_data d;
+
+    d.buf = buf;
+    d.pos = 0;
+    d.sz = sz;
+    rc = TXTVM_OK;
+
+    txtvm_io_readbuf(&vm-&gt;io, &d);
+
+    while (d.pos &lt; d.sz) {
+        char c;
+        int n;
+
+        n = txtvm_io_read(&vm-&gt;io, 1, &c);
+        if (n &lt;= 0) return TXTVM_NOT_OK;
+
+        switch (c) {
+            case TYPE_INT6: {
+                int x;
+                rc = txtvm_read_int6(vm, &x);
+                TXTVM_ERROR_CHECK(rc);
+                printf("INT6: %d\n", x);
+                txtvm_push_int(vm, x);
+                break;
+            }
+            case TYPE_INT12: {
+                int x;
+                rc = txtvm_read_int12(vm, &x);
+                TXTVM_ERROR_CHECK(rc);
+                printf("INT12: %d\n", x);
+                txtvm_push_int(vm, x);
+                break;
+            }
+            case TYPE_CALL: {
+                int x;
+                rc = txtvm_pop_int(vm, &x);
+                TXTVM_ERROR_CHECK(rc);
+                printf("CALL %d\n", x);
+                rc = txtvm_call(vm, x);
+                TXTVM_ERROR_CHECK(rc);
+                break;
+            }
+            default:
+                return TXTVM_NOT_OK;
+        }
+    }
+
+
+    return rc;
+}</pre></code>
+</div>
+</body>
+</html>

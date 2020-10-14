@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>8. Serializer</h3>
+
+<p><a id="wm_001_0372"></a></p>
+
+<h4>8.1. Overview</h4>
+
+<p><a id="wm_001_0373"></a>The "text" part of the <code>txtvm</code> comes into play with the
+serialization format. It is designed to only utilize
+printable ascii characters.
+</p>
+<p>Instead of using 8-bit bytes, txtvm uses 6-bit syllables,
+which track with the base64 encoding table: A-Z, a-z, 0-9, and
++ and /.
+</p>
+<p>There are 95 printable characters, so this leaves 31
+characters remaining. These characters are reserved for
+core opcode operations.
+</p>
+<p>Those characters are:!"#$%&'()*,-.:;<=>?@[ /]^_`{|}~
+</p>
+<p>space will be ignored, so really it's 30 characters.
+</p>
+<p>Integer values can be 6, 12, 18, or 24 bits long, called
+int6, int12, int18, and int24. They are stored in
+little-endian.
+</p>
+<p>Each integer operation begins with the command character,
+then reads subsequent characters (assumbed to be 6-bit
+syllables).
+</p>
+<p>This means:
+</p>
+<p>int6 (') is a 2 character operation.
+</p>
+<p>int12 (#) is 3 characters.
+</p>
+<p>int18 ($) is 4 characters.
+</p>
+<p>int24 (%) is 5 characters.
+</p>
+<p>should also be uint8, uint12, uint18, and uint24 as
+'&', -, '.', ':'.
+</p>
+<p>long values are 32-bit values, and are 9 characters long.
+They can be signed or unsigned. represented as '?'.
+</p>
+<p>An execute operation will pop an integer off the stack
+and use that as an look-up id for what word to execute.
+</p>
+<p>Represented as '!'
+</p>
+<p>Text is represented as '"'. It pops a size of the stack,
+then reads that many characters as a literal string. Only
+printable characters work here. Otherwise, blobs will have
+to be used.
+</p>
+<p>A base64 blob is represented as '*'. It pop the size
+from the stack, then read that many bytes as literally
+base64 encoding.
+</p>
+<p>Later on, ascii85 encoding may be used as well. The size
+of this string is expected to be a multiple of 5.
+Represented as '@'.
+</p>
+
+<h4>8.2. Opcodes</h4>
+
+<p><a id="wm_001_0375"></a></p>
+
+<h5>8.2.1. macros</h5>
+
+<p><a id="wm_001_0376"></a>Every opcode is defined as a macro with the corresponding
+ascii character. This helps makes code more readable.
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>&lt;&lt;type_macros&gt;&gt;</pre></code>
+
+<h5>8.2.2. int6</h5>
+
+<p><a id="wm_001_0382"></a>The <code>int6</code> opcode uses the character <code>'</code>.
+</p>
+<div><b><i>&lt;&lt;type_macros&gt;&gt;=</i></b></div><pre><code>#define TYPE_INT6 '\''</pre></code>
+<p></p>
+<p>It takes in 1 additional byte, which it then turns into a
+6-bit integer value.
+</p>
+<p>Write an int6 with <code>txtvm_write_int6</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_int6(txtvm *vm, int x);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_int6(txtvm *vm, int x)
+{
+    char b[2];
+    int nbytes;
+
+    x &= 0x3f;
+    b[0] = TYPE_INT6;
+    b[1] = base64_encode[x];
+
+    nbytes = txtvm_io_write(&vm-&gt;io, 2, b);
+
+    if (nbytes &lt; 0) return TXTVM_NOT_OK;
+    else if (nbytes &lt; 2) return TXTVM_INCOMPLETE_WRITE;
+
+    return TXTVM_OK;
+}</pre></code>
+<p></p>
+<p>Read an int6 with <code>txtvm_read_int6</code>. This assumes the type
+byte has already been written.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_read_int6(txtvm *vm, int *x);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_read_int6(txtvm *vm, int *x)
+{
+    int n;
+    char b;
+
+    n = txtvm_io_read(&vm-&gt;io, 1, &b);
+
+    if (n != 1) return TXTVM_INCOMPLETE_READ;
+
+    *x = base64_decode[b & 0x7f];
+    return TXTVM_OK;
+}</pre></code>
+
+<h5>8.2.3. int12</h5>
+
+<p><a id="wm_001_0397"></a>The int12 opcode has uses character <code>#</code>.
+</p>
+<div><b><i>&lt;&lt;type_macros&gt;&gt;=</i></b></div><pre><code>#define TYPE_INT12 '#'</pre></code>
+<p></p>
+<p>It takes in 2 additional bytes, which it then turns into a
+12-bit integer value. It's stored as little endian, so the
+the byte order is LSB followed by MSB.
+</p>
+<p>Write an int12 with <code>txtvm_write_int12</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_int12(txtvm *vm, int x);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_int12(txtvm *vm, int x)
+{
+    char b[3];
+    int nbytes;
+
+    b[0] = TYPE_INT12;
+    b[1] = base64_encode[x & 0x3f];
+    b[2] = base64_encode[(x &gt;&gt; 6) & 0x3f];
+
+    nbytes = txtvm_io_write(&vm-&gt;io, 3, b);
+
+    if (nbytes &lt; 0) return TXTVM_NOT_OK;
+    else if (nbytes &lt; 3) return TXTVM_INCOMPLETE_WRITE;
+
+    return TXTVM_OK;
+}</pre></code>
+<p></p>
+<p>Read an int12 with <code>txtvm_read_int12</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_read_int12(txtvm *vm, int *x);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_read_int12(txtvm *vm, int *x)
+{
+    int n;
+    char b[2];
+
+    n = txtvm_io_read(&vm-&gt;io, 2, b);
+
+    if (n &lt; 0) return TXTVM_NOT_OK;
+    else if (n != 2) return TXTVM_INCOMPLETE_WRITE;
+
+    *x = base64_decode[b[0] & 0x7f];
+    *x |= (base64_decode[b[1] & 0x7f]) &lt;&lt; 6;
+    return TXTVM_OK;
+}</pre></code>
+
+<h5>8.2.4. call</h5>
+
+<p><a id="wm_001_0411"></a>The call opcode uses the character <code>!</code>.
+</p>
+<div><b><i>&lt;&lt;type_macros&gt;&gt;=</i></b></div><pre><code>#define TYPE_CALL '!'</pre></code>
+<p></p>
+<p>No additional bytes are read. It runs under the assumption
+that a positive integer value is at the top of the stack.
+The call command, when run, will pop that value off, and
+then look and run up the corresponding entry in the
+dictinonary
+</p>
+<p>Write a call with <code>txtvm_write_call</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_call(txtvm *vm);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_call(txtvm *vm)
+{
+    char b;
+    int nbytes;
+
+    b = TYPE_CALL;
+    nbytes = txtvm_io_write(&vm-&gt;io, 1, &b);
+
+    if (nbytes &lt; 0) return TXTVM_NOT_OK;
+    else if (nbytes != 1) return TXTVM_INCOMPLETE_WRITE;
+
+    return TXTVM_OK;
+}</pre></code>
+
+<h4>8.3. lookup tables</h4>
+
+<p><a id="wm_001_0420"></a>The following table is used to convert values in range
+0-63 to ascii characters that map to the base64 character
+set: A..Z, a..z, 0..9, and + and /.
+</p>
+<div><b><i>&lt;&lt;constants&gt;&gt;=</i></b></div><pre><code>static const char * base64_encode =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+"abcdefghijklmnopqrstuvwxyz"
+"0123456789+/";</pre></code>
+<p></p>
+<p>Decoding is a little bit more tricky since the values aren't
+exactly lined up. To keep things consistent, we're going
+to use a lookup table here as well, at the cost of having
+a bit more redundant memory. Those parts will be padded
+with zeros.
+</p>
+<div><b><i>&lt;&lt;constants&gt;&gt;=</i></b></div><pre><code>static const char base64_decode[128] = {
+/* pad with 43 zeros to first ASCII character + */
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0,
+
+/* + and /, spaced by 3 zeros */
+62, 0, 0, 0, 63,
+
+/* 0-9 */
+52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
+
+/* 7 zeros between 9 and A */
+
+0, 0, 0, 0, 0, 0, 0,
+
+/* A-Z */
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+17, 18, 19, 20, 21, 22, 23, 24, 25,
+
+/* 6 zeros between 9 and A */
+
+0, 0, 0, 0, 0, 0,
+
+/* a-z */
+26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,
+
+/* padding: 5 0's aligns to 128 bytes total */
+
+0, 0, 0, 0, 0,
+
+};</pre></code>
+</div>
+</body>
+</html>

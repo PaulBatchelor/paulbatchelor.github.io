@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Dictionary</h3>
+
+<p><a id="wm_001_0124"></a>The dictionary in textvm is used to store and retrieve
+functions that interact with the stack. The implementation
+of this is based off of a hashmap, but instead of using
+string values as keys, integer values (and therefore
+no hash values) will be used.
+</p>
+<p>A function is wrapped inside what will be referred
+to as an <code>entry</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct txtvm_dict_entry txtvm_dict_entry;</pre></code>
+<div><b><i>&lt;&lt;entry_struct&gt;&gt;=</i></b></div><pre><code>struct txtvm_dict_entry {
+&lt;&lt;entry&gt;&gt;
+};</pre></code>
+<p></p>
+<p>It is initialized with <code>txtvm_dict_entry_init</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void entry_init(txtvm_dict_entry *e);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void entry_init(txtvm_dict_entry *e)
+{
+&lt;&lt;entry_init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>Every entry will be identified with an integer value, which
+in this case will be a 16-bit value.
+</p>
+<div><b><i>&lt;&lt;entry&gt;&gt;=</i></b></div><pre><code>short id;</pre></code>
+<p></p>
+<p>A negative value is considered to be an uninitialized id.
+</p>
+<div><b><i>&lt;&lt;entry_init&gt;&gt;=</i></b></div><pre><code>e-&gt;id = -1;</pre></code>
+<p></p>
+<p>The main function callback for an entry takes in two
+arguments: a <code>txtvm</code> instance, and a void pointer for
+userdata.
+</p>
+<div><b><i>&lt;&lt;entry&gt;&gt;=</i></b></div><pre><code>int (*fun)(txtvm *, void *);</pre></code>
+<p></p>
+<p>When <code>NULL</code>, the function is disabled.
+</p>
+<div><b><i>&lt;&lt;entry_init&gt;&gt;=</i></b></div><pre><code>e-&gt;fun = NULL;</pre></code>
+<p></p>
+<p>User data can be optionally bound to the entry. A cleanup
+callback is also provided.
+</p>
+<div><b><i>&lt;&lt;entry&gt;&gt;=</i></b></div><pre><code>void *ud;
+void (*clean)(void *);</pre></code>
+<div><b><i>&lt;&lt;entry_init&gt;&gt;=</i></b></div><pre><code>e-&gt;clean = NULL;</pre></code>
+<p></p>
+<p>Entries exist in a doubly linked list, so the usual
+prev/next pointers are included.
+</p>
+<div><b><i>&lt;&lt;entry&gt;&gt;=</i></b></div><pre><code>txtvm_dict_entry *prev;
+txtvm_dict_entry *next;</pre></code>
+<div><b><i>&lt;&lt;entry_init&gt;&gt;=</i></b></div><pre><code>e-&gt;prev = NULL;
+e-&gt;next = NULL;</pre></code>
+<p></p>
+<p>Entries are wrapped up inside of an entry list, which is
+a core component in the dictionary. It contains a head,
+tail, and size.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct txtvm_dict_entrylist txtvm_dict_entrylist;</pre></code>
+<div><b><i>&lt;&lt;entrylist_struct&gt;&gt;=</i></b></div><pre><code>&lt;&lt;entry_struct&gt;&gt;
+struct txtvm_dict_entrylist {
+    txtvm_dict_entry *head;
+    txtvm_dict_entry *tail;
+    short size;
+};</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void entrylist_init(txtvm_dict_entrylist *el);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void entrylist_init(txtvm_dict_entrylist *el)
+{
+    el-&gt;head = NULL;
+    el-&gt;tail = NULL;
+    el-&gt;size = 0;
+}</pre></code>
+<p></p>
+<p>When an entry is appeneded to the doubly-linked list, things
+need to be considered in two directions. The <code>next</code> entry of
+the current <code>tail</code> is set to point to the new entry like a
+single linked list. In the other direction, the <code>prev</code> entry
+of the new entry is set to be the tail of the current entry.
+</p>
+<p>After linking, the tail is then updated.
+</p>
+<p>The edge case to handle is when the entry list is empty. In
+this case, the head and the tail will be set to be the
+current entry, and then things will carry on normally. This
+will set the initial head of the list to be circular, but
+this should be an okay side effect.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void entry_append(txtvm_dict_entrylist *el,
+                         txtvm_dict_entry *e);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void entry_append(txtvm_dict_entrylist *el,
+                         txtvm_dict_entry *e)
+{
+    if (el-&gt;head == NULL) {
+        el-&gt;size = 0;
+        el-&gt;head = e;
+        el-&gt;tail = e;
+    }
+
+    el-&gt;tail-&gt;next = e;
+    e-&gt;prev = el-&gt;tail;
+    el-&gt;tail = e;
+    el-&gt;size++;
+}</pre></code>
+<p></p>
+<p>The key advantage to a doubly-linked list is that items can
+be removed, or unlinked, from a list. To do this, only the
+entry in question needs to be present.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void entry_unlink(txtvm_dict_entry *ent);</pre></code>
+<p></p>
+<p>The unlinking process is a matter of fusing the entries
+<code>prev</code> and <code>next</code> values together. <code>prev->next</code> needs
+to be updated to point to <code>next</code>. <code>next->prev</code> needs to
+be updated to point to <code>prev</code>. This operation should check
+for NULL values before attempting to read anything. After
+unlinking, the entry prev/next pointers will be cleared.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void entry_unlink(txtvm_dict_entry *ent)
+{
+    txtvm_dict_entry *prev, *next;
+
+    prev = ent-&gt;prev;
+    next = ent-&gt;next;
+
+    if (prev != NULL) {
+        prev-&gt;next = next;
+    }
+
+    if (next != NULL) {
+        next-&gt;prev = prev;
+    }
+
+    ent-&gt;prev = NULL;
+    ent-&gt;next = NULL;
+}</pre></code>
+<p></p>
+<p>A dictionary implementation is an array of entry lists,
+along with a word count. It is called <code>txtvm_dict</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct txtvm_dict txtvm_dict;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;entrylist_struct&gt;&gt;
+#define TXTVM_DICT_SIZE 32
+struct txtvm_dict {
+    txtvm_dict_entrylist lists[TXTVM_DICT_SIZE];
+    short nwords;
+};</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_dict_init(txtvm_dict *dict);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_dict_init(txtvm_dict *dict)
+{
+    int i;
+
+    dict-&gt;nwords = 0;
+
+    for (i = 0; i &lt; TXTVM_DICT_SIZE; i++) {
+        entrylist_init(&dict-&gt;lists[i]);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_dict_free(txtvm_dict *dict);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_dict_free(txtvm_dict *dict)
+{
+    int i;
+
+    for (i = 0; i &lt; TXTVM_DICT_SIZE; i++) {
+        entrylist_free(&dict-&gt;lists[i]);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void entrylist_free(txtvm_dict_entrylist *el);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void entrylist_free(txtvm_dict_entrylist *el)
+{
+    int i;
+    txtvm_dict_entry *ent, *next;
+
+    ent = el-&gt;head;
+    for (i = 0; i &lt; el-&gt;size; i++) {
+        next = ent-&gt;next;
+        if (ent-&gt;clean != NULL) ent-&gt;clean(ent-&gt;ud);
+        free(ent);
+        ent = next;
+    }
+}</pre></code>
+<p></p>
+<p>A new entry is appended to the dictionary by supplying it's
+ID. It will first attempt to find a previously allocated
+entry with that ID and re-initialize it. Short of that, a
+new entry is allocated, initialized, and appended to the
+dictionary. This entry is then returned, where it can be
+further populated with a function and optional user data.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>txtvm_dict_entry* txtvm_dict_new_entry(txtvm_dict *d, short id);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>txtvm_dict_entry* txtvm_dict_new_entry(txtvm_dict *d, short id)
+{
+    txtvm_dict_entrylist *l;
+
+    l = &d-&gt;lists[id % TXTVM_DICT_SIZE];
+
+    return entrylist_new(l, id);
+}</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static txtvm_dict_entry* entrylist_new(txtvm_dict_entrylist *l, short id);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static txtvm_dict_entry* entrylist_new(txtvm_dict_entrylist *l, short id)
+{
+    txtvm_dict_entry *e;
+    e = NULL;
+    e = malloc(sizeof(txtvm_dict_entry));
+
+    entry_init(e);
+    e-&gt;id = id;
+    entry_append(l, e);
+    return e;
+}</pre></code>
+<p></p>
+<p>Looking up an entry in a dictionary by id is a matter of
+first finding which list the entry would belong to (a modulo
+operation), then traversing through that list until an entry
+is found or it reaches the end. If no entry is found, an
+error code is returned. Otherwise, the entry is stored in
+the supplied pointer.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_dict_lookup(txtvm_dict *d,
+                      short id,
+                      txtvm_dict_entry **e);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_dict_lookup(txtvm_dict *d,
+                      short id,
+                      txtvm_dict_entry **e)
+{
+    int i;
+    txtvm_dict_entrylist *l;
+    txtvm_dict_entry *ent;
+
+    l = &d-&gt;lists[id % TXTVM_DICT_SIZE];
+
+    ent = l-&gt;head;
+    for (i = 0; i &lt; l-&gt;size; i++) {
+        if (ent-&gt;id == id) {
+            *e = ent;
+            return TXTVM_OK;
+        }
+    }
+
+    return TXTVM_NOTFOUND;
+}</pre></code>
+<div><b><i>&lt;&lt;errorlist&gt;&gt;=</i></b></div><pre><code>ERRORCODE(TXTVM_NOTFOUND, "entry not found.")</pre></code>
+<p></p>
+<p>An entry is removed by looking up it's id in the dictionary
+and unlinking it. If no entry is found, an error code is
+returned.
+</p>
+</div>
+</body>
+</html>
