@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>2. The Top Level Interface</h3>
+
+<p><a id="wm_000_0018"></a>The <code>btprnt</code> interface is one that handles all the low-level
+details.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct btprnt btprnt;</pre></code>
+<p></p>
+<p>The btprnt struct contains a canvas, and a buffer.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct btprnt {
+    btprnt_buf *buf;
+    btprnt_canvas *canvas;
+};</pre></code>
+<p></p>
+<p>Canvas can be retrieved using the function
+<code>btprnt_canvas_get</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_canvas *btprnt_canvas_get(btprnt *b);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_canvas *btprnt_canvas_get(btprnt *b)
+{
+    return b-&gt;canvas;
+}</pre></code>
+<p></p>
+<p>The buffer can be retrieved using <code>btprnt_buf_get</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_buf * btprnt_buf_get(btprnt *b);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_buf * btprnt_buf_get(btprnt *b)
+{
+    return b-&gt;buf;
+}</pre></code>
+<p></p>
+<p>The function <code>btprnt_new</code> will allocate and return a new
+btprnt instance. Internally, this will allocate and
+initialize the canvas and the buffer. The dimensions of
+the buffer are needed to be known at init time.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt * btprnt_new(int w, int h);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt * btprnt_new(int w, int h)
+{
+    btprnt *b;
+
+    b = calloc(1, sizeof(btprnt));
+
+    if (b == NULL) return NULL;
+
+    b-&gt;buf = btprnt_buf_init(w, h);
+
+    if (b-&gt;buf == NULL) {
+        free(b);
+        return NULL;
+    }
+
+    b-&gt;canvas = btprnt_canvas_new(b-&gt;buf);
+
+    if (b-&gt;canvas == NULL) {
+        btprnt_buf_free(&b-&gt;buf);
+        free(b);
+        return NULL;
+    }
+    return b;
+}</pre></code>
+<p></p>
+<p>The function <code>btprnt_del</code> will delete that which has
+been previously allocated.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_del(btprnt **b);</pre></code>
+<p></p>
+<p>This pointer notation is a bit too clever for my peabrain,
+but it is very convenient. I will explain it while it is
+still fresh in my head:
+</p>
+<p><code>b</code> is a pointer to a pointer to <code>btprnt</code> (aka double star)
+</p>
+<p><code>*b</code> will return the pointer to <code>btprnt</code>. We need this
+to access things like <code>canvas</code> with <code>(*b)->canvas</code>.
+</p>
+<p>The freeing functions take pointers to pointers (double
+stars), so we need to give it the address of the pointer
+<code>&(*b)->canvas</code>, NOT the pointer itself which would be
+<code>(*b)->canvas</code>.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_del(btprnt **b)
+{
+    if (*b == NULL) return;
+    btprnt_canvas_del(&(*b)-&gt;canvas);
+    btprnt_buf_free(&(*b)-&gt;buf);
+    free(*b);
+    *b = NULL;
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_del(btprnt **b);</pre></code>
+</div>
+</body>
+</html>

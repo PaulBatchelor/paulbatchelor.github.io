@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>8. Lines</h3>
+
+<p><a id="wm_000_0194"></a></p>
+
+<h4>8.1. Horizontal Line</h4>
+
+<p><a id="wm_000_0195"></a>A horizontal line can be drawn with <code>btprnt_draw_hline</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_hline(btprnt_region *r,
+                       int x, int y,
+                       int sz, int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_hline(btprnt_region *r,
+                       int x, int y,
+                       int sz, int clr)
+{
+    int n;
+
+    for (n = 0; n &lt; sz; n++) {
+        btprnt_region_draw(r, x + n, y, clr);
+    }
+}</pre></code>
+
+<h4>8.2. Vertical Line</h4>
+
+<p><a id="wm_000_0201"></a>A horizontal line can be drawn with <code>btprnt_draw_vline</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_vline(btprnt_region *r,
+                       int x, int y,
+                       int sz, int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_vline(btprnt_region *r,
+                       int x, int y,
+                       int sz, int clr)
+{
+    int n;
+
+    for (n = 0; n &lt; sz; n++) {
+        btprnt_region_draw(r, x, y + n, clr);
+    }
+}</pre></code>
+
+<h4>8.3. DONE Regular Line</h4>
+
+<p><a id="wm_000_0207"></a>CLOSED: [2020-04-25 Sat 09:43]
+Bresenham circle algorithm.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_line(btprnt_region *reg,
+                      int x0, int y0,
+                      int x1, int y1,
+                      int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void swap(int *a, int *b)
+{
+    int tmp;
+    tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+void btprnt_draw_line(btprnt_region *reg,
+                      int x0, int y0,
+                      int x1, int y1,
+                      int clr)
+{
+    int x, y;
+    int dx, dy;
+    int derror2;
+    int error2;
+    char steep = 0;
+
+    if (abs(x0 - x1) &lt; abs(y0 - y1)) {
+        swap(&x0, &y0);
+        swap(&x1, &y1);
+        steep = 1;
+    }
+
+    if (x0 &gt; x1) {
+        swap(&x0, &x1);
+        swap(&y0, &y1);
+    }
+
+    dx = x1 - x0;
+    dy = y1 - y0;
+    derror2 = abs(dy) * 2;
+    error2 = 0;
+    y = y0;
+
+    for (x = x0; x &lt; x1; x++) {
+        if (steep) {
+            btprnt_region_draw(reg, y, x, clr);
+        } else {
+            btprnt_region_draw(reg, x, y, clr);
+        }
+        error2 += derror2;
+        if (error2 &gt; dx) {
+            y += (y1 &gt; y0 ? 1 : -1);
+            error2 -= dx * 2;
+        }
+    }
+}</pre></code>
+</div>
+</body>
+</html>
