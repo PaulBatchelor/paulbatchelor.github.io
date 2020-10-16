@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>8. Channels in Scheme and Janet</h3>
+
+<p><a id="wm_027_0088"></a></p>
+
+<h4>8.1. Worgle Constructs</h4>
+
+<p><a id="wm_027_0089"></a><div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_scheme_functions&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_scheme_entries&gt;&gt;</pre></code>
+
+<h4>8.2. Channel Scheme Functions</h4>
+
+<p><a id="wm_027_0098"></a>The two functions needed here are <code>monolith:chan-get</code>
+and <code>monolith:chan-set</code>.
+<div><b><i>&lt;&lt;chan_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:chan-get", pp_chan_get, 1, 1, {INT,___,___}},</pre></code>
+<div><b><i>&lt;&lt;chan_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_chan_get(cell x)
+{
+    PWFLT val;
+    int pos;
+    monolith_d *m;
+    unsigned int ival;
+    char name[] = "monolith:chan-get";
+
+    pos = integer_value(name, car(x));
+
+    m = monolith_data_get();
+    val = monolith_chan_get(m, pos);
+
+    /* get non-decimal part */
+    ival = floor(val);
+    /* get 4 decimal places */
+    val = floor(1e4 * (ival + (val - ival)));
+    return s9_make_real(1, -4, s9_make_integer(val));
+}</pre></code>
+<div><b><i>&lt;&lt;chan_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:chan-set", pp_chan_set, 2, 2, {INT,REA,___}},</pre></code>
+<div><b><i>&lt;&lt;chan_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_chan_set(cell x)
+{
+    PWFLT val;
+    int pos;
+    monolith_d *m;
+    char name[] = "monolith:chan-set";
+    int mantissa;
+    int exponent;
+    cell real;
+
+    pos = integer_value(name, car(x));
+    x = cdr(x);
+
+    m = monolith_data_get();
+
+    real = car(x);
+    mantissa = s9_bignum_to_int(s9_real_mantissa(real));
+    exponent = s9_real_exponent(real);
+    val = mantissa * pow(10, exponent);
+
+    monolith_chan_set(m, pos, val);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h4>8.3. Channel Janet Functions</h4>
+
+<p><a id="wm_027_0110"></a>Identical in functionality to scheme functions.
+<code>monolith/chan-get</code> and <code>monolith/chan-set</code>.
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_chan_get(int32_t argc, Janet *argv)
+{
+    PWFLT val;
+    int pos;
+    monolith_d *m;
+
+    janet_fixarity(argc, 1);
+
+    pos = janet_unwrap_integer(argv[0]);
+
+    m = monolith_data_get();
+    val = monolith_chan_get(m, pos);
+
+    return janet_wrap_number(val);
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/chan-get",
+j_chan_get,
+"get a channel\n"
+},</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_chan_set(int32_t argc, Janet *argv)
+{
+    PWFLT val;
+    int pos;
+    monolith_d *m;
+
+    janet_fixarity(argc, 2);
+
+    pos = janet_unwrap_integer(argv[0]);
+    val = janet_unwrap_number(argv[1]);
+
+    m = monolith_data_get();
+
+    monolith_chan_set(m, pos, val);
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/chan-set",
+j_chan_set,
+"setting a channel value\n"
+},</pre></code>
+</div>
+</body>
+</html>

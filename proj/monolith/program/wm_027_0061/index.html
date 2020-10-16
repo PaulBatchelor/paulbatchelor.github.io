@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>7. Framebuffer</h3>
+
+<p><a id="wm_027_0061"></a></p>
+
+<h4>7.1. Set Size</h4>
+
+<p><a id="wm_027_0062"></a>The global framebuffer dimensions can be size using the function
+<code>monolith:gfx-setsize</code>.
+</p>
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:gfx-setsize", pp_setsize, 2, 2, {INT,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_setsize(cell p)
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int w;
+    int h;
+    char *name = "monolith:gfx-setsize";
+    m = monolith_data_get();
+    w = integer_value(name, car(p));
+    p = cdr(p);
+    h = integer_value(name, car(p));
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    monolith_framebuffer_setsize(fb, w, h);
+    return UNSPECIFIC;
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/gfx-setsize",
+j_gfx_setsize,
+"(monolith/gfx-setsize w h)\n"
+"Sets size of framebuffer.\n"
+},</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_gfx_setsize(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int w, h;
+
+    janet_fixarity(argc, 2);
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+
+    w = janet_unwrap_integer(argv[0]);
+    h = janet_unwrap_integer(argv[1]);
+
+    monolith_framebuffer_setsize(fb, w, h);
+
+    return janet_wrap_nil();
+}</pre></code>
+
+<h4>7.2. Get Width/Height</h4>
+
+<p><a id="wm_027_0072"></a>The Janet functions <code>monolith/gfx-width</code>  and
+<code>monolith/gfx-height</code> returns the width and height of
+the current framebuffer.
+</p>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/gfx-width",
+j_gfx_width,
+"(monolith/gfx-width)\n"
+"Gets framebuffer width.\n"
+},
+{
+"monolith/gfx-height",
+j_gfx_height,
+"(monolith/gfx-height)\n"
+"Gets framebuffer height.\n"
+},</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_gfx_width(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int w;
+
+    janet_fixarity(argc, 0);
+
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+
+    w = monolith_gfx_width(fb);
+
+    return janet_wrap_integer(w);
+}
+
+static Janet j_gfx_height(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int h;
+
+    janet_fixarity(argc, 0);
+
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+
+    h = monolith_gfx_height(fb);
+
+    return janet_wrap_integer(h);
+}</pre></code>
+
+<h4>7.3. Zoom</h4>
+
+<p><a id="wm_027_0078"></a>This scheme function can be set using the function <code>monolith:gfx-zoom</code>.
+</p>
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:gfx-zoom", pp_zoom, 1, 1, {INT,___,___}},</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_zoom(cell p)
+{
+    int zoom;
+    monolith_framebuffer *fb;
+    monolith_d *m;
+    char name[] = "monolith:gfx-zoom";
+
+    zoom = integer_value(name, car(p));
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    if(fb != NULL) {
+        monolith_framebuffer_zoom(fb, zoom);
+    }
+    return UNSPECIFIC;
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_gfx_zoom(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_framebuffer *fb;
+    int zoom;
+
+    janet_fixarity(argc, 1);
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+
+    zoom = janet_unwrap_integer(argv[0]);
+
+    if (fb != NULL) monolith_framebuffer_zoom(fb, zoom);
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/gfx-zoom",
+j_gfx_zoom,
+"(monolith/gfx-zoom zoom)\n"
+"Sets zoom factor of framebuffer.\n"
+},</pre></code>
+</div>
+</body>
+</html>

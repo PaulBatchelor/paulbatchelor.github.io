@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>10. Scheme</h3>
+
+<p><a id="wm_000_1024"></a>Monolith controlled via a Scheme REPL. It uses a dialect of
+scheme called Scheme 9 From Extended Space, or S9fES. It has
+been modified a little bit to be easier to extend. Scheme
+code runs outside the DSP Kernel, but not inside of
+it to avoid any glitches caused the garbage collector
+</p>
+
+<h4>10.1. Scheme Loader</h4>
+
+<p><a id="wm_000_1026"></a>The loader function will load all the native functions for
+monolith. This function gets passed into the function
+<code>s9_main_with_loader</code>, which is used to instantiate the
+scheme CLI and REPL.
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>&lt;&lt;page_loaders_funcdefs&gt;&gt;
+&lt;&lt;aux_loaders_funcdefs&gt;&gt;
+static void loader()
+{
+    add_primitives("monolith", Monolith_primitives);
+&lt;&lt;page_loaders&gt;&gt;
+&lt;&lt;aux_loaders&gt;&gt;
+}</pre></code>
+
+<h4>10.2. Scheme Primitives Table</h4>
+
+<p><a id="wm_000_1039"></a>Primitives scheme functions are stored in a global table,
+declared below.
+</p>
+<div><b><i>&lt;&lt;primitive_table&gt;&gt;=</i></b></div><pre><code>static S9_PRIM Monolith_primitives[] = {
+&lt;&lt;primitive_entries&gt;&gt;
+{NULL}
+};</pre></code>
+
+<h4>10.3. Scheme Page Loader</h4>
+
+<p><a id="wm_000_1046"></a>All scheme functions for pages get loaded at runtime.
+</p>
+
+<h5>10.3.1. Grid Page</h5>
+
+<p><a id="wm_000_1048"></a><div><b><i>&lt;&lt;page_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_grid(void);</pre></code>
+<div><b><i>&lt;&lt;page_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_grid();</pre></code>
+
+<h5>10.3.2. Sliders Page</h5>
+
+<p><a id="wm_000_1055"></a><div><b><i>&lt;&lt;page_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_sliders(void);</pre></code>
+<div><b><i>&lt;&lt;page_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_sliders();</pre></code>
+
+<h5>10.3.3. Step Page</h5>
+
+<p><a id="wm_000_1060"></a><div><b><i>&lt;&lt;page_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_step(void);</pre></code>
+<div><b><i>&lt;&lt;page_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_step();</pre></code>
+
+<h5>10.3.4. Line16 Page</h5>
+
+<p><a id="wm_000_1065"></a><div><b><i>&lt;&lt;page_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_line16(void);</pre></code>
+<div><b><i>&lt;&lt;page_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_line16();</pre></code>
+
+<h5>10.3.5. Foo Loader</h5>
+
+<p><a id="wm_000_1070"></a><div><b><i>&lt;&lt;page_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_foo(void);</pre></code>
+<div><b><i>&lt;&lt;page_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_foo();</pre></code>
+
+<h5>10.3.6. Knobs Page</h5>
+
+<p><a id="wm_000_1075"></a><div><b><i>&lt;&lt;page_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_knobs(void);</pre></code>
+<div><b><i>&lt;&lt;page_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_knobs();</pre></code>
+
+<h5>10.3.7. Seq16 Page</h5>
+
+<p><a id="wm_000_1080"></a><div><b><i>&lt;&lt;page_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_seq16(void);</pre></code>
+<div><b><i>&lt;&lt;page_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_seq16();</pre></code>
+
+<h5>10.3.8. Trig Page</h5>
+
+<p><a id="wm_000_1085"></a><div><b><i>&lt;&lt;page_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_trig(void);</pre></code>
+<div><b><i>&lt;&lt;page_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_trig();</pre></code>
+
+<h4>10.4. Scheme Aux loader</h4>
+
+<p><a id="wm_000_1090"></a>Scheme functions that aren't bound to a particular page are
+loaded are considered to be auxiliary functions, and are
+called by appending them to the <code>aux_loader</code> section.
+</p>
+
+<h5>10.4.1. SQLar Loader</h5>
+
+<p><a id="wm_000_1092"></a>These are the scheme bindings for loading SQLar data.
+<div><b><i>&lt;&lt;aux_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_sqlar(void);</pre></code>
+<div><b><i>&lt;&lt;aux_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_sqlar();</pre></code>
+
+<h5>10.4.2. Janet Loader</h5>
+
+<p><a id="wm_000_1100"></a><div><b><i>&lt;&lt;aux_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>#ifdef USE_JANET
+void s9_load_janet(void);
+#endif</pre></code>
+<div><b><i>&lt;&lt;aux_loaders&gt;&gt;=</i></b></div><pre><code>#ifdef USE_JANET
+s9_load_janet();
+#endif</pre></code>
+
+<h5>10.4.3. SQLar wavread</h5>
+
+<p><a id="wm_000_1105"></a><div><b><i>&lt;&lt;aux_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_sqlar_wavread(void);</pre></code>
+<div><b><i>&lt;&lt;aux_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_sqlar_wavread();</pre></code>
+
+<h5>10.4.4. Graphics</h5>
+
+<p><a id="wm_000_1110"></a><div><b><i>&lt;&lt;aux_loaders_funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_gfx(void);</pre></code>
+<div><b><i>&lt;&lt;aux_loaders&gt;&gt;=</i></b></div><pre><code>s9_load_gfx();</pre></code>
+
+<h4>10.5. Scheme Sample Foo Function</h4>
+
+<p><a id="wm_000_1115"></a>The "foo" function is a placeholder function that displays a
+message. We use this to get the ball rolling, and to set up
+the framework.
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:foo", pp_foo, 0, 0, {CHR,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_foo(cell x)
+{
+    printf("hello foo!\n");
+    return UNSPECIFIC;
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>12. Image Loading and Storing</h3>
+
+<p><a id="wm_027_0231"></a>Monolith has the ability to load and store images inside
+of the monolith dictionary.
+</p>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_img_load(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_gfx_img *img;
+    const char *key;
+    const char *filename;
+    int rc;
+
+    janet_fixarity(argc, 2);
+    m = monolith_data_get();
+
+    key = (const char *)janet_unwrap_string(argv[0]);
+    filename = (const char *)janet_unwrap_string(argv[1]);
+
+    img = NULL;
+    rc = monolith_img_load(m,
+                           key, strlen(key),
+                           filename,
+                           &img);
+
+    if (rc == MONOLITH_OK) {
+        return janet_wrap_abstract(img);
+    }
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/img-load",
+j_img_load,
+"(monolith/img-load key filename)\n"
+"Loads a filename into key. On success, will return\n"
+"handle to image.\n"
+},</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>static Janet j_img_find(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_gfx_img *img;
+    const char *key;
+    int rc;
+
+    janet_fixarity(argc, 1);
+    m = monolith_data_get();
+
+    key = (const char *)janet_unwrap_string(argv[0]);
+
+    img = NULL;
+    rc = monolith_img_find(m,
+                           key, strlen(key),
+                           &img);
+
+    if (rc == MONOLITH_OK) {
+        return janet_wrap_abstract(img);
+    }
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/img-find",
+j_img_find,
+"(monolith/img-find key)\n"
+"Looks up image given a key.\n"
+},</pre></code>
+</div>
+</body>
+</html>

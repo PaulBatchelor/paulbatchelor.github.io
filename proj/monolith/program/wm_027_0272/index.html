@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>15. H264 Video</h3>
+
+<p><a id="wm_027_0272"></a></p>
+
+<h4>15.1. Worgle Code Blocks</h4>
+
+<p><a id="wm_027_0273"></a><div><b><i>&lt;&lt;gfx_scheme_functions&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+&lt;&lt;h264_scheme_functions&gt;&gt;
+#endif</pre></code>
+<div><b><i>&lt;&lt;gfx_scheme_entries&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+&lt;&lt;h264_scheme_entries&gt;&gt;
+#endif</pre></code>
+<div><b><i>&lt;&lt;gfx_janet&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+&lt;&lt;h264_janet_functions&gt;&gt;
+#endif</pre></code>
+<div><b><i>&lt;&lt;gfx_janet_entries&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+&lt;&lt;h264_janet_entries&gt;&gt;
+#endif</pre></code>
+
+<h4>15.2. Interface</h4>
+
+<p><a id="wm_027_0290"></a></p>
+
+<h5>15.2.1. Begin</h5>
+
+<p><a id="wm_027_0291"></a></p>
+
+<h6>15.2.1.1. begin in scheme</h6>
+
+<p><a id="wm_027_0292"></a><div><b><i>&lt;&lt;h264_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:h264-begin", pp_h264_begin, 2, 2, {STR,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;h264_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_h264_begin(cell p)
+{
+    int fps;
+    const char *filename;
+    monolith_d *m;
+    monolith_h264 *vid;
+    monolith_framebuffer *fb;
+    char *name = "monolith:gfx-setsize";
+
+    filename = string(car(p));
+    p = cdr(p);
+    fps = integer_value(name, car(p));
+
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    vid = monolith_h264_get(m);
+
+    if(fb != NULL) {
+        monolith_h264_begin(vid, fb, filename, fps);
+    }
+    return UNSPECIFIC;
+}</pre></code>
+
+<h6>15.2.1.2. begin in janet</h6>
+
+<p><a id="wm_027_0299"></a><div><b><i>&lt;&lt;h264_janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_h264_begin(int32_t argc, Janet *argv)
+{
+    int fps;
+    const char *filename;
+    monolith_d *m;
+    monolith_h264 *vid;
+    monolith_framebuffer *fb;
+
+    janet_fixarity(argc, 2);
+
+    filename = (const char *)janet_unwrap_string(argv[0]);
+    fps = janet_unwrap_integer(argv[1]);
+
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    vid = monolith_h264_get(m);
+
+    if(fb != NULL) {
+        monolith_h264_begin(vid, fb, filename, fps);
+    }
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;h264_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/h264-begin",
+j_h264_begin,
+"begin h264 video."
+},</pre></code>
+
+<h5>15.2.2. Append</h5>
+
+<p><a id="wm_027_0306"></a></p>
+
+<h6>15.2.2.1. append in scheme</h6>
+
+<p><a id="wm_027_0307"></a><div><b><i>&lt;&lt;h264_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:h264-append", pp_h264_append, 0, 0, {___,___,___}},</pre></code>
+<div><b><i>&lt;&lt;h264_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_h264_append(cell p)
+{
+    monolith_d *m;
+    monolith_h264 *vid;
+    monolith_framebuffer *fb;
+
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    vid = monolith_h264_get(m);
+
+    if(fb != NULL) {
+        monolith_h264_append(vid, fb);
+    }
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h6>15.2.2.2. append in janet</h6>
+
+<p><a id="wm_027_0312"></a><div><b><i>&lt;&lt;h264_janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_h264_append(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_h264 *vid;
+    monolith_framebuffer *fb;
+
+    janet_fixarity(argc, 0);
+
+    m = monolith_data_get();
+    fb = monolith_fb_get(m);
+    vid = monolith_h264_get(m);
+
+    monolith_h264_append(vid, fb);
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;h264_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/h264-append",
+j_h264_append,
+"h264 frame."
+},</pre></code>
+
+<h5>15.2.3. End</h5>
+
+<p><a id="wm_027_0317"></a></p>
+
+<h6>15.2.3.1. end in scheme</h6>
+
+<p><a id="wm_027_0318"></a><div><b><i>&lt;&lt;h264_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:h264-end", pp_h264_end, 0, 0, {___,___,___}},</pre></code>
+<div><b><i>&lt;&lt;h264_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_h264_end(cell p)
+{
+    monolith_d *m;
+    monolith_h264 *vid;
+
+    m = monolith_data_get();
+    vid = monolith_h264_get(m);
+
+    monolith_h264_end(vid);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h6>15.2.3.2. end in janet</h6>
+
+<p><a id="wm_027_0323"></a><div><b><i>&lt;&lt;h264_janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_h264_end(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    monolith_h264 *vid;
+
+    janet_fixarity(argc, 0);
+
+    m = monolith_data_get();
+    vid = monolith_h264_get(m);
+
+    monolith_h264_end(vid);
+
+    return janet_wrap_nil();
+}</pre></code>
+<div><b><i>&lt;&lt;h264_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/h264-end",
+j_h264_end,
+"ends h264 video."
+},</pre></code>
+</div>
+</body>
+</html>

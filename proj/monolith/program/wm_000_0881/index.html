@@ -449,6 +449,59 @@ in certain cases.
 
     return make_integer(nextfree);
 }</pre></code>
+
+<h4>9.10. Loading More Runt Words</h4>
+
+<p><a id="wm_000_1011"></a>While it's not recommended, it is technically possible to
+define more keywords at any point in time. This can be
+done with <code>monolith_runt_more_words</code>. The function itself
+takes a <code>loader</code> callback. The loader need only take in
+the monolith data struct. From there, things like runt
+and patchwerk data can be retrieved using getters.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_runt_more_words(monolith_d *m,
+                              void (*loader)(monolith_d *));</pre></code>
+<p></p>
+<p>The reason why it's not implemented is due to Runt's current
+memory-pool model that it uses to allocate memory for
+dictionary entries. If a string or some other temporarily
+allocated thing is in the memory pool while new keywords
+are being defined, they will stuck in there. So it's best
+to use this as close to run time as possible.
+</p>
+<p>Turning off interactive mode makes it so runt can define
+new words and keywords.
+</p>
+<p>Calling <code>monolith_runt_mark_set</code> causes the memory pool
+to store the current size.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_runt_more_words(monolith_d *m,
+                              void (*loader) (monolith_d *))
+{
+    runt_set_state(&m-&gt;vm, RUNT_MODE_INTERACTIVE, RUNT_OFF);
+    loader(m);
+    monolith_runt_mark_set(m);
+    runt_set_state(&m-&gt;vm, RUNT_MODE_INTERACTIVE, RUNT_ON);
+}</pre></code>
+
+<h4>9.11. Retrieving Runt Patchwerk Pointer</h4>
+
+<p><a id="wm_000_1018"></a>Patchwerk is accessed from runt via a runt pointer.
+This can be retrieved using the function
+<code>monolith_runt_patchwerk</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>runt_ptr monolith_runt_patchwerk(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>runt_ptr monolith_runt_patchwerk(monolith_d *m)
+{
+    runt_ptr p;
+    int rc;
+
+    rc = rpw_plugin_data(&m-&gt;vm, &p);
+
+    if (rc != RUNT_OK) return m-&gt;vm.nil;
+
+    return p;
+}</pre></code>
 </div>
 </body>
 </html>

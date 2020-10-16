@@ -9,118 +9,32 @@
 <body>
 <div id="main">
 
-<h3>2. Overview</h3>
+<h3>2. Motivation</h3>
 
-<p><a id="wm_032_0004"></a>The feather amount is the size in pixels of the outer edge
-fuzz. This amount cannot be greater than the radius itself,
-and will return early if this isn't true.
+<p><a id="wm_032_0004"></a>A blend operation such as this one is crucial for any kind
+of alpha channel manipulation one might come across. The
+naive approach here is to take two RGB triples and linearly
+interpolate. Doing this without being careful can lead to
+weird color inconsistencies, which often appear in the form
+of dark shadows and muddy looking colors.
 </p>
-<div><b><i>&lt;&lt;check_bounds&gt;&gt;=</i></b></div><pre><code>if (feather &gt; rad) return 0;</pre></code>
-<p></p>
-<p>Take the center point and radius, and construct a bounding
-square that is the size of the diameter <code>2r</code>.
+<p>The reason that this happens is because the colorspace
+itself is non-linear. Monolith framebuffers implicitely use
+the sRGB colorspace, which is used by default on pretty much
+every electronics device. This color space adds a
+non-linearity (warps) the gamma component (basically
+brightness) in order to better map colors on displays.
 </p>
-<div><b><i>&lt;&lt;create_bounding_box&gt;&gt;=</i></b></div><pre><code>sz = floor(rad * 2);
-xs = floor(cx - rad);
-ys = floor(cy - rad);</pre></code>
-<p></p>
-<p>The feather amount is subtracted from the main radius to
-get the full-color radius amount, known as <code>fillrad</code>.
-Any point within this region will be painted a full color
-with no feathering.
+<p>The solution to this problem is to perform color mixing
+operations in a linear space rather than the sRGB space.
+Krita provides a pretty decent overview on the issue and
+includes noticeable differences.
 </p>
-<div><b><i>&lt;&lt;calculate_fillrad&gt;&gt;=</i></b></div><pre><code>fillrad = rad - feather;</pre></code>
-<p></p>
-<p>Iterate through the bounding box.
+<p>https://docs.krita.org/en/generaland_gamma.html
 </p>
-<div><b><i>&lt;&lt;iterate_through_box&gt;&gt;=</i></b></div><pre><code>for (y = 0; y &lt; sz; y++) {
-    for (x = 0; x &lt; sz; x++) {
-        float d;
-        int xp, yp;
-        xp = xs + x;
-        yp = ys + y;
-&lt;&lt;calculate_distance&gt;&gt;
-&lt;&lt;check_and_draw&gt;&gt;
-    }
-}</pre></code>
-<p></p>
-<p>A drawing operation will
-only occur if the point is within the radius of the
-center point. Cue the euclidean distance formula to get this
-value.
-</p>
-<div><b><i>&lt;&lt;calculate_distance&gt;&gt;=</i></b></div><pre><code>d = sqrt((cx - xp)*(cx - xp) + (cy - yp)*(cy - yp));</pre></code>
-<div><b><i>&lt;&lt;check_and_draw&gt;&gt;=</i></b></div><pre><code>if (d &lt; rad) {
-    if (d &lt; fillrad) {
-&lt;&lt;fill&gt;&gt;
-    } else {
-&lt;&lt;feather&gt;&gt;
-    }
-}</pre></code>
-<p></p>
-<p>Another distance check is done inside the first one to
-determine what kind of drawing operation will happen. A
-distance less than <code>fillrad</code> will be filled with a solid
-color, otherwise feathering will be applied.
-</p>
-<p>Fill will blend in solid color based on the global <code>blend</code>
-amount.
-</p>
-<div><b><i>&lt;&lt;fill&gt;&gt;=</i></b></div><pre><code>monolith_pixel tmp;
-float a;
-int rc;
-
-rc = monolith_gfx_pixel_get(fb, xp, yp, &tmp);
-if (!rc) continue;
-a = blend;
-monolith_gfx_blend(tmp, clr, a, &tmp);
-monolith_gfx_pixel_set(fb, xp, yp, tmp);</pre></code>
-<p></p>
-<p>Feathering is a matter of calculating an intensity based on
-distance from the center, and blending that color in with
-the global <code>blend</code> amount.
-</p>
-<div><b><i>&lt;&lt;feather&gt;&gt;=</i></b></div><pre><code>monolith_pixel tmp;
-float a;
-int rc;
-rc = monolith_gfx_pixel_get(fb, xp, yp, &tmp);
-if (!rc) continue;
-&lt;&lt;calculate_intensity&gt;&gt;
-&lt;&lt;powslope&gt;&gt;
-&lt;&lt;clamp_values&gt;&gt;
-&lt;&lt;blend_in_color&gt;&gt;</pre></code>
-<p></p>
-<p>The feathering amount is a value that represents
-the total feathering distance. The total distance is
-subtracted from the <code>fillrad</code> distance to get how much
-this value is normalized to be between 0 and 1, and then
-inverted.
-</p>
-<div><b><i>&lt;&lt;calculate_intensity&gt;&gt;=</i></b></div><pre><code>a = ((d - fillrad) / feather);
-a = 1 - a;</pre></code>
-<p></p>
-<br>
-<p>Optionally, one can enable a squared slope, which produces a
-much softer outline. This only happens if the <code>powslope</code>
-flag is turned on.
-</p>
-<div><b><i>&lt;&lt;powslope&gt;&gt;=</i></b></div><pre><code>if (powslope) a *= a;</pre></code>
-<p></p>
-<p>Clamp the values at 0 and 1 to prevent any strange behavior
-that could have been introduced with <code>powslope</code> or anything
-else.
-</p>
-<div><b><i>&lt;&lt;clamp_values&gt;&gt;=</i></b></div><pre><code>if (a &lt; 0) a = 0;
-if (a &gt; 1) a = 1;</pre></code>
-<p></p>
-<p>Aqcuire the color of the current position in the
-framebuffer, and blend the new color using
-<code>monolith_gfx_blend</code>.
-</p>
-<div><b><i>&lt;&lt;blend_in_color&gt;&gt;=</i></b></div><pre><code>monolith_gfx_blend(tmp, clr, a, &tmp);
-monolith_gfx_pixel_set(fb, xp, yp, tmp);</pre></code>
-<p></p>
-<p>Update the new color.
+<p>More examples of the kind of artifacts (and 
+corrections) can be found in this article found
+<a href="https://ninedegreesbelow.com/photography/linear-gamma-blur-normal-blend.html">here</a>.
 </p>
 </div>
 </body>
