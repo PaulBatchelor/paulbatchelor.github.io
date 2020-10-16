@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>AudioVisual works in Monolith</title>
+<h1>AudioVisual works in Monolith</h1>
+<p>This (eventually) will be a best practices guide
+to making audio-visual works in Monolith.
+</p>
+<p>Word vomit at the moment. This will be wrangled into
+a tutorial-slash-literate-program. This will (eventually)
+tangle into the needed files using the command:
+</p>
+<pre><code>worgle audiovisual.org</pre></code>
+<p></p>
+<p>in the <code>docs</code> directory found in the Monolith code.
+</p>
+<p>AV stuff is limited to offline rendering only. This is
+because there no way to render video in realtime.
+</p>
+<p>Monolith will render a h264 video file (via ), and an audio file (wav). These two are then stitched
+together into an mp4 file via ffmpeg. The wav file can be
+optionally converted to an mp3 file via <code>lame</code>. This is
+done because some video players don't support wav.
+</p>
+<p>It usually ends up that sounds are created in a realtime
+configuration, then rendered with the video later. Video
+design tends to be more guess-and-wait-and-check.
+</p>
+<p>In order to set up the renderer, monolith must be
+started in <code>offline</code> mode. This can be done with
+<code>monolith:start-offline</code>.
+</p>
+<p>The internal patchwerk configuration is reallocated to be
+a block size of 49 with <code>monolith:realloc</code>. This is
+done to make blocks line up with frames better, as the
+default size of 64 does not work.
+49 divides samples up evenly when the sampling rate is
+44.1kHz (63 also works, may want to try that out).
+</p>
+<p>Graphics are pretty much always done using <a href="/proj/monolith/wiki/janet">Janet</a>, which is embedded in Monolith, and controlled
+from inside of Scheme. Janet is initialized with
+<code>(monolith:janet-init)</code>.
+</p>
+<p>It is best to have a top-level Janet file to import, then
+a top-level janet function to initialize stuff with.
+</p>
+<p>A h264 video file is opened using the <code>monolith:h264-begin</code>.
+I tend to prefer using framerate of 60 fps.
+</p>
+<p>Now a monolith patch is created and set up to render to a
+wavfile. More on this later.
+</p>
+<p>Finally, the actual rendering happens. This is done
+using the <code>monolith:repeat</code> function, which calls a
+function a certain number of times. Each time the function
+is called, a new frame is written along with a block of
+audio that encompasses the frame. Multiplying the intended
+duration in seconds by the FPS will get the number of frames
+needed to be rendered.
+</p>
+<p>After rendering, things are wrapped up with
+<code>monolith:h264-end</code>.
+</p>
+<p>That's the overall structure of the program!
+</p>
+<p>The <code>render-block</code> is a defined scheme function which is in
+charge of rendering a frame of video, and a block of sound.
+I will often put Janet in charge of rendering the frame
+block instead of Scheme, so this function simply evaluates
+a Janet function with no arguments.
+</p>
+<p>After lots of trial and error, I've found that the cleanest
+approach to for creating a frame-block is to draw and <b>then</b>
+compute the block before appending. This is the best
+approach because it guarantees that something gets drawn on
+the first frame. Some AV latency issues may occur because of
+this, but there are some hacks with delays I do to correct
+this which are tolerable.
+</p>
+<p><code>monolith/compute</code> is used to compute the block. The block
+size is determined with <code>sr / fps</code>, where <code>sr</code> is the
+sampling rate, and <code>fps</code> is the frames per second. In other
+words, this tells you how many samples of audio are needed
+to compute one frame of video.
+</p>
+<p>It's helpful to have some kind of progress. One thing to do
+is to keep track of and print the frame position at every
+second (every 60 frames, in this case).
+</p>
+<p>What to draw? How 'bout a nice blue square on a white
+background. The scaling of the rectangle can be modulated
+by some signal in the audio domain, stored in <a href="/proj/monolith/wiki/channels">channel</a> 0.
+</p>
+<p>What to squawk? How 'bout a nice filtered saw oscillator,
+whose frequency is modulated by a sinusoidal LFO? A copy of
+this LFO will be stored in monolith channel 0 to scale the
+square mentioned previously.
+</p>
+<p>Oh heck. Let's add some reverb too. Or as John Chowning
+(allegedly) calls it, "adding some ketchup".
+</p>
+<p>So! That's all the basic parts. The scheme file can be
+rendered with <code>monolith</code> from inside the <code>doc</code> directory
+with:
+</p>
+<pre><code>../monolith singing_square.scm</pre></code>
+<p></p>
+<p>Two files will be generated, <code>singing_square.h264</code> and
+<code>singing_square.wav</code>.
+</p>
+<p>Encode wav to mp3 with lame:
+</p>
+<pre><code>lame --preset insane singin_square.wav</pre></code>
+<p></p>
+<p>Then, stitch things into an mp4 file with ffmpeg:
+</p>
+<pre><code>ffmpeg -y -i singing_square.mp3 \
+-i singing_square.h264 \
+-vf format=yuv420p singing_square.mp4</pre></code>
+<p></p>
+<br>
+<p>Colorspace is manually converted to <code>yuv420</code> colorspace,
+because monolith by default saves to the <code>yuv444</code>. yuv444 is
+much better for pixel-art style videos where every pixel
+counts, but it's not always supported in video players.
+yuv420 is used to maximize portability.
+</p>
+</div>
+</body>
+</html>
