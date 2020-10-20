@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>BTPRNT</title>
+<h1>BTPRNT</h1>
+<p>How to use <code>btprnt</code> in monolith.
+</p>
+<p>Gradually adding things as I go.
+</p>
+
+<h3>drawbits</h3>
+
+<p><code>drawbits</code> allows one to copy janet buffers to a btprnt
+buffer.
+</p>
+<div><b><i>&lt;&lt;bitbuf.janet&gt;&gt;=</i></b></div><pre><code>(def bits @"")
+
+(var bp (monolith/btprnt-new 64 64))
+
+
+# a slightly offset black box
+# offset by 1 pixel
+(put bits 0 0x00)
+(put bits 1 0xe)
+(put bits 2 0xe)
+(put bits 3 0xe)
+(put bits 4 0x00)
+
+(pp bits)
+
+# move the slightly offset box
+# to be flush against the corner
+(monolith/btprnt-drawbits
+ bp bits
+ @(0 0 8 4)
+ 0 0
+ 8 4
+ 1 1)
+
+(monolith/btprnt-write-pbm bp "bits.pbm")</pre></code>
+
+<h3>stencil</h3>
+
+<p>The function <code>monolith/gfx-btprnt-stencil</code> can be used
+to copy a region of a btprnt buffer to a location on
+a monolith framebuffer using a certain color.
+</p>
+<p>It takes in 10 arguments:
+</p>
+<p>The btprnt instance.
+</p>
+<p>x,y: the top left starting point to draw the btprnt stencil.
+</p>
+<p>w,h: the width and height of the space to draw. If these
+exceed the bounds of the btprnt buffer, these will be ignored.
+</p>
+<p>offx, offy: the starting offset values to start reading from
+btprnt.
+</p>
+<p>R,G,B: the color to use.
+</p>
+<pre><code>(monolith/gfx-btprnt-stencil bp 0 32 width height 0 0 0 0 0)</pre></code>
+<p></p>
+<p>More information on the implementation can be found in <a href="/proj/monolith/program/wm_027_0241#wm_027_0241">13. btprnt + gfx framebuffer</a>.
+</p>
+
+<h3>Rectangles</h3>
+
+<p>Done with <code>monolith/btprnt-rect</code> and
+<code>monolith/btprnt-rect-filled</code>.
+</p>
+<pre><code>(monolith/btprnt-rect-filled bp @(0 0 64 64) 0 0 10 10 1)
+(monolith/btprnt-rect bp @(4 4 64 64) 0 0 10 10 0)</pre></code>
+
+<h3>Alignment</h3>
+
+</div>
+</body>
+</html>

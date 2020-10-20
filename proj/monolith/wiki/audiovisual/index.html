@@ -13,14 +13,61 @@
 <p>This (eventually) will be a best practices guide
 to making audio-visual works in Monolith.
 </p>
-<p>Word vomit at the moment. This will be wrangled into
-a tutorial-slash-literate-program. This will (eventually)
-tangle into the needed files using the command:
+
+<h3>Tangled Files</h3>
+
+<p><code>singing_square.scm</code> is main file. It's scheme code which
+controls the show and renders sound.
 </p>
-<pre><code>worgle audiovisual.org</pre></code>
+<div><b><i>&lt;&lt;singing_square.scm&gt;&gt;=</i></b></div><pre><code>(monolith:load "ugens.scm")
+
+&lt;&lt;singing-square&gt;&gt;
+&lt;&lt;render-block&gt;&gt;
+
+(define (render-singing-square fps dur)
+    &lt;&lt;enable-offline-mode&gt;&gt;
+    &lt;&lt;realloc-blocksize&gt;&gt;
+    &lt;&lt;init-janet&gt;&gt;
+    &lt;&lt;setup-video&gt;&gt;
+    &lt;&lt;setup-sound&gt;&gt;
+    &lt;&lt;render&gt;&gt;
+    &lt;&lt;finish&gt;&gt;
+)
+
+(render-singing-square 60 10)</pre></code>
 <p></p>
-<p>in the <code>docs</code> directory found in the Monolith code.
+<p><code>singing_square.janet</code> is a janet file used to draw the
+square.
 </p>
+<div><b><i>&lt;&lt;singing_square.janet&gt;&gt;=</i></b></div><pre><code>&lt;&lt;gfx-init&gt;&gt;
+&lt;&lt;draw&gt;&gt;
+&lt;&lt;render-frame-block&gt;&gt;</pre></code>
+<p></p>
+<p><code>singing_square.sh</code> is a little shell script that runs 
+<code>monolith</code>, converts wav to mp3 via <code>lame</code>, and then
+generates an mp4 file via <code>ffmpeg</code>.
+</p>
+<div><b><i>&lt;&lt;singing_square.sh&gt;&gt;=</i></b></div><pre><code>&lt;&lt;run-monolith&gt;&gt;
+&lt;&lt;mp3-conversion&gt;&gt;
+&lt;&lt;ffmpeg&gt;&gt;</pre></code>
+
+<h3>How to run</h3>
+
+<p>First, tangle up all the code using <code>worgle</code> from the
+top-level directory:
+</p>
+<pre><code>worgle doc/audiovisual.org</pre></code>
+<p></p>
+<p>Once rendered, run the generated shell script:
+</p>
+<pre><code>sh singing_square.sh</pre></code>
+<p></p>
+<p>With any luck, a file called <code>singing_square.mp4</code> will
+appear.
+</p>
+
+<h3>Main setup</h3>
+
 <p>AV stuff is limited to offline rendering only. This is
 because there no way to render video in realtime.
 </p>
@@ -33,10 +80,17 @@ done because some video players don't support wav.
 configuration, then rendered with the video later. Video
 design tends to be more guess-and-wait-and-check.
 </p>
+
+<h4>Offline Mode</h4>
+
 <p>In order to set up the renderer, monolith must be
 started in <code>offline</code> mode. This can be done with
 <code>monolith:start-offline</code>.
 </p>
+<div><b><i>&lt;&lt;enable-offline-mode&gt;&gt;=</i></b></div><pre><code>(monolith:start-offline)</pre></code>
+
+<h4>Block Reallocatoin</h4>
+
 <p>The internal patchwerk configuration is reallocated to be
 a block size of 49 with <code>monolith:realloc</code>. This is
 done to make blocks line up with frames better, as the
@@ -44,6 +98,10 @@ default size of 64 does not work.
 49 divides samples up evenly when the sampling rate is
 44.1kHz (63 also works, may want to try that out).
 </p>
+<div><b><i>&lt;&lt;realloc-blocksize&gt;&gt;=</i></b></div><pre><code>(monolith:realloc 8 10 49)</pre></code>
+
+<h4>Janet Setup</h4>
+
 <p>Graphics are pretty much always done using <a href="/proj/monolith/wiki/janet">Janet</a>, which is embedded in Monolith, and controlled
 from inside of Scheme. Janet is initialized with
 <code>(monolith:janet-init)</code>.
@@ -51,12 +109,28 @@ from inside of Scheme. Janet is initialized with
 <p>It is best to have a top-level Janet file to import, then
 a top-level janet function to initialize stuff with.
 </p>
+<div><b><i>&lt;&lt;init-janet&gt;&gt;=</i></b></div><pre><code>(monolith:janet-init)
+(monolith:janet-eval "(import singing_square)")
+(monolith:janet-eval "(singing_square/gfx-init)")</pre></code>
+
+<h4>h264 setup</h4>
+
 <p>A h264 video file is opened using the <code>monolith:h264-begin</code>.
 I tend to prefer using framerate of 60 fps.
 </p>
+<div><b><i>&lt;&lt;setup-video&gt;&gt;=</i></b></div><pre><code>(monolith:h264-begin "singing_square.h264" fps)</pre></code>
+
+<h4>Patch Setup</h4>
+
 <p>Now a monolith patch is created and set up to render to a
 wavfile. More on this later.
 </p>
+<div><b><i>&lt;&lt;setup-sound&gt;&gt;=</i></b></div><pre><code>(singing-square)
+(wavout zz "singing_square.wav")
+(out zz)</pre></code>
+
+<h4>Rendering</h4>
+
 <p>Finally, the actual rendering happens. This is done
 using the <code>monolith:repeat</code> function, which calls a
 function a certain number of times. Each time the function
@@ -65,17 +139,35 @@ audio that encompasses the frame. Multiplying the intended
 duration in seconds by the FPS will get the number of frames
 needed to be rendered.
 </p>
-<p>After rendering, things are wrapped up with
-<code>monolith:h264-end</code>.
-</p>
-<p>That's the overall structure of the program!
-</p>
+<div><b><i>&lt;&lt;render&gt;&gt;=</i></b></div><pre><code>(monolith:repeat render-block (* dur fps))</pre></code>
+<p></p>
 <p>The <code>render-block</code> is a defined scheme function which is in
 charge of rendering a frame of video, and a block of sound.
 I will often put Janet in charge of rendering the frame
 block instead of Scheme, so this function simply evaluates
 a Janet function with no arguments.
 </p>
+<div><b><i>&lt;&lt;render-block&gt;&gt;=</i></b></div><pre><code>(define (render-block)
+  (monolith:janet-eval "(singing_square/render-block)"))</pre></code>
+
+<h4>Finishing up</h4>
+
+<p>After rendering, things are wrapped up with
+<code>monolith:h264-end</code>.
+</p>
+<div><b><i>&lt;&lt;finish&gt;&gt;=</i></b></div><pre><code>(monolith:h264-end)</pre></code>
+<p></p>
+<p>That's the overall structure of the program!
+</p>
+
+<h3>Janet Stuff</h3>
+
+<p><code>gfx-init</code> is called from janet. at the very least, this
+initializes the framebuffer.
+</p>
+<div><b><i>&lt;&lt;gfx-init&gt;&gt;=</i></b></div><pre><code>(defn gfx-init []
+    (monolith/gfx-fb-init))</pre></code>
+<p></p>
 <p>After lots of trial and error, I've found that the cleanest
 approach to for creating a frame-block is to draw and <b>then</b>
 compute the block before appending. This is the best
@@ -94,38 +186,99 @@ to compute one frame of video.
 is to keep track of and print the frame position at every
 second (every 60 frames, in this case).
 </p>
-<p>What to draw? How 'bout a nice blue square on a white
-background. The scaling of the rectangle can be modulated
+<div><b><i>&lt;&lt;render-frame-block&gt;&gt;=</i></b></div><pre><code>(var framepos 0)
+(var fps 60)
+(var sr 44100)
+(defn render-block []
+    (draw)
+    (if (= (% framepos fps) 0) (print framepos))
+    (monolith/compute (math/floor (/ sr fps)))
+    (monolith/h264-append)
+    (set framepos (+ framepos 1)))</pre></code>
+
+<h3>The Singing Square</h3>
+
+
+<h4>Visuals</h4>
+
+<p>What to draw? How 'bout a nice blue square. The scaling of
+the rectangle can be modulated
 by some signal in the audio domain, stored in <a href="/proj/monolith/wiki/channels">channel</a> 0.
 </p>
-<p>What to squawk? How 'bout a nice filtered saw oscillator,
+<div><b><i>&lt;&lt;draw&gt;&gt;=</i></b></div><pre><code>(defn draw []
+  (var allports @[0x32 0x72 0x9c])
+  (var blue-romance @[0xd2 0xf9 0xde])
+  (def scale (monolith/chan-get 0))
+
+  (def size (+ 30 (* 80 scale)))
+  (def cx (/ (monolith/gfx-width) 2))
+  (def cy (/ (monolith/gfx-height) 2))
+
+  (def x (math/floor (- cx (/ size 2))))
+  (def y (math/floor (- cy (/ size 2))))
+
+  (monolith/gfx-fill
+   (blue-romance 0)
+   (blue-romance 1)
+   (blue-romance 2))
+
+  (monolith/gfx-rect-fill x y size size
+  (allports 0)
+  (allports 1)
+  (allports 2)))</pre></code>
+
+<h4>Sound</h4>
+
+<p>What to squawk? How 'bout a nice filtered square oscillator,
 whose frequency is modulated by a sinusoidal LFO? A copy of
 this LFO will be stored in monolith channel 0 to scale the
 square mentioned previously.
 </p>
+<div><b><i>&lt;&lt;singing-square&gt;&gt;=</i></b></div><pre><code>(define (singing-square)
+    (biscale (sine 0.2 1) 0 1)
+    (bdup)
+    (monset zz 0)
+    (scale zz 48 60)
+    (sine 6 0.3)
+    (add zz zz)
+    (mtof zz)
+    (blsquare zz 0.5 0.5)
+    (butlp zz 1000)
+    &lt;&lt;some-reverb&gt;&gt;
+)</pre></code>
+<p></p>
 <p>Oh heck. Let's add some reverb too. Or as John Chowning
 (allegedly) calls it, "adding some ketchup".
 </p>
+<div><b><i>&lt;&lt;some-reverb&gt;&gt;=</i></b></div><pre><code>(bdup)
+(bdup)
+(revsc zz zz 0.93 10000)
+(bdrop)
+(mul zz (ampdb -20))
+(dcblock zz)
+(add zz zz)</pre></code>
+
+<h3>Running and Rendering</h3>
+
 <p>So! That's all the basic parts. The scheme file can be
 rendered with <code>monolith</code> from inside the <code>doc</code> directory
 with:
 </p>
-<pre><code>../monolith singing_square.scm</pre></code>
+<div><b><i>&lt;&lt;run-monolith&gt;&gt;=</i></b></div><pre><code>./monolith -l p/monolith.scm singing_square.scm</pre></code>
 <p></p>
 <p>Two files will be generated, <code>singing_square.h264</code> and
 <code>singing_square.wav</code>.
 </p>
 <p>Encode wav to mp3 with lame:
 </p>
-<pre><code>lame --preset insane singin_square.wav</pre></code>
+<div><b><i>&lt;&lt;mp3-conversion&gt;&gt;=</i></b></div><pre><code>lame --preset insane singing_square.wav</pre></code>
 <p></p>
 <p>Then, stitch things into an mp4 file with ffmpeg:
 </p>
-<pre><code>ffmpeg -y -i singing_square.mp3 \
+<div><b><i>&lt;&lt;ffmpeg&gt;&gt;=</i></b></div><pre><code>ffmpeg -y -i singing_square.mp3 \
 -i singing_square.h264 \
 -vf format=yuv420p singing_square.mp4</pre></code>
 <p></p>
-<br>
 <p>Colorspace is manually converted to <code>yuv420</code> colorspace,
 because monolith by default saves to the <code>yuv444</code>. yuv444 is
 much better for pixel-art style videos where every pixel
