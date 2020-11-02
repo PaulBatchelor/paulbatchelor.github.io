@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>18. Layout</h3>
+
+<p><a id="wm_000_0302"></a>This section outlines a set of tools used to help assist
+building layouts. Layouts are created by making a region
+that is subregion of another region.
+</p>
+<p>The operations below are designed to take in a one region
+and output a region. Both regions need to be pre-allocated
+ahead of time. If something goes wrong, these operations
+will return an error code of some kind.
+</p>
+
+<h4>18.1. outline</h4>
+
+<p><a id="wm_000_0304"></a>The function <code>btprnt_layout_outline</code> draws box outside
+of the region. This can be used for debugging and
+visualization.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_layout_outline(btprnt_region *r, int c);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_layout_outline(btprnt_region *r, int c)
+{
+    btprnt_region o;
+    o = *r;
+    o.x--;
+    o.y--;
+    o.w += 2;
+    o.h += 2;
+    btprnt_draw_rect(&o, 0, 0, o.w, o.h, c);
+}</pre></code>
+
+<h4>18.2. Centerbox</h4>
+
+<p><a id="wm_000_0310"></a>The function <code>btprnt_layout_centerbox</code> configures a
+subregion of a particular width and height that is centered
+in the middle of another region. If the width or height are
+out of bounds, an error is returned.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int btprnt_layout_centerbox(btprnt_region *r,
+                            int w, int h,
+                            btprnt_region *s);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int btprnt_layout_centerbox(btprnt_region *r,
+                            int w, int h,
+                            btprnt_region *s)
+{
+    int vmargin;
+    int hmargin;
+
+    hmargin = (r-&gt;w - w) / 2;
+    vmargin = (r-&gt;h - h) / 2;
+
+
+    if (hmargin &lt; 0 || vmargin &lt; 0) {
+        s-&gt;c = r-&gt;c;
+        s-&gt;x = 0;
+        s-&gt;y = 0;
+        s-&gt;w = 0;
+        s-&gt;h = 0;
+        return BTPRNT_NOT_OK;
+    }
+
+    s-&gt;c = r-&gt;c;
+    s-&gt;x = r-&gt;x + hmargin;
+    s-&gt;y = r-&gt;y + vmargin;
+    s-&gt;w = w;
+    s-&gt;h = h;
+
+    return BTPRNT_OK;
+}</pre></code>
+
+<h4>18.3. Border</h4>
+
+<p><a id="wm_000_0316"></a>The function <code>btprnt_layout_border</code> configures a subregions
+with equal-sized margins surrounding it.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int btprnt_layout_border(btprnt_region *r,
+                         int border,
+                         btprnt_region *s);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int btprnt_layout_border(btprnt_region *r,
+                         int border,
+                         btprnt_region *s)
+{
+    if (r-&gt;w &lt; (2 * border) || r-&gt;h &lt; (2 * border)) {
+        return BTPRNT_NOT_OK;
+    }
+
+    s-&gt;c = r-&gt;c;
+    s-&gt;x = r-&gt;x + border;
+    s-&gt;y = r-&gt;y + border;
+    s-&gt;w = r-&gt;w - 2*border;
+    s-&gt;h = r-&gt;h - 2*border;
+
+    return BTPRNT_OK;
+}</pre></code>
+
+<h4>18.4. Grid</h4>
+
+<p><a id="wm_000_0322"></a>The function <code>btprnt_layout_grid</code> returns a region that
+belongs to a grid of arbitrary rows and columns.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int btprnt_layout_grid(btprnt_region *r,
+                       int nrows,
+                       int ncols,
+                       int row,
+                       int col,
+                       btprnt_region *s);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int btprnt_layout_grid(btprnt_region *r,
+                       int nrows,
+                       int ncols,
+                       int row,
+                       int col,
+                       btprnt_region *s)
+{
+    int hspace;
+    int vspace;
+    int err;
+
+    hspace = r-&gt;w / nrows;
+    vspace = r-&gt;h / ncols;
+
+    err = hspace &lt;= 0 || vspace &lt;= 0;
+    err = err || row &gt;= nrows || col &gt;= ncols;
+
+    if (err) {
+        s-&gt;c = r-&gt;c;
+        s-&gt;x = 0;
+        s-&gt;y = 0;
+        s-&gt;w = 0;
+        s-&gt;h = 0;
+        return BTPRNT_NOT_OK;
+    }
+
+    s-&gt;c = r-&gt;c;
+    s-&gt;x = r-&gt;x + hspace * row;
+    s-&gt;y = r-&gt;y + vspace * col;
+    s-&gt;w = hspace;
+    s-&gt;h = vspace;
+
+    if (row == (nrows - 1)) s-&gt;w = r-&gt;w - (hspace * row);
+    if (col == (ncols - 1)) s-&gt;h = r-&gt;h - (vspace * col);
+
+    return BTPRNT_OK;
+}</pre></code>
+<p></p>
+<p>Any subregion that is in the last row or column will contain
+any "carry-over" that occurs from things not dividing
+properly.
+</p>
+</div>
+</body>
+</html>

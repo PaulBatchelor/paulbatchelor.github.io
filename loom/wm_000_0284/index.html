@@ -10,63 +10,45 @@
 <body>
 <div id="main">
 
-<h3>16. Tiny Tile</h3>
+<h3>15. Bezier Arrow</h3>
 
-<p><a id="wm_000_0284"></a>A tiny tile is a 8x8 tile that can be specified in
-only 3 bytes. It does this breaking up the tile into
-4-bit 2x2 blocks, and then restricting those blocks
-to be only 2 patterns. The first byte stores what
-those two patterns are, and then the 2 remaining
-bytes store the indexes.
+<p><a id="wm_000_0284"></a>Like an arrow, but with a bezier curved line.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_tinytile(btprnt_region *r,
-                          int xpos,
-                          int ypos,
-                          int b0,
-                          int b1,
-                          int b2);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_tinytile(btprnt_region *r,
-                          int xpos,
-                          int ypos,
-                          int b0,
-                          int b1,
-                          int b2)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_bezier_arrow(btprnt_region *r,
+                              int start_x, int start_y,
+                              int end_x, int end_y,
+                              int ctrl_x, int ctrl_y,
+                              int arrow_start,
+                              int arrow_end,
+                              int c);</pre></code>
+<p></p>
+<p>Internally, this is done by drawing two arrowheads pointing
+away from a control point, then drawing a bezier curve
+connecting those two points.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_bezier_arrow(btprnt_region *r,
+                              int start_x, int start_y,
+                              int end_x, int end_y,
+                              int ctrl_x, int ctrl_y,
+                              int arrow_start,
+                              int arrow_end,
+                              int c)
 {
-    int x, y;
-    b0 &= 0xff;
-    b1 &= 0xff;
-    b2 &= 0xff;
+    btprnt_draw_arrow(r,
+                      start_x, start_y,
+                      ctrl_x, ctrl_y,
+                      1, 0, 0, c);
 
-    for (y = 0; y &lt; 4; y++) {
-        for (x = 0; x &lt; 4; x++) {
-            unsigned char pat;
-            int xoff, yoff;
+    btprnt_draw_arrow(r,
+                      end_x, end_y,
+                      ctrl_x, ctrl_y,
+                      1, 0, 0, c);
 
-            if (y &lt; 2) {
-                pat = (b1 &gt;&gt; (4 * y)) & (1 &lt;&lt; x);
-            } else {
-                pat = (b2 &gt;&gt; (4 * (y - 2))) & (1 &lt;&lt; x);
-            }
-
-            pat = (pat ? (b0&gt;&gt;4) : b0) & 0xf;
-
-            xoff = (x&lt;&lt;1) + xpos;
-            yoff = (y&lt;&lt;1) + ypos;
-
-            btprnt_region_draw(r,
-                               xoff, yoff,
-                               pat & 1);
-            btprnt_region_draw(r,
-                               xoff + 1, yoff,
-                               (pat & 2) &gt;&gt; 1);
-            btprnt_region_draw(r,
-                               xoff, yoff + 1,
-                               (pat & 4) &gt;&gt; 2);
-            btprnt_region_draw(r,
-                               xoff + 1, yoff + 1,
-                               (pat & 8) &gt;&gt; 3);
-        }
-    }
+    btprnt_draw_bezier(r,
+                       start_x, start_y,
+                       ctrl_x, ctrl_y,
+                       end_x, end_y,
+                       c);
 }</pre></code>
 </div>
 </body>

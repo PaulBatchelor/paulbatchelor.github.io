@@ -10,136 +10,94 @@
 <body>
 <div id="main">
 
-<h3>14. Bezier Curve</h3>
+<h3>13. Arrow</h3>
 
-<p><a id="wm_000_0266"></a>Adapted from the bresenham bezier found at
-<a href="http://members.chello.at/~easyfilter/bresenham.html">this page</a>, as
-well as this <a href="https://stackoverflow.com/questions/31757501/pixel-by-pixel-b%C3%A9zier-curve">stackoverflow post</a></p>
-<br>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_bezier(btprnt_region *reg,
-                        int x0, int y0,
-                        int x1, int y1,
-                        int x2, int y2,
-                        int c);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;draw_bezier_seg&gt;&gt;
-void btprnt_draw_bezier(btprnt_region *reg,
-                        int x0, int y0,
-                        int x1, int y1,
-                        int x2, int y2,
-                        int c)
+<p><a id="wm_000_0266"></a>This draws an arrowed line. One can specify if the start and
+end points have an arrow.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_arrow(btprnt_region *r,
+                       int start_x, int start_y,
+                       int end_x, int end_y,
+                       int arrow_start,
+                       int arrow_end,
+                       int draw_line,
+                       int c);</pre></code>
+<p></p>
+<p>Arrowheads are equalateral triangles, angled relative to the
+slope of the line.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_arrow(btprnt_region *r,
+                       int start_x, int start_y,
+                       int end_x, int end_y,
+                       int arrow_start,
+                       int arrow_end,
+                       int draw_line,
+                       int c)
 {
-    int x, y;
-    double t, r;
+    int sz;
+    float angle;
+    float off;
+    int ptx[2];
+    int pty[2];
+    int dx;
+    int dy;
+    int dir;
 
-    x = x0-x1;
-    y = y0-y1;
-    t = x0-2*x1+x2;
-
-    if ((long)x*(x2-x1) &gt; 0) {
-        if ((long)y*(y2-y1) &gt; 0)
-            if (fabs((y0-2*y1+y2)/t*x) &gt; abs(y)) {
-                x0 = x2; x2 = x+x1; y0 = y2; y2 = y+y1;
-            }
-        t = (x0-x1)/t;
-        r = (1-t)*((1-t)*y0+2.0*t*y1)+t*t*y2;
-        t = (x0*x2-x1*x1)*t/(x0-x1);
-        x = floor(t+0.5); y = floor(r+0.5);
-        r = (y1-y0)*(t-x0)/(x1-x0)+y0;
-        bezierseg(reg, x0, y0, x, floor(r+0.5), x, y, c);
-        r = (y1-y2)*(t-x2)/(x1-x2)+y2;
-        x0 = x1 = x; y0 = y; y1 = floor(r+0.5);
+    if (start_x &gt; end_x) {
+        dir = -1;
+    } else {
+        dir = 1;
     }
 
-    if ((long)(y0-y1)*(y2-y1) &gt; 0) {
-        t = y0-2*y1+y2; t = (y0-y1)/t;
-        r = (1-t)*((1-t)*x0+2.0*t*x1)+t*t*x2;
-        t = (y0*y2-y1*y1)*t/(y0-y1);
-        x = floor(r+0.5); y = floor(t+0.5);
-        r = (x1-x0)*(t-y0)/(y1-y0)+x0;
-        bezierseg(reg, x0, y0, floor(r+0.5), y, x, y, c);
-        r = (x1-x2)*(t-y2)/(y1-y2)+x2;
-        x0 = x; x1 = floor(r+0.5); y0 = y1 = y;
+    sz = 9;
+
+    dx = end_x - start_x;
+    dy = end_y - start_y;
+
+    off = asin(dx / sqrt(dx*dx + dy*dy));
+
+    if (off &lt; 0) {
+        dir *= -1;
     }
 
-    bezierseg(reg, x0, y0, x1, y1, x2, y2, c);
-}</pre></code>
-<div><b><i>&lt;&lt;draw_bezier_seg&gt;&gt;=</i></b></div><pre><code>static void bezierseg(btprnt_region *r,
-                      int x0, int y0,
-                      int x1, int y1,
-                      int x2, int y2,
-                      int c)
-{
-    int sx, sy;
-    long xx, yy, xy;
-    double dx, dy, err, cur;
-    int rc;
+    angle = 30;
+    /* convert to radians */
+    angle *= M_PI / 180.0;
 
-    sx = x2-x1;
-    sy = y2-y1;
-    xx = x0-x1;
-    yy = y0-y1;
-
-    cur = xx*sy-yy*sx;
-
-    rc = xx*sx &lt;= 0 && yy*sy &lt;= 0;
-
-    if (!rc) return;
-
-    if (sx*(long)sx+sy*(long)sy &gt; xx*xx+yy*yy) {
-        x2 = x0;
-        x0 = sx+x1;
-        y2 = y0;
-        y0 = sy+y1;
-        cur = -cur;
+    if (draw_line) {
+        btprnt_draw_line(r,
+                        start_x, start_y,
+                        end_x, end_y, c);
     }
 
-    if (cur != 0) {
-        xx += sx;
-        xx *= sx = x0 &lt; x2 ? 1 : -1;
+    if (arrow_start) {
+        ptx[0] = start_x + dir * sz * sin(angle + off);
+        pty[0] = start_y + dir * sz * cos(angle + off);
 
-        yy += sy;
-        yy *= sy = y0 &lt; y2 ? 1 : -1;
+        ptx[1] = start_x + dir * sz * sin(off - angle);
+        pty[1] = start_y + dir * sz * cos(off - angle);
 
-        xy = 2*xx*yy;
-        xx *= xx;
-        yy *= yy;
-
-        if (cur*sx*sy &lt; 0) {
-            xx = -xx;
-            yy = -yy;
-            xy = -xy;
-            cur = -cur;
-        }
-
-        dx = 4.0*sy*cur*(x1-x0)+xx-xy;
-        dy = 4.0*sx*cur*(y0-y1)+yy-xy;
-
-        xx += xx;
-        yy += yy;
-        err = dx+dy+xy;
-
-        do {
-            btprnt_region_draw(r, x0, y0, c);
-
-            if (x0 == x2 && y0 == y2) return;
-
-            y1 = 2*err &lt; dx;
-
-            if (2*err &gt; dy) {
-                x0 += sx;
-                dx -= xy;
-                err += dy += yy;
-            }
-
-            if (y1) {
-                y0 += sy;
-                dy -= xy;
-                err += dx += xx;
-            }
-        } while (dy &lt; dx );
+        btprnt_draw_triangle(r,
+                            start_x, start_y,
+                            ptx[0], pty[0],
+                            ptx[1], pty[1],
+                            c);
     }
 
-    btprnt_draw_line(r, x0, y0, x2, y2, c);
+    if (arrow_end) {
+        ptx[0] = end_x + -dir * sz * sin(angle + off);
+        pty[0] = end_y + -dir * sz * cos(angle + off);
+
+        ptx[1] = end_x + -dir * sz * sin(off - angle);
+        pty[1] = end_y + -dir * sz * cos(off - angle);
+
+        btprnt_draw_triangle(r,
+                            end_x, end_y,
+                            ptx[0], pty[0],
+                            ptx[1], pty[1],
+                            c);
+
+    }
 }</pre></code>
 </div>
 </body>

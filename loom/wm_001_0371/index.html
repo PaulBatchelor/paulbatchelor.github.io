@@ -92,17 +92,24 @@ ascii character. This helps makes code more readable.
 <div><b><i>&lt;&lt;type_macros&gt;&gt;=</i></b></div><pre><code>#define TYPE_INT6 '\''</pre></code>
 <p></p>
 <p>It takes in 1 additional byte, which it then turns into a
-6-bit integer value.
+6-bit signed integer value.
 </p>
 <p>Write an int6 with <code>txtvm_write_int6</code>.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_int6(txtvm *vm, int x);</pre></code>
+<p></p>
+<p>Because it's signed, some biasing happens to make it
+positive.
+</p>
+<p>6-bit values have a range [-31, 31], so add 32 to make
+it 0-63.
+</p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_int6(txtvm *vm, int x)
 {
     char b[2];
     int nbytes;
 
-    x &= 0x3f;
+    x = (x + 32) & 0x3f; /* bias and mask */
     b[0] = TYPE_INT6;
     b[1] = base64_encode[x];
 
@@ -118,6 +125,10 @@ ascii character. This helps makes code more readable.
 byte has already been written.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_read_int6(txtvm *vm, int *x);</pre></code>
+<p></p>
+<p>When the byte is read, the bias must be factored in to
+convert it back to a signed value.
+</p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_read_int6(txtvm *vm, int *x)
 {
     int n;
@@ -127,13 +138,13 @@ byte has already been written.
 
     if (n != 1) return TXTVM_INCOMPLETE_READ;
 
-    *x = base64_decode[b & 0x7f];
+    *x = base64_decode[b & 0x7f] - 32;
     return TXTVM_OK;
 }</pre></code>
 
 <h5>8.2.3. int12</h5>
 
-<p><a id="wm_001_0396"></a>The int12 opcode has uses character <code>#</code>.
+<p><a id="wm_001_0398"></a>The int12 opcode has uses character <code>#</code>.
 </p>
 <div><b><i>&lt;&lt;type_macros&gt;&gt;=</i></b></div><pre><code>#define TYPE_INT12 '#'</pre></code>
 <p></p>
@@ -144,11 +155,15 @@ the byte order is LSB followed by MSB.
 <p>Write an int12 with <code>txtvm_write_int12</code>.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_int12(txtvm *vm, int x);</pre></code>
+<p></p>
+<p>Because it's signed, bias with 2048 before encoding.
+</p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_write_int12(txtvm *vm, int x)
 {
     char b[3];
     int nbytes;
 
+    x += 2048; /* bias */
     b[0] = TYPE_INT12;
     b[1] = base64_encode[x & 0x3f];
     b[2] = base64_encode[(x &gt;&gt; 6) & 0x3f];
@@ -164,6 +179,9 @@ the byte order is LSB followed by MSB.
 <p>Read an int12 with <code>txtvm_read_int12</code>.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_read_int12(txtvm *vm, int *x);</pre></code>
+<p></p>
+<p>Because it is signed, remember to remove the bias!
+</p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_read_int12(txtvm *vm, int *x)
 {
     int n;
@@ -176,12 +194,13 @@ the byte order is LSB followed by MSB.
 
     *x = base64_decode[b[0] & 0x7f];
     *x |= (base64_decode[b[1] & 0x7f]) &lt;&lt; 6;
+    *x -= 2048;
     return TXTVM_OK;
 }</pre></code>
 
 <h5>8.2.4. call</h5>
 
-<p><a id="wm_001_0410"></a>The call opcode uses the character <code>!</code>.
+<p><a id="wm_001_0414"></a>The call opcode uses the character <code>!</code>.
 </p>
 <div><b><i>&lt;&lt;type_macros&gt;&gt;=</i></b></div><pre><code>#define TYPE_CALL '!'</pre></code>
 <p></p>
@@ -210,7 +229,7 @@ dictinonary
 
 <h4>8.3. lookup tables</h4>
 
-<p><a id="wm_001_0419"></a>The following table is used to convert values in range
+<p><a id="wm_001_0423"></a>The following table is used to convert values in range
 0-63 to ascii characters that map to the base64 character
 set: A..Z, a..z, 0..9, and + and /.
 </p>

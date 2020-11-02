@@ -12,7 +12,7 @@
 
 <h3>4. The Region</h3>
 
-<p><a id="wm_000_0100"></a>Regions are rectangular spaces to draw stuff into.
+<p><a id="wm_000_0102"></a>Regions are rectangular spaces to draw stuff into.
 </p>
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct btprnt_region btprnt_region;</pre></code>
 <p></p>
@@ -138,6 +138,28 @@ different components and flesh out the canvas interface.
     if (gy &lt; 0 || gy &gt;= cv-&gt;buf-&gt;h) return;
 
     btprnt_buf_write(cv-&gt;buf, gx, gy, c);
+}</pre></code>
+<p></p>
+<p>Get the pixel of the region with coordinates relative to
+the region with <code>btprnt_region_read</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int btprnt_region_read(btprnt_region *r, int x, int y);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int btprnt_region_read(btprnt_region *r, int x, int y)
+{
+    btprnt_canvas *cv;
+    int gx, gy;
+
+    cv = r-&gt;c;
+
+    if (x &lt; 0 || x &gt;= r-&gt;w) return 0;
+    if (y &lt; 0 || y &gt;= r-&gt;h) return 0;
+
+    gx = cv-&gt;offx + r-&gt;x + x;
+    if (gx &lt; 0 || gx &gt;= cv-&gt;buf-&gt;w) return 0;
+    gy = cv-&gt;offy + r-&gt;y + y;
+    if (gy &lt; 0 || gy &gt;= cv-&gt;buf-&gt;h) return 0;
+
+    return btprnt_buf_read(cv-&gt;buf, gx, gy);
 }</pre></code>
 </div>
 </body>
