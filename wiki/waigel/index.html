@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Waigel</title>
+<h1>Waigel</h1>
+
+<h3>Note from the Author</h3>
+
+<p>This document is the playground used to build the breathing
+card known as Waigel. It has been extracted from my private
+repo managing the <a href="/wiki/breathing_cards">breathing cards etudes</a>. It is licensed under
+the <a href="https://creativecommons.org/choose/zero/">Creative Commons Zero license</a>].
+</p>
+<p>To render this document, this document (written in org)
+would be Tangled using <a href="/wiki/worgle">worgle</a> to produce a
+<a href="/wiki/scheme">scheme</a> and <a href="/wiki/janet">janet</a> file. From there,
+the generated files would be processed by <a href="/wiki/monolith">monolith</a> to produce a WAV file and h264. The WAV would
+be converted to mp3 via lame, and then the mp3 and h264
+would be stitched together into an mp4 via ffmpeg.
+</p>
+<p>The whole system is automated using a mildly over-engineered
+Makefile system (not included).
+</p>
+<p>Preset data for the trig and line16 pages are stored in SQLite
+format, the dump of which can be found below:
+</p>
+<div><b><i>&lt;&lt;waigel.sqlite&gt;&gt;=</i></b></div><pre><code>PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE line16(key TEXT UNIQUE, lines BLOB, map BLOB, durmin FLOAT, durmax FLOAT, selpt INT, selln INT, rate FLOAT);
+INSERT INTO line16 VALUES('waigel:curves',X'9192cd0000dc00109601ca00000000ca3e676c8c00ca00000000ca000000009601ca3f0d9167ca3e9db22d00ca00000000ca000000009601ca3d343954ca3dac083101ca00000000ca000000009601ca3f10e55fca3d072b0401ca3ef6459eca3c9374bc9601ca3cd4fe0bca3d23d70b00ca3ee0c49bca000000009601ca3e374bd9ca3f80000001ca3f800000ca000000009601ca3f800000ca3eed916701ca00000000ca000000009600ca00000000ca0000000000ca00000000ca000000009600ca00000000ca0000000000ca00000000ca000000009600ca00000000ca0000000000ca00000000ca000000009600ca00000000ca0000000000ca00000000ca000000009600ca00000000ca0000000000ca00000000ca000000009600ca00000000ca0000000000ca00000000ca000000009600ca00000000ca0000000000ca00000000ca000000009600ca00000000ca0000000000ca00000000ca000000009600ca00000000ca0000000000ca00000000ca00000000',NULL,0.10000000149011611938,10.0,6,0,1.0);
+CREATE TABLE trig(key TEXT UNIQUE, pool BLOB, startpos INT);
+INSERT INTO trig VALUES('waigel:trigs',X'9693cc00ce00120101ce0000445193cc01ce00010002ce0000001593cc02ce00120101ce0001f55593cc03ce00000002ce0000000293cc04ce00120101ce0001500193cc05ce00000002ce00000002',0);
+COMMIT;</pre></code>
+
+<h3>Overview</h3>
+
+<p>To run, eval this block.
+</p>
+<pre><code>&lt;&lt;loader&gt;&gt;
+&lt;&lt;top&gt;&gt;</pre></code>
+<p></p>
+<p>Run <code>monolith:start</code>
+
+Then <code>init</code>.
+</p>
+<pre><code>(monolith:start)
+(init)</pre></code>
+<p></p>
+<p><code>run</code> or ctrl-space should get it going.
+</p>
+
+<h3>Updates</h3>
+
+
+<h4>[2020-09-10 Thu 09:38] hey you guys!</h4>
+
+
+<h4>[2020-09-16 Wed 10:09] etude scope</h4>
+
+<p>Here is what I'm thinking about:
+</p>
+<p>graphics: fractal brownian motion, controlled with
+sound gestures
+</p>
+<p>sound: chaosnoise, built around the initial test patch
+</p>
+<p>pages: line16, knobs (hopefully using an interface to
+make scaling/saving easier)
+</p>
+
+<h4>[2020-10-03 Sat 14:23] initial fbm import</h4>
+
+<p>based on example fbm code in monolith.
+</p>
+<p>added some initial time-based domain warpaing based on BOS
+example. It's complete. Just gotta implement <code>r</code>.
+</p>
+
+<h4>[2020-10-04 Sun 17:16] initial sound import</h4>
+
+
+<h4>[2020-10-04 Sun 17:27] more fbm warping</h4>
+
+<p>finish up book of shaders transformation
+</p>
+
+<h4>[2020-10-06 Tue 09:59] add an initial color stripe</h4>
+
+<p>My thinking is to try to add an off-center vertical color
+(deep red?) bar that filters the region of pixels to be
+1-bit atkinson dither.
+</p>
+
+<h4>[2020-10-09 Fri 10:46] layering in FM drone</h4>
+
+
+<h4>[2020-10-09 Fri 10:53] quickly decoupling reverb</h4>
+
+<p>doing it the quick way first, then the less quick betterer
+way later.
+</p>
+
+<h4>[2020-10-16 Fri 10:20] add line16 page</h4>
+
+<p>it modulates the fmdrone in the sound domain, and it 
+changes the speed of the FBM in the visual domain.
+</p>
+
+<h4>[2020-10-16 Fri 11:00] glitches modulate fbm</h4>
+
+<p>going to lower the octaves whenever it flips on
+</p>
+
+<h4>[2020-10-17 Sat 09:08] trig is added! and thumbnail</h4>
+
+<p>trig now modulates the glitches. it's a little ditty in 9/8.
+</p>
+
+<h3>Sound</h3>
+
+
+<h4>Top Synth</h4>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define REG-CURVE 0)
+(define (waigel usejanet)
+  (go-curve)
+  (clk-setup)
+  (trigs-clockit (lambda () (clk-get)))
+  (static-sound)
+  (drone)
+  (add zz zz)
+  (slap-on-reverb)
+  (monset (the-curve) (param REG-CURVE))
+  (clk-bye)
+  (trigs-reset))</pre></code>
+
+<h4>initial static sounds</h4>
+
+<p>from a runt sketch I wrote a while back demonstrating
+crackle.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define REG-GATE 1)
+(define (static-sound-maygate)
+(rvl "
+10.1 metro 0.1 0 maygate
+"
+))
+(define (static-sound-tgates)
+  (trigs-wire 1)
+  (clk-get)
+  (mul zz zz)
+  (tgate zz (trand (clk-get) 0.005 0.04))
+
+  ;; add some pauses
+  ;; 9/8 sorta vibes
+  (tdiv (clk-get) 18 0)
+  (maygate zz 0.3 0)
+  (mul zz zz)
+)
+
+(define (static-sound)
+(rvl "
+0.9 1.3 0.512 randi
+40 45 0.5 randi")
+;;(static-sound-maygate)
+(static-sound-tgates)
+(bdup)
+(monset zz REG-GATE)
+(rvl "
+9000 mul add
+chaosnoise
+60 60 3 eqfil
+"
+))</pre></code>
+
+<h4>drone</h4>
+
+<p>using <code>fmdrone</code> fragment.
+</p>
+<p>The brightness amount could potentially be something modulated
+by something sequenced in line16?
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (drone)
+    (fmdrone
+     (paramf 20)
+     (lambda () (scale (the-curve) 1.1 4)))
+    (mul zz (ampdb -15)))</pre></code>
+
+<h4>reverbing + eq</h4>
+
+<p>For now just slap a reverb + EQ on it all. This has been
+quickly extracted from the static-sound code.
+</p>
+<p>More sophisticated sends will come later.
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (slap-on-reverb)
+(rvl
+"
+bdup bdup 0.93 8000 revsc bdrop -10 ampdb mul
+add
+dcblock
+4000 2000 4 eqfil
+"
+)
+)</pre></code>
+
+<h4>the clock</h4>
+
+<p>clocks <code>trig</code>, and is used to control static bursts.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define REG-CLK 2)
+(define (clk-setup)
+  (metro (randi 10 20.1 0.5))
+  (bhold zz)
+  (cabset zz REG-CLK))
+
+(define (clk-get)
+  (cabget REG-CLK))
+
+(define (clk-bye)
+  (bunhold (clk-get)))</pre></code>
+
+<h3>Pages</h3>
+
+
+<h4>create pages</h4>
+
+<p>This is the thing that creates all pages.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>&lt;&lt;pagenames&gt;&gt;
+(define (create-pages)
+    &lt;&lt;create_pages&gt;&gt;
+)</pre></code>
+<p></p>
+</p>
+
+<h4>curves (line16)</h4>
+
+<div><b><i>&lt;&lt;pagenames&gt;&gt;=</i></b></div><pre><code>(define line16-name "curves")</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;create_pages&gt;&gt;=</i></b></div><pre><code>(monolith:line16-new line16-name)</pre></code>
+<p></p>
+<p>select the page with <code>select-curves</code>.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (select-curves) (monolith:page-select line16-name))</pre></code>
+<p></p>
+<p>The main curve can be retrived with <code>the-curve</code>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (the-curve) (line16line line16-name))</pre></code>
+<p></p>
+<p><code>go-curve</code> must be called before using it.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (go-curve) (line16 0 line16-name))</pre></code>
+
+<h4>trigs</h4>
+
+<p>via the trig page.
+<div><b><i>&lt;&lt;pagenames&gt;&gt;=</i></b></div><pre><code>(define trig-name "trigs")</pre></code>
+<p></p>
+<p>create the page here.
+</p>
+<div><b><i>&lt;&lt;create_pages&gt;&gt;=</i></b></div><pre><code>(monolith:trig-new trig-name)</pre></code>
+<p></p>
+<p>select with <code>select-trigs</code>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (select-trigs) (monolith:page-select trig-name))</pre></code>
+<p></p>
+<p>Initialize the trig clock with <code>trigs-clockit</code>.
+This will also call <code>trigex</code>.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (trigs-clockit trg)
+    (trigclk (trg) trig-name)
+    (trigex trig-name))</pre></code>
+<p></p>
+<p>Read from a wire.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (trigs-wire n)
+    (trigwget n trig-name))</pre></code>
+<p></p>
+<p>reset position
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (trigs-reset) (monolith:trig-reset trig-name))</pre></code>
+
+<h3>Graphics</h3>
+
+<p>Talk about graphics here!
+</p>
+
+<h4>Render Block</h4>
+
+<div><b><i>&lt;&lt;render-block&gt;&gt;=</i></b></div><pre><code>(var tick 0)
+(defn render-block ()
+  (monolith/chan-set 0 tick)
+  (bc/mkframe draw-frame framepos)
+  (if (= tick 1) (set tick 0) (set tick 1))
+  (set framepos (+ framepos 1))
+
+  # get speed amount stored in channel 0
+  # normalized 0-1, so scale it
+  (var speed (+ 1 (* 5 (monolith/chan-get reg-curve))))
+  (def speed2 (+ 0.4 (* 7 (- 1 (monolith/chan-get reg-curve)))))
+  (set timeline (+ timeline speed))
+  (set warp (+ warp speed2)))</pre></code>
+
+<h4>Main Shtuff</h4>
+
+<p>I need to break it up.
+<div><b><i>&lt;&lt;janet-top&gt;&gt;=</i></b></div><pre><code>(var line-ypos 23)
+(var line-xpos 48)
+(var fps 60)
+
+(var sqr-pos 23)
+(var framepos 0)
+(def reg-gate 1)
+(def reg-curve 0)
+
+# kind of like framepos, only warped by monolith
+# used to control fbm
+(var timeline 0)
+
+# warp is another thing controlled by monolith
+(var warp 0)
+
+(defn gfx-init ()
+    (bc/init))
+
+(defn hline (c y)
+  (for x 0 128
+    (monolith/gfx-pixel-set x y (c 0) (c 1) (c 2) 255)))
+
+(defn vline (c x)
+  (for y 0 64
+    (monolith/gfx-pixel-set x y (c 0) (c 1) (c 2) 255)))
+
+(defn fill (c) (for y 0 64 (hline c y)))
+
+(defn sqr (pos clr)
+  (monolith/gfx-rect-fill
+   (* (% pos 16) 8)  (* (math/floor (/ pos 16)) 8)
+   8 8
+   (clr 0)
+   (clr 1)
+   (clr 2)))
+
+&lt;&lt;fbm&gt;&gt;
+&lt;&lt;colorbar&gt;&gt;
+
+(defn draw-frame ()
+  #(fill gun-metal)
+  #(sqr sqr-pos safety-orange)
+  (fbm)
+  (colorbar))
+
+&lt;&lt;render-block&gt;&gt;
+&lt;&lt;thumb&gt;&gt;
+
+(defn test-frame ()
+  (gfx-init)
+  (draw-frame)
+  (monolith/gfx-write-png "out.png"))</pre></code>
+
+<h4>FBM</h4>
+
+<p>main fbm callback. boilerplate fbm with global time
+component.
+</p>
+<div><b><i>&lt;&lt;fbm&gt;&gt;=</i></b></div><pre><code>(defn colorlerp [c1 c2 a]
+  (array
+   (+ (* a (c2 0)) (* (- 1 a) (c1 0)))
+   (+ (* a (c2 1)) (* (- 1 a) (c1 1)))
+   (+ (* a (c2 2)) (* (- 1 a) (c1 2)))))
+
+(def white @(255 255 255))
+(def black @(0 0 0))
+
+(defn color [x y c]
+    (monolith/gfx-pixel-set
+     x y
+     (math/floor (c 0))
+     (math/floor (c 1))
+     (math/floor (c 2)) 255))
+
+(defn fbm []
+  (var height (monolith/gfx-height))
+  (var width (monolith/gfx-width))
+  (def gate (monolith/chan-get reg-gate))
+  (def noctaves (math/floor (- 5 (* gate 3))))
+  (def wrp (/ warp bc/fps))
+
+  (for ypos 0 height
+    (for xpos 0 width
+      (var x (/ xpos width))
+      (var y (/ ypos height))
+      (set x (* x (/ width height)))
+
+      (set y (* y 4))
+      (set x (* x 4))
+
+      #(var fa (monolith/fbm x y noctaves))
+
+      ## add some time based motion
+      #(set fa (math/sin (* 5 fa (/ framepos bc/fps))))
+
+      #(var fb (monolith/fbm (+ x fa) (+ y fa) noctaves))
+
+      # TODO: can this be moved out of loop?
+      (var ut (/ timeline bc/fps))
+
+      (var qx (monolith/fbm (+ x ut) (+ y ut) noctaves))
+      (var qy (monolith/fbm (+ x 2) (+ y 1) noctaves))
+
+      (var rx
+           (monolith/fbm
+            (+ x qx 1.7 (* 0.15 ut))
+            (+ y qy 9.2 (* 0.15 ut))
+            noctaves))
+      (var ry
+           (monolith/fbm
+            (+ x qx 8.3 (* 0.126 wrp))
+            (+ y qy 2.8 (* 0.3 wrp))
+            noctaves))
+
+      (var amp (monolith/fbm (+ x rx) (+ y ry) noctaves))
+
+      (if (&gt; amp 1) (set amp 1))
+      (if (&lt; amp 0) (set amp 0))
+
+      (color xpos ypos (colorlerp black white amp)))))</pre></code>
+
+<h4>Color Bar</h4>
+
+<p>Creates an off-center bar of color (deep red?). It will take
+an existing region of the buffer, filter it with atkinson
+dither, then choose a monochrome color palette.
+</p>
+<div><b><i>&lt;&lt;colorbar&gt;&gt;=</i></b></div><pre><code>(defn colorbar []
+  (monolith/gfx-dither
+   32 0 16 64
+   # Blood Red
+   102 0 0
+   # NCS red
+   192 2 51))</pre></code>
+
+<h4>Thumbnail</h4>
+
+<div><b><i>&lt;&lt;thumb&gt;&gt;=</i></b></div><pre><code>(defn thumb ()
+  (bc/init 1)
+  (draw-frame)
+  (monolith/gfx-write-png "thumb.png"))</pre></code>
+
+<h3>System</h3>
+
+
+<h4>Generated Files</h4>
+
+
+<h5>Scheme file</h5>
+
+<div><b><i>&lt;&lt;waigel.scm&gt;&gt;=</i></b></div><pre><code>&lt;&lt;top&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;waigel_render.scm&gt;&gt;=</i></b></div><pre><code>&lt;&lt;loader&gt;&gt;
+(load "waigel.scm")
+(render 80)</pre></code>
+
+<h5>Janet File</h5>
+
+<div><b><i>&lt;&lt;waigel.janet&gt;&gt;=</i></b></div><pre><code>(import ../bc :as bc)
+&lt;&lt;janet-top&gt;&gt;</pre></code>
+
+<h4>Render</h4>
+
+
+<h5>Wav Rendering</h5>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (wavrender)
+  (wavout (waigel 1) "waigel.wav")
+  (out '()))</pre></code>
+
+<h5>Offline Render</h5>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (render-block)
+  (monolith:janet-eval "(waigel/render-block)"))
+(define fps 60)
+(define (render dur)
+  (monolith:start-offline)
+  (monolith:realloc 8 10 49) ;; vid-friendly blksize of 49
+  (init)
+  (monolith:janet-init)
+  (monolith:janet-eval "(import waigel)")
+  (monolith:janet-eval "(waigel/gfx-init)")
+  (monolith:h264-begin "waigel.h264" fps)
+  (wavrender)
+  (monolith:repeat render-block (* dur fps))
+  (monolith:h264-end))</pre></code>
+
+<h4>Scheme Loader</h4>
+
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>(monolith:append-path
+ (string-append
+  (sys:getenv "HOME")
+  "/p"))
+(monolith:load "tudes/tudes.scm")</pre></code>
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>(monolith:load "ugens.scm")</pre></code>
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>(monolith:load "frags/fmdrone.scm")</pre></code>
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>(monolith:load "line16.scm")</pre></code>
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>(monolith:load "trig.scm")</pre></code>
+
+<h4>Callbacks</h4>
+
+
+<h5>Run Function</h5>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (run)
+  (display "Recompiling")
+  (newline)
+  (out (waigel 0)))</pre></code>
+
+<h5>Compile Function</h5>
+
+<p>Used to eval code inside code editing block window.
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (compile s) (eval s))</pre></code>
+
+<h5>Keybinding macros</h5>
+
+<p>Place keybindings definitions (<code>mac0</code>, <code>mac1</code>, etc) here.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (mac0) (select-curves))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (mac1) (select-trigs))</pre></code>
+
+<h4>Init</h4>
+
+<p>Initialize stuff. Do this before starting.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (init) (create-pages) (pgload))</pre></code>
+
+<h4>Load/save</h4>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define pages (list line16-name trig-name))
+(define (pgsave)
+  (monolith:state-open TUDES-STATE)
+  (monolith:save-pages "waigel" pages)
+  (monolith:state-close)
+  (monolith:state-open (tudes-mkpath "waigel/waigel.db"))
+  (monolith:save-pages "waigel" pages)
+  (monolith:state-close))
+(define (pgload)
+  ;;(monolith:state-open TUDES-STATE)
+  (monolith:state-open (tudes-mkpath "waigel/waigel.db"))
+  (monolith:load-pages "waigel" pages)
+  (monolith:state-close))</pre></code>
+</div>
+</body>
+</html>
