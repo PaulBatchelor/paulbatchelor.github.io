@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Word</h3>
+
+<p><a id="wm_029_0037"></a>The ftlget word (by the same name), is loaded into runt with
+<code>load_ftlget</code>.
+</p>
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>int load_ftlget(runt_vm *vm, runt_ptr pw)
+{
+    runt_cell *c;
+    runt_keyword_define(vm, "ftlget", 6, rproc_ftlget, &c);
+    runt_cell_data(vm, c, pw);
+    return runt_is_alive(vm);
+}</pre></code>
+<div><b><i>&lt;&lt;word&gt;&gt;=</i></b></div><pre><code>int node_ftlget(pw_node *node, sp_ftlist *ftl);
+static runt_int rproc_ftlget(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    sp_ftlist *ftl;
+    rpw_param in;
+    runt_stacklet *out;
+    pw_patch *patch;
+    pw_node *node;
+
+    rc = rpw_get_ftlist(vm, &ftl);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = rpw_get_param(vm, &in);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    patch = rpw_get_patch(p);
+
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rc = node_ftlget(node, ftl);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rpw_set_param(vm, node, &in, 0);
+    rpw_push_output(vm, node, out, 1);
+
+    return RUNT_OK;
+}</pre></code>
+</div>
+</body>
+</html>

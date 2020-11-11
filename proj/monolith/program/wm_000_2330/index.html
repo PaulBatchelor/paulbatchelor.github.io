@@ -657,7 +657,7 @@ on failure.
     p = &vid-&gt;param;
     vid-&gt;fp = fopen(filename, "w");
 
-    if(vid-&gt;fp == NULL) return 0;
+    if (vid-&gt;fp == NULL) return 0;
 
     vid-&gt;i_frame = 0;
 
@@ -676,11 +676,18 @@ on failure.
     p-&gt;rc.i_aq_mode= 1;
     p-&gt;i_log_level = X264_LOG_NONE;
 
-    if(x264_param_apply_profile(p, "high444") &lt; 0 ) {
+    p-&gt;vui.i_colmatrix = 1;
+    p-&gt;vui.i_transfer = 1;
+    p-&gt;vui.i_colorprim = 1;
+
+    /* yuv444p is 16-235, yuvj444p doesn't work with mplayer */
+    p-&gt;vui.b_fullrange = 0;
+
+    if (x264_param_apply_profile(p, "high444") &lt; 0 ) {
         return 0;
     }
 
-    if(x264_picture_alloc(&vid-&gt;pic,
+    if (x264_picture_alloc(&vid-&gt;pic,
                           p-&gt;i_csp,
                           p-&gt;i_width,
                           p-&gt;i_height) &lt; 0 ) {
@@ -688,7 +695,7 @@ on failure.
     }
 
     vid-&gt;h = x264_encoder_open(p);
-    if(!vid-&gt;h) return 0;
+    if (!vid-&gt;h) return 0;
 
     return 1;
 }</pre></code>
@@ -706,11 +713,27 @@ below.
 <p><a id="wm_000_2616"></a>The static function <code>rgb2yuv</code> will take in a single RGB
 triplet and return a YUV triplet
 </p>
+<p>(original) source: <a href="https://www.fourcc.org/fccyvrgb.php">https://www.fourcc.org/fccyvrgb.php</a></p>
 <br>
-<p>source: <a href="https://www.fourcc.org/fccyvrgb.php">https://www.fourcc.org/fccyvrgb.php</a></p>
 <br>
+<p>The new rgb2yuv conversions are from:
+</p>
+<p>http://avisynth.nl/index.php/Color_conversions
+</p>
+<p>These coefficients seem to better match the
+colorspace that bt709 wants.
+</p>
 <div><b><i>&lt;&lt;h264_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void rgb2yuv(uint8_t r, uint8_t g, uint8_t b,
                     uint8_t *y, uint8_t *u, uint8_t *v);</pre></code>
+<p></p>
+<p>full-range (yuvj444) is between 0 and 255, while yuv444 is
+between 16 and 235:
+</p>
+<p>https://www.eoshd.com/comments/topic/20799-what-is-the-difference-between-yuvj420p-and-yuv420p/
+</p>
+<p>raw h264 yuvj444 doesn't render yellows properly with
+mplayer, but yuv444 does.
+</p>
 <div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>static void rgb2yuv(uint8_t r, uint8_t g, uint8_t b,
                     uint8_t *y, uint8_t *u, uint8_t *v)
 {
@@ -721,19 +744,29 @@ triplet and return a YUV triplet
 
     norm = 1.0/255;
 
-    Ey = (0.299*r + 0.587*g + 0.114*b)*norm;
-    Ecr = 0.713 * (r*norm - Ey);
-    Ecb = 0.564 * (b*norm - Ey);
+    /* Ey = (0.299*r + 0.587*g + 0.114*b)*norm; */
+    Ey = (0.2126*r + 0.7152*g + 0.0722*b)*norm;
+    /* Ecr = 0.713 * (r*norm - Ey); */
+    /* Ecb = 0.564 * (b*norm - Ey); */
+    Ecr = (r*norm - Ey) / (1 - 0.2126);
+    Ecb = (b*norm - Ey) / (1 - 0.0722);
 
 
-    *y = Ey * 255;
-    *u = (0.5 + Ecb) * 255;
-    *v = (0.5 + Ecr) * 255;
+    /* (*y) = Ey * 255; */
+    /* (*u) = Ecb * 127.5 + 128; */
+    /* (*v) = Ecr * 127.5 + 128; */
+
+    /* scale between 16 and 235 */
+    (*y) = Ey * 219 + 16;
+
+    /* clamp between 16 and 239 */
+    (*u) = Ecb * 111.5 + 112 + 16;
+    (*v) = Ecr * 111.5 + 112 + 16;
 }</pre></code>
 
 <h7>18.4.7.2.2. mkyuv</h7>
 
-<p><a id="wm_000_2623"></a>The <code>mkyuv</code> static function will create a YUV frame from
+<p><a id="wm_000_2624"></a>The <code>mkyuv</code> static function will create a YUV frame from
 a GFX framebuffer, and store it in separate YUV buffers.
 The encoding used for the video is IC420, which means the
 Y buffer is full resolution, while the U and V components
@@ -783,7 +816,7 @@ subsamped to be at quarter resolution.
 
 <h7>18.4.7.2.3. append C function</h7>
 
-<p><a id="wm_000_2629"></a><div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_h264_append(monolith_h264 *vid,
+<p><a id="wm_000_2630"></a><div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_h264_append(monolith_h264 *vid,
                          monolith_framebuffer *fb);</pre></code>
 <div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>int monolith_h264_append(monolith_h264 *vid,
                          monolith_framebuffer *fb)
@@ -821,7 +854,7 @@ subsamped to be at quarter resolution.
 
 <h6>18.4.7.3. end</h6>
 
-<p><a id="wm_000_2634"></a>Writes remaining frames. Closes file. Cleans up x264.
+<p><a id="wm_000_2635"></a>Writes remaining frames. Closes file. Cleans up x264.
 This is also called at cleanup in case some things
 are not fully cleaned up.
 <div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_h264_end(monolith_h264 *vid);</pre></code>
@@ -854,21 +887,21 @@ are not fully cleaned up.
 
 <h4>18.5. Image Loading and Storing</h4>
 
-<p><a id="wm_000_2640"></a><div><b><i>&lt;&lt;aux_includes&gt;&gt;=</i></b></div><pre><code>#include "lodepng/lodepng.h"</pre></code>
+<p><a id="wm_000_2641"></a><div><b><i>&lt;&lt;aux_includes&gt;&gt;=</i></b></div><pre><code>#include "lodepng/lodepng.h"</pre></code>
 
 <h5>18.5.1. Image Struct</h5>
 
-<p><a id="wm_000_2643"></a>The monolith image struct stores loaded image information.
+<p><a id="wm_000_2644"></a>The monolith image struct stores loaded image information.
 It is called <code>monolith_gfx_image</code>.
 </p>
 
 <h6>18.5.1.1. Typedef</h6>
 
-<p><a id="wm_000_2645"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_gfx_img monolith_gfx_img;</pre></code>
+<p><a id="wm_000_2646"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_gfx_img monolith_gfx_img;</pre></code>
 
 <h6>18.5.1.2. Struct Contents</h6>
 
-<p><a id="wm_000_2648"></a>Included in this struct is the width, height, as well
+<p><a id="wm_000_2649"></a>Included in this struct is the width, height, as well
 as raw RGBA data.
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct monolith_gfx_img {
     unsigned int w;
@@ -901,7 +934,7 @@ as raw RGBA data.
 
 <h5>18.5.2. Loading Image Data</h5>
 
-<p><a id="wm_000_2661"></a>An image struct can be allocated and loaded in a
+<p><a id="wm_000_2662"></a>An image struct can be allocated and loaded in a
 <code>monolith_gfx_image</code> struct using the function
 <code>monlith_gfx_img_load</code>.
 </p>
@@ -936,7 +969,7 @@ This means that only valid PNG files will be used.
 
 <h5>18.5.3. Freeing Image Data</h5>
 
-<p><a id="wm_000_2667"></a>Image struct + data can be freed simultaneously with the
+<p><a id="wm_000_2668"></a>Image struct + data can be freed simultaneously with the
 function <code>monolith_gfx_image_free</code>. This should be called
 inside of something like <code>monolith_dict_entry_list_free</code>.
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_free(monolith_gfx_img **img);</pre></code>
@@ -952,7 +985,7 @@ inside of something like <code>monolith_dict_entry_list_free</code>.
 
 <h5>18.5.4. Loading an image to a dictionary</h5>
 
-<p><a id="wm_000_2673"></a>The function <code>monolith_img_load</code> will load an image and
+<p><a id="wm_000_2674"></a>The function <code>monolith_img_load</code> will load an image and
 store it inside of the monolith dictionary to a unique
 keyword.
 </p>
@@ -1002,7 +1035,7 @@ keyword.
 
 <h5>18.5.5. Finding an entry</h5>
 
-<p><a id="wm_000_2679"></a>The function <code>monolith_img_lookup</code> will attempt to look up
+<p><a id="wm_000_2680"></a>The function <code>monolith_img_lookup</code> will attempt to look up
 an image given a key.
 </p>
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_img_find(monolith_d *m,
@@ -1036,11 +1069,11 @@ an image given a key.
 
 <h4>18.6. Setting/Getting Pixels</h4>
 
-<p><a id="wm_000_2685"></a></p>
+<p><a id="wm_000_2686"></a></p>
 
 <h5>18.6.1. Get Pixel</h5>
 
-<p><a id="wm_000_2686"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_get(monolith_framebuffer *f,
+<p><a id="wm_000_2687"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_get(monolith_framebuffer *f,
                            int x, int y,
                            monolith_pixel *p);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_get(monolith_framebuffer *f,
@@ -1061,7 +1094,7 @@ an image given a key.
 
 <h5>18.6.2. Set Pixel in C</h5>
 
-<p><a id="wm_000_2691"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_set(monolith_framebuffer *f,
+<p><a id="wm_000_2692"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_set(monolith_framebuffer *f,
                           int x, int y,
                           monolith_pixel p);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_set(monolith_framebuffer *f,
