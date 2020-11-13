@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>expmap</title>
+<h1>expmap</h1>
+
+<h3>Overview</h3>
+
+<p><code>expmap</code> is an exponential signal mapper with variable
+slope. It takes in a normalized linear value, and applies
+an exponential curve to it.
+</p>
+<p>Two version of <code>expmap</code> are provided: a naive implementation
+that is easy to read and adapt, and a more optimized version
+that uses parameter caching to reduce division operations
+and calls to <code>exp</code>.
+</p>
+
+<h3>Equation</h3>
+
+<p>This is all there is to it:
+</p>
+<p><img src="/sndkit/_fig/expmap_eqn.png" alt="{1 - e^{xs} \over 1 - e^{s}}"srcset="/sndkit/_fig/expmap_eqn.png 1x,/sndkit/_fig/expmap_eqn2x.png 2x,">
+</p>
+<p>Where <img src="/sndkit/_fig/expmap_x.png" alt="x">
+ is the normalized
+linear input signal, and <img src="/sndkit/_fig/expmap_s.png" alt="s">
+ is
+the slope.
+</p>
+<p>As <img src="/sndkit/_fig/expmap_s.png">
+ gets more negative, the
+exponential curve will be more convex, with more values
+staying closer to 1. As <img src="/sndkit/_fig/expmap_s.png">
+ gets more
+positive, the exponential curve will get more concave, with
+more values staying closer to 0.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p><code>expmap.c</code> and <code>expmap.h</code> are the tangled files. If
+<code>SK_EXPMAP_PRIV</code> is defined, it exposes the structs.
+</p>
+<div><b><i>&lt;&lt;expmap.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_EXPMAP_PRIV
+#include "expmap.h"
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;expmap.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_EXPMAP_H
+#define SK_EXPMAP_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_EXPMAP_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+#endif</pre></code>
+
+<h3>Naive Function (stateless).</h3>
+
+<p>The function <code>sk_expmap_stateless</code> will compute
+this exponential function without any internal state.
+The code is quite clear and simple,
+but requires two calls <code>exp</code>, which is an expensive
+operation.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_expmap_stateless(SKFLT in, SKFLT slope);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_expmap_stateless(SKFLT in, SKFLT slope)
+{
+    return (1 - exp(in*slope)) / (1 - exp(slope));
+}</pre></code>
+
+<h3>Struct</h3>
+
+<p>Called <code>sk_expmap</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_expmap sk_expmap;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_expmap {
+    &lt;&lt;sk_expmap&gt;&gt;
+};</pre></code>
+
+<h3>Input/Ouput Caching</h3>
+
+<p>To avoid computation, some caching of the input/output
+variables are used.
+</p>
+<p><code>pin</code> is the cached input value, will be used to avoid
+computation. At init, it is set to be an (invalid) negative
+value.
+</p>
+<div><b><i>&lt;&lt;sk_expmap&gt;&gt;=</i></b></div><pre><code>SKFLT pin;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>em-&gt;pin = -1;</pre></code>
+<p></p>
+<p><code>pout</code> is the cached computed output value. It is used if no
+computation is needed. By default, it is set to be -1. It is
+assumed that this value shouldn't actually ever be returned.
+</p>
+<div><b><i>&lt;&lt;sk_expmap&gt;&gt;=</i></b></div><pre><code>SKFLT pout;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>em-&gt;pout = -1;</pre></code>
+
+<h3>Scaling Constant</h3>
+
+<p><code>scale</code> is the constant <code>1/(1 - exp(slope)</code>. A scaler used
+to shave off an expensive <code>exp</code> operation and <code>div</code>
+operation.
+</p>
+<div><b><i>&lt;&lt;sk_expmap&gt;&gt;=</i></b></div><pre><code>SKFLT scale;</pre></code>
+<p></p>
+<p>The scaling value can be computed with the static function
+<code>compute_scale</code>, given an input slope.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT compute_scale(SKFLT slope);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT compute_scale(SKFLT slope)
+{
+    return 1 / (1 - exp(slope));
+}</pre></code>
+<p></p>
+<p>After the <code>slope</code> is initialized, the scale is initialized
+to be the slope.
+</p>
+<div><b><i>&lt;&lt;init_scale&gt;&gt;=</i></b></div><pre><code>em-&gt;scale = compute_scale(em-&gt;slope);</pre></code>
+
+<h3>Initialization</h3>
+
+<p>Initialization is done with <code>sk_expmap_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_expmap_init(sk_expmap *em);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_expmap_init(sk_expmap *em)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Changing Slope</h3>
+
+<p>The slope of expmap can be changed with <code>sk_expmap_slope</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_expmap_slope(sk_expmap *em, SKFLT slope);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_expmap_slope(sk_expmap *em, SKFLT slope)
+{
+    em-&gt;slope = slope;
+}</pre></code>
+<p></p>
+<p>The slope parameter uses caching to avoid re-computation.
+</p>
+<div><b><i>&lt;&lt;sk_expmap&gt;&gt;=</i></b></div><pre><code>SKFLT slope;
+SKFLT pslope;</pre></code>
+<p></p>
+<p>The slope is set to be <code>1</code> to begin.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_expmap_slope(em, 1);
+em-&gt;pslope = 1;
+&lt;&lt;init_scale&gt;&gt;</pre></code>
+
+<h3>Compute</h3>
+
+<p>A single sample of audio is computed with <code>sk_expmap_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_expmap_tick(sk_expmap *em, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_expmap_tick(sk_expmap *em, SKFLT in)
+{
+    SKFLT out = 0;
+    &lt;&lt;update_scale_value&gt;&gt;
+    &lt;&lt;compute&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<p>Before a sample is computed, the slope parameter is checked
+for updates. If it is updated, the scale needs to be
+re-computed.
+</p>
+<div><b><i>&lt;&lt;update_scale_value&gt;&gt;=</i></b></div><pre><code>if (em-&gt;slope != em-&gt;pslope) {
+    em-&gt;pslope = em-&gt;slope;
+    em-&gt;scale = compute_scale(em-&gt;slope);
+}</pre></code>
+<p></p>
+<p>Computation is done only if the input value <code>in</code> is
+different from the cached input value <code>pin</code>. If
+it is, it updates the cached output value <code>pout</code>.
+</p>
+<br>
+<p>the output variable <code>out</code> is set to be the cached value
+<code>pout</code>.
+</p>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>if (in != em-&gt;pin) {
+    em-&gt;pin = in;
+    em-&gt;pout = (1 - exp(in * em-&gt;slope)) * em-&gt;scale;
+}
+out = em-&gt;pout;</pre></code>
+</div>
+</body>
+</html>

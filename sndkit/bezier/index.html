@@ -42,58 +42,58 @@ the normalized range 0-1.
 </p>
 <p><img src="/sndkit/_fig/bezier_eqn.png" alt="B(t) = (1 - t)^2 P_0 + 2(1 - t)tP_1 + t^2 P_2"srcset="/sndkit/_fig/bezier_eqn.png 1x,/sndkit/_fig/bezier_eqn2x.png 2x,">
 </p>
-<p>Where <img src="/sndkit/_fig/bezier_t.png"nilnil>
+<p>Where <img src="/sndkit/_fig/bezier_t.png">
  is a normalized time
 value between 0 and 1,
-and <img src="/sndkit/_fig/bezier_pn.png" alt="P_n"nil>
+and <img src="/sndkit/_fig/bezier_pn.png" alt="P_n">
  refers to a
 2-dimensional point with a (x,y) coordinate.
 </p>
 <p>The issue with the classic equation above is that the value
-is derived from <img src="/sndkit/_fig/bezier_t.png"nilnil>
+is derived from <img src="/sndkit/_fig/bezier_t.png">
 , allowing
-<img src="/sndkit/_fig/bezier_x.png" alt="x"nil>
+<img src="/sndkit/_fig/bezier_x.png" alt="x">
  to be fractional. This is
 problematic because the system implemented here is
-discrete, restricted to whole-integer values of <img src="/sndkit/_fig/bezier_x.png"nilnil>
+discrete, restricted to whole-integer values of <img src="/sndkit/_fig/bezier_x.png">
 .
 </p>
 <p>The solution to this problem is to rework the equation
 above to solve for $t$ in terms of the current sample
-position <img src="/sndkit/_fig/bezier_xn.png"nilnil>
+position <img src="/sndkit/_fig/bezier_xn.png">
 . Once $t$ is found, it can be used to
 compute the result, which is the y component of the bezier
 curve in terms of t.
 </p>
-<p>The Bezier x component <img src="/sndkit/_fig/bezier_bx.png" alt="B_x"nil>
+<p>The Bezier x component <img src="/sndkit/_fig/bezier_bx.png" alt="B_x">
  can
-be rearranged to be a quadratic equation for <img src="/sndkit/_fig/bezier_t.png" alt="t"nil>
+be rearranged to be a quadratic equation for <img src="/sndkit/_fig/bezier_t.png" alt="t">
 , given the x bezier control points
-<img src="/sndkit/_fig/bezier_x0.png" alt="x_0"nil>
+<img src="/sndkit/_fig/bezier_x0.png" alt="x_0">
 ,
-<img src="/sndkit/_fig/bezier_x1.png" alt="x_1"nil>
+<img src="/sndkit/_fig/bezier_x1.png" alt="x_1">
 , and
-<img src="/sndkit/_fig/bezier_x2.png" alt="x_2"nil>
+<img src="/sndkit/_fig/bezier_x2.png" alt="x_2">
 , as well as the current
-sample position <img src="/sndkit/_fig/bezier_xn.png" alt="x_n"nil>
+sample position <img src="/sndkit/_fig/bezier_xn.png" alt="x_n">
 .
 </p>
 <p><img src="/sndkit/_fig/bezier_derive.png" alt="\eqalign{    x_n &= (1 - t)^2 x_0 + 2(1 - t)tx_1 + t^2 x_2 \cr        &= (1 - 2t + t^2)x_0 + (2t - 2t^2)x_1 + t^2x_2 \cr        &= x_0 - 2tx_0 + t^2x_0 + 2tx_1 - 2t^2x_1 + t^2x_2 \cr        &= (x_0 - 2x_1 + x_2)t^2 + 2(-x_0 + x_1)t + x_0 \cr      0 &= (x_0 - 2x_1 + x_2)t^2 + 2(-x_0 + x_1)t + x_0 - x_n\cr}"srcset="/sndkit/_fig/bezier_derive.png 1x,/sndkit/_fig/bezier_derive2x.png 2x,">
 </p>
 <p>This yields the following
 </p>
-<p><img src="/sndkit/_fig/bezier_a.png" alt="a"nil>
+<p><img src="/sndkit/_fig/bezier_a.png" alt="a">
 ,
-<img src="/sndkit/_fig/bezier_b.png" alt="b"nil>
+<img src="/sndkit/_fig/bezier_b.png" alt="b">
 , and
-<img src="/sndkit/_fig/bezier_c.png" alt="c"nil>
+<img src="/sndkit/_fig/bezier_c.png" alt="c">
  quadratic equation
 coefficients:
 </p>
 <p><img src="/sndkit/_fig/bezier_coefs.png" alt="\eqalign{    a &= x_0 - 2x_1 + x2 \cr    b &= 2(-x_0 + x_1), \cr    c &= x_0 - x_n \cr}"srcset="/sndkit/_fig/bezier_coefs.png 1x,/sndkit/_fig/bezier_coefs2x.png 2x,">
 </p>
 <p>Using those variables and the quadratic equation, the value
-of <img src="/sndkit/_fig/bezier_t.png"nilnil>
+of <img src="/sndkit/_fig/bezier_t.png">
  can be found if it is a real
 value.
 </p>
