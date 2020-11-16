@@ -35,6 +35,45 @@ in the registers.
 <p><code>cabget</code> and <code>cabset</code> are specialized versions of <code>regget</code>
 and <code>regset</code>, used to store held patchwerk <a href="/proj/monolith/wiki/cables">cables</a>.
 </p>
+
+<h3>dynamic cable generation with mkcab</h3>
+
+<p>Keeping track of registers for cables can be tedious
+work. Luckily, there is an operation which automates
+this a little bit.
+</p>
+<p>The scheme function <code>monolith:mkcab</code> can be used
+to store and hold a signal. It will return a
+register number that can be used with <code>cabget</code>,
+and then cleared with <code>cabclr</code> when it is finished.
+</p>
+<p>The first argument is a lambda for the signal,
+and the second argument is the suggested starting
+register. The function works by going through each
+</p>
+<p>In the example below, a single oscillator using phase
+distortion synthesis is modulated with a LFO signal
+stored in register <code>lfo</code>. <code>let*</code> is ideal to use because
+it allows <code>mkcab</code> to sequentially set values.
+</p>
+<pre><code>(define (phasedist-voice)
+  (gen_sine (ftnew 8192))
+  (regset zz 0)
+  (let* ((note 58)
+         (ft (lambda () (regget 0)))
+         (lfo (monolith:mkcab
+               (lambda ()
+                 (biscale (oscf (/ 1 28) 0 ft) 0 1)) 0)))
+    (phasor (mtof
+             (add
+               (mul
+                 (oscf (scale (cabget lfo) 4 6) 0 ft)
+                 (scale (cabget lfo) 0 0.3)) note)) 0)
+    (pdhalf zz (scale (cabget lfo) 0 0.8))
+    (oscfext zz ft)
+    (mul zz 0.3)
+    (cabclr lfo))
+    (out zz))</pre></code>
 </div>
 </body>
 </html>
