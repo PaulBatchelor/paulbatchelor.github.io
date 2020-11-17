@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>phsclk</title>
+<h1>phsclk</h1>
+
+<h3>Overview</h3>
+
+<p><code>phsclk</code> is a utility that converts an incoming phasor
+signal into a clock signal that will tick N times in one
+cycle.
+</p>
+<p>Using a phasor signal to generate a clock signal has the
+advantage of arbitrarily subdiving a beat. If the phasor is
+the master clock, parallel sequences can be subidvided in
+different ways while also remaining relatively in sync.
+There is no chance of accumulative drift.
+</p>
+<p>This algorithm is minimally stateful, only requiring memory
+of the previous sample to work.
+</p>
+<p>A tick is registered when the phasor crosses a certain
+threshold. Both the previous and current phasor signals are
+scaled by the subdivision amount, then floored. If they are
+different, a tick is registered.
+</p>
+
+<h3>Generated Files</h3>
+
+<p><code>phsclk.c</code> and <code>phsclk.h</code> are the generated files.
+</p>
+<div><b><i>&lt;&lt;phsclk.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_PHSCLK_PRIV
+#include "phsclk.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;phsclk.h&gt;&gt;=</i></b></div><pre><code>#ifndef PHSCLK_H
+#define PHSCLK_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_PHSCLK_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+#endif</pre></code>
+
+<h3>Structs</h3>
+
+<p>The state data is encapsulated in a struct called
+<code>sk_phsclk</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_phsclk sk_phsclk;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_phsclk {
+    &lt;&lt;sk_phsclk&gt;&gt;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_phsclk&gt;&gt;=</i></b></div><pre><code>SKFLT prev;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>pc-&gt;prev = -1;</pre></code>
+
+<h3>Init</h3>
+
+<p>phsclk is initialized with <code>sk_phsclk_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_phsclk_init(sk_phsclk *pc);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_phsclk_init(sk_phsclk *pc)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Setting Number of Ticks</h3>
+
+<p>The number of ticks is set with the function
+<code>sk_phsclk_nticks</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_phsclk_nticks(sk_phsclk *pc, SKFLT nticks);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_phsclk_nticks(sk_phsclk *pc, SKFLT nticks)
+{
+    pc-&gt;nticks = nticks;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_phsclk&gt;&gt;=</i></b></div><pre><code>SKFLT nticks;</pre></code>
+<p></p>
+<p>4 is a sensible starting value. Western music loves
+multiples of 4 and 8.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_phsclk_nticks(pc, 4);</pre></code>
+
+<h3>Computation</h3>
+
+<p>The function <code>sk_phsclk_tick</code> computes a single sample of
+audio from an input signal <code>in</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_phsclk_tick(sk_phsclk *pc, SKFLT in);</pre></code>
+<p></p>
+<p>The algorithm for phsclk is quite simple: scale and floor
+the previous and current input phasor signals, and if
+there is a difference, make a tick.
+</p>
+<p><code>floor</code> will almost always truncate the decimal, and will
+almost always ensure that the value is between 0 and
+<code>nticks - 1</code>. The exception to this is when <code>in</code> is exactly
+1. This can somes cause extra ticks to happen, so a
+conditional is added to avoid this.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_phsclk_tick(sk_phsclk *pc, SKFLT in)
+{
+    SKFLT out;
+    out = 0;
+
+    if (in &lt; 1) {
+        int i, pi;
+        SKFLT s, ps;
+        s = in * pc-&gt;nticks;
+        ps = pc-&gt;prev * pc-&gt;nticks;
+
+        i = floor(s);
+        pi = floor(ps);
+
+        if (i != pi) out = 1;
+    }
+
+    pc-&gt;prev = in;
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>
