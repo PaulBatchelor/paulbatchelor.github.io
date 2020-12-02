@@ -10,7 +10,7 @@
 <body>
 <div id="main">
 
-<h3>10. WIP Circle</h3>
+<h3>10. Circle</h3>
 
 <p><a id="wm_000_0231"></a></p>
 
@@ -47,6 +47,7 @@ radius is 16. We're keeping it at that for now.
     btprnt_region_draw(r, cx + y, cy - x, clr);
     btprnt_region_draw(r, cx - y, cy - x, clr);
 }
+
 void btprnt_draw_circ(btprnt_region *r,
                       int cx, int cy,
                       int rad,
@@ -78,7 +79,68 @@ void btprnt_draw_circ(btprnt_region *r,
 
 <h4>10.2. Filled Circle</h4>
 
-<p><a id="wm_000_0238"></a></p>
+<p><a id="wm_000_0238"></a><code>btprnt_draw_circ_filled</code> uses an adaptation of the midpoint
+circle algorithm to draw a filled circle. It has been
+adapated from <code>btprnt_draw_circ</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_circ_filled(btprnt_region *r,
+                      int cx, int cy,
+                      int rad,
+                      int clr);</pre></code>
+<p></p>
+<br>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void circ_line(btprnt_region *r,
+                       int cx, int cy,
+                       int x, int y,
+                       int clr)
+{
+    btprnt_draw_line(r,
+                     cx - x, cy + y,
+                     cx + x, cy + y,
+                     clr);
+    btprnt_draw_line(r,
+                     cx - y, cy + x,
+                     cx + y, cy + x,
+                     clr);
+    btprnt_draw_line(r,
+                     cx + x, cy - y,
+                     cx - x, cy - y,
+                     clr);
+    btprnt_draw_line(r,
+                     cx + y, cy - x,
+                     cx - y, cy - x,
+                     clr);
+
+}
+
+void btprnt_draw_circ_filled(btprnt_region *r,
+                      int cx, int cy,
+                      int rad,
+                      int clr)
+{
+    int x;
+    int y;
+    int err;
+
+    x = 0;
+    y = rad;
+    err = 1 - rad;
+
+    circ_line(r, cx, cy, x, y, clr);
+
+    while (x &lt; y) {
+        x++;
+
+        if (err &lt; 0) {
+            err += 2 * x + 1;
+        } else {
+            y--;
+            err += 2 * (x - y) + 1;
+        }
+
+        circ_line(r, cx, cy, x, y, clr);
+    }
+}</pre></code>
 </div>
 </body>
 </html>
