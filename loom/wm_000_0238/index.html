@@ -12,11 +12,11 @@
 
 <h3>10. Circle</h3>
 
-<p><a id="wm_000_0231"></a></p>
+<p><a id="wm_000_0238"></a></p>
 
 <h4>10.1. Stroked Circle</h4>
 
-<p><a id="wm_000_0232"></a>Midpoint circle algorithm.
+<p><a id="wm_000_0239"></a>Midpoint circle algorithm.
 </p>
 <p>I don't know where I found the code for the first algorithm,
 but it was too pointy at the compass coordinates. This one
@@ -79,7 +79,7 @@ void btprnt_draw_circ(btprnt_region *r,
 
 <h4>10.2. Filled Circle</h4>
 
-<p><a id="wm_000_0238"></a><code>btprnt_draw_circ_filled</code> uses an adaptation of the midpoint
+<p><a id="wm_000_0245"></a><code>btprnt_draw_circ_filled</code> uses an adaptation of the midpoint
 circle algorithm to draw a filled circle. It has been
 adapated from <code>btprnt_draw_circ</code>.
 </p>
@@ -139,6 +139,62 @@ void btprnt_draw_circ_filled(btprnt_region *r,
         }
 
         circ_line(r, cx, cy, x, y, clr);
+    }
+}</pre></code>
+
+<h4>10.3. Thick Circle</h4>
+
+<p><a id="wm_000_0252"></a><code>btprnt_draw_thickcirc</code> will draw a circle
+with a thick outline with a radius <code>rad</code>, thickness
+<code>thick</code>, and color <code>c</code>.
+This works like the normal midpoint circle algorithm,
+except that it draws filled circles instead of pixels.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_thickcirc(btprnt_region *r,
+                           int cx, int cy,
+                           int rad, int thick,
+                           int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void circ_dots(btprnt_region *r,
+                       int cx, int cy,
+                       int x, int y,
+                       int clr, int thick)
+{
+    btprnt_draw_circ_filled(r, cx - x, cy + y, thick, clr);
+    btprnt_draw_circ_filled(r, cx + x, cy + y, thick, clr);
+    btprnt_draw_circ_filled(r, cx - y, cy + x, thick, clr);
+    btprnt_draw_circ_filled(r, cx + y, cy + x, thick, clr);
+    btprnt_draw_circ_filled(r, cx + x, cy - y, thick, clr);
+    btprnt_draw_circ_filled(r, cx - x, cy - y, thick, clr);
+    btprnt_draw_circ_filled(r, cx + y, cy - x, thick, clr);
+    btprnt_draw_circ_filled(r, cx - y, cy - x, thick, clr);
+}
+
+void btprnt_draw_thickcirc(btprnt_region *r,
+                           int cx, int cy,
+                           int rad, int thick,
+                           int clr)
+{
+    int x;
+    int y;
+    int err;
+
+    x = 0;
+    y = rad;
+    err = 1 - rad;
+
+    circ_dots(r, cx, cy, x, y, clr, thick);
+
+    while (x &lt; y) {
+        x++;
+
+        if (err &lt; 0) {
+            err += 2 * x + 1;
+        } else {
+            y--;
+            err += 2 * (x - y) + 1;
+        }
+
+        circ_dots(r, cx, cy, x, y, clr, thick);
     }
 }</pre></code>
 </div>

@@ -48,10 +48,10 @@
     }
 }</pre></code>
 
-<h4>8.3. DONE Regular Line</h4>
+<h4>8.3. Regular Line</h4>
 
-<p><a id="wm_000_0214"></a>CLOSED: [2020-04-25 Sat 09:43]
-Bresenham circle algorithm.
+<p><a id="wm_000_0214"></a>Bresenham line algorithm.
+</p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_line(btprnt_region *reg,
                       int x0, int y0,
                       int x1, int y1,
@@ -105,6 +105,62 @@ void btprnt_draw_line(btprnt_region *reg,
         }
     }
 }</pre></code>
+
+<h4>8.4. Thick Line</h4>
+
+<p><a id="wm_000_0220"></a><code>btprnt_draw_thickline</code> draws a thick line. This is a
+modification of the Bresenham algorithm. Instead of pixels,
+little circles are drawn.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_thickline(btprnt_region *reg,
+                           int x0, int y0,
+                           int x1, int y1,
+                           int thick,
+                           int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_thickline(btprnt_region *reg,
+                           int x0, int y0,
+                           int x1, int y1,
+                           int thick,
+                           int clr)
+{
+    int x, y;
+    int dx, dy;
+    int derror2;
+    int error2;
+    char steep = 0;
+
+    if (abs(x0 - x1) &lt; abs(y0 - y1)) {
+        swap(&x0, &y0);
+        swap(&x1, &y1);
+        steep = 1;
+    }
+
+    if (x0 &gt; x1) {
+        swap(&x0, &x1);
+        swap(&y0, &y1);
+    }
+
+    dx = x1 - x0;
+    dy = y1 - y0;
+    derror2 = abs(dy) * 2;
+    error2 = 0;
+    y = y0;
+
+    for (x = x0; x &lt; x1; x++) {
+        if (steep) {
+            btprnt_draw_circ_filled(reg, y, x, thick, clr);
+        } else {
+            btprnt_draw_circ_filled(reg, x, y, thick, clr);
+        }
+        error2 += derror2;
+        if (error2 &gt; dx) {
+            y += (y1 &gt; y0 ? 1 : -1);
+            error2 -= dx * 2;
+        }
+    }
+}</pre></code>
+<p></p>
+<br>
 </div>
 </body>
 </html>

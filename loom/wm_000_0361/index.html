@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>21. Slope Line</h3>
+
+<p><a id="wm_000_0361"></a>Draws N pixel steps with a specified slope, and returns
+the last coordinate (if the values are not NULL).
+</p>
+<p>This is created with the intention of facilitating
+generative pixel art.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_slopeline(btprnt_region *r,
+                           int xstart,
+                           int ystart,
+                           int xslp,
+                           int yslp,
+                           int nsteps,
+                           int clr,
+                           int *xlast,
+                           int *ylast);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_slopeline(btprnt_region *r,
+                           int xstart,
+                           int ystart,
+                           int xslp,
+                           int yslp,
+                           int nsteps,
+                           int clr,
+                           int *xlast,
+                           int *ylast)
+{
+    int c;
+    int xp, yp;
+    int ydir, xdir;
+
+    c = nsteps;
+
+    xp = xstart;
+    yp = ystart;
+
+    xdir = (xslp &lt; 0) ? -1 : 1;
+    ydir = (yslp &lt; 0) ? -1 : 1;
+
+    xslp = abs(xslp);
+    yslp = abs(yslp);
+
+    while (c &gt; 0) {
+        int x, y;
+        for (x = 0; x &lt; xslp; x++) {
+            btprnt_region_draw(r, xp, yp, clr);
+            c--;
+            if (c &lt;= 0) break;
+            xp += xdir;
+        }
+
+        if (c &lt;= 0) break;
+
+        for (y = 0; y &lt; yslp; y++) {
+            if (y &gt; 0) {
+                btprnt_region_draw(r, xp - xdir, yp, clr);
+                c--;
+                if (c &lt;= 0) break;
+            }
+            yp += ydir;
+        }
+
+    }
+
+    if (xlast != NULL) *xlast = xp;
+    if (ylast != NULL) *ylast = yp;
+}</pre></code>
+</div>
+</body>
+</html>

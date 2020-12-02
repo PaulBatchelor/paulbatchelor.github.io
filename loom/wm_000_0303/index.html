@@ -10,15 +10,46 @@
 <body>
 <div id="main">
 
-<h3>17. Error Codes</h3>
+<h3>15. Bezier Arrow</h3>
 
-<p><a id="wm_000_0303"></a>Right now, <code>BTPRNT_OK</code> and <code>BTPRNT_NOT_OK</code> are all that
-is needed.
+<p><a id="wm_000_0303"></a>Like an arrow, but with a bezier curved line.
 </p>
-<div><b><i>&lt;&lt;errorcodes&gt;&gt;=</i></b></div><pre><code>enum {
-    BTPRNT_OK,
-    BTPRNT_NOT_OK
-};</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_bezier_arrow(btprnt_region *r,
+                              int start_x, int start_y,
+                              int end_x, int end_y,
+                              int ctrl_x, int ctrl_y,
+                              int arrow_start,
+                              int arrow_end,
+                              int c);</pre></code>
+<p></p>
+<p>Internally, this is done by drawing two arrowheads pointing
+away from a control point, then drawing a bezier curve
+connecting those two points.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_bezier_arrow(btprnt_region *r,
+                              int start_x, int start_y,
+                              int end_x, int end_y,
+                              int ctrl_x, int ctrl_y,
+                              int arrow_start,
+                              int arrow_end,
+                              int c)
+{
+    btprnt_draw_arrow(r,
+                      start_x, start_y,
+                      ctrl_x, ctrl_y,
+                      1, 0, 0, c);
+
+    btprnt_draw_arrow(r,
+                      end_x, end_y,
+                      ctrl_x, ctrl_y,
+                      1, 0, 0, c);
+
+    btprnt_draw_bezier(r,
+                       start_x, start_y,
+                       ctrl_x, ctrl_y,
+                       end_x, end_y,
+                       c);
+}</pre></code>
 </div>
 </body>
 </html>
