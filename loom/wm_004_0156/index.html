@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>8. Buffer Management</h3>
+
+<p><a id="wm_004_0156"></a>All content must be written to in-memory location.
+This is handled in a very simple way via a buffer type
+called <code>wws_buffer</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wws_buffer wws_buffer;</pre></code>
+<p></p>
+<p>A <code>wws_buffer</code> struct contains the buffer itself (an
+unsigned char array), the current position of the buffer
+(which is therefore the current size), and the
+total size.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wws_buffer {
+    int pos;
+    int size;
+    unsigned char *buf;
+};</pre></code>
+<p></p>
+<p>The <code>wws_buffer</code> is allocated with the function
+<code>wws_buffer_alloc</code>. Choose a largish size because this
+is the maximum HTML size for a page. Re-allocation could
+come later, but for this proof-of concept, a fixed
+size is simple and good enough.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wws_buffer_alloc(wws_buffer *wb, int size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wws_buffer_alloc(wws_buffer *wb, int size)
+{
+    wb-&gt;buf = calloc(1, size);
+    wb-&gt;pos = 0;
+    wb-&gt;size = size;
+}</pre></code>
+<p></p>
+<p>A allocated buffer must be freed with <code>wws_buffer_free</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wws_buffer_free(wws_buffer *wb);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wws_buffer_free(wws_buffer *wb)
+{
+    wb-&gt;size = 0;
+    wb-&gt;pos = 0;
+    free(wb-&gt;buf);
+}</pre></code>
+<p></p>
+<p>Write to the buffer using <code>wws_buffer_write</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wws_buffer_write(wws_buffer *wb,
+                      const char *buf,
+                      int size);</pre></code>
+<p></p>
+<p>This copies over a chunk of data to the internal buffer.
+If the buffer is full, it just stops adding and breaks
+away.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wws_buffer_write(wws_buffer *wb,
+                      const char *buf,
+                      int size)
+{
+    int i;
+    if (wb-&gt;pos &gt;= wb-&gt;size) {
+       wws_buffer_extend(wb, 512);
+    }
+    for (i = 0; i &lt; size; i++) {
+        wb-&gt;buf[wb-&gt;pos] = buf[i];
+        wb-&gt;pos++;
+        if (wb-&gt;pos &gt;= wb-&gt;size) {
+            wws_buffer_extend(wb, 512);
+        }
+    }
+}</pre></code>
+<p></p>
+<p>Extending a buffer is done via <code>wws_buffer_extend</code>. This is
+done automatically inside of <code>wws_buffer_write</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wws_buffer_extend(wws_buffer *wb, int amount);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wws_buffer_extend(wws_buffer *wb, int amount)
+{
+     wb-&gt;size += amount;
+     wb-&gt;buf = realloc(wb-&gt;buf, wb-&gt;size);
+}</pre></code>
+</div>
+</body>
+</html>

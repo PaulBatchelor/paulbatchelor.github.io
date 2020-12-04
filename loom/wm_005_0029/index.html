@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>5. Iterating through pages</h3>
+
+<p><a id="wm_005_0029"></a>This is a process that gets applied to each page, and works
+very similarly to the <code>export</code> command.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>static void parse_all_pages(void);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void parse_all_pages(void)
+{
+    weewiki_d *ww;
+    sqlite3_stmt *stmt;
+    sqlite3 *db;
+    int rc;
+&lt;&lt;init_and_open&gt;&gt;
+&lt;&lt;create_sqlite_statement&gt;&gt;
+&lt;&lt;iterate_through_pages&gt;&gt;
+&lt;&lt;cleanup&gt;&gt;
+}</pre></code>
+<p></p>
+<p>Before any iteration can begin, a few bits of
+initialization. The database is opened.
+</p>
+<div><b><i>&lt;&lt;init_and_open&gt;&gt;=</i></b></div><pre><code>ww = malloc(weewiki_sizeof());
+weewiki_init(ww);
+weewiki_open(ww, "a.db");
+
+db = weewiki_db(ww);</pre></code>
+<p></p>
+<p>All the pages in the <code>wiki</code> table are queried, their keys
+and values extracted. The keys and values are fed into the
+analyzer. First, the SQLite statment is created, then
+it is stepped through.
+</p>
+<div><b><i>&lt;&lt;create_sqlite_statement&gt;&gt;=</i></b></div><pre><code>sqlite3_prepare_v2(db,
+                    "SELECT key, value "
+                    "FROM wiki "
+                    "WHERE key NOT LIKE \"@%\";",
+                    -1,
+                    &stmt,
+                    NULL);</pre></code>
+<div><b><i>&lt;&lt;iterate_through_pages&gt;&gt;=</i></b></div><pre><code>rc = sqlite3_step(stmt);
+
+while (rc == SQLITE_ROW) {
+    const char *key;
+    size_t keysz;
+    const char *val;
+    size_t valsz;
+
+    key = (const char *)sqlite3_column_text(stmt, 0);
+    keysz = sqlite3_column_bytes(stmt, 0);
+    val = (const char *)sqlite3_column_text(stmt, 1);
+    valsz = sqlite3_column_bytes(stmt, 1);
+
+    parse_file(key, keysz, val, valsz, stdout);
+    rc = sqlite3_step(stmt);
+}</pre></code>
+<p></p>
+<p>At cleanup, the database is closed, and the statment
+cleaned up.
+</p>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>sqlite3_finalize(stmt);
+weewiki_close(ww);
+weewiki_clean(ww);
+free(ww);</pre></code>
+</div>
+</body>
+</html>

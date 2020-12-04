@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>2. Test Parser</h3>
+
+<p><a id="wm_007_0020"></a>This test program can be run inside of <code>main</code>, and is
+designed to be run as a command line program.
+</p>
+
+<h4>2.1. Top Level Program</h4>
+
+<p><a id="wm_007_0022"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>#ifdef ORGPARSE_TEST
+int orgparse_test(int argc, char *argv[]);
+#endif</pre></code>
+<div><b><i>&lt;&lt;test_program&gt;&gt;=</i></b></div><pre><code>&lt;&lt;test_callbacks&gt;&gt;
+static void setup_orgparse(orgparse *op)
+{
+&lt;&lt;setup_test_callbacks&gt;&gt;
+}
+int orgparse_test_parser(int argc, char *argv[])
+{
+    orgparse op;
+    FILE *fp;
+    char *buf;
+    size_t sz;
+
+    if (argc == 1) {
+        fprintf(stderr, "Usage: %s file.org\n", argv[0]);
+        return 1;
+    }
+
+    fp = fopen(argv[1], "r");
+    if (fp == NULL) {
+        fprintf(stderr,
+                "Could not open %s for reading.\n",
+                argv[1]);
+        return 1;
+    }
+    fseek(fp, 0, SEEK_END);
+    sz = ftell(fp) + 1;
+    buf = calloc(1, sz);
+    fseek(fp, 0, SEEK_SET);
+    fread(buf, 1, sz, fp);
+    orgparse_init(&op);
+    setup_orgparse(&op);
+    orgparse_run(&op, buf, sz, NULL);
+    free(buf);
+    return 0;
+}</pre></code>
+
+<h4>2.2. Test Callbacks</h4>
+
+<p><a id="wm_007_0033"></a></p>
+
+<h5>2.2.1. Header</h5>
+
+<p><a id="wm_007_0034"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_header(void *ud,
+                        const char *h,
+                        size_t sz,
+                        int lvl)
+{
+    printf("header: '");
+    fwrite(h, 1, sz, stdout);
+    printf("', lvl: %d\n", lvl);
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_header(op, test_header);</pre></code>
+
+<h5>2.2.2. Text</h5>
+
+<p><a id="wm_007_0041"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_text(void *ud,
+                      const char *str,
+                      size_t sz)
+{
+    printf("text: '");
+    fwrite(str, 1, sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_text(op, test_text);</pre></code>
+
+<h5>2.2.3. Bold</h5>
+
+<p><a id="wm_007_0046"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_bold(void *ud,
+                      const char *str,
+                      size_t sz)
+{
+    printf("bold: '");
+    fwrite(str, 1, sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_bold(op, test_bold);</pre></code>
+
+<h5>2.2.4. Code</h5>
+
+<p><a id="wm_007_0051"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_code(void *ud,
+                      const char *str,
+                      size_t sz)
+{
+    printf("code: '");
+    fwrite(str, 1, sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_code(op, test_code);</pre></code>
+
+<h5>2.2.5. Underline</h5>
+
+<p><a id="wm_007_0056"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_uline(void *ud,
+                       const char *str,
+                       size_t sz)
+{
+    printf("underline: '");
+    fwrite(str, 1, sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_underline(op, test_uline);</pre></code>
+
+<h5>2.2.6. Newline</h5>
+
+<p><a id="wm_007_0061"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_newline(void *ud,
+                         const char *str,
+                         size_t sz)
+{
+    printf("newline\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_newline(op, test_newline);</pre></code>
+
+<h5>2.2.7. Codeblock</h5>
+
+<p><a id="wm_007_0066"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_codeblock(void *ud,
+                           const char *str,
+                           size_t sz)
+{
+    printf("codeblock: '");
+    fwrite(str, 1, sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_codeblock(op, test_codeblock);</pre></code>
+
+<h5>2.2.8. Name</h5>
+
+<p><a id="wm_007_0071"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_name(void *ud,
+                           const char *str,
+                           size_t sz)
+{
+    printf("name: '");
+    fwrite(str, 1, sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_name(op, test_name);</pre></code>
+
+<h5>2.2.9. Aux Block</h5>
+
+<p><a id="wm_007_0076"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_aux(void *ud,
+                     const char *str,
+                     size_t sz)
+{
+    printf("aux: '");
+    fwrite(str, 1, sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_aux(op, test_aux);</pre></code>
+
+<h5>2.2.10. Title</h5>
+
+<p><a id="wm_007_0081"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_title(void *ud,
+                       const char *str,
+                       size_t sz)
+{
+    printf("title: '");
+    fwrite(str, 1, sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_title(op, test_title);</pre></code>
+
+<h5>2.2.11. Link</h5>
+
+<p><a id="wm_007_0086"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_link(void *ud,
+                      const char *link,
+                      size_t link_sz,
+                      const char *name,
+                      size_t name_sz)
+{
+    printf("link_ref: '");
+    fwrite(link, 1, link_sz, stdout);
+    printf("', '");
+    fwrite(name, 1, name_sz, stdout);
+    printf("'\n");
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_link(op, test_link);</pre></code>
+
+<h5>2.2.12. Paragraph</h5>
+
+<p><a id="wm_007_0091"></a><div><b><i>&lt;&lt;test_callbacks&gt;&gt;=</i></b></div><pre><code>static void test_pgrph(void *ud, int mode)
+{
+    if (mode) {
+        printf("PARAGRAPH END\n");
+    } else {
+        printf("PARAGRAPH BEGIN\n");
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;setup_test_callbacks&gt;&gt;=</i></b></div><pre><code>orgparse_set_pgrph(op, test_pgrph);</pre></code>
+</div>
+</body>
+</html>

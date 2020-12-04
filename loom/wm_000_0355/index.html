@@ -10,31 +10,38 @@
 <body>
 <div id="main">
 
-<h3>20. Bitrow</h3>
+<h3>19. Invert</h3>
 
-<p><a id="wm_000_0355"></a>This copies up to 16 bits of an integer to a row in a
-region. The leftmost x, y coordinate is provided, as well
-as the pattern, encoded as an unsigned short. The number
-of bits is also needed (up to 16).
+<p><a id="wm_000_0355"></a>Inverts colors on a portion of a region.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_bitrow(btprnt_region *reg,
-                   int x, int y,
-                   int nbits,
-                   unsigned short pat);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_bitrow(btprnt_region *reg,
-                   int x, int y,
-                   int nbits,
-                   unsigned short pat)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_invert(btprnt_region *r,
+                   int xoff, int yoff,
+                   int w, int h);</pre></code>
+<p></p>
+<p>Later, add bounds checking.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_invert(btprnt_region *r,
+                   int xoff, int yoff,
+                   int w, int h)
 {
-    int i;
-    if (nbits &lt; 0) return;
-    if (nbits &gt; 16) nbits = 16;
+    int x, y;
+    /* TODO: add bounds checking */
+    for (x = 0; x &lt; w; x++) {
+        for (y = 0; y &lt; h; y ++) {
+            int s;
+            int xp, yp;
+            xp = x + xoff;
+            yp = y + yoff;
+            s = btprnt_region_read(r, xp, yp);
 
-    for (i = 0; i &lt; nbits; i++) {
-        btprnt_region_draw(reg,
-                           x + i, y,
-                           (pat & (1 &lt;&lt; i)) &gt;&gt; i);
+            if (s) {
+                btprnt_region_draw(r, xp, yp, 0);
+            } else {
+                btprnt_region_draw(r, xp, yp, 1);
+            }
+        }
     }
+
 }</pre></code>
 </div>
 </body>

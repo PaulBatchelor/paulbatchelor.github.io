@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>5. Parsing</h3>
+
+<p><a id="wm_007_0383"></a></p>
+
+<h4>5.1. Top Level Parse (orgparse_run)</h4>
+
+<p><a id="wm_007_0384"></a>Parsing is done using the function <code>orgparse_run</code>.
+All mutable variables are declared locally, so it should
+be feasible to run nested calls to this function.
+</p>
+<p><code>orgparse_run</code> expects a properly intialized + set instance
+of <code>orgparse</code>, a text block, the text block size, and any
+user data.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void orgparse_run(orgparse *op,
+                  const char *txt,
+                  size_t sz,
+                  void *ud);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void orgparse_run(orgparse *op,
+                  const char *txt,
+                  size_t sz,
+                  void *ud)
+{
+    orgparse_state state;
+    orgparse_init_and_run(op, txt, sz, ud, &state);
+    orgparse_end(op, ud, &state);
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void orgparse_init_and_run(orgparse *op,
+                           const char *txt,
+                           size_t sz,
+                           void *ud,
+                           orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void orgparse_init_and_run(orgparse *op,
+                           const char *txt,
+                           size_t sz,
+                           void *ud,
+                           orgparse_state *state)
+{
+    orgparse_state_init(state, op, txt, sz, ud);
+    orgparse_state_run(state);
+}</pre></code>
+
+<h4>5.2. Orgparse State</h4>
+
+<p><a id="wm_007_0394"></a>To make orgparse re-entrant, all mutable data is stored in
+a state.
+</p>
+
+<h5>5.2.1. Orgparse Struct</h5>
+
+<p><a id="wm_007_0396"></a>All mutable orgparse data is contained inside of a struct
+called <code>orgparse_state</code>, which gets instantiated with every
+call to <code>orgparse_run</code>. This allows <code>orgparse_run</code> to be
+re-entrant, which is a needed requirement in order for
+weewiki's scripting capabilities to really work.
+</p>
+
+<h6>5.2.1.1. Struct Declarations</h6>
+
+<p><a id="wm_007_0398"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct orgparse_state orgparse_state;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;orgparse_flags_struct&gt;&gt;
+struct orgparse_state {
+    orgparse *op;
+    const char *txt;
+    size_t sz;
+    void *ud;
+    size_t pos;
+    const char *blk;
+    size_t len;
+&lt;&lt;state_flags_in_struct&gt;&gt;
+};</pre></code>
+
+<h6>5.2.1.2. Flags Struct</h6>
+
+<p><a id="wm_007_0407"></a>The flags struct is a component of the <code>orgparse_state</code>.
+These flags are used to determine position the parser
+state machine.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct orgparse_state_flags orgparse_state_flags;</pre></code>
+
+<h7>5.2.1.2.1. The Flags</h7>
+
+<p><a id="wm_007_0411"></a>The <code>mode</code> flag is used to determine the large scale parsing
+mode, and is used to do general org-mode parsing or aux
+block parsing.
+</p>
+<p>The <code>txtmode</code> flag is boolean value set every time the
+parser goes to parse a text block. It is used to help
+indicate when a new paragraph block should begin.
+</p>
+<p>The <code>newline</code> flag is used to determine whether or not
+a <code>newline</code> character has been found. This is used to
+add explicit breaks, as well as start new paragraph blocks.
+<div><b><i>&lt;&lt;orgparse_flags_struct&gt;&gt;=</i></b></div><pre><code>struct orgparse_state_flags {
+    int mode;
+    int txtmode;
+    int newline;
+};</pre></code>
+
+<h7>5.2.1.2.2. Flags in orgparse state</h7>
+
+<p><a id="wm_007_0416"></a>The <code>orgparse_state</code> struct has two <code>orgparse_state_flags</code>
+variables: an internal flags value <code>iflags</code>, and a pointer
+value <code>flags</code>. By default, <code>flags</code> points to the internal
+value, but this can be overridden to be an external value.
+The reasoning for having this feature is to allow more
+seamless org code parsing generation in the Janet scriping
+engine via the <code>org</code> command.
+<div><b><i>&lt;&lt;state_flags_in_struct&gt;&gt;=</i></b></div><pre><code>orgparse_state_flags *flags;
+orgparse_state_flags iflags;</pre></code>
+<p>To override flags, use the <code>orgparse_state_flags_set</code>
+function. To get the internal flags, use
+<code>orgparse_state_flags_get</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>orgparse_state_flags *orgparse_state_flags_get(orgparse_state *s);
+void orgparse_state_flags_set(orgparse_state *s,
+                              orgparse_state_flags *f);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>orgparse_state_flags *orgparse_state_flags_get(orgparse_state *s)
+{
+    return s-&gt;flags;
+}
+void orgparse_state_flags_set(orgparse_state *s,
+                              orgparse_state_flags *f)
+{
+    s-&gt;flags = f;
+}</pre></code>
+
+<h6>5.2.1.3. Struct Init</h6>
+
+<p><a id="wm_007_0426"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void orgparse_state_init(orgparse_state *state,
+                         orgparse *op,
+                         const char *txt,
+                         size_t sz,
+                         void *ud);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void orgparse_state_init(orgparse_state *state,
+                         orgparse *op,
+                         const char *txt,
+                         size_t sz,
+                         void *ud)
+{
+    state-&gt;op = op;
+    state-&gt;txt = txt;
+    state-&gt;sz = sz;
+    state-&gt;pos = 0;
+    state-&gt;flags = &state-&gt;iflags;
+    state-&gt;flags-&gt;mode = 0;
+    state-&gt;flags-&gt;txtmode = 0;
+    state-&gt;len = 0;
+    state-&gt;ud = ud;
+    state-&gt;blk = NULL;
+    state-&gt;flags-&gt;newline = 0;
+}</pre></code>
+
+<h6>5.2.1.4. Size</h6>
+
+<p><a id="wm_007_0431"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>size_t orgparse_state_size(void);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>size_t orgparse_state_size(void)
+{
+    return sizeof(orgparse_state);
+}</pre></code>
+
+<h5>5.2.2. State Run</h5>
+
+<p><a id="wm_007_0436"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void orgparse_state_run(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void orgparse_state_run(orgparse_state *state)
+{
+    int txtmode;
+    size_t sz;
+
+    txtmode = 0;
+
+    sz = state-&gt;sz;
+
+    if (state-&gt;txt[sz - 1] == '\0') {
+        sz--;
+    }
+
+    for (state-&gt;pos = 0; state-&gt;pos &lt; sz; state-&gt;pos++) {
+        txtmode = 0;
+        if (state-&gt;flags-&gt;mode == 0) {
+            if (parse_comment(state)) {
+                continue;
+            }
+            if (parse_codeblock(state)) {
+                continue;
+            } else if (parse_header(state)) {
+                continue;
+            } else if (is_cmd(state)) {
+                if (parse_name(state)) {
+                    continue;
+                } else if (parse_title(state)) {
+                    continue;
+                } else {
+                    parse_ucmd(state);
+                    continue;
+                }
+            } else {
+                if (!state-&gt;flags-&gt;txtmode) {
+                    if (state-&gt;pos &lt; (state-&gt;sz - 1)) {
+                        orgparse_pgrph_begin(state-&gt;op,
+                                            state-&gt;ud);
+                        state-&gt;flags-&gt;newline = 0;
+                    }
+                }
+                txtmode = 1;
+                parse_text(state);
+            }
+        } else if (state-&gt;flags-&gt;mode == 1) {
+            parse_codeblock(state);
+        } else if (state-&gt;flags-&gt;mode == 2) {
+            if (state-&gt;flags-&gt;txtmode) txtmode = 1;
+            if (parse_aux_doiend(state)) {
+&lt;&lt;end_the_aux_block&gt;&gt;
+            } else {
+&lt;&lt;increment_aux_line&gt;&gt;
+            }
+        }
+        state-&gt;flags-&gt;txtmode = txtmode;
+    }
+}</pre></code>
+
+<h4>5.3. Parse Header</h4>
+
+<p><a id="wm_007_0445"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_header(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_header(orgparse_state *state)
+{
+    const char *header;
+    size_t n;
+    size_t start;
+    int mode;
+    int lvl;
+    size_t hsz;
+    int rc;
+
+    orgparse *op;
+    const char *str;
+    size_t sz;
+    void *ud;
+    size_t *pos;
+
+    op = state-&gt;op;
+    str = state-&gt;txt;
+    sz = state-&gt;sz;
+    ud = state-&gt;ud;
+    pos = &state-&gt;pos;
+
+    if(sz - *pos &lt; 2) return 0;
+    if (str[*pos] != '*') return 0;
+
+    start = *pos;
+    mode = 0;
+    lvl = 0;
+    rc = 0;
+    for (n = start; n &lt; sz; n++) {
+        if (mode == 2) break;
+        switch (mode) {
+            case 0:
+                if (str[n] == '*') {
+                    lvl++;
+                    continue;
+                } else if (str[n] == ' ') {
+                    n++;
+                    header = &str[n];
+                    hsz = 1;
+                    mode = 1;
+                    rc = 1;
+                    if (n == (sz - 1)) {
+                        *pos += n - start;
+                        if (op-&gt;header != NULL) {
+                            if (state-&gt;flags-&gt;txtmode) {
+                                orgparse_pgrph_end(op, ud);
+                                state-&gt;flags-&gt;txtmode = 0;
+                            }
+                            op-&gt;header(ud, header, hsz, lvl);
+                        }
+                    }
+                } else {
+                    mode = 2;
+                    rc = 0;
+                }
+                break;
+            case 1:
+                if (str[n] == '\n') {
+                    mode = 2;
+                    *pos += n - start;
+                    if (op-&gt;header != NULL) {
+                        if (state-&gt;flags-&gt;txtmode) {
+                            orgparse_pgrph_end(op, ud);
+                            state-&gt;flags-&gt;txtmode = 0;
+                        }
+                        op-&gt;header(ud, header, hsz, lvl);
+                    }
+                    rc = 1;
+                    break;
+                }
+                hsz++;
+                break;
+        }
+    }
+
+    return rc;
+}</pre></code>
+
+<h4>5.4. Parse Text</h4>
+
+<p><a id="wm_007_0451"></a></p>
+
+<h5>5.4.1. Parse Text Callback</h5>
+
+<p><a id="wm_007_0452"></a>Text is defined by what it isn't. If it isn't a header or
+code block, it is probably text. For this reason, the text
+block is a "last resort".
+</p>
+<p>Anything that is not a header or code block is generally
+considered to be a text block. Text can span multiple lines,
+and can contain special formatting tags, for things like
+<b>bold</b> text, <b></b>italic<b></b> text, and  text as well.
+In addition, text can also contain links.
+</p>
+<p>When a line is determined to not be anything else (header,
+codeblock, aux block, etc), it is sent in to be parsed as
+text.
+</p>
+<p>The text block parser will read lines until it hits stuff
+that is non-text. Along the way, the text will check for
+formatting tags and links on a line by line basis.
+</p>
+
+<h6>5.4.1.1. Main Callback</h6>
+
+<p><a id="wm_007_0454"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_text(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_text(orgparse_state *state)
+{
+    size_t n;
+    size_t start;
+    size_t mark;
+    int rc;
+
+    orgparse *op;
+    const char *str;
+    size_t sz;
+    void *ud;
+    size_t *pos;
+    int *mode;
+    const char **buf;
+    size_t *len;
+
+    op = state-&gt;op;
+    str = state-&gt;txt;
+    sz = state-&gt;sz;
+    ud = state-&gt;ud;
+    pos = &state-&gt;pos;
+    mode = &state-&gt;flags-&gt;mode;
+    buf = &state-&gt;blk;
+    len = &state-&gt;len;
+
+    rc = 0;
+    start = *pos;
+    mark = start;
+
+    /* check for end of file */
+    if (start == sz) return 0;
+
+    for (n = start; n &lt; sz; n++) {
+        if (str[n] == '\n' || n == (sz - 1)) {
+            rc = 1;
+            if (n == mark) {
+&lt;&lt;handle_newline_logic&gt;&gt;
+            } else {
+                if (op-&gt;text != NULL) {
+                    /* +1 includes line break*/
+                    op-&gt;text(ud,
+                            &str[mark],
+                            (n - mark) + 1);
+                }
+            }
+            break;
+        } else if (parse_aux_check(str, sz, &n)) {
+&lt;&lt;break_and_begin_aux_block&gt;&gt;
+        } else if (state-&gt;flags-&gt;newline) {
+&lt;&lt;newline_begin_paragraph&gt;&gt;
+        } else if (parse_bold(op, str, ud, sz, &n, &mark)) {
+            continue;
+        } else if (parse_code(op, str, ud, sz, &n, &mark)) {
+            continue;
+        } else if (parse_ul(op, str, ud, sz, &n, &mark)) {
+            continue;
+        } else if (parse_link(op, str, ud, sz, &n, &mark)) {
+            continue;
+        }
+    }
+    *pos += (n - start);
+    return rc;
+}</pre></code>
+
+<h6>5.4.1.2. Handling Newline Logic</h6>
+
+<p><a id="wm_007_0465"></a>In org mode, line break characters "\n" can trigger
+different behaviors. This is managed via the <code>newline</code> flag.
+</p>
+<p>The newline at the end of some text is used to indicate the
+end of a line. The text parser reads things a line at a
+time, so at that point it is an indicator to break out of
+text parser routine.
+</p>
+<p>Newline behavior changes when the character is found without
+any other characters. The first newline is considered to
+mark the end of a paragraph block. Subsequent newlines are
+registered as line breaks.
+</p>
+<div><b><i>&lt;&lt;handle_newline_logic&gt;&gt;=</i></b></div><pre><code>if (!state-&gt;flags-&gt;newline) {
+    orgparse_pgrph_end(op, ud);
+    state-&gt;flags-&gt;newline = 1;
+} else {
+    if (op-&gt;newline != NULL) {
+        op-&gt;newline(ud, NULL, 0);
+    }
+}</pre></code>
+<p></p>
+<p>Text that begins after a single empty line break is
+considered to be a new paragraph. This is determined
+by checking to see if the newline flag has been set.
+</p>
+<p>A bug was discovered where the parser skips the first
+character of the paragraph. This bug becomes noticeable
+when any kind of formatting is used at the beginning of
+a paragraph (such as bold text). To mitigate this, the
+character pointer (n) moves back one character. While
+this may introduce other bugs later (not sure), it does
+not seem to break any tests in the current test suite.
+</p>
+<div><b><i>&lt;&lt;newline_begin_paragraph&gt;&gt;=</i></b></div><pre><code>state-&gt;flags-&gt;newline = 0;
+orgparse_pgrph_begin(op, ud);
+n--; /* go backwards 1 */</pre></code>
+
+<h5>5.4.2. Tag Check</h5>
+
+<p><a id="wm_007_0474"></a>This functionality will generically check a line for
+matching tags. If a tag is found, the end position is
+returned.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int tag_check(const char *txt,
+                     size_t sz,
+                     char tag,
+                     size_t *len);</pre></code>
+<p></p>
+<p>A small but important detail: tags in org mode work on a
+single line. If a line break is found before a matching tag,
+it breaks out.
+</p>
+<p>Another detail: tags can't have spaces at the immediately
+after or before the tags. * this* is not a tag. *this * is
+also not a tag.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int tag_check(const char *txt,
+                     size_t sz,
+                     char tag,
+                     size_t *len)
+{
+    size_t n;
+    int rc;
+    if (sz &lt;= 2) return 0;
+    if (txt[0] != tag) return 0;
+    if (txt[1] == ' ') return 0;
+
+    rc = 0;
+
+
+    for (n = 1; n &lt; sz; n++) {
+        if (txt[n] == '\n') {
+            rc = 0;
+            break;
+        }
+
+        if (txt[n] == tag) {
+            if (txt[n - 1] == ' ') rc = 0;
+            else rc = 1;
+
+            *len = n - 1;
+            break;
+        }
+    }
+    return rc;
+}</pre></code>
+
+<h5>5.4.3. Check and Parse</h5>
+
+<p><a id="wm_007_0481"></a>Checks AND parses particular tag.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int check_and_parse(orgparse *op,
+                           const char *str,
+                           void *ud,
+                           size_t sz,
+                           size_t *pos,
+                           size_t *mark,
+                           char tag,
+                           orgparse_text f);</pre></code>
+<p>Setting the <code>mark</code> and <code>pos</code> variables for mark and position
+took some trial and error to get right.
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int check_and_parse(orgparse *op,
+                           const char *str,
+                           void *ud,
+                           size_t sz,
+                           size_t *pos,
+                           size_t *mark,
+                           char tag,
+                           orgparse_text f)
+{
+    size_t n, m;
+    int rc;
+    size_t len;
+
+    n = *pos;
+    m = *mark;
+    rc = 0;
+    len = 0;
+
+    if (tag_check(&str[n],
+                  sz - m,
+                  tag,
+                  &len)) {
+        if (op-&gt;text != NULL && n != m) {
+            op-&gt;text(ud, &str[m], n - m);
+        }
+        if (f != NULL) {
+            f(ud, &str[n + 1], len);
+        }
+        n += len + 2;
+        m = n;
+        /* commenting this out makes the tests pass */
+        /* if (n &lt; sz && str[n] == '\n') n--; */
+        *pos = n;
+        *mark = m;
+        rc = 1;
+    }
+
+    return rc;
+}</pre></code>
+
+<h5>5.4.4. Parse Bold</h5>
+
+<p><a id="wm_007_0488"></a>This will check and parse <b>bold</b> text.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_bold(orgparse *op,
+                      const char *str,
+                      void *ud,
+                      size_t sz,
+                      size_t *pos,
+                      size_t *mark);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_bold(orgparse *op,
+                      const char *str,
+                      void *ud,
+                      size_t sz,
+                      size_t *pos,
+                      size_t *mark)
+{
+    return check_and_parse(op,
+                           str,
+                           ud,
+                           sz,
+                           pos,
+                           mark,
+                           '*',
+                           op-&gt;bold);
+}</pre></code>
+
+<h5>5.4.5. Parse Code.</h5>
+
+<p><a id="wm_007_0494"></a>This will check and parse <code>code</code> text.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_code(orgparse *op,
+                      const char *str,
+                      void *ud,
+                      size_t sz,
+                      size_t *pos,
+                      size_t *mark);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_code(orgparse *op,
+                      const char *str,
+                      void *ud,
+                      size_t sz,
+                      size_t *pos,
+                      size_t *mark)
+{
+    return check_and_parse(op,
+                           str,
+                           ud,
+                           sz,
+                           pos,
+                           mark,
+                           '=',
+                           op-&gt;code);
+}</pre></code>
+
+<h5>5.4.6. Parse Underline.</h5>
+
+<p><a id="wm_007_0500"></a>This will check and parse <code>underline</code> text.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_ul(orgparse *op,
+                    const char *str,
+                    void *ud,
+                    size_t sz,
+                    size_t *pos,
+                    size_t *mark);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_ul(orgparse *op,
+                    const char *str,
+                    void *ud,
+                    size_t sz,
+                    size_t *pos,
+                    size_t *mark)
+{
+    return check_and_parse(op,
+                           str,
+                           ud,
+                           sz,
+                           pos,
+                           mark,
+                           '_',
+                           op-&gt;underline);
+}</pre></code>
+
+<h5>5.4.7. Parse Link</h5>
+
+<p><a id="wm_007_0506"></a></p>
+
+<h6>5.4.7.1. Top Level Function</h6>
+
+<p><a id="wm_007_0507"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_link(orgparse *op,
+                      const char *str,
+                      void *ud,
+                      size_t sz,
+                      size_t *pos,
+                      size_t *mark);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_link(orgparse *op,
+                      const char *str,
+                      void *ud,
+                      size_t sz,
+                      size_t *pos,
+                      size_t *mark)
+{
+    int rc;
+    const char *link;
+    size_t link_sz;
+    const char *name;
+    size_t name_sz;
+    size_t len;
+    size_t n, m;
+
+    rc = check_link(str, *pos, sz);
+
+    if (!rc) return 0;
+
+    link_sz = 0;
+    name_sz = 0;
+    len = 0;
+
+    n = *pos;
+    m = *mark;
+
+    extract_link(str, n, sz,
+                 &link, &link_sz,
+                 &name, &name_sz,
+                 &len);
+
+    if (op-&gt;text != NULL && n != m) {
+        op-&gt;text(ud, &str[m], n - m);
+    }
+
+    if (op-&gt;link != NULL) {
+        op-&gt;link(ud, link, link_sz, name, name_sz);
+    }
+
+    n += len + 2;
+    m = n;
+    if (n &lt; sz && str[n] == '\n') n--;
+
+    *pos = n;
+    *mark = m;
+
+    return 1;
+}</pre></code>
+
+<h6>5.4.7.2. Check For Link</h6>
+
+<p><a id="wm_007_0512"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int check_link(const char *str,
+                      size_t pos,
+                      size_t sz);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int check_link(const char *str,
+                      size_t pos,
+                      size_t sz)
+{
+    size_t n;
+
+    if ((pos - sz) &lt; 5) return 0;
+
+    if (str[pos] != '[' || str[pos+1] != '[') return 0;
+
+    sz -= 1; /* for lookahead */
+    pos += 2;
+
+    for (n = pos; n &lt; sz; n++) {
+        if (str[n] == '\n') return 0;
+        if (str[n] == ']' && str[n + 1] == ']') return 1;
+    }
+
+    return 0;
+}</pre></code>
+
+<h6>5.4.7.3. Extract Link</h6>
+
+<p><a id="wm_007_0517"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void extract_link(const char *str,
+                         size_t pos,
+                         size_t sz,
+                         const char **plink,
+                         size_t *link_sz,
+                         const char **pname,
+                         size_t *name_sz,
+                         size_t *len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void extract_link(const char *str,
+                         size_t pos,
+                         size_t sz,
+                         const char **plink,
+                         size_t *link_sz,
+                         const char **pname,
+                         size_t *name_sz,
+                         size_t *len)
+{
+    size_t off;
+    size_t n;
+    const char *link;
+    size_t link_size;
+    const char *name;
+    size_t name_size;
+    size_t tmp;
+    size_t start;
+
+
+    sz -= 1; /* for lookahead */
+
+    start = pos;
+    pos += 2;
+
+    off = 2;
+    name_size = 0;
+    link_size = 0;
+    tmp = 0;
+    link = NULL;
+    name = NULL;
+    link = &str[pos];
+    for(n = pos; n &lt; sz; n++) {
+        off++;
+        tmp++;
+        if(str[n] == ']' && str[n + 1] == '[') {
+            link_size = tmp - 1;
+            tmp = 0;
+            name = &str[n + 2];
+            n++;
+            off++;
+        } else if(str[n] == ']' && str[n + 1] == ']') {
+            name_size = tmp - 1;
+            if(name == NULL) { /* name not set, assume type 2 link */
+                link_size = name_size;
+                name = link;
+            }
+            off++;
+            break;
+        }
+    }
+    *name_sz = name_size;
+    *pname = name;
+    *link_sz = link_size;
+    *plink = link;
+    *len = n - start;
+}</pre></code>
+
+<h4>5.5. Parse Comment</h4>
+
+<p><a id="wm_007_0522"></a>Any thing that starts with '# ' (hash + space) is considered
+to be a comment, and the line will be ignored.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_comment(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_comment(orgparse_state *state)
+{
+    size_t start;
+    size_t n;
+    const char *txt;
+    size_t sz;
+    size_t *pos;
+
+    txt = state-&gt;txt;
+    sz = state-&gt;sz;
+    pos = &state-&gt;pos;
+
+    if ((sz - *pos) &lt; 2) return 0;
+    if (txt[*pos] != '#') return 0;
+    if (txt[*pos + 1] != ' ') return 0;
+
+    start = *pos;
+
+    for (n = start; n &lt; sz; n++) {
+        if (txt[n] == '\n') break;
+    }
+
+    *pos += (n - start);
+
+    return 1;
+}</pre></code>
+
+<h4>5.6. Parse Command</h4>
+
+<p><a id="wm_007_0528"></a>A 'command' in org mode refers to any line that starts with
+'#+'. After this, a string of alphanumeric non-space
+characters creates the command name. Following this is an
+arbitray number of spaces, followed by the command string.
+</p>
+<p>The <code>parse_cmd</code> function will parse and extract the
+command, and command string (assuming it is indeed
+a command).
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_cmd(const char *str,
+                     size_t sz,
+                     const char **cmd,
+                     size_t *cmd_len,
+                     const char **cmdstr,
+                     size_t *cmdstr_len,
+                     size_t *total_len);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_cmd(const char *str,
+                     size_t sz,
+                     const char **cmd,
+                     size_t *cmd_len,
+                     const char **cmdstr,
+                     size_t *cmdstr_len,
+                     size_t *total_len)
+{
+    size_t n;
+    const char *pcmdstr;
+    const char *pcmd;
+    size_t len;
+    int mode;
+    int rc;
+
+    if (sz &lt; 3) return 0;
+    if (str[0] != '#') return 0;
+    if (str[1] != '+') return 0;
+    if (str[2] == ' ') return 0;
+
+
+    rc = 0;
+
+    mode = 0;
+
+    pcmd = &str[2];
+    pcmdstr = NULL;
+    len = 0;
+
+    /* zero out lengths */
+
+    *total_len = 0;
+    *cmdstr_len = 0;
+    *cmd_len = 0;
+
+    for (n = 2; n &lt; sz; n++) {
+        if (str[n] == '\n' || (n == (sz - 1))) {
+            *cmdstr_len = len;
+            if (mode == 0) {
+                *cmd_len = len;
+                *cmdstr_len = 0;
+                rc = 1;
+            }
+            break;
+        }
+        switch (mode) {
+            case 0: /* command string */
+                if (str[n] == ' ') {
+                    mode = 1;
+                    *cmd_len = len;
+                    len = 0;
+                    rc = 1;
+                    break;
+                }
+                len++;
+                break;
+            case 1:
+                if (str[n] != ' ') {
+                    mode = 2;
+                    len = 1;
+                    pcmdstr = &str[n];
+                }
+                break;
+            case 2:
+                len++;
+                break;
+        }
+    }
+
+    *cmdstr = pcmdstr;
+    *cmd = pcmd;
+    *total_len = n * rc;
+
+    return rc;
+}</pre></code>
+<p></p>
+<p><code>is_cmd</code> is used to check if the line is a command to begin
+with. This is used in the parser so that general command
+statements are ignored.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int is_cmd(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_cmd(orgparse_state *state)
+{
+    const char *str;
+    size_t sz;
+
+    sz = state-&gt;sz;
+    str = &state-&gt;txt[state-&gt;pos];
+    if (sz &lt; 3) return 0;
+    if (str[0] != '#') return 0;
+    if (str[1] != '+') return 0;
+    if (str[2] == ' ') return 0;
+    return 1;
+}</pre></code>
+
+<h4>5.7. Parse User Command</h4>
+
+<p><a id="wm_007_0539"></a>Any command that isn't handled by Orgparse will get
+sent here. Eventually, a user-defined callback will
+optionally be able to parse this.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_ucmd(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_ucmd(orgparse_state *state)
+{
+    int rc;
+    size_t start;
+    size_t cmdlen;
+    size_t cmdstrlen;
+    const char *cmd;
+    const char *cmdstr;
+    size_t totallen;
+
+    const char *txt;
+    size_t sz;
+    size_t *pos;
+
+    txt = state-&gt;txt;
+    sz = state-&gt;sz;
+    pos = &state-&gt;pos;
+
+    start = *pos;
+    cmdlen = 0;
+    cmdstrlen = 0;
+    totallen = 0;
+    rc = parse_cmd(&txt[start],
+                   sz - start,
+                   &cmd,
+                   &cmdlen,
+                   &cmdstr,
+                   &cmdstrlen,
+                   &totallen);
+    if (rc) {
+        /* TODO: add user-defined callback */
+        (*pos) += totallen;
+    }
+    return rc;
+}</pre></code>
+
+<h4>5.8. Parse Codeblock</h4>
+
+<p><a id="wm_007_0545"></a>A codeblock is a set of lines smooshed between
+'#+BEGINSRC' tags.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_codeblock(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_codeblock(orgparse_state *state)
+{
+    int rc;
+    size_t start;
+    size_t cmdlen;
+    size_t cmdstrlen;
+    const char *cmd;
+    const char *cmdstr;
+    size_t totallen;
+    size_t n;
+    int new_block;
+
+    orgparse *op;
+    const char *txt;
+    size_t sz;
+    void *ud;
+    size_t *pos;
+    int *mode;
+    const char **blk;
+    size_t *blklen;
+
+    op = state-&gt;op;
+    txt = state-&gt;txt;
+    sz = state-&gt;sz;
+    ud = state-&gt;ud;
+    pos = &state-&gt;pos;
+    mode = &state-&gt;flags-&gt;mode;
+    blk = &state-&gt;blk;
+    blklen = &state-&gt;len;
+
+    start = *pos;
+    cmdlen = 0;
+    cmdstrlen = 0;
+    totallen = 0;
+    rc = parse_cmd(&txt[start],
+                   sz - start,
+                   &cmd,
+                   &cmdlen,
+                   &cmdstr,
+                   &cmdstrlen,
+                   &totallen);
+    new_block = 0;
+
+    if (rc) {
+        if (*mode  == 0) {
+            if (!strncmp(cmd, "BEGIN_SRC", cmdlen)) {
+                *pos += totallen;
+                *blk = &txt[*pos + 1];
+                *blklen = 0;
+                *mode = 1;
+                new_block = 1;
+            } else {
+                /* another command, not a codeblock */
+                rc = 0;
+            }
+        } else if (*mode == 1) {
+            if (!strncmp(cmd, "END_SRC", cmdlen)) {
+                *pos += totallen;
+                *mode = 0;
+                if (op-&gt;codeblock != NULL) {
+                    op-&gt;codeblock(ud, *blk, *blklen - 1);
+                }
+                *blk = NULL;
+                *blklen = 0;
+            }
+        }
+    }
+
+    /* Read a line */
+    if (*mode == 1 && !new_block) {
+        rc = 1;
+        for (n = start; n &lt; sz; n++) {
+            if (txt[n] == '\n') break;
+        }
+        *pos += (n - start);
+        *blklen += (n - start) + 1;
+    }
+
+    return rc;
+}</pre></code>
+
+<h4>5.9. Parse Name</h4>
+
+<p><a id="wm_007_0551"></a>Parses a "#+NAME" command.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_name(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_name(orgparse_state *state)
+{
+    int rc;
+    size_t start;
+    size_t cmdlen;
+    size_t cmdstrlen;
+    const char *cmd;
+    const char *cmdstr;
+    size_t totallen;
+
+    orgparse *op;
+    const char *txt;
+    size_t sz;
+    void *ud;
+    size_t *pos;
+
+    op = state-&gt;op;
+    txt = state-&gt;txt;
+    sz = state-&gt;sz;
+    ud = state-&gt;ud;
+    pos = &state-&gt;pos;
+
+    start = *pos;
+    cmdlen = 0;
+    cmdstrlen = 0;
+    totallen = 0;
+    rc = parse_cmd(&txt[start],
+                   sz - start,
+                   &cmd,
+                   &cmdlen,
+                   &cmdstr,
+                   &cmdstrlen,
+                   &totallen);
+    if (rc) {
+        if (!strncmp(cmd, "NAME:", cmdlen)) {
+            if (op-&gt;name != NULL) {
+                op-&gt;name(ud, cmdstr, cmdstrlen);
+            }
+            *pos += totallen;
+        } else rc = 0;
+    }
+
+    return rc;
+}</pre></code>
+
+<h4>5.10. Parsing an Aux Block</h4>
+
+<p><a id="wm_007_0557"></a>An aux block is anything inside of a ''.
+For WeeWiki, the idea here is to execute janet code for
+dynamic page content. Aux blocks can be both in-line and
+multiline. They start out inside of a text block, but have
+their own mode for multi-line processing (similar to code
+blocks).
+</p>
+
+<h5>5.10.1. Beginning a Block</h5>
+
+<p><a id="wm_007_0559"></a></p>
+
+<h6>5.10.1.1. Checking for an Aux Block</h6>
+
+<p><a id="wm_007_0560"></a>An aux block can be started at anytime inside of a text
+block. The parsing process here must check for any 'If indeed an aux block has been found, the parsing routine
+will immediately break out of the loop and set itself
+up to be in aux block mode (mode 2). Any text up to this
+point is processed as well.
+</p>
+<p>Return values aren't really being used right now, but
+the return value is being set to be 0 (false) to indicate
+that the the text has been short-circuited by an aux block.
+</p>
+<p>The code below is done inside of the <code>parse_text</code> function.
+<div><b><i>&lt;&lt;break_and_begin_aux_block&gt;&gt;=</i></b></div><pre><code>if (op-&gt;text != NULL && n != mark) {
+    op-&gt;text(ud, &str[mark], n - mark);
+}
+
+if (state-&gt;flags-&gt;newline) {
+    state-&gt;flags-&gt;newline = 0;
+    orgparse_pgrph_begin(op, ud);
+}
+
+*mode = 2;
+*len = 0;
+*buf = &str[n + 2];
+rc = 0;
+break;</pre></code>
+
+<h5>5.10.2. Ending it</h5>
+
+<p><a id="wm_007_0572"></a>Once the parse state machine is set to be in aux block mode,
+it can only be ended by finding a matching '!@' tag.
+</p>
+
+<h6>5.10.2.1. Do I end?</h6>
+
+<p><a id="wm_007_0574"></a>The only way a aux block ends is with the magic tag '!@'.
+This is checked with the function <code>parse_aux_doiend</code>.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_aux_doiend(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_aux_doiend(orgparse_state *state)
+{
+    if ((state-&gt;sz - state-&gt;pos) &lt; 2) return 0;
+    return (state-&gt;txt[state-&gt;pos] == '!' &&
+            state-&gt;txt[state-&gt;pos + 1] == '@');
+}</pre></code>
+
+<h6>5.10.2.2. Ending The Aux Block</h6>
+
+<p><a id="wm_007_0580"></a><div><b><i>&lt;&lt;end_the_aux_block&gt;&gt;=</i></b></div><pre><code>state-&gt;flags-&gt;mode = 0;
+state-&gt;pos++;
+if (state-&gt;op-&gt;aux != NULL) {
+    state-&gt;op-&gt;aux(state-&gt;ud, state-&gt;blk, state-&gt;len - 1);
+}
+&lt;&lt;handle_auxblock_endofline&gt;&gt;</pre></code>
+<p>An edge case to handle: what happens when an aux block is at
+the end of a line? When this happens, the parser absorbs the
+newline character. If this doesn't happen, the text parser
+adds an extra newline.
+<div><b><i>&lt;&lt;handle_auxblock_endofline&gt;&gt;=</i></b></div><pre><code>if ((state-&gt;pos + 1) &lt; state-&gt;sz &&
+    state-&gt;txt[state-&gt;pos + 1] == '\n') {
+    state-&gt;pos++;
+}</pre></code>
+
+<h6>5.10.2.3. Adding to aux line</h6>
+
+<p><a id="wm_007_0590"></a>While in aux block mode, the character block length is
+increased one character at a time.
+<div><b><i>&lt;&lt;increment_aux_line&gt;&gt;=</i></b></div><pre><code>state-&gt;len++;</pre></code>
+
+<h4>5.11. Parse Title</h4>
+
+<p><a id="wm_007_0595"></a>Parses the <code>TITLE</code> commmand.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_title(orgparse_state *state);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_title(orgparse_state *state)
+{
+    int rc;
+    size_t start;
+    size_t cmdlen;
+    size_t cmdstrlen;
+    const char *cmd;
+    const char *cmdstr;
+    size_t totallen;
+
+
+    orgparse *op;
+    const char *txt;
+    size_t sz;
+    void *ud;
+    size_t *pos;
+
+    op = state-&gt;op;
+    txt = state-&gt;txt;
+    sz = state-&gt;sz;
+    ud = state-&gt;ud;
+    pos = &state-&gt;pos;
+
+    start = *pos;
+    cmdlen = 0;
+    cmdstrlen = 0;
+    totallen = 0;
+    rc = parse_cmd(&txt[start],
+                   sz - start,
+                   &cmd,
+                   &cmdlen,
+                   &cmdstr,
+                   &cmdstrlen,
+                   &totallen);
+    if (rc) {
+        if (!strncmp(cmd, "TITLE:", cmdlen)) {
+            if (op-&gt;title != NULL) {
+                op-&gt;title(ud, cmdstr, cmdstrlen);
+            }
+            *pos += totallen;
+
+            if ((*pos + 1) &lt; sz && txt[*pos + 1] == '\n') {
+                (*pos) = (*pos) + 1;
+            }
+            return 1;
+        }
+    }
+
+    return 0;
+}</pre></code>
+</div>
+</body>
+</html>

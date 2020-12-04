@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>11. Sync</h3>
+
+<p><a id="wm_002_0296"></a>The <code>sync</code> command is used to sync files between the
+database and external files. It will iterate through the
+<code>wikilinks</code> tables and update things by comparing internal
+modification times.
+</p>
+<p>If the external mtime is greater, the file is pushed to the
+table.
+</p>
+<p>If the internal mtime is greater, the file is pulled from
+table.
+</p>
+<p>If the times are equal, no action happens.
+</p>
+<p>If the external file doesn't exist, it is treated as a
+"pull" operation.
+</p>
+<div><b><i>&lt;&lt;argparse_entries&gt;&gt;=</i></b></div><pre><code>{"sync", 4, p_sync, NULL},</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_sync(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int p_sync(int argc, char *argv[])
+{
+    weewiki_d ww;
+    int rc;
+
+    weewiki_init(&ww);
+
+    if (argc == 2) {
+        weewiki_open(&ww, argv[1]);
+    } else {
+        weewiki_open(&ww, weewiki_dbname_get());
+    }
+
+    rc = weewiki_sync(&ww);
+
+    weewiki_close(&ww);
+    weewiki_clean(&ww);
+    return rc;
+}</pre></code>
+</div>
+</body>
+</html>
