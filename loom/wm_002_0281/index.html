@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>10. ls</h3>
+
+<p><a id="wm_002_0281"></a>List all pages.
+</p>
+<div><b><i>&lt;&lt;argparse_entries&gt;&gt;=</i></b></div><pre><code>{"ls", 2, p_ls, NULL},</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_ls(int argc, char *argv[]);</pre></code>
+<p></p>
+<p>You'll notice some duplicate code here. This has been
+introduced because of a change in behavior. The last
+parameter of "ls" can now specify the databse file name in
+place of "a.db". Because there are a variable number of
+arguments, there are a few permutations:
+</p>
+<p>No arguments will invoke the default ls behavior with
+"a.db".
+</p>
+<p>If there is one argument, it will either be "links", or
+a database name. "links" will list all the linked pages
+using "a.db". Any other value will invoke the default ls
+behavior using that as the database file name.
+</p>
+<p>Three arguments will invoke "ls links" with a custom
+database filename. If the second argument is not "links",
+it will return an error.
+</p>
+<p>The duplicate code is done for the sake of readability, and
+is used to make the edge cases above more clear-cut.
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int list(void *ud, int sz, char **argv, char **col)
+{
+    int n;
+    for(n = 0; n &lt; sz; n++) {
+        if (n != 0) printf(" ");
+        printf("%s", argv[n]);
+    }
+    printf("\n");
+    return 0;
+}
+
+static int p_ls(int argc, char *argv[])
+{
+    weewiki_d ww;
+    int rc;
+
+    weewiki_init(&ww);
+
+    rc = 0;
+
+    if (argc == 1) {
+        weewiki_open(&ww, weewiki_dbname_get());
+        sqlite3_exec(ww.db,
+                    "SELECT key FROM wiki;",
+                    list,
+                    NULL,
+                    NULL);
+    } else if (argc == 2) {
+        if (!strcmp(argv[1], "links")) {
+            weewiki_open(&ww, weewiki_dbname_get());
+            sqlite3_exec(ww.db,
+                        "SELECT key, filename FROM wikilinks;",
+                        list,
+                        NULL,
+                        NULL);
+        } else {
+            weewiki_open(&ww, argv[1]);
+            sqlite3_exec(ww.db,
+                        "SELECT key FROM wiki;",
+                        list,
+                        NULL,
+                        NULL);
+        }
+    } else if (argc == 3) {
+        if (!strcmp(argv[1], "links")) {
+            weewiki_open(&ww, argv[2]);
+            sqlite3_exec(ww.db,
+                        "SELECT key, filename FROM wikilinks;",
+                        list,
+                        NULL,
+                        NULL);
+        } else {
+            fprintf(stderr, "Invalid command '%s'\n",
+                    argv[1]);
+            fprintf(stderr, "Expected 'links'.\n");
+            rc = 1;
+        }
+    }
+
+    weewiki_close(&ww);
+    weewiki_clean(&ww);
+    return rc;
+}</pre></code>
+</div>
+</body>
+</html>

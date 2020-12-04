@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Main Data</h3>
+
+<p><a id="wm_004_0034"></a>This is stuff that gets instantiated at startup.
+For now, this is probably just the database, though
+this could change.
+</p>
+
+<h4>4.1. Struct</h4>
+
+<p><a id="wm_004_0036"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wwserver_d wwserver_d;</pre></code>
+<p>Database + http server.
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wwserver_d {
+    struct http_server_s *server;
+    weewiki_d *ww;
+    JanetTable *env;
+    int use_sqlar;
+};</pre></code>
+
+<h4>4.2. global data setters/getters</h4>
+
+<p><a id="wm_004_0044"></a>- State "DONE"       from "WIP"        [2020-01-16 Thu 18:15]
+- State "WIP"        from "TODO"       [2020-01-12 Sun 17:29]
+<div><b><i>&lt;&lt;global_data&gt;&gt;=</i></b></div><pre><code>static wwserver_d *WWS = NULL;</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void wwserver_global_set(wwserver_d *p);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void wwserver_global_set(wwserver_d *p)
+{
+    WWS = p;
+}</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static wwserver_d * wwserver_global_get(void);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static wwserver_d * wwserver_global_get(void)
+{
+    return WWS;
+}</pre></code>
+
+<h4>4.3. Startup</h4>
+
+<p><a id="wm_004_0058"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwserver_init(wwserver_d *wws, int port);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wwserver_init(wwserver_d *wws, int port)
+{
+    wws-&gt;server = http_server_init(port, handle_request);
+    wws-&gt;env = weewiki_janet_setup();
+    wws-&gt;use_sqlar = 0;
+    return 1;
+}</pre></code>
+
+<h4>4.4. Cleanup</h4>
+
+<p><a id="wm_004_0063"></a>Database is closed. May need to figure out how to cleanly
+break out of loop.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwserver_clean(wwserver_d *wws);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wwserver_clean(wwserver_d *wws)
+{
+    if (wws-&gt;server != NULL) {
+        free(wws-&gt;server);
+    }
+    weewiki_janet_cleanup();
+    /* weewiki data gets cleaned elsewhere */
+}</pre></code>
+</div>
+</body>
+</html>

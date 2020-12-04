@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>11. Opening Files</h3>
+
+<p><a id="wm_004_0199"></a>The weewiki server is able to serve files like HTML and CSS
+in addition parsing org wiki pages. It looks for a file
+after checking for a wiki page.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wws_find_and_serve(wwserver_d *wws,
+                       struct http_request_s *request,
+                       struct http_string_s *str);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;mime_type_table&gt;&gt;
+int wws_find_and_serve(wwserver_d *wws,
+                       struct http_request_s *request,
+                       struct http_string_s *str)
+{
+    char *name;
+    int rc;
+    char *filebuf;
+    unsigned int filesize;
+    struct http_response_s* response;
+    sqlite3 *db;
+
+    filebuf = NULL;
+    filesize = 0;
+    response = NULL;
+
+    rc = 0;
+    /* copy URL to NULL terminated string */
+    name = calloc(1, str-&gt;len + 1);
+    /* skip the first '/' character */
+
+    db = weewiki_db(wws-&gt;ww);
+    strncpy(name, &str-&gt;buf[1], str-&gt;len - 1);
+
+&lt;&lt;does_file_exist&gt;&gt;
+
+    response = http_response_init();
+
+&lt;&lt;find_mime_type&gt;&gt;
+&lt;&lt;load_file_into_memory&gt;&gt;
+&lt;&lt;serve_the_file&gt;&gt;
+
+    cleanup:
+
+    if (response != NULL) free(response);
+    if (filebuf != NULL) free(filebuf);
+    free(name);
+    return rc;
+}</pre></code>
+<p></p>
+<p>The process of loading a file is as follows:
+</p>
+<p>See if the URL points to an existing file. If it does not
+exist, return. The process of this will vary based on if
+sqlar mode is enabled.
+</p>
+<p>Additional work must be done to check if the file is a
+directory or not. If this doesn't happen, then the program
+continues as usual and a segfault occurs.
+</p>
+<div><b><i>&lt;&lt;does_file_exist&gt;&gt;=</i></b></div><pre><code>if (wws-&gt;use_sqlar) {
+    if (!sqlar_file_exists(db, name)) {
+        rc = 0;
+        goto cleanup;
+    }
+} else {
+    if (access(name, F_OK) != -1) {
+        /* Check if non-file (like a directory) */
+        struct stat path_stat;
+        stat(name, &path_stat);
+        if (!S_ISREG(path_stat.st_mode)) {
+            rc = 0;
+            goto cleanup;
+        }
+    } else {
+        rc = 0;
+        goto cleanup;
+    }
+}</pre></code>
+<p></p>
+<p>The file extension of the file is found. This is used to
+determine + set the MIME type in the HTTP request.
+</p>
+<div><b><i>&lt;&lt;find_mime_type&gt;&gt;=</i></b></div><pre><code>{
+    unsigned int sz;
+    unsigned int i;
+    unsigned int ext_pos;
+    sz = 0;
+    ext_pos = 0;
+&lt;&lt;get_extension&gt;&gt;
+&lt;&lt;mime_lookup&gt;&gt;
+}</pre></code>
+<p></p>
+<p>The file extension is found by starting at the end of the
+URL, and working backwards until the first '.' is found. If
+no extension is found, the MIME type is skipped I guess?
+</p>
+<div><b><i>&lt;&lt;get_extension&gt;&gt;=</i></b></div><pre><code>for (i = str-&gt;len; i &gt; 0; --i) {
+    sz++;
+    if (str-&gt;buf[i - 1] == '.') {
+        ext_pos = i - 1;
+        break;
+    }
+}
+</pre></code>
+<p></p>
+<p>The mime type strings are set via a linear table lookup.
+</p>
+<div><b><i>&lt;&lt;mime_type_table&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    const char *extension;
+    const char *mime_type;
+} mime_map;
+
+mime_map mime_table [] = {
+    {".css", "text/css"},
+    {".gif", "image/gif"},
+    {".htm", "text/html"},
+    {".html", "text/html"},
+    {".jpeg", "image/jpeg"},
+    {".jpg", "image/jpeg"},
+    {".ico", "image/x-icon"},
+    {".js", "application/javascript"},
+    {".pdf", "application/pdf"},
+    {".mp4", "video/mp4"},
+    {".png", "image/png"},
+    {".svg", "image/svg+xml"},
+    {".xml", "text/xml"},
+    {NULL, NULL},
+};</pre></code>
+<div><b><i>&lt;&lt;mime_lookup&gt;&gt;=</i></b></div><pre><code>i = 0;
+while (1) {
+    if (mime_table[i].extension == NULL) break;
+    if (!strncmp(mime_table[i].extension,
+                 &str-&gt;buf[ext_pos],
+                 sz)) {
+        http_response_header(response,
+                             "Content-Type",
+                             mime_table[i].mime_type);
+        break;
+    }
+    i++;
+}</pre></code>
+<p></p>
+<p>The file is loaded into memory. The process of this will
+vary based on if sqlar is enabled.
+</p>
+<div><b><i>&lt;&lt;load_file_into_memory&gt;&gt;=</i></b></div><pre><code>if (wws-&gt;use_sqlar) {
+    int sqlite_rc;
+    sqlite_rc = sqlar_extract_to_buffer(db,
+                                        name,
+                                        &filebuf,
+                                        &filesize);
+    if (sqlite_rc != SQLITE_OK) {
+        rc = 0;
+        goto cleanup;
+    }
+} else {
+    FILE *fp;
+
+    fp = fopen(name, "r");
+    fseek(fp, 0, SEEK_END);
+    filesize = ftell(fp);
+
+    fseek(fp, 0, SEEK_SET);
+
+    filebuf = calloc(1, filesize + 1);
+    fread(filebuf, 1, filesize, fp);
+}</pre></code>
+<p></p>
+<p>After all this is done, the http request is completed.
+</p>
+<div><b><i>&lt;&lt;serve_the_file&gt;&gt;=</i></b></div><pre><code>{
+    http_response_body(response, filebuf, filesize);
+    http_respond(request, response);
+    rc = 1;
+    response = NULL;
+}</pre></code>
+</div>
+</body>
+</html>

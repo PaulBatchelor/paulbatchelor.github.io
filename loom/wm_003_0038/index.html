@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Janet</h3>
+
+<p><a id="wm_003_0038"></a></p>
+
+<h4>6.1. Setup</h4>
+
+<p><a id="wm_003_0039"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>JanetTable * weewiki_janet_setup(void);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>JanetTable * weewiki_janet_setup(void)
+{
+    JanetTable *env;
+    janet_init();
+    env = janet_core_env(NULL);
+    weewiki_janet_cfuns(env);
+    return env;
+}</pre></code>
+
+<h4>6.2. Load C Functions</h4>
+
+<p><a id="wm_003_0044"></a>All the custom C functions for janet are loaded here.
+This is called in setup, but is also called separately
+for the janet standalone in <code>janet_main</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_cfuns(JanetTable *env);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_sqlite(JanetTable *env);
+void weewiki_janet_cfuns(JanetTable *env)
+{
+    janet_def(env,
+              "print",
+              janet_wrap_cfunction(cfun_io_print),
+              NULL);
+    janet_def(env,
+              "prin",
+              janet_wrap_cfunction(cfun_io_prin),
+              NULL);
+    janet_def(env,
+              "org",
+              janet_wrap_cfunction(cfun_org),
+              NULL);
+    janet_def(env,
+              "ww-open",
+              janet_wrap_cfunction(cfun_ww_open),
+              NULL);
+    janet_def(env,
+              "ww-close",
+              janet_wrap_cfunction(cfun_ww_close),
+              NULL);
+    janet_def(env,
+              "ww-add-page",
+              janet_wrap_cfunction(cfun_ww_add_page),
+              NULL);
+    janet_def(env,
+              "ww-add-link",
+              janet_wrap_cfunction(cfun_ww_add_link),
+              NULL);
+    janet_def(env,
+              "ww-sync",
+              janet_wrap_cfunction(cfun_ww_sync),
+              NULL);
+    janet_def(env,
+              "ww-clear",
+              janet_wrap_cfunction(cfun_ww_clear),
+              NULL);
+    janet_def(env,
+              "ww-db",
+              janet_wrap_cfunction(cfun_ww_db),
+              NULL);
+    janet_def(env,
+              "ww-name",
+              janet_wrap_cfunction(cfun_name),
+              NULL);
+&lt;&lt;janet_defs&gt;&gt;
+    weewiki_janet_sqlite(env);
+    janet_dostring(env,
+                    "(defn html-header () ())"
+                    "(defn html-footer () ())"
+                    "(def ww-dir \"\")",
+                    NULL, NULL);
+
+}</pre></code>
+
+<h4>6.3. Cleanup</h4>
+
+<p><a id="wm_003_0052"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_cleanup(void);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_cleanup(void)
+{
+    janet_deinit();
+}</pre></code>
+
+<h4>6.4. Load Config</h4>
+
+<p><a id="wm_003_0057"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_loadconfig(JanetTable *env);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_loadconfig(JanetTable *env)
+{
+    FILE *config;
+    size_t config_sz;
+    char *tmp;
+
+    config = fopen("weewiki.janet", "r");
+
+    if (config != NULL) {
+        fseek(config, 0, SEEK_END);
+        config_sz = ftell(config);
+        tmp = calloc(1, config_sz + 1);
+        fseek(config, 0, SEEK_SET);
+        fread(tmp, 1, config_sz, config);
+        fclose(config);
+        janet_dostring(env, tmp, NULL, NULL);
+        free(tmp);
+    }
+}</pre></code>
+
+<h4>6.5. Get www-dir</h4>
+
+<p><a id="wm_003_0062"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>const unsigned char * weewiki_janet_wwdir(JanetTable *env);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>const unsigned char * weewiki_janet_wwdir(JanetTable *env)
+{
+    const unsigned char *dir;
+    Janet out;
+
+    dir = NULL;
+    janet_dostring(env, "ww-dir", NULL, &out);
+    dir = janet_unwrap_string(out);
+    return dir;
+}</pre></code>
+
+<h4>6.6. Open/Close database</h4>
+
+<p><a id="wm_003_0067"></a>Should only be used in the janet standalone.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_open(int32_t argc, Janet *argv);
+static Janet cfun_ww_close(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_open(int32_t argc, Janet *argv)
+{
+    const uint8_t *filename;
+    weewiki_d *ww;
+    janet_fixarity(argc, 1);
+
+    filename = janet_getstring(argv, 0);
+    ww = weewiki_get();
+
+    weewiki_open(ww, (const char *)filename);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_ww_close(int32_t argc, Janet *argv)
+{
+    weewiki_d *ww;
+    ww = weewiki_get();
+    weewiki_close(ww);
+    return janet_wrap_nil();
+}</pre></code>
+
+<h4>6.7. Add Page</h4>
+
+<p><a id="wm_003_0073"></a>Adds a page to the database.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_add_page(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_add_page(int32_t argc, Janet *argv)
+{
+    const char *key;
+    const char *val;
+    weewiki_d *ww;
+
+    janet_fixarity(argc, 2);
+    key = (const char *)janet_getstring(argv, 0);
+    val = (const char *)janet_getstring(argv, 1);
+    ww = weewiki_get();
+
+    weewiki_add_page(ww, key, val);
+
+    return janet_wrap_nil();
+}</pre></code>
+
+<h4>6.8. Add Link</h4>
+
+<p><a id="wm_003_0079"></a>Adds a link to the note. Note that the mtime will be set to
+zero, so that the page is automatically pushed by default.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_add_link(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_add_link(int32_t argc, Janet *argv)
+{
+    const char *key;
+    const char *fname;
+    weewiki_d *ww;
+
+    janet_fixarity(argc, 2);
+    key = (const char *)janet_getstring(argv, 0);
+    fname = (const char *)janet_getstring(argv, 1);
+    ww = weewiki_get();
+
+    weewiki_add_link(ww, key, fname);
+    return janet_wrap_nil();
+}</pre></code>
+
+<h4>6.9. Sync Database</h4>
+
+<p><a id="wm_003_0085"></a>Equivalent to <code>weewiki sync</code>.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_sync(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_sync(int32_t argc, Janet *argv)
+{
+    weewiki_d *ww;
+    ww = weewiki_get();
+    weewiki_sync(ww);
+    return janet_wrap_nil();
+}</pre></code>
+
+<h4>6.10. Clear Database</h4>
+
+<p><a id="wm_003_0091"></a>Clears data from existing wiki db.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_clear(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_clear(int32_t argc, Janet *argv)
+{
+    weewiki_d *ww;
+    ww = weewiki_get();
+    weewiki_clear(ww);
+    return janet_wrap_nil();
+}</pre></code>
+
+<h4>6.11. Get Open Database</h4>
+
+<p><a id="wm_003_0097"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_db(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>Janet weewiki_return_db(sqlite3 *sql);
+static Janet cfun_ww_db(int32_t argc, Janet *argv)
+{
+    weewiki_d *ww;
+    ww = weewiki_get();
+    return weewiki_return_db(weewiki_db(ww));
+}</pre></code>
+
+<h4>6.12. Getting current page name</h4>
+
+<p><a id="wm_003_0102"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_name(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_name(int32_t argc, Janet *argv)
+{
+    weewiki_d *ww;
+    const char *name;
+    Janet out;
+    ww = weewiki_get();
+
+    name = weewiki_pgname(ww);
+
+    out = janet_wrap_nil();
+
+    if (name !=NULL) {
+        out = janet_wrap_string(janet_string((const unsigned char *)name, strlen(name)));
+    }
+
+    return out;
+}</pre></code>
+
+<h4>6.13. Is weewiki in server mode?</h4>
+
+<p><a id="wm_003_0107"></a>Done with the janet function <code>ww-server?</code>
+
+<div><b><i>&lt;&lt;janet_defs&gt;&gt;=</i></b></div><pre><code>janet_def(env,
+          "ww-server?",
+          janet_wrap_cfunction(cfun_is_server),
+          NULL);</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_is_server(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_is_server(int32_t argc, Janet *argv)
+{
+    weewiki_d *ww;
+    ww = weewiki_get();
+
+    return janet_wrap_boolean(weewiki_is_server(ww));
+}</pre></code>
+
+<h4>6.14. DB name set/get</h4>
+
+<p><a id="wm_003_0116"></a>Wrappers to set/get the current database name.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_dbname_set(int32_t argc, Janet *argv);
+static Janet cfun_dbname_get(int32_t argc, Janet *argv);</pre></code>
+<div><b><i>&lt;&lt;janet_defs&gt;&gt;=</i></b></div><pre><code>janet_def(env,
+          "ww-dbname-set",
+          janet_wrap_cfunction(cfun_dbname_set),
+          NULL);
+janet_def(env,
+          "ww-dbname-get",
+          janet_wrap_cfunction(cfun_dbname_get),
+          NULL);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_dbname_set(int32_t argc, Janet *argv)
+{
+    const char *str;
+    janet_fixarity(argc, 1);
+    str = (const char *)janet_getstring(argv, 0);
+    weewiki_dbname_set(str);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_dbname_get(int32_t argc, Janet *argv)
+{
+    janet_fixarity(argc, 0);
+    return janet_wrap_string(weewiki_dbname_get());
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Argument Parsing</h3>
+
+<p><a id="wm_002_0159"></a>Based on constructs found in <code>worgmap</code>, a project found
+in <code>worgle</code>.
+</p>
+
+<h4>4.1. Argparse entry table</h4>
+
+<p><a id="wm_002_0161"></a>Every subcommand is stored inside of a table. This gets
+dynamically populated with Worgle via a code block called
+<code>orgparse_entries</code>.
+</p>
+<div><b><i>&lt;&lt;argparse&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    const char *name;
+    int len;
+    int (*fun)(int, char **);
+    const char *desc;
+} argparse_entry;
+
+argparse_entry commands[] = {
+&lt;&lt;argparse_entries&gt;&gt;
+};</pre></code>
+
+<h4>4.2. Argparse Run</h4>
+
+<p><a id="wm_002_0168"></a>The function <code>argparse_match_and_run</code> will attempt find and
+run the proper subcommand. It will return the error code.
+Any non-zero value will be considered an error.
+</p>
+<p>This function assumes that <code>argc</code> is greater than 1. Do
+checks beforehand.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int argparse_match_and_run(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int match(const char *s1,
+                 int sz1,
+                 const char *s2,
+                 int sz2)
+{
+    return sz1 == sz2 && !strncmp(s1, s2, sz2);
+}
+
+
+static int argparse_match_and_run(int argc, char *argv[])
+{
+    size_t len;
+    int rc;
+    int nitems;
+    int i;
+    argparse_entry *cmd;
+
+    rc = 0;
+
+    nitems = sizeof(commands) / sizeof(*commands);
+
+    len = strlen(argv[1]);
+
+    cmd = commands;
+
+    for (i = 0; i &lt; nitems; i++) {
+        if (match(argv[1], len, cmd[i].name, cmd[i].len)) {
+            argc--;
+            argv++;
+            return cmd[i].fun(argc, argv);
+        }
+    }
+
+    return rc;
+}</pre></code>
+
+<h4>4.3. Print Arguments</h4>
+
+<p><a id="wm_002_0175"></a>Done with <code>argparse_print</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void argparse_print(FILE *fp);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void argparse_print(FILE *fp)
+{
+    int nitems;
+    int i;
+
+    fprintf(fp, "Available commands:\n\n");
+    nitems = sizeof(commands) / sizeof(*commands);
+
+    for (i = 0; i &lt; nitems; i++) {
+        fprintf(fp, "%s\n", commands[i].name);
+    }
+}</pre></code>
+</div>
+</body>
+</html>
