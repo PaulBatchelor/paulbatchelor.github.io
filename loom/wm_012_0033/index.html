@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. wmp_core</h3>
+
+<p><a id="wm_012_0033"></a></p>
+
+<h4>3.1. Struct</h4>
+
+<p><a id="wm_012_0034"></a>SQLite data is indirectly handled inside of a struct called
+<code>wmp_core</code>. That's all it does for now, but I fully expect
+things to change in the future.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wmp_core wmp_core;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wmp_core {
+    sqlite3 *db;
+};</pre></code>
+
+<h4>3.2. DONE Opening the database</h4>
+
+<p><a id="wm_012_0042"></a>CLOSED: [2019-08-31 Sat 06:09]
+The database handled is opened with the function
+<code>wmp_core_open</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int wmp_core_open(wmp_core *core, const char *filename);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_core_open(wmp_core *core, const char *filename)
+{
+    sqlite3 *db;
+    int rc;
+    FILE *fp;
+
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        fprintf(stderr,
+                "Database %s not found.\n",
+                filename);
+        return 0;
+    }
+    fclose(fp);
+
+    core-&gt;db = NULL;
+    rc = sqlite3_open(filename, &db);
+    if (rc) {
+        fprintf(stderr,
+                "Could not open database: %s",
+                sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return 0;
+    }
+
+    core-&gt;db = db;
+    return 1;
+}</pre></code>
+
+<h4>3.3. DONE Closing the database</h4>
+
+<p><a id="wm_012_0050"></a>CLOSED: [2019-08-31 Sat 06:10]
+The database handle is closed with the function
+<code>wmp_core_close</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_core_close(wmp_core *core);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_core_close(wmp_core *core)
+{
+    sqlite3_close(core-&gt;db);
+}</pre></code>
+
+<h4>3.4. DONE Getting SQLite data type</h4>
+
+<p><a id="wm_012_0056"></a>CLOSED: [2019-08-31 Sat 06:13]
+Retrieved using the function <code>wmp_core_db</code>.
+</p>
+<p>This will only be defined if the sqlite3 header
+file is included before this header. Otherwise,
+including sqlite3 would be a prereq for anything
+wanting to include <code>core.h</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef SQLITE3_H
+sqlite3 * wmp_core_db(wmp_core *core);
+#endif</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>sqlite3 * wmp_core_db(wmp_core *core)
+{
+    return core-&gt;db;
+}</pre></code>
+
+<h4>3.5. DONE Default Filename</h4>
+
+<p><a id="wm_012_0062"></a>CLOSED: [2019-08-31 Sat 06:21]
+To make the CLI more terse, a default filename is used,
+which can be configured through command line flags.
+</p>
+
+<h4>3.6. Global Definition</h4>
+
+<p><a id="wm_012_0064"></a>The default filename is <code>a.db</code>.
+<div><b><i>&lt;&lt;constants&gt;&gt;=</i></b></div><pre><code>const char *db_filename = "a.db";</pre></code>
+
+<h4>3.7. Setters/Getters</h4>
+
+<p><a id="wm_012_0069"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>const char * wmp_filename_get(void);
+void wmp_filename_set(const char *filename);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>const char * wmp_filename_get(void)
+{
+    return db_filename;
+}
+
+void wmp_filename_set(const char *filename)
+{
+    db_filename = filename;
+}</pre></code>
+</div>
+</body>
+</html>

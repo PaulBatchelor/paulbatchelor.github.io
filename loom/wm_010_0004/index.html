@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>2. Main loop</h3>
+
+<p><a id="wm_010_0004"></a><div><b><i>&lt;&lt;main_loop&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include "parg.h"
+
+&lt;&lt;global_variables&gt;&gt;
+&lt;&lt;enums&gt;&gt;
+&lt;&lt;sorg_data&gt;&gt;
+&lt;&lt;function_declarations&gt;&gt;
+&lt;&lt;functions&gt;&gt;
+&lt;&lt;parsing_top&gt;&gt;
+&lt;&lt;getline&gt;&gt;
+
+int main(int argc, char *argv[])
+{
+    FILE *in;
+    FILE *out;
+    char *line;
+    size_t read;
+    size_t n;
+    sorg_d sorg;
+    char *filename;
+&lt;&lt;local_variables&gt;&gt;
+
+    filename = NULL;
+    in = stdin;
+
+&lt;&lt;parse_command_flags&gt;&gt;
+
+    if(filename != NULL) {
+        in = fopen(filename, "r");
+    }
+
+    out = stdout;
+
+    line = NULL;
+    n = 0;
+
+    sorg_init(&sorg);
+
+    while((read = sorg_getline(&line, &n, in)) != -1) {
+        parse(&sorg, out, line, read);
+    }
+
+    if(sorg.pmode == MODE_TEXT) fprintf(out, "&lt;/p&gt;");
+    if(mktoc && sorg.depth &gt;= 0) fprintf(out, "&lt;/ul&gt;");
+    if(in != stdin) fclose(in);
+    if(line != NULL) free(line);
+    return 0;
+}</pre></code>
+</div>
+</body>
+</html>

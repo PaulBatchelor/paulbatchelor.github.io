@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Command line parsing</h3>
+
+<p><a id="wm_010_0296"></a>Command line argument parsing is done using the third-party library
+<a href="https://github.com/jibsen/parg">parg</a>, included in this source distribution.
+</p>
+<div><b><i>&lt;&lt;local_variables&gt;&gt;=</i></b></div><pre><code>struct parg_state ps;
+int c;</pre></code>
+<div><b><i>&lt;&lt;parse_command_flags&gt;&gt;=</i></b></div><pre><code>parg_init(&ps);
+while((c = parg_getopt(&ps, argc, argv, "st:")) != -1) {
+    switch(c) {
+        case 1:
+            filename = (char *)ps.optarg;
+            break;
+        case 't':
+&lt;&lt;generate_toc&gt;&gt;
+            break;
+        case 's':
+&lt;&lt;turn_on_sections&gt;&gt;
+            break;
+        default:
+            fprintf(stderr, "Unknown option -%c\n", c);
+            return 1;
+    }
+}</pre></code>
+
+<h4>6.1. Turn on section numbers (-s)</h4>
+
+<p><a id="wm_010_0308"></a></p>
+<p>The "-t" flag will turn on section numbers.
+This will set a global variable <code>use_secno</code> to be 1.
+</p>
+<div><b><i>&lt;&lt;turn_on_sections&gt;&gt;=</i></b></div><pre><code>use_secno = 1;</pre></code>
+<p></p>
+<p>By default, the <code>use_secno</code> global is 0.
+</p>
+<div><b><i>&lt;&lt;global_variables&gt;&gt;=</i></b></div><pre><code>static int use_secno = 0;</pre></code>
+
+<h4>6.2. Generate Table of Contents (-t)</h4>
+
+<p><a id="wm_010_0317"></a></p>
+<p>This argument flag will generate a table of contents. The flag has
+an input parameter, which should be the name of the HTML filename containing
+the full documentation.
+</p>
+<div><b><i>&lt;&lt;generate_toc&gt;&gt;=</i></b></div><pre><code>mktoc = 1;
+indxfile = (char *)ps.optarg;</pre></code>
+<p></p>
+<p>By default, the filename is set to NULL, and the <code>mktoc</code> variable is set
+to be false.
+</p>
+<div><b><i>&lt;&lt;global_variables&gt;&gt;=</i></b></div><pre><code>static char *indxfile = NULL;
+static int mktoc = 0;</pre></code>
+</div>
+</body>
+</html>

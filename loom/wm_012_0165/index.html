@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>7. File</h3>
+
+<p><a id="wm_012_0165"></a></p>
+
+<h4>7.1. Struct</h4>
+
+<p><a id="wm_012_0166"></a>A <code>wmp_file</code> is a record containing the name of a file to
+tangle to.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wmp_file wmp_file;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wmp_file {
+    unsigned int id;
+    char *filename;
+    int top;
+    int next_file;
+    int prog;
+};</pre></code>
+
+<h4>7.2. init</h4>
+
+<p><a id="wm_012_0172"></a>It is initialized using <code>wmp_file_init</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_file_init(wmp_file *f);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_file_init(wmp_file *f)
+{
+    f-&gt;id = 0;
+    f-&gt;filename = NULL;
+    f-&gt;next_file = -1;
+    f-&gt;prog = -1;
+}</pre></code>
+
+<h4>7.3. Free</h4>
+
+<p><a id="wm_012_0178"></a>It is freed using <code>wmp_file_free</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_file_free(wmp_file *f);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_file_free(wmp_file *f)
+{
+    free(f-&gt;filename);
+}</pre></code>
+
+<h4>7.4. Find</h4>
+
+<p><a id="wm_012_0184"></a>It is queried using <code>wmp_find_file</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int wmp_find_file(wmp_core *c,
+                  unsigned int uuid,
+                  wmp_file *f,
+                  int prog);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_find_file(wmp_core *c,
+                  unsigned int uuid,
+                  wmp_file *f,
+                  int prog)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int nbytes;
+    const char *str;
+
+    db = wmp_core_db(c);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT "
+                         "filename,"
+                         "next_file, "
+                         "top "
+                       "FROM files "
+                       "WHERE(id==?1) AND "
+                       "(program == ?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_int(stmt, 1, uuid);
+    sqlite3_bind_int(stmt, 2, prog);
+
+    rc = sqlite3_step(stmt);
+
+    if(rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+
+    if(rc == SQLITE_ROW) {
+        f-&gt;id = uuid;
+        nbytes = sqlite3_column_bytes(stmt, 0);
+        f-&gt;filename = calloc(1, nbytes + 1);
+        f-&gt;next_file = sqlite3_column_int(stmt, 1);
+        str = (const char *)sqlite3_column_text(stmt, 0);
+        strncpy(f-&gt;filename, str, nbytes);
+        f-&gt;top = sqlite3_column_int(stmt, 2);
+    } else {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+    sqlite3_finalize(stmt);
+    return 1;
+}</pre></code>
+
+<h4>7.5. Lookup</h4>
+
+<p><a id="wm_012_0190"></a>A file can be queried by name directly via the function
+<code>wmp_lookup_file</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int wmp_lookup_file(wmp_core *c,
+                     const char *filename,
+                     wmp_file *f);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_lookup_file(wmp_core *c,
+                     const char *filename,
+                     wmp_file *f)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int nbytes;
+
+    db = wmp_core_db(c);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT "
+                         "id,"
+                         "next_file, "
+                         "top, "
+                         "program "
+                       "FROM files "
+                       "WHERE(filename==?1);",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_text(stmt, 1,
+                      filename, strlen(filename),
+                      NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+
+    if (rc == SQLITE_ROW) {
+        f-&gt;id = sqlite3_column_int(stmt, 0);
+        f-&gt;next_file = sqlite3_column_int(stmt, 1);
+        nbytes = strlen(filename);
+        f-&gt;filename = calloc(1, nbytes + 1);
+        strncpy(f-&gt;filename, filename, nbytes);
+        f-&gt;top = sqlite3_column_int(stmt, 2);
+        f-&gt;prog = sqlite3_column_int(stmt, 3);
+    } else {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+    sqlite3_finalize(stmt);
+    return 1;
+}</pre></code>
+
+<h4>7.6. Top File</h4>
+
+<p><a id="wm_012_0196"></a>Gets top file from the files column. Useful if you want to
+iterate throught the file list.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int wmp_file_top(wmp_core *c, wmp_file *f, int prog);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_file_top(wmp_core *c, wmp_file *f, int prog)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int nbytes;
+    const char *filename;
+
+    db = wmp_core_db(c);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT "
+                         "id,"
+                         "filename,"
+                         "next_file, "
+                         "top "
+                       "FROM files "
+                       "WHERE (program == ?1) "
+                       "LIMIT 1;",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_int(stmt, 1, prog);
+    rc = sqlite3_step(stmt);
+
+    if(rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+
+    if(rc == SQLITE_ROW) {
+        f-&gt;id = sqlite3_column_int(stmt, 0);
+        f-&gt;next_file = sqlite3_column_int(stmt, 2);
+        nbytes = sqlite3_column_bytes(stmt, 1);
+        f-&gt;filename = calloc(1, nbytes + 1);
+        filename = (const char *)sqlite3_column_text(stmt, 1);
+        strncpy(f-&gt;filename, filename, nbytes);
+        f-&gt;top = sqlite3_column_int(stmt, 2);
+    } else {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+    sqlite3_finalize(stmt);
+    return 1;
+}</pre></code>
+</div>
+</body>
+</html>

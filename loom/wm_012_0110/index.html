@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>5. Segment</h3>
+
+<p><a id="wm_012_0110"></a></p>
+
+<h4>5.1. Struct</h4>
+
+<p><a id="wm_012_0111"></a>A <code>wmp_segment</code> stores a segment of text from the segment
+table.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wmp_segment wmp_segment;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wmp_segment {
+    unsigned int id;
+    int type;
+    char *str;
+    int linum;
+    char *filename;
+    int nxtseg;
+    int prog;
+};</pre></code>
+<p></p>
+<p>A <code>wmp_segment</code> can be queried by UUID using the function
+<code>wmp_find_segment</code>. If the return value is false (0), then
+there was a problem finding the entry.
+</p>
+<p>The function <code>wmp_find_segment</code> allocates memory to store
+the segment text as a C-string. Because of this, a segment
+must be freed using the function <code>wmp_segment_free</code>.
+</p>
+
+<h4>5.2. init</h4>
+
+<p><a id="wm_012_0118"></a>A segment is initialized with <code>wmp_segment_init</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_segment_init(wmp_segment *s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_segment_init(wmp_segment *s)
+{
+    s-&gt;id = 0;
+    s-&gt;type = -1;
+    s-&gt;str = NULL;
+    s-&gt;linum = 0;
+    s-&gt;filename = NULL;
+    s-&gt;nxtseg = -1;
+    s-&gt;prog = -1;
+}</pre></code>
+
+<h4>5.3. Free</h4>
+
+<p><a id="wm_012_0124"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_segment_free(wmp_segment *s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_segment_free(wmp_segment *s)
+{
+    free(s-&gt;str);
+    free(s-&gt;filename);
+}</pre></code>
+
+<h4>5.4. Find</h4>
+
+<p><a id="wm_012_0129"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int wmp_find_segment(wmp_core *c,
+                     unsigned int uuid,
+                     wmp_segment *s,
+                     int prog);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_find_segment(wmp_core *c,
+                     unsigned int uuid,
+                     wmp_segment *s,
+                     int prog)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int nbytes;
+    const char *str;
+    const char *fname;
+
+    db = wmp_core_db(c);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT "
+                         "type,"
+                         "str,"
+                         "linum,"
+                         "filename,"
+                         "next_segment, "
+                         "program "
+                       "FROM segments "
+                       "WHERE(id==?1) AND "
+                       "(program==?2) ",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_int(stmt, 1, uuid);
+    sqlite3_bind_int(stmt, 2, prog);
+
+    rc = sqlite3_step(stmt);
+
+    if(rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return WMP_NOT_OK;
+    }
+
+    if(rc == SQLITE_ROW) {
+        s-&gt;id = uuid;
+        s-&gt;type = sqlite3_column_int(stmt, 0);
+
+        nbytes = sqlite3_column_bytes(stmt, 1);
+        s-&gt;str = calloc(1, nbytes + 1);
+        str = (const char *)sqlite3_column_text(stmt, 1);
+        strncpy(s-&gt;str, str, nbytes);
+
+        s-&gt;linum = sqlite3_column_int(stmt, 2);
+
+        nbytes = sqlite3_column_bytes(stmt, 3);
+        s-&gt;filename = calloc(1, nbytes + 1);
+        fname = (const char *)sqlite3_column_text(stmt, 3);
+        strncpy(s-&gt;filename, fname, nbytes);
+
+        s-&gt;nxtseg = sqlite3_column_int(stmt, 4);
+        s-&gt;prog = sqlite3_column_int(stmt, 5);
+    } else {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return WMP_NOT_OK;
+    }
+    sqlite3_finalize(stmt);
+    return WMP_OK;
+}</pre></code>
+</div>
+</body>
+</html>

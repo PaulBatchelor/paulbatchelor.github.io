@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Generation</h3>
+
+<p><a id="wm_015_0055"></a>This section refers to the core wiki page generation.
+</p>
+<p>Every weewiki page generated corresponds to a top-level
+header.
+</p>
+<p>For simplification purposes, a program in this context is
+considered to be a collection of top-level headers.
+If there are no level 1 headers, no pages are created.
+Any text that occurs before the first header will be skipped.
+</p>
+<p>Page generation is a matter of getting the top-level id, and
+then iterating through all the individual components until
+it reaches the end. Along the way, it is determined where
+major sections start and end, and pages are broken up and
+generated accordingly.
+</p>
+<div><b><i>&lt;&lt;page_generation&gt;&gt;=</i></b></div><pre><code>&lt;&lt;find_first_id&gt;&gt;
+&lt;&lt;find_last_id&gt;&gt;
+&lt;&lt;iterate_through_components&gt;&gt;</pre></code>
+<p></p>
+<p>The first header in the program needs to be found. This is
+the header with the smallest reference ID.
+</p>
+<p>This can be found with <code>wmp_header_top</code>.
+</p>
+<div><b><i>&lt;&lt;find_first_id&gt;&gt;=</i></b></div><pre><code>id = wmp_header_top(core, NULL, prog);
+if (id == 0) {
+    single_page = 1;
+    id = wmp_resource_top(core, NULL, prog);
+}
+page_id = id;</pre></code>
+<p></p>
+<p>The last significant id of the program is found. When this
+resource is reached, the program willl break. This is found
+with the function <code>wmp_resource_last</code>.
+</p>
+<div><b><i>&lt;&lt;find_last_id&gt;&gt;=</i></b></div><pre><code>last = wmp_resource_last(core, NULL, prog);</pre></code>
+<p></p>
+<p>Org code gets rendered by iterating through headers,
+content, and block references.
+</p>
+<div><b><i>&lt;&lt;iterate_through_components&gt;&gt;=</i></b></div><pre><code>while (1) {
+    wmp_resource res;
+&lt;&lt;get_type&gt;&gt;
+&lt;&lt;handle_component&gt;&gt;
+&lt;&lt;check_for_last&gt;&gt;
+&lt;&lt;update_id&gt;&gt;
+}
+&lt;&lt;flush_last_page&gt;&gt;</pre></code>
+<p></p>
+<p>These components are
+connected together as a linked list. Every one of these
+components has a "next" value, containing the reference ID
+of the next object.
+</p>
+<p>Iteration through the list will continue to happen until
+the last ID is found. There, it will break the loop.
+</p>
+<div><b><i>&lt;&lt;check_for_last&gt;&gt;=</i></b></div><pre><code>if (id &gt;= last) break;</pre></code>
+<p></p>
+<p>The <code>next</code> value is presumably found from one of the
+components, it is updated at the end of the loop.
+</p>
+<div><b><i>&lt;&lt;update_id&gt;&gt;=</i></b></div><pre><code>if (next == 0) {
+    printf("next id is 0, coming from %d\n", id);
+}
+id = next;</pre></code>
+<p></p>
+<p>The type of the reference ID is determined, and then the
+information is extracted from the right table.
+</p>
+<div><b><i>&lt;&lt;get_type&gt;&gt;=</i></b></div><pre><code>wmp_resource_init(&res);
+rc = wmp_find_resource(core, id, &res, prog);
+
+if (!rc) {
+    fprintf(stderr, "Could not find resource %d\n", id);
+    err = 1;
+    goto cleanup;
+}</pre></code>
+<p></p>
+<p>Content gets appended to the working string in different
+ways depending on the type. There are three major types
+to consider: content data, headers, and code blocks.
+</p>
+<p>For now: headers, content, and block references are hard
+coded as integers 3, 4, 5 (as seen in the enum defined
+in db.org). A less brittle solution will perhaps someday be
+implemented.
+</p>
+<div><b><i>&lt;&lt;handle_component&gt;&gt;=</i></b></div><pre><code>switch (res.type) {
+    case 3:
+&lt;&lt;append_header&gt;&gt;
+        break;
+    case 4:
+&lt;&lt;append_content&gt;&gt;
+        break;
+    case 5:
+&lt;&lt;append_block&gt;&gt;
+        break;
+    default:
+        fprintf(stderr, "Not sure how to handle type %d\n",
+                res.type);
+        err = 1;
+        goto cleanup;
+}</pre></code>
+<p></p>
+<p>Components get appended onto the end of a string as org
+code.
+</p>
+<p>For content, it's a matter of appending the text
+as-is. This is the most straightforward.
+</p>
+<div><b><i>&lt;&lt;append_content&gt;&gt;=</i></b></div><pre><code>{
+    wmp_content ct;
+    rc = wmp_content_find(core, id, &ct, prog);
+
+    if (!rc) {
+        fprintf(stderr,
+                "Could not find content %d in program %d\n",
+                id,
+                prog);
+        err = 1;
+        goto cleanup;
+    }
+
+    wwstring_append(&str, ct.content, strlen(ct.content));
+    next = ct.next;
+    wmp_content_free(&ct);
+}</pre></code>
+<p></p>
+<p>Headers require some processing. First, the header level is
+applied (the number of stars). Following that, the
+dynamically generated section number. Finally, the actual
+name itself is appended.
+</p>
+<br>
+<p>Following each header is a <code>marker</code> command from Janet. This
+is used to enable jump links for specific sections. The id
+used will be the relative worgmap id.
+</p>
+<div><b><i>&lt;&lt;append_header&gt;&gt;=</i></b></div><pre><code>{
+    wmp_header hd;
+    char tmp[16]; /* hope 16 levels is enough heh */
+    int i;
+    int level;
+    char idstr[12]; /* wm_XXX_YYYY */
+
+    rc = wmp_header_find(core, id, &hd, prog);
+
+    if (!rc) {
+        fprintf(stderr,
+                "Could not find content %d in program %d\n",
+                id,
+                prog);
+    }
+
+&lt;&lt;check_for_new_section&gt;&gt;
+
+    if (hd.level &gt;= 14) level = 14;
+    else level = hd.level;
+
+    for (i = 0; i &lt; hd.level; i++) {
+        tmp[i] = '*';
+    }
+
+    tmp[level] = ' ';
+    tmp[level + 1] = '\0';
+
+    wwstring_append(&str, tmp, level + 1);
+    wwstring_append(&str, hd.section, strlen(hd.section));
+    wwstring_append(&str, " ", 1);
+    wwstring_append(&str, hd.name, strlen(hd.name));
+    wwstring_append(&str, "\n", 1);
+
+    sprintf(idstr, "wm_%03d_%04d", prog, hd.id);
+    idstr[11] = 0;
+    wwstring_append(&str, "@!(marker \"", 11);
+    wwstring_append(&str, idstr, 11);
+    wwstring_append(&str, "\")!@\n", 5);
+
+    next = hd.next;
+    prev_header_id = hd.id;
+    wmp_header_free(&hd);
+}</pre></code>
+<p></p>
+<p>Markers are referenced using inline janet function called
+<code>marker</code>. This creates an id reference that jump links can
+use.
+</p>
+<p>A header marker generated with the format
+<code>wm_PROG_ID</code> where <code>PROG</code> is the program number, and
+<code>ID</code> is the reference id.
+</p>
+<p>Generating code blocks is where things start to get
+interesting. A code block first pops up as a block
+reference, and is used to make a marker with the name
+<code>wm_PROG_ID</code>. From the block reference, the code block
+itself can be extracted. The subblock can then be recreated
+using the <code>pos</code>, <code>ref</code>, <code>prev_lastseg</code>, and <code>segoff</code>
+values.
+</p>
+<p>A code subblock is a chain of segments. that gets written
+inside of a subblock. Segments are either piece of text,
+or block references. Block references will eventually turn
+into hyperlinks that go to a block page. For now, they
+will be represented in text form.
+</p>
+<p>The first thing supplied here is a block reference. From the
+block reference, the actual named code block can be
+retrieved. This is found using <code>wmp_blkref_codeblock</code>, which
+returns the subblock as a list of segments.
+</p>
+<div><b><i>&lt;&lt;append_block&gt;&gt;=</i></b></div><pre><code>{
+    wmp_blkref br;
+    wmp_segment *segs;
+    int nsegs;
+    wmp_block blk;
+    int k;
+
+    nsegs = 0;
+    wmp_blkref_init(&br);
+
+    wmp_blkref_find(core, id, &br, prog);
+    wmp_block_init(&blk);
+    wmp_find_block(core, br.ref, &blk, prog);
+    wmp_blkref_codeblock(core, &br, &segs, &nsegs);
+
+    wwstring_append(&str, "#+NAME: ", 8);
+    wwstring_append(&str, blk.name, strlen(blk.name));
+    wwstring_append(&str, "\n", 1);
+    wwstring_append(&str, "#+BEGIN_SRC c", 13);
+    wwstring_append(&str, "\n", 1);
+    for (k = 0; k &lt; nsegs; k++) {
+        if (segs[k].type == 0) {
+            wwstring_append(&str, segs[k].str, strlen(segs[k].str));
+        } else if (segs[k].type == 1) {
+            wwstring_append(&str, "&lt;&lt;", 2);
+            wwstring_append(&str, segs[k].str, strlen(segs[k].str));
+            wwstring_append(&str, "&gt;&gt;", 2);
+            wwstring_append(&str, "\n", 1);
+        }
+    }
+    wwstring_append(&str, "#+END_SRC", 9);
+    wwstring_append(&str, "\n", 1);
+
+    next = br.next;
+    wmp_blkref_free(&br);
+    wmp_block_free(&blk);
+    wmp_blkref_codeblock_free(core, &segs, nsegs);
+}</pre></code>
+<p></p>
+<p>A check is done to see if a page needs to be written. A new
+page can be written when a new major section is found (this
+will probably be set with some sort of flag).
+</p>
+<div><b><i>&lt;&lt;check_for_new_section&gt;&gt;=</i></b></div><pre><code>if (hd.level == 1 && prev_header_id &gt; 0) {
+&lt;&lt;create_new_wikipage&gt;&gt;
+    wwstring_free(&str);
+    wwstring_init(&str);
+    page_id = hd.id;
+}</pre></code>
+<p></p>
+<p>Creating a new weewiki is a matter of inserting a new row
+into the <code>wiki</code> table. A unique page name is created with
+the format <code>WM_PROG_ID</code> where <code>PROG</code> is the program ID, and
+<code>ID</code> is the resource ID associated with the top-level
+header.
+</p>
+<div><b><i>&lt;&lt;generate_page_name&gt;&gt;=</i></b></div><pre><code>sprintf(pgname, "wm_%03d_%04d", prog, page_id);</pre></code>
+<p></p>
+<p>The data for page content itself is stored in a string that
+has been appended to since the last page was created.
+</p>
+<p>The key/value pair for an operation is written via a SQL
+<code>INSERT</code> operation via the SQLite API.
+</p>
+<div><b><i>&lt;&lt;sql_insert_operation&gt;&gt;=</i></b></div><pre><code>{
+    sqlite3_stmt *stmt;
+    int rc;
+
+    sqlite3_prepare_v2(wiki,
+                       "INSERT INTO wiki"
+                       "(key, value)\n"
+                       "VALUES(?1, ?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_text(stmt, 1, pgname, -1, NULL);
+    sqlite3_bind_text(stmt, 2, str-&gt;str, -1, NULL);
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(wiki));
+        err = 1;
+    }
+    sqlite3_finalize(stmt);
+}</pre></code>
+<p></p>
+<br>
+<div><b><i>&lt;&lt;create_new_wikipage&gt;&gt;=</i></b></div><pre><code>rc = create_new_wikipage(wiki, prog, page_id, &str);
+if (rc) {
+    err = 1;
+    goto cleanup;
+}</pre></code>
+<p></p>
+<p>A function called <code>create_new_wikipage</code> will create a new
+weewiki page given the database, program, page id, and
+content stored in a <code>wwstring</code>. This is needed as a function
+because it is called in more than one place.
+</p>
+<div><b><i>&lt;&lt;helper_functions&gt;&gt;=</i></b></div><pre><code>static int create_new_wikipage(sqlite3 *wiki,
+                               int prog,
+                               int page_id,
+                               wwstring *str)
+{
+    char pgname[16]; /* wm_XXX_XXXX */
+    int err;
+    err = 0;
+&lt;&lt;generate_page_name&gt;&gt;
+&lt;&lt;sql_insert_operation&gt;&gt;
+    return err;
+}</pre></code>
+<p></p>
+<p>At the end of the parsing, the last page must be written to
+disk, if there is a last page. Prior to this, the only way
+a new wiki page would be written was when a new major
+section occured. No more major sections following means this
+page would otherwise be stick in limbo.
+</p>
+<div><b><i>&lt;&lt;flush_last_page&gt;&gt;=</i></b></div><pre><code>if (single_page || (prev_header_id &gt; 0 && str.sz &gt; 0)) {
+    rc = create_new_wikipage(wiki, prog, page_id, &str);
+
+    if (rc) {
+        err = 1;
+        goto cleanup;
+    }
+}</pre></code>
+</div>
+</body>
+</html>

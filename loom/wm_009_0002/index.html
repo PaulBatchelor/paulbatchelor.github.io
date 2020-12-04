@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>1. Worgle Database Top</h3>
+
+<p><a id="wm_009_0002"></a></p>
+
+<h4>1.1. Top-level files</h4>
+
+<p><a id="wm_009_0003"></a>The worgle database interface generates a single C and header file.
+<div><b><i>&lt;&lt;db-top&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+#include &lt;sqlite3.h&gt;
+#include "worgle.h"
+#include "worgle_private.h"
+#include "db.h"
+&lt;&lt;static_db_functions&gt;&gt;
+&lt;&lt;functions&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;db-header&gt;&gt;=</i></b></div><pre><code>#ifndef WORGLE_DB_H
+#define WORGLE_DB_H
+&lt;&lt;macros&gt;&gt;
+&lt;&lt;function_declarations&gt;&gt;
+#endif</pre></code>
+
+<h4>1.2. Top-level functions</h4>
+
+<p><a id="wm_009_0021"></a></p>
+
+<h5>1.2.1. Insert Schemas</h5>
+
+<p><a id="wm_009_0022"></a>The initial worgle schemas are created inside the database
+using the function <code>worgle_db_schemas</code>. This <b>must</b> be
+called before attempting to do anything else, and it
+should only be called once.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_db_schemas(worgle_d *worg, sqlite3 *db);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_db_schemas(worgle_d *worg, sqlite3 *db)
+{
+&lt;&lt;schemas&gt;&gt;
+}</pre></code>
+
+<h5>1.2.2. Insert Data</h5>
+
+<p><a id="wm_009_0032"></a>When worgle is done parsing data, the data is
+written to the database using the funtion
+<code>worgle_db_generate</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_db_generate(worgle_d *worg, sqlite3 *db);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_db_generate(worgle_d *worg, sqlite3 *db)
+{
+    sqlite3_exec(db, "BEGIN;\n", NULL, NULL, NULL);
+&lt;&lt;inserts&gt;&gt;
+    sqlite3_exec(db, "COMMIT;\n", NULL, NULL, NULL);
+}</pre></code>
+
+<h5>1.2.3. Clear Tables</h5>
+
+<p><a id="wm_009_0040"></a>Will clear any existing tables where information is stored.
+This will only eliminate tables that Worgle writes to,
+leaving other tables untouched. This is particularly useful
+when utilizing the SQLite database for other things.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_db_clear(sqlite3 *db, int program);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void delete_table(sqlite3 *db,
+                         char *sbuf,
+                         const char *tbl,
+                         int program)
+{
+    if(program &lt; 0) {
+        sprintf(sbuf,
+                "DELETE FROM %s WHERE 1;\n",
+                tbl);
+    } else {
+        sprintf(sbuf,
+                "DELETE FROM %s WHERE program == %d;\n",
+                tbl,
+                program);
+    }
+    sqlite3_exec(db, sbuf, NULL, NULL, NULL);
+}
+
+void worgle_db_clear(sqlite3 *db, int program)
+{
+    char sbuf[256];
+    delete_table(db, sbuf, "resources", program);
+    delete_table(db, sbuf, "blocks", program);
+    delete_table(db, sbuf, "headers", program);
+    delete_table(db, sbuf, "segments", program);
+    delete_table(db, sbuf, "files", program);
+}</pre></code>
+</div>
+</body>
+</html>
