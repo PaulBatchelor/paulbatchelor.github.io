@@ -1101,7 +1101,7 @@ optionally be able to parse this.
 
 <h4>6.10. Parsing an Aux Block</h4>
 
-<p><a id="wm_007_0559"></a>An aux block is anything inside of a ''.
+<p><a id="wm_007_0559"></a>An aux block is anything inside of a <code>@!</code> and <code>!@</code>.
 For WeeWiki, the idea here is to execute janet code for
 dynamic page content. Aux blocks can be both in-line and
 multiline. They start out inside of a text block, but have
@@ -1116,7 +1116,33 @@ blocks).
 <h6>6.10.1.1. Checking for an Aux Block</h6>
 
 <p><a id="wm_007_0562"></a>An aux block can be started at anytime inside of a text
-block. The parsing process here must check for any 'If indeed an aux block has been found, the parsing routine
+block. The parsing process here must check for any <code>@!</code>
+roaming around. This is wrapped inside of a function called
+<code>parse_aux_check</code>. It is called inside of <code>parse_text</code>.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int parse_aux_check(const char *str,
+                           size_t sz,
+                           size_t *pos);</pre></code>
+<p>At one point, this once also processed the aux block code,
+but the function ended up taking too many arguments! Now
+it only checks.
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int parse_aux_check(const char *str,
+                           size_t sz,
+                           size_t *pos)
+{
+    size_t n;
+
+    n = *pos;
+
+    if ((sz - n) &lt; 4) return 0;
+    if (str[n] != '@') return 0;
+    if (str[n + 1] != '!') return 0;
+
+    return 1;
+}</pre></code>
+
+<h6>6.10.1.2. Breaking Out of The Loop</h6>
+
+<p><a id="wm_007_0569"></a>If indeed an aux block has been found, the parsing routine
 will immediately break out of the loop and set itself
 up to be in aux block mode (mode 2). Any text up to this
 point is processed as well.
