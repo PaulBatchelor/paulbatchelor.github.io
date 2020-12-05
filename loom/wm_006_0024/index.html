@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. Low Level Operations</h3>
+
+<p><a id="wm_006_0024"></a></p>
+
+<h4>3.1. UUIDs</h4>
+
+<p><a id="wm_006_0025"></a>A universally unique identifer (UUID) is used to label
+every item in the zet. The UUIDs are generated courtesy
+of the <code>uuid4</code> library by <code>rxi</code>, included inside of
+the weewiki project.
+</p>
+
+<h5>3.1.1. UUID struct</h5>
+
+<p><a id="wm_006_0027"></a>A full UUID contained inside of a struct called
+<code>wwzet_uuid</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wwzet_uuid wwzet_uuid;</pre></code>
+<p></p>
+<p>This UUID contains a char of 37 bytes:
+36 for the UUID (including dashes) plus the null terminator.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wwzet_uuid {
+    char str[37];
+};</pre></code>
+
+<h5>3.1.2. (re)-initializing a UUID</h5>
+
+<p><a id="wm_006_0036"></a>The UUID is initialized with the function
+<code>wwzet_uuid_init</code>. This will set the UUID to be
+<code>00000000-0000-4000-8000-000000000000</code>, a valid
+but zeroed UUID4.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_init(wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_init(wwzet_uuid *uuid)
+{
+    int i;
+    static const char *zero =
+        "00000000-0000-4000-8000-000000000000";
+
+    for (i = 0; i &lt; 36; i++) uuid-&gt;str[i] = zero[i];
+    uuid-&gt;str[36] = 0;
+}</pre></code>
+
+<h5>3.1.3. Initializing the uuid4 RNG</h5>
+
+<p><a id="wm_006_0044"></a>Before generating a new UUID, the RNG must be
+initialized with <code>wwzet_uuid_rng_init</code>.
+</p>
+<p>This makes a call to <code>uuid4_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_rng_init(void);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_rng_init(void)
+{
+    uuid4_init();
+}</pre></code>
+
+<h5>3.1.4. UUID generation</h5>
+
+<p><a id="wm_006_0050"></a>Create a new UUID with <code>wwzet_uuid_generate</code>. This uses
+the uuid version 4 protocol, which means it is randomly
+generated. This assumes the RNG has been initialized
+already.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_generate(wwzet_uuid *uuid);</pre></code>
+<p></p>
+<p>This function calls <code>uuid4_generate</code> under the hood, and
+then stores the output to the <code>wwzet_uuid</code> variable
+<code>uuid</code>.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_generate(wwzet_uuid *uuid)
+{
+    uuid4_generate(uuid-&gt;str);
+}</pre></code>
+
+<h5>3.1.5. UUID expansion/validation</h5>
+
+<p><a id="wm_006_0057"></a><code>wwzet_uuid_expand</code> will check if a partial UUID exists in
+the zettelkasten table, and expand to full UUID value.
+The partial value is provided as a null-terminated C string.
+</p>
+<p>The number of matches is returned. Anything not equal to
+1 is considered an error.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_expand(weewiki_d *ww,
+                      const char *partial,
+                      int sz,
+                      wwzet_uuid *uuid);</pre></code>
+<p></p>
+<p>The following SQLite3 statement is used:
+</p>
+<pre><code>SELECT UUID, COUNT(*) from wikizet where UUID LIKE(?1);</pre></code>
+<p></p>
+<p>Where "?1" is the partial match.
+</p>
+<p>This query will return a single row with the first found
+wikizet, and the number of matches.
+</p>
+<p>Actions will only happen when there is exactly 1 match.
+This involves copying over the UUID value into the
+variable.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_expand(weewiki_d *ww,
+                      const char *partial,
+                      int sz,
+                      wwzet_uuid *uuid)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    char *matchstr;
+    int nmatches;
+
+    matchstr = calloc(1, sz + 2);
+
+    strcpy(matchstr, partial);
+    matchstr[sz] = '%';
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT UUID, COUNT(*) FROM wikizet "
+                       "WHERE UUID LIKE(?1);",
+                       -1, &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, matchstr, sz + 1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        free(matchstr);
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    nmatches = sqlite3_column_int(stmt, 1);
+
+    if (nmatches == 1) {
+        int i;
+        const char *str;
+        str = (const char *)sqlite3_column_text(stmt, 0);
+
+        for (i = 0; i &lt; 36; i++) uuid-&gt;str[i] = str[i];
+    }
+
+    free(matchstr);
+    sqlite3_finalize(stmt);
+    return nmatches;
+}</pre></code>
+
+<h4>3.2. Create Zet Message</h4>
+
+<p><a id="wm_006_0064"></a>The function <code>wwzet_message</code> will create a
+timestamped entry with a message in the zet table
+with a new UUID.
+</p>
+<p>What is required is the main weewiki data, message, as well
+as the message length. The resulting UUID will get placed in
+the supplied UUID pointer if it is not NULL.
+</p>
+<p>Be sure to open the database and initialize the UUID4 RNG
+before calling this.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_message(weewiki_d *ww,
+                  const char *msg,
+                  int sz,
+                  wwzet_uuid *uuid);</pre></code>
+<p></p>
+<p>Under the hood, this will generate a UUID and create an
+insert SQLite statement using the SQLite API.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_message(weewiki_d *ww,
+                  const char *msg,
+                  int sz,
+                  wwzet_uuid *uuid)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    wwzet_uuid id;
+    int rc;
+    char *val;
+
+    val = malloc(sz + 2);
+
+    val[0] = '&gt;';
+
+    strcpy(&val[1], msg);
+    wwzet_uuid_init(&id);
+    db = weewiki_db(ww);
+    wwzet_uuid_generate(&id);
+
+    sqlite3_prepare_v2(db,
+                       "INSERT INTO "
+                       "wikizet(time, UUID, value)"
+                       "VALUES(datetime(), ?1, ?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+
+    sqlite3_bind_text(stmt, 1, id.str, -1, NULL);
+    sqlite3_bind_text(stmt, 2, val, sz + 1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        free(val);
+        return 1;
+    }
+
+    if (uuid != NULL) *uuid = id;
+
+    free(val);
+    sqlite3_finalize(stmt);
+    return 0;
+}</pre></code>
+
+<h4>3.3. Create Zet Link</h4>
+
+<p><a id="wm_006_0071"></a>The function <code>wwzet_link</code> will link UUID A to
+UUID B.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_link(weewiki_d *ww, wwzet_uuid *a, wwzet_uuid *b);</pre></code>
+<p></p>
+<p>A link is created by creating a new entry using A's UUID,
+and having the value be the UUID of B. A UUID is prepended
+with a '#'.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_link(weewiki_d *ww, wwzet_uuid *a, wwzet_uuid *b)
+{
+    char *addr;
+
+    addr = calloc(1, 38);
+    addr[0] = '#';
+    strcpy(&addr[1], b-&gt;str);
+    wwzet_insert(ww, NULL, 0, a-&gt;str, 36, addr, 37);
+    free(addr);
+}</pre></code>
+
+<h4>3.4. Insert an Entry</h4>
+
+<p><a id="wm_006_0078"></a>The function <code>wwzet_insert</code> will perform a low-level
+insert command into the wikizet table.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_insert(weewiki_d *ww,
+                  const char *timestamp, int tlen,
+                  const char *uuid, int ulen,
+                  const char *value, int vlen);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_insert(weewiki_d *ww,
+                  const char *timestamp, int tlen,
+                  const char *uuid, int ilen,
+                  const char *value, int vlen)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "INSERT into wikizet(time,uuid,value) "
+                       "VALUES(?1,?2,?3);",
+                       -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, timestamp, tlen, NULL);
+    sqlite3_bind_text(stmt, 2, uuid, ilen, NULL);
+    sqlite3_bind_text(stmt, 3, value, vlen, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+    }
+
+    sqlite3_finalize(stmt);
+}</pre></code>
+</div>
+</body>
+</html>

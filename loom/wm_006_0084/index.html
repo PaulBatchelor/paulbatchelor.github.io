@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Command Line Operations</h3>
+
+<p><a id="wm_006_0084"></a></p>
+
+<h4>4.1. top-level processor</h4>
+
+<p><a id="wm_006_0085"></a>The entry point for the top-level CLI is done with
+<code>ww_zet</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int ww_zet(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int ww_zet(int argc, char *argv[])
+{
+    if (argc &lt;= 1) {
+        fprintf(stderr, "Zet: supply a command\n");
+        return 1;
+    }
+
+    argv++; argc--;
+
+    if (!strcmp(argv[0], "say")) {
+        return p_say(argc, argv);
+    } else if (!strcmp(argv[0], "export")) {
+        return p_export(argc, argv);
+    } else if (!strcmp(argv[0], "import")) {
+        return p_import(argc, argv);
+    } else {
+        fprintf(stderr, "Could not find command '%s'\n", argv[1]);
+    }
+
+    return 1;
+}</pre></code>
+
+<h4>4.2. say</h4>
+
+<p><a id="wm_006_0091"></a>creates a new UUID with a timestamped message. Any arguments
+provided are expected to be partial UUIDs of pre-existing
+zet items.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_say(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_say(int argc, char *argv[])
+{
+    char *line;
+
+    line = linenoise("say: ");
+
+    if (line != NULL) {
+        weewiki_d *ww;
+        wwzet_uuid uuid;
+        int rc;
+
+        ww = malloc(weewiki_sizeof());
+        weewiki_init(ww);
+        weewiki_open(ww, weewiki_dbname_get());
+
+        wwzet_uuid_rng_init();
+        wwzet_uuid_init(&uuid);
+        rc = wwzet_message(ww, line, strlen(line), &uuid);
+
+        if (!rc) printf("%s\n", uuid.str);
+
+        if (argc &gt; 1) {
+            wwzet_uuid res;
+            int p;
+
+            for (p = 1; p &lt; argc; p++) {
+                const char *part;
+                int m;
+                part = argv[p];
+
+                wwzet_uuid_init(&res);
+                m = wwzet_uuid_expand(ww, part, strlen(part), &res);
+
+                if (m == 0) {
+                    fprintf(stderr, "could not expand '%s'\n", part);
+                } else if (m &gt; 1) {
+                    fprintf(stderr, "'%s' is not unique\n", part);
+                } else {
+                    wwzet_link(ww, &uuid, &res);
+                }
+            }
+        }
+
+        weewiki_close(ww);
+        weewiki_clean(ww);
+        free(line);
+        free(ww);
+        return 0;
+    }
+
+    return 1;
+}</pre></code>
+
+<h4>4.3. export</h4>
+
+<p><a id="wm_006_0098"></a>Export. This will dump all the zet pairs as list of
+tab-separated values to stdout. The idea would then be that
+this information could then be processed further by
+some external program.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_export(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_export(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT time,UUID,value from wikizet;",
+                       -1,
+                       &stmt,
+                       NULL);
+
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        const char *t = (const char *)sqlite3_column_text(stmt, 0);
+        printf("%s\t%s\t%s\n",
+               (t == NULL) ? "-" : t,
+               sqlite3_column_text(stmt, 1),
+               sqlite3_column_text(stmt, 2));
+        rc = sqlite3_step(stmt);
+    }
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return 0;
+}</pre></code>
+
+<h4>4.4. import</h4>
+
+<p><a id="wm_006_0104"></a>Import. Imports a list of tab-separated pairs into the zet
+table.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_import(int argc, char *argv[]);</pre></code>
+<p></p>
+<p>This import is very generalized, and will parse any
+3-column TSV file without validation. It is assumed that
+the input comes from a previous export.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void import_line(weewiki_d *ww, const char *line, int sz)
+{
+    int pos;
+    int i;
+    const char *val[3];
+    int vlen[3];
+    int count;
+
+
+    sz--; /* chomp line break */
+    /* fprintf(stdout, "line: "); */
+    /* fwrite(line, 1, sz, stdout); */
+
+
+    for (i = 0; i &lt; 3; i++) {
+        val[i] = NULL;
+        vlen[i] = 0;
+    }
+
+    pos = 0;
+    val[pos] = &line[0];
+    count = 1;
+
+    for (i = 0; i &lt; sz; i++) {
+        if (line[i] == '\t') {
+            vlen[pos] = count - 1;
+            val[pos + 1] = &line[i + 1];
+            pos++;
+            count = 0;
+            if (pos &gt;= 3) break;
+        }
+        count++;
+    }
+
+    /* wrap-up, address last count, minus linebreak */
+    vlen[2] = count - 1;
+
+    /* set timestamp to NULL if input is '-' */
+
+    if (*val[0] == '-') {
+        val[0] = NULL;
+        vlen[0] = 1;
+    }
+
+    wwzet_insert(ww,
+                 val[0], vlen[0],
+                 val[1], vlen[1],
+                 val[2], vlen[2]);
+}
+
+static int p_import(int argc, char *argv[])
+{
+    FILE *fp;
+    char *buf;
+    int sz;
+    char c;
+    weewiki_d *ww;
+    sqlite3 *db;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    db = weewiki_db(ww);
+
+    fp = stdin;
+
+    sz = 0;
+
+    buf = calloc(1, 1024);
+
+    sqlite3_exec(db, "BEGIN;\n", NULL, NULL, NULL);
+
+    while (1) {
+        c = fgetc(fp);
+        if (feof(fp)) break;
+        buf[sz] = c;
+        sz++;
+
+        if (sz == 1023) {
+           fprintf(stderr, "import buffer size too small\n");
+           goto clean;
+        }
+
+        if (c == '\n') {
+           import_line(ww, buf, sz);
+           sz = 0;
+        }
+    }
+
+    sqlite3_exec(db, "COMMIT;\n", NULL, NULL, NULL);
+
+    clean:
+    free(buf);
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return 0;
+}</pre></code>
+
+<h4>4.5. info</h4>
+
+<p><a id="wm_006_0111"></a>Gets information on a particular zet item. A partial
+UUID value can be provided.
+</p>
+
+<h4>4.6. link</h4>
+
+<p><a id="wm_006_0113"></a>Link. Link item A to item B. A new zet pair will be made
+with the A UUID value and the B reference. A and B can be
+partial UUID values.
+</p>
+
+<h4>4.7. search</h4>
+
+<p><a id="wm_006_0115"></a>Performs full-text search on the zet table.
+</p>
+
+<h4>4.8. lookup</h4>
+
+<p><a id="wm_006_0117"></a>given a partial UUID, try to find the full matching
+UUID. If more than one is found. return an error.
+</p>
+</div>
+</body>
+</html>
