@@ -101,7 +101,7 @@ The partial value is provided as a null-terminated C string.
 <p></p>
 <p>The following SQLite3 statement is used:
 </p>
-<pre><code>SELECT UUID, COUNT(*) from wikizet where UUID LIKE(?1);</pre></code>
+<pre><code>SELECT UUID, COUNT(DISTINCT UUID) from wikizet where UUID LIKE(?1);</pre></code>
 <p></p>
 <p>Where "?1" is the partial match.
 </p>
@@ -131,7 +131,7 @@ variable.
     db = weewiki_db(ww);
 
     sqlite3_prepare_v2(db,
-                       "SELECT UUID, COUNT(*) FROM wikizet "
+                       "SELECT UUID, COUNT(DISTINCT UUID) FROM wikizet "
                        "WHERE UUID LIKE(?1);",
                        -1, &stmt, NULL);
 
@@ -161,9 +161,131 @@ variable.
     return nmatches;
 }</pre></code>
 
-<h4>3.2. Create Zet Message</h4>
+<h4>3.2. Create Zet Entry</h4>
 
-<p><a id="wm_006_0064"></a>The function <code>wwzet_message</code> will create a
+<p><a id="wm_006_0064"></a><code>wwzet_entry</code> creates a generic zet entry given a message
+and timestamps it based on the current system time.
+</p>
+<p>If <code>uuid</code> is not NULL, the generated UUID is saved here.
+It is assumed the uuid RNG is initialized already before
+calling this function.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry(weewiki_d *ww,
+                const char *msg,
+                int sz,
+                wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry(weewiki_d *ww,
+                const char *msg,
+                int sz,
+                wwzet_uuid *uuid)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    wwzet_uuid id;
+    int rc;
+
+    wwzet_uuid_init(&id);
+    db = weewiki_db(ww);
+    wwzet_uuid_generate(&id);
+
+    sqlite3_prepare_v2(db,
+                       "INSERT INTO "
+                       "wikizet(time, UUID, value)"
+                       "VALUES(datetime(), ?1, ?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+
+    sqlite3_bind_text(stmt, 1, id.str, -1, NULL);
+    sqlite3_bind_text(stmt, 2, msg, sz, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        return 1;
+    }
+
+    if (uuid != NULL) *uuid = id;
+
+    sqlite3_finalize(stmt);
+    return 0;
+}</pre></code>
+
+<h4>3.3. Create Zet Entry (With Symbol)</h4>
+
+<p><a id="wm_006_0070"></a>The function <code>wwzet_entry_withsymbol</code> wraps around
+<code>wwzet_entry</code> to create a new timestamped entry and
+prepends it with a single-character symbol.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry_withsymbol(weewiki_d *ww,
+                           char c,
+                           const char *msg,
+                           int sz,
+                           wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry_withsymbol(weewiki_d *ww,
+                           char c,
+                           const char *msg,
+                           int sz,
+                           wwzet_uuid *uuid)
+{
+    char *val;
+    int rc;
+
+    val = malloc(sz + 2);
+    val[0] = c;
+
+    strncpy(&val[1], msg, sz);
+
+    val[sz + 1] = '\0';
+
+    rc = wwzet_entry(ww, val, sz + 1, uuid);
+
+    free(val);
+    return rc;
+}</pre></code>
+
+<h4>3.4. Insert an Entry</h4>
+
+<p><a id="wm_006_0076"></a>The function <code>wwzet_insert</code> will perform a low-level
+insert command into the wikizet table. The timestamp,
+uuid, and value should already be generated or known.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_insert(weewiki_d *ww,
+                  const char *timestamp, int tlen,
+                  const char *uuid, int ulen,
+                  const char *value, int vlen);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_insert(weewiki_d *ww,
+                  const char *timestamp, int tlen,
+                  const char *uuid, int ilen,
+                  const char *value, int vlen)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "INSERT into wikizet(time,uuid,value) "
+                       "VALUES(?1,?2,?3);",
+                       -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, timestamp, tlen, NULL);
+    sqlite3_bind_text(stmt, 2, uuid, ilen, NULL);
+    sqlite3_bind_text(stmt, 3, value, vlen, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+    }
+
+    sqlite3_finalize(stmt);
+}</pre></code>
+
+<h4>3.5. Create Zet Message</h4>
+
+<p><a id="wm_006_0082"></a>The function <code>wwzet_message</code> will create a
 timestamped entry with a message in the zet table
 with a new UUID.
 </p>
@@ -228,9 +350,9 @@ insert SQLite statement using the SQLite API.
     return 0;
 }</pre></code>
 
-<h4>3.3. Create Zet Link</h4>
+<h4>3.6. Create Zet Link</h4>
 
-<p><a id="wm_006_0071"></a>The function <code>wwzet_link</code> will link UUID A to
+<p><a id="wm_006_0089"></a>The function <code>wwzet_link</code> will link UUID A to
 UUID B.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_link(weewiki_d *ww, wwzet_uuid *a, wwzet_uuid *b);</pre></code>
@@ -250,41 +372,48 @@ with a '#'.
     free(addr);
 }</pre></code>
 
-<h4>3.4. Insert an Entry</h4>
+<h4>3.7. Create Zet File</h4>
 
-<p><a id="wm_006_0078"></a>The function <code>wwzet_insert</code> will perform a low-level
-insert command into the wikizet table.
+<p><a id="wm_006_0096"></a>A file entry is created with <code>wwzet_file</code>.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_insert(weewiki_d *ww,
-                  const char *timestamp, int tlen,
-                  const char *uuid, int ulen,
-                  const char *value, int vlen);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_insert(weewiki_d *ww,
-                  const char *timestamp, int tlen,
-                  const char *uuid, int ilen,
-                  const char *value, int vlen)
+<p>An inserted file is not actually the file, but just
+a file path, prepended with a forward slash <code>/</code>.
+Presumably, this would link to an entry in the SQLar table
+(which do not have leading slashes). Thus, an entry
+<code>/test/foo.txt</code> would have a corresponding SQLar file
+<code>test/foo.txt</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_file(weewiki_d *ww,
+               const char *filename,
+               int sz,
+               wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_file(weewiki_d *ww,
+               const char *filename,
+               int sz,
+               wwzet_uuid *uuid)
 {
-    sqlite3 *db;
-    sqlite3_stmt *stmt;
-    int rc;
+    return wwzet_entry_withsymbol(ww, '/', filename, sz, uuid);
+}</pre></code>
 
-    db = weewiki_db(ww);
+<h4>3.8. Create Zet Group</h4>
 
-    sqlite3_prepare_v2(db,
-                       "INSERT into wikizet(time,uuid,value) "
-                       "VALUES(?1,?2,?3);",
-                       -1, &stmt, NULL);
-    sqlite3_bind_text(stmt, 1, timestamp, tlen, NULL);
-    sqlite3_bind_text(stmt, 2, uuid, ilen, NULL);
-    sqlite3_bind_text(stmt, 3, value, vlen, NULL);
-
-    rc = sqlite3_step(stmt);
-
-    if (rc != SQLITE_DONE) {
-        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
-    }
-
-    sqlite3_finalize(stmt);
+<p><a id="wm_006_0102"></a>A group entry is created with <code>wwzet_group</code>.
+</p>
+<p>Groups are used with the crate interface, and are used
+to link files to specific sqlar archives.
+</p>
+<p>Groups are prefixed with '@'.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_group(weewiki_d *ww,
+               const char *group,
+               int sz,
+               wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_group(weewiki_d *ww,
+               const char *filename,
+               int sz,
+               wwzet_uuid *uuid)
+{
+    return wwzet_entry_withsymbol(ww, '@', filename, sz, uuid);
 }</pre></code>
 </div>
 </body>
