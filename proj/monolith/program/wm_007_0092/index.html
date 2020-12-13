@@ -9,7 +9,7 @@
 <body>
 <div id="main">
 
-<h3>9. TODO sqlite_open</h3>
+<h3>8. sqlite_open (WIP)</h3>
 
 <p><a id="wm_007_0092"></a>The <code>sqlite_open</code> operation allows a sqlite handle to be
 opened and managed inside of a patchwerk patch.
@@ -19,34 +19,58 @@ since opening SQLar archives is just open a SQLite database,
 figured I might as well generalize this baby.
 </p>
 
-<h4>9.1. TODO monolith_sqlite_open</h4>
+<h4>8.1. monolith_sqlite_open</h4>
 
 <p><a id="wm_007_0094"></a>The lowest level function for this is
 <code>monolith_sqlite_open</code> as a C function. Provided is the
 patchwerk patch, as well the filename.
 </p>
 <p>This will attempt to open and store a SQLite database
-filehandle, and will return an error when it is not found.
+filehandle, and then return the <code>sqlite3</code> pointer to the
+instance. If something wrong happens, <code>NULL</code> is returned.
 </p>
 <p>The SQLite handle is appended as a patchwerk pointer, with
 a destroy function that will close the SQLite handle. Like
 all patchwerk pointers, this gets called when the patch is
 destroyed.
 </p>
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>sqlite3 * monolith_sqlite_open(pw_patch *pw,
+                               const char *fname);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>static void free_sqlite(pw_pointer *p)
+{
+    sqlite3 *db;
 
-<h4>9.2. TODO sqlite_open in runt</h4>
+    db = pw_pointer_data(p);
+    sqlite3_close(db);
+}
 
-<p><a id="wm_007_0096"></a></p>
+sqlite3 * monolith_sqlite_open(pw_patch *pw,
+                               const char *fname)
+{
+    sqlite3 *db;
+    int rc;
 
-<h5>9.2.1. Word</h5>
+    rc = sqlite3_open(fname, &db);
 
-<p><a id="wm_007_0097"></a>the <code>sqlite_open</code> runt word wraps <code>monolith_sqlite_open</code>
+    if (rc) return NULL;
+
+    pw_patch_append_userdata(pw, free_sqlite, db);
+    return db;
+}</pre></code>
+
+<h4>8.2. sqlite_open in runt</h4>
+
+<p><a id="wm_007_0100"></a></p>
+
+<h5>8.2.1. Word</h5>
+
+<p><a id="wm_007_0101"></a>the <code>sqlite_open</code> runt word wraps <code>monolith_sqlite_open</code>
 inside of a struct.
 </p>
 
-<h5>9.2.2. Wrappers for getting/pushing sqlite</h5>
+<h5>8.2.2. Wrappers for getting/pushing sqlite</h5>
 
-<p><a id="wm_007_0099"></a>Runt has a dumb type system, which can be used to add a
+<p><a id="wm_007_0103"></a>Runt has a dumb type system, which can be used to add a
 thin layer of confidence that the C data you are
 hucking is in fact a sqlite database handle, and not
 something like I don't know an ftable?
@@ -59,12 +83,42 @@ is going over there right now...)
 If that item is not a SQLite database, then it will throw
 an error.
 </p>
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>runt_int rpw_get_sqlite(runt_vm *vm, sqlite3 **db);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>runt_int rpw_get_sqlite(runt_vm *vm, sqlite3 **db)
+{
+    runt_int rc;
+    runt_stacklet *s;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    if (s-&gt;t != RUNT_END + TYPE_SQLITE) {
+        runt_print(vm, "Parameter does not seem to be sqlite.\n");
+        *db = NULL;
+        return RUNT_NOT_OK;
+    }
+
+    *db = runt_to_cptr(s-&gt;p);
+    return RUNT_OK;
+}</pre></code>
+<p></p>
 <p><code>rpw_stacklet_sqlite</code> will configure a runt stacklet to hold
 a sqlite database handle. The ID will be set to be
 <code>END + 5717</code>, where <code>END</code> is the end value from
-<code>rpw_get_end</code>. The value 5717 is a number derived from
+<code>rpw_get_end</code>.
+</p>
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>void rpw_stacklet_sqlite(runt_vm *vm, runt_stacklet *s, sqlite3 *db);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>void rpw_stacklet_sqlite(runt_vm *vm, runt_stacklet *s, sqlite3 *db)
+{
+    s-&gt;p = runt_mk_cptr(vm, db);
+    s-&gt;t = RUNT_END + TYPE_SQLITE;
+}</pre></code>
+<p></p>
+<p>The value 5717 is a number derived from
 taking the base64 value "sql" (0xb2a9), and right-shifting
-3: <code>base64("sql")>>3</code></p>
+3: <code>base64("sql")>>3</code>
+
+<div><b><i>&lt;&lt;sqlar_macros&gt;&gt;=</i></b></div><pre><code>#define TYPE_SQLITE 5717</pre></code>
 </div>
 </body>
 </html>
