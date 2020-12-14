@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>9. TODO cratewav</h3>
+
+<p><a id="wm_007_0127"></a>The <code>cratewav</code> procedure loads a wav file from a weewiki
+crate partial UUID into an ftable.
+</p>
+<p>A partial UUID is provided as a string. The crate is
+provided as an open SQLite database handle. It is assumed
+that the procedure that the crate AND the SQLar tables are
+contained in this same database.
+</p>
+<p>This procedure works first by extracting the filename from
+the UUID. The filename can then be used to load things
+from the blob in the SQLar table to an ftable via
+<code>sqlar_loadwav</code> (not included here).
+</p>
+<p>The loader for this is <code>load_cratewav</code>.
+</p>
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>int load_cratewav(runt_vm *vm, runt_ptr pw);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;rproc_cratewav&gt;&gt;
+int load_cratewav(runt_vm *vm, runt_ptr pw)
+{
+    runt_cell *c;
+    runt_keyword_define(vm, "cratewav", 8, rproc_cratewav, &c);
+    runt_cell_data(vm, c, pw);
+    return runt_is_alive(vm);
+}</pre></code>
+<p></p>
+<p>The procedure is in a C function called <code>rproc_cratewav</code>.
+</p>
+<p>The word order for this is the database (crate) THEN the
+id. This is a bit counterintuitive from the usual
+small-to-large order that I usually respect. The reason for
+doing it this way has to do with some quirks that Runt has
+with strings. It's better to evaluate the UUID string last.
+</p>
+<p><code>sqlar_loadwav_db</code>, defined in another file, is
+forward-declared here.
+</p>
+<div><b><i>&lt;&lt;rproc_cratewav&gt;&gt;=</i></b></div><pre><code>int sqlar_loadwav_db(sqlite3 *db,
+                     const char *filename,
+                     sp_ftbl **ft);
+
+static int rproc_cratewav(runt_vm *vm, runt_ptr p)
+{
+    int rc;
+    sqlite3 *db;
+    const char *idstr;
+    sp_ftbl *ft;
+    runt_stacklet *s;
+    sqlite3_stmt *stmt;
+    const char *filename;
+    pw_patch *pw;
+    int count;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    idstr = runt_to_string(s-&gt;p);
+
+    if (idstr == NULL) {
+        runt_print(vm, "Bad string.\n");
+        return RUNT_NOT_OK;
+    }
+
+    rc = rpw_get_sqlite(vm, &db);
+    RUNT_ERROR_CHECK(rc);
+
+    pw = runt_to_cptr(p);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT value, COUNT(DISTINCT uuid) "
+                       "from wikizet "
+                       "WHERE uuid LIKE ?1 "
+                       "AND value LIKE \"/%\";",
+                       -1, &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, idstr, -1, NULL);
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        runt_print(vm, "cratewav: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return RUNT_NOT_OK;
+    }
+
+    count = sqlite3_column_int(stmt, 1);
+
+    if (count &lt; 1) {
+        runt_print(vm, "Could not resolve id %s\n", idstr);
+        sqlite3_finalize(stmt);
+        return RUNT_NOT_OK;
+    } else if (count &gt; 1) {
+        runt_print(vm, "id pattern %s not unique.\n", idstr);
+        sqlite3_finalize(stmt);
+        return RUNT_NOT_OK;
+    }
+
+    filename = (const char *)sqlite3_column_text(stmt, 0);
+
+    rc = sqlar_loadwav_db(db, &filename[1], &ft);
+
+    rpw_append_ftable(pw, ft);
+
+    if (rc != SP_OK) {
+        runt_print(vm, "There were SQLar problems.\n");
+        sqlite3_finalize(stmt);
+        return RUNT_NOT_OK;
+    }
+
+    rc = runt_ppush(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    rpw_stacklet_ftable(vm, s, ft);
+
+    sqlite3_finalize(stmt);
+    return RUNT_OK;
+}</pre></code>
+</div>
+</body>
+</html>

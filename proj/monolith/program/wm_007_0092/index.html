@@ -9,7 +9,7 @@
 <body>
 <div id="main">
 
-<h3>8. sqlite_open (WIP)</h3>
+<h3>8. sqlite_open</h3>
 
 <p><a id="wm_007_0092"></a>The <code>sqlite_open</code> operation allows a sqlite handle to be
 opened and managed inside of a patchwerk patch.
@@ -67,10 +67,54 @@ sqlite3 * monolith_sqlite_open(pw_patch *pw,
 <p><a id="wm_007_0101"></a>the <code>sqlite_open</code> runt word wraps <code>monolith_sqlite_open</code>
 inside of a struct.
 </p>
+<p>The loader for this is <code>load_sqlite_open</code>.
+</p>
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>int load_sqlite_open(runt_vm *vm, runt_ptr pw);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;rproc_sqlite_open&gt;&gt;
+int load_sqlite_open(runt_vm *vm, runt_ptr pw)
+{
+    runt_cell *c;
+    runt_keyword_define(vm,
+                        "sqlite_open", 11,
+                        rproc_sqlite_open, &c);
+
+    runt_cell_data(vm, c, pw);
+    return runt_is_alive(vm);
+}</pre></code>
+<div><b><i>&lt;&lt;rproc_sqlite_open&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_sqlite_open(runt_vm *vm, runt_ptr p)
+{
+    sqlite3 *db;
+    pw_patch *pw;
+    int rc;
+    runt_stacklet *s;
+    const char *filename;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    filename = runt_to_string(s-&gt;p);
+
+    if (filename == NULL) {
+        runt_print(vm, "This probably wasn't a string\n");
+        return RUNT_NOT_OK;
+    }
+
+    pw = runt_to_cptr(p);
+    db = monolith_sqlite_open(pw, filename);
+
+    if (db == NULL) {
+        runt_print(vm, "There was a problem opening the SQLite file\n");
+        return RUNT_NOT_OK;
+    }
+
+    rc = runt_ppush(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    rpw_stacklet_sqlite(vm, s, db);
+    return RUNT_OK;
+}</pre></code>
 
 <h5>8.2.2. Wrappers for getting/pushing sqlite</h5>
 
-<p><a id="wm_007_0103"></a>Runt has a dumb type system, which can be used to add a
+<p><a id="wm_007_0112"></a>Runt has a dumb type system, which can be used to add a
 thin layer of confidence that the C data you are
 hucking is in fact a sqlite database handle, and not
 something like I don't know an ftable?

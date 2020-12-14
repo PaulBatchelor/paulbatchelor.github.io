@@ -59,14 +59,67 @@
     free(buf);
     return SP_OK;
 }</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sqlar_loadwav_db(sqlite3 *db,
+                     const char *filename,
+                     sp_ftbl **ft);</pre></code>
+<p></p>
+<p><code>sqlar_loadwav_db</code> is just like <code>sqlar_loadwav</code>, except that
+it takes in a sqlite3 handle rather than a filename. At some
+point, these functions should be refactored to share the
+same components.
+</p>
+<p>Also, the soundpipe <code>sp_data</code> component is completely unused
+when creating these ftables, so I'm axing that from this
+version and supplying <code>NULL</code> until I get around to cleaning
+that up.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int sqlar_loadwav_db(sqlite3 *db,
+                     const char *filename,
+                     sp_ftbl **ft)
+{
+    char *buf;
+    int sz;
+    drwav wav;
+    size_t size;
+    SPFLOAT *tbl;
+    sp_ftbl *ftp;
+    int rc;
+
+    sz = 0;
+    buf = NULL;
+    rc = sqlar_extract_to_buffer_db(db, filename, &buf, &sz);
+
+    if (rc != SQLITE_OK) {
+        if (buf != NULL) free(buf);
+        fprintf(stderr, "SQLite problems\n");
+        return SP_NOT_OK;
+    }
+
+    if (!drwav_init_memory(&wav, buf, sz)) {
+        fprintf(stderr, "drwav could not initialize\n");
+        free(buf);
+        return SP_NOT_OK;
+    }
+
+    size = wav.totalSampleCount;
+    *ft = malloc(sizeof(sp_ftbl));
+    ftp = *ft;
+    ftp-&gt;tbl = malloc(sizeof(SPFLOAT) * (size + 1));
+    tbl = ftp-&gt;tbl;
+    sp_ftbl_init(NULL, ftp, size);
+    drwav_read_f32(&wav, size, tbl);
+    drwav_uninit(&wav);
+    free(buf);
+    return SP_OK;
+}</pre></code>
 
 <h4>2.2. runt word (sqlar_loadwav)</h4>
 
-<p><a id="wm_025_0019"></a></p>
+<p><a id="wm_025_0024"></a></p>
 
 <h5>2.2.1. Loader</h5>
 
-<p><a id="wm_025_0020"></a><div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;proc&gt;&gt;
+<p><a id="wm_025_0025"></a><div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;proc&gt;&gt;
 int load_sqlar_loadwav(runt_vm *vm, runt_ptr pw)
 {
     runt_cell *c;
@@ -81,7 +134,7 @@ int load_sqlar_loadwav(runt_vm *vm, runt_ptr pw)
 
 <h5>2.2.2. Procedure</h5>
 
-<p><a id="wm_025_0025"></a><div><b><i>&lt;&lt;proc&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_sqlar_loadwav(runt_vm *vm, runt_ptr p)
+<p><a id="wm_025_0030"></a><div><b><i>&lt;&lt;proc&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_sqlar_loadwav(runt_vm *vm, runt_ptr p)
 {
     sp_ftbl *ft;
     runt_int rc;
