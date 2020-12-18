@@ -179,6 +179,14 @@ int weewiki_sync(weewiki_d *ww)
 <h4>5.4. Clear</h4>
 
 <p><a id="wm_002_0198"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_clear(weewiki_d *ww);</pre></code>
+<p></p>
+<p>When working with a massive zet, I began noticing that my
+SQLite database was getting larger and larger, even after
+I removed all tables. This is because tables are marked
+for removal, but aren't necessarily removed.
+</p>
+<p>The solution to this is: <code>VACUUM</code>.
+</p>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_clear(weewiki_d *ww)
 {
     sqlite3_exec(ww-&gt;db,
@@ -191,11 +199,21 @@ int weewiki_sync(weewiki_d *ww)
                 NULL,
                 NULL,
                 NULL);
+    sqlite3_exec(ww-&gt;db,
+                "DELETE FROM wikizet WHERE 1;\n",
+                NULL,
+                NULL,
+                NULL);
+    sqlite3_exec(ww-&gt;db,
+                "VACUUM;\n",
+                NULL,
+                NULL,
+                NULL);
 }</pre></code>
 
 <h4>5.5. Parsing</h4>
 
-<p><a id="wm_002_0203"></a>See the Export section. That's where all the action
+<p><a id="wm_002_0204"></a>See the Export section. That's where all the action
 is happening related to orgparse.
 </p>
 </div>

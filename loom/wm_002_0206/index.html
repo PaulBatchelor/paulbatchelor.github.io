@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Database</h3>
+
+<p><a id="wm_002_0206"></a></p>
+
+<h4>6.1. Open</h4>
+
+<p><a id="wm_002_0207"></a>A database is opened with <code>weewiki_open</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int weewiki_open(weewiki_d *ww, const char *filename);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int weewiki_open(weewiki_d *ww, const char *filename)
+{
+    sqlite3 *db;
+    int rc;
+    FILE *fp;
+
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+        fprintf(stderr,
+            "Could not find database %s\n",
+            filename);
+        return 1;
+    }
+
+    fclose(fp);
+
+    ww-&gt;db = NULL;
+    rc = sqlite3_open(filename, &db);
+
+    if (rc) {
+        fprintf(stderr,
+                "Could not open database: %s",
+                sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return 1;
+    }
+
+    ww-&gt;db = db;
+    return 0;
+}</pre></code>
+
+<h4>6.2. Create</h4>
+
+<p><a id="wm_002_0213"></a>Creates and initializes a weewiki database.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int weewiki_create(weewiki_d *ww, const char *filename);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int weewiki_create(weewiki_d *ww, const char *filename)
+{
+    sqlite3 *db;
+    int rc;
+
+    ww-&gt;db = NULL;
+    rc = sqlite3_open(filename, &db);
+
+    if (rc) {
+        fprintf(stderr,
+                "Could not open database: %s",
+                sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return 1;
+    }
+
+    ww-&gt;db = db;
+    weewiki_create_tables(ww);
+    return 0;
+}</pre></code>
+
+<h4>6.3. Close</h4>
+
+<p><a id="wm_002_0219"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_close(weewiki_d *ww);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_close(weewiki_d *ww)
+{
+    if (ww-&gt;db != NULL) sqlite3_close(ww-&gt;db);
+    ww-&gt;db = NULL;
+}</pre></code>
+
+<h4>6.4. Get</h4>
+
+<p><a id="wm_002_0224"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int weewiki_getter(weewiki_d *ww, const char *key);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int weewiki_getter(weewiki_d *ww, const char *key)
+{
+    size_t sz;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    FILE *fp;
+
+    fp = stdout;
+
+    db = ww-&gt;db;
+    sqlite3_prepare_v2(db,
+                       "SELECT value FROM wiki WHERE(key==?1);",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_text(stmt, 1, key, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr,
+                "Could not find key '%s'\n",
+                key);
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    sz = sqlite3_column_bytes(stmt, 0);
+    fwrite(sqlite3_column_text(stmt, 0), 1, sz, fp);
+    sqlite3_finalize(stmt);
+    return 0;
+}</pre></code>
+
+<h4>6.5. Set</h4>
+
+<p><a id="wm_002_0229"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int weewiki_setter(weewiki_d *ww,
+                   const char *key,
+                   const char *val);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int weewiki_setter(weewiki_d *ww,
+                   const char *key,
+                   const char *val)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+
+    db = ww-&gt;db;
+    sqlite3_prepare_v2(db,
+                       "SELECT value FROM wiki WHERE(key==?1);",
+                       -1,
+                       &stmt,
+                       NULL);
+
+    sqlite3_prepare_v2(db,
+                       "INSERT OR REPLACE INTO wiki"
+                       "(key, value)\n"
+                       "VALUES(?1,?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+
+    sqlite3_bind_text(stmt, 1, key, -1, NULL);
+    sqlite3_bind_text(stmt, 2, val, -1, NULL);
+
+    sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    return 0;
+}</pre></code>
+
+<h4>6.6. Create Tables</h4>
+
+<p><a id="wm_002_0234"></a>The function <code>weewiki_create_tables</code> creates all the needed
+SQLite tables needed by weewiki. This includes <code>wiki</code>,
+<code>wikilinks</code>, and <code>wikizet</code>.
+</p>
+<p>The <code>wiki</code> table is most important table by weewiki. It
+holds all the wiki document content. wikis are stored in
+a key-value fashion, with unique keys being the page names,
+and <code>text</code> being the page content, stored in org markup.
+</p>
+<p>The <code>wikilinks</code> table is used to managed all externally
+linked files. What is given here is the page name
+(the <code>key</code>), the filename path, and the unix modification
+time <code>mtime</code>. This logic is used to determine syncing.
+</p>
+<p>The <code>wikizet</code> table is the the weewiki zettelkasten
+interface. It is implemented using SQLites full-text
+search capabilities (fts5) as a virtual table. Similar to
+the wiki, the zet is a key/value database, except that
+the keys are UUIDs that do not have a unique constraint, and
+each entry has an optional timestamp for microblogging.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_create_tables(weewiki_d *ww);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_create_tables(weewiki_d *ww)
+{
+    sqlite3_exec(ww-&gt;db,
+                "CREATE TABLE IF NOT EXISTS wiki(\n"
+                "key TEXT UNIQUE,\n"
+                "value TEXT\n"
+                ");\n",
+                NULL,
+                NULL,
+                NULL);
+    sqlite3_exec(ww-&gt;db,
+                "CREATE TABLE IF NOT EXISTS wikilinks(\n"
+                "key TEXT UNIQUE,\n"
+                "filename TEXT,\n"
+                "mtime INTEGER\n"
+                ");\n",
+                NULL,
+                NULL,
+                NULL);
+
+    sqlite3_exec(ww-&gt;db,
+                 "CREATE VIRTUAL TABLE wikizet using fts5("
+                 "time,\n"
+                 "UUID,\n"
+                 "value);\n",
+                 NULL,
+                 NULL,
+                 NULL);
+}</pre></code>
+
+<h4>6.7. Push</h4>
+
+<p><a id="wm_002_0240"></a>Low level operation that pushes a file to a key.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int weewiki_push(weewiki_d *ww,
+                 const char *fname,
+                 const char *key);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int weewiki_push(weewiki_d *ww,
+                 const char *fname,
+                 const char *key)
+{
+    char *buf;
+    size_t sz;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    FILE *fp;
+
+    fp = fopen(fname, "r");
+
+    if (fp == NULL) {
+        fprintf(stderr,
+                "Could not open file %s reading.\n",
+                fname);
+        return 1;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    sz = ftell(fp);
+    buf = calloc(1, sz + 1);
+    fseek(fp, 0, SEEK_SET);
+    fread(buf, 1, sz, fp);
+
+    db = ww-&gt;db;
+
+    sqlite3_prepare_v2(db,
+                       "INSERT OR REPLACE INTO wiki"
+                       "(key, value)\n"
+                       "VALUES(?1,?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+
+    sqlite3_bind_text(stmt, 1, key, -1, NULL);
+    sqlite3_bind_text(stmt, 2, buf, sz, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr,
+                "SQLite error: %s\n",
+                sqlite3_errmsg(db));
+         return 1;
+    }
+    sqlite3_finalize(stmt);
+
+    free(buf);
+    return 0;
+}</pre></code>
+
+<h4>6.8. Pull</h4>
+
+<p><a id="wm_002_0246"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int weewiki_pull(weewiki_d *ww,
+                 const char *key,
+                 const char *fname);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int weewiki_pull(weewiki_d *ww,
+                 const char *key,
+                 const char *fname)
+{
+    size_t sz;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    FILE *fp;
+
+    fp = fopen(fname, "w");
+    if (fp == NULL) {
+        fprintf(stderr,
+                "Could not open file %s for writing\n",
+                fname);
+        return 1;
+    }
+
+    db = ww-&gt;db;
+    sqlite3_prepare_v2(db,
+                       "SELECT value FROM wiki WHERE(key==?1);",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_text(stmt, 1, key, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr,
+                "Could not find key '%s'\n",
+                key);
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    sz = sqlite3_column_bytes(stmt, 0);
+    fwrite(sqlite3_column_text(stmt, 0), 1, sz, fp);
+    sqlite3_finalize(stmt);
+    fclose(fp);
+    return 0;
+}</pre></code>
+
+<h4>6.9. Exists</h4>
+
+<p><a id="wm_002_0251"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int weewiki_exists(weewiki_d *ww, const char *key);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int weewiki_exists(weewiki_d *ww, const char *key)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    db = ww-&gt;db;
+    sqlite3_prepare_v2(db,
+                       "SELECT EXISTS("
+                       "SELECT * FROM wiki WHERE(key==?1)"
+                       ");",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_text(stmt, 1, key, -1, NULL);
+
+    sqlite3_step(stmt);
+
+    rc = sqlite3_column_int(stmt, 0);
+
+    sqlite3_finalize(stmt);
+    return rc;
+}</pre></code>
+
+<h4>6.10. Name Set/Get</h4>
+
+<p><a id="wm_002_0256"></a>Sets/gets the database name.
+</p>
+<p>A global variable is used outside of the global <code>weewiki_d</code>
+because it needs to be able to be set before that struct
+is initialized.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_dbname_set(const char *name);
+const char * weewiki_dbname_get(void);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static const char *g_dbname = "a.db";
+void weewiki_dbname_set(const char *name)
+{
+    g_dbname = name;
+}
+
+const char * weewiki_dbname_get(void)
+{
+    return g_dbname;
+}</pre></code>
+</div>
+</body>
+</html>

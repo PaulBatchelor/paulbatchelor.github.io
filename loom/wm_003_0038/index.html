@@ -137,8 +137,15 @@ void weewiki_janet_cfuns(JanetTable *env)
 <h4>6.6. Open/Close database</h4>
 
 <p><a id="wm_003_0067"></a>Should only be used in the janet standalone.
+</p>
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_open(int32_t argc, Janet *argv);
 static Janet cfun_ww_close(int32_t argc, Janet *argv);</pre></code>
+<p></p>
+<p>Note: this used to use <code>weewiki_open</code>, but has been changed
+to use <code>weewiki_create</code>. The latter function will open and
+initialize a new database (which is what the former used
+to do).
+</p>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_open(int32_t argc, Janet *argv)
 {
     const uint8_t *filename;
@@ -148,7 +155,7 @@ static Janet cfun_ww_close(int32_t argc, Janet *argv);</pre></code>
     filename = janet_getstring(argv, 0);
     ww = weewiki_get();
 
-    weewiki_open(ww, (const char *)filename);
+    weewiki_create(ww, (const char *)filename);
     return janet_wrap_nil();
 }
 
@@ -162,7 +169,7 @@ static Janet cfun_ww_close(int32_t argc, Janet *argv)
 
 <h4>6.7. Add Page</h4>
 
-<p><a id="wm_003_0073"></a>Adds a page to the database.
+<p><a id="wm_003_0074"></a>Adds a page to the database.
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_add_page(int32_t argc, Janet *argv);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_add_page(int32_t argc, Janet *argv)
 {
@@ -182,7 +189,7 @@ static Janet cfun_ww_close(int32_t argc, Janet *argv)
 
 <h4>6.8. Add Link</h4>
 
-<p><a id="wm_003_0079"></a>Adds a link to the note. Note that the mtime will be set to
+<p><a id="wm_003_0080"></a>Adds a link to the note. Note that the mtime will be set to
 zero, so that the page is automatically pushed by default.
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_add_link(int32_t argc, Janet *argv);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_add_link(int32_t argc, Janet *argv)
@@ -202,7 +209,7 @@ zero, so that the page is automatically pushed by default.
 
 <h4>6.9. Sync Database</h4>
 
-<p><a id="wm_003_0085"></a>Equivalent to <code>weewiki sync</code>.
+<p><a id="wm_003_0086"></a>Equivalent to <code>weewiki sync</code>.
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_sync(int32_t argc, Janet *argv);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_sync(int32_t argc, Janet *argv)
 {
@@ -214,7 +221,7 @@ zero, so that the page is automatically pushed by default.
 
 <h4>6.10. Clear Database</h4>
 
-<p><a id="wm_003_0091"></a>Clears data from existing wiki db.
+<p><a id="wm_003_0092"></a>Clears data from existing wiki db.
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_clear(int32_t argc, Janet *argv);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_clear(int32_t argc, Janet *argv)
 {
@@ -226,7 +233,7 @@ zero, so that the page is automatically pushed by default.
 
 <h4>6.11. Get Open Database</h4>
 
-<p><a id="wm_003_0097"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_db(int32_t argc, Janet *argv);</pre></code>
+<p><a id="wm_003_0098"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_ww_db(int32_t argc, Janet *argv);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>Janet weewiki_return_db(sqlite3 *sql);
 static Janet cfun_ww_db(int32_t argc, Janet *argv)
 {
@@ -237,7 +244,7 @@ static Janet cfun_ww_db(int32_t argc, Janet *argv)
 
 <h4>6.12. Getting current page name</h4>
 
-<p><a id="wm_003_0102"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_name(int32_t argc, Janet *argv);</pre></code>
+<p><a id="wm_003_0103"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_name(int32_t argc, Janet *argv);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static Janet cfun_name(int32_t argc, Janet *argv)
 {
     weewiki_d *ww;
@@ -258,7 +265,7 @@ static Janet cfun_ww_db(int32_t argc, Janet *argv)
 
 <h4>6.13. Is weewiki in server mode?</h4>
 
-<p><a id="wm_003_0107"></a>Done with the janet function <code>ww-server?</code>
+<p><a id="wm_003_0108"></a>Done with the janet function <code>ww-server?</code>
 
 <div><b><i>&lt;&lt;janet_defs&gt;&gt;=</i></b></div><pre><code>janet_def(env,
           "ww-server?",
@@ -275,7 +282,7 @@ static Janet cfun_ww_db(int32_t argc, Janet *argv)
 
 <h4>6.14. DB name set/get</h4>
 
-<p><a id="wm_003_0116"></a>Wrappers to set/get the current database name.
+<p><a id="wm_003_0117"></a>Wrappers to set/get the current database name.
 </p>
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_dbname_set(int32_t argc, Janet *argv);
 static Janet cfun_dbname_get(int32_t argc, Janet *argv);</pre></code>

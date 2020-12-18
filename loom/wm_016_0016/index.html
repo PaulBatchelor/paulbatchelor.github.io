@@ -44,6 +44,8 @@ top-level weewiki program.
         p_extract(argc, argv);
     } else if (!strcmp(cmd, "find")) {
         p_find(argc, argv);
+    } else if (!strcmp(cmd, "copy")) {
+        p_copy(argc, argv);
     } else {
         fprintf(stderr, "Crate: could not find command '%s'\n", cmd);
     }
@@ -75,6 +77,9 @@ entries in the weewiki database.
 with the name of the SQLar archive. When a new file entry is
 created, its UUID gets linked with the UUID of the group.
 </p>
+<p>Note: don't forget to use <code>BEGIN</code> and <code>COMMIT</code> on the
+weewiki database for faster inserts.
+</p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int do_i_exist(const char *filename)
 {
     FILE *fp;
@@ -98,6 +103,7 @@ static int p_import(int argc, char *argv[])
 {
     const char *ww_name;
     weewiki_d *ww;
+    sqlite3 *ww_db;
 
     const char *sqlar_name;
     sqlite3 *sqlar_db;
@@ -136,6 +142,10 @@ static int p_import(int argc, char *argv[])
 
     rc = sqlite3_step(stmt);
 
+    ww_db = weewiki_db(ww);
+
+    sqlite3_exec(ww_db, "BEGIN;\n", NULL, NULL, NULL);
+
     while (rc == SQLITE_ROW) {
         const char *f;
         int sz;
@@ -150,6 +160,7 @@ static int p_import(int argc, char *argv[])
         rc = sqlite3_step(stmt);
     }
 
+    sqlite3_exec(ww_db, "COMMIT;\n", NULL, NULL, NULL);
 
     sqlite3_finalize(stmt);
     sqlite3_close(sqlar_db);
@@ -309,6 +320,77 @@ The filenames used will be their UUID.
 <p>Copy a SQLar archive <code>foo.sqlar</code> to a weewiki database
 <code>a.db</code>.
 </p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_copy(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_copy(int argc, char *argv[])
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+
+    int rc;
+    int err;
+
+    err = 0;
+
+    rc = sqlite3_open(":memory:", &db);
+
+    if (rc) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        return 1;
+    }
+
+    if (argc &lt; 3) {
+        fprintf(stderr, "Usage: %s src dst\n", argv[0]);
+        return 1;
+    }
+
+    rc = sqlite3_prepare_v2(db,
+                            "ATTACH ?1 AS src;",
+                            -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, argv[1], -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        err = 1;
+        goto cleanup;
+    }
+
+    rc = sqlite3_prepare_v2(db,
+                            "ATTACH ?1 AS dst;",
+                            -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, argv[2], -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        err = 1;
+        goto cleanup;
+    }
+
+    sqlite3_exec(db,
+        "CREATE TABLE IF NOT EXISTS dst.sqlar("
+        "  name TEXT PRIMARY KEY,"
+        "  mode INT,"
+        "  mtime INT,"
+        "  sz INT,"
+        "  data BLOB"
+        ");", NULL, NULL, NULL);
+
+    sqlite3_exec(db, "BEGIN;", NULL, NULL, NULL);
+    sqlite3_exec(db,
+                "INSERT OR REPLACE INTO dst.sqlar SELECT * FROM src.sqlar;", NULL, NULL, NULL);
+    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+
+    sqlite3_exec(db, "DETACH src;", NULL, NULL, NULL);
+    sqlite3_exec(db, "DETACH dst;", NULL, NULL, NULL);
+
+    cleanup:
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return err;
+}</pre></code>
 </div>
 </body>
 </html>
