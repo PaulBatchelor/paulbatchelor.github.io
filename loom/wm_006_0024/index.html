@@ -218,9 +218,14 @@ non-zero value is an error.
 <p><a id="wm_006_0070"></a><code>wwzet_uuid_resolve</code> smartly resolves a UUID from
 a string value. Will return a non-zero value on error.
 </p>
-<p>If it starts with a <code>@</code>, it will know to resolve it
-from a group. Otherwise, it assumes it is a partial
-UUID match.
+<p>The default behavior of resolve is to expand a partial UUID.
+However, certain prefixes in the string will cause it to be
+treated as a value lookup.
+</p>
+<p>Currently, valid prefixes are <code>@</code> (groups), <code>!</code> (pages),
+and <code>/</code> (<code>crate</code> filepaths). Message (<code>></code>) and
+addresses (<code>#</code>) are to be ignored because they have less
+of a chance of being unique.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_resolve(weewiki_d *ww,
                        const char *val,
@@ -233,11 +238,17 @@ UUID match.
 {
     int err;
     int rc;
+    int special_prefix;
     err = 0;
 
     wwzet_uuid_init(uuid);
 
-    if (val[0] == '@') {
+    special_prefix =
+        val[0] == '@' ||
+        val[0] == '!' ||
+        val[0] == '/';
+
+    if (special_prefix) {
         rc = wwzet_uuid_fromval(ww, val, sz, uuid);
         if (rc) err = 1;
     } else {

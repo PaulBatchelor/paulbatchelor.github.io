@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>14. Export</h3>
+
+<p><a id="wm_002_0336"></a></p>
+
+<h4>14.1. Command</h4>
+
+<p><a id="wm_002_0337"></a><div><b><i>&lt;&lt;argparse_entries&gt;&gt;=</i></b></div><pre><code>{"export", 6, p_export, NULL},</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_export(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int p_export(int argc, char *argv[])
+{
+    weewiki_d ww;
+    int rc;
+    weewiki_export_d ex;
+    sqlite3 *db;
+    const unsigned char *dir;
+    int export_page;
+
+    if (argc &lt; 2) {
+        export_page = 0;
+    } else {
+        export_page = 1;
+    }
+
+    rc = 0;
+
+    weewiki_init(&ww);
+    weewiki_open(&ww, weewiki_dbname_get());
+
+    if (!rc) {
+        db = ww.db;
+        weewiki_set(&ww);
+
+        weewiki_orgparse_setup(&ex.op);
+        ex.env = weewiki_janet_setup();
+
+        weewiki_janet_loadconfig(ex.env);
+        dir = weewiki_janet_wwdir(ex.env);
+
+        if (export_page) {
+            write_single_file(&ww, &ex, db, dir, argv[1]);
+        } else {
+            write_multiple_files(&ww, &ex, db, dir);
+        }
+
+        weewiki_janet_cleanup();
+    }
+
+    weewiki_close(&ww);
+    weewiki_clean(&ww);
+    return rc;
+}</pre></code>
+
+<h4>14.2. Orgparse Export Struct</h4>
+
+<p><a id="wm_002_0344"></a>This is a struct passed into orgparse.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct weewiki_export_d weewiki_export_d;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct weewiki_export_d {
+    weewiki_d *ww;
+    FILE *fp;
+    orgparse op;
+    JanetTable *env;
+    orgparse_state state;
+};</pre></code>
+
+<h4>14.3. Orgparse callback setup</h4>
+
+<p><a id="wm_002_0350"></a>Orgparse is used to parse a text buffer and generate HTML
+content. To do this, a series of callbacks are implemented.
+</p>
+<p><code>weewiki_orgparse_setup</code> is enclosed in a ifdef macro
+for <code>ORGPARSE_H</code>. This is done so that <code>orgparse.h</code> need
+not be explicitely included if it not needed.
+</p>
+<p>Honestly, this sort of practice a slippery slope, but
+in moderation it is quite convenient.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>#ifdef ORGPARSE_H /* define if orgparse header included */
+void weewiki_orgparse_setup(orgparse *op);
+#endif</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;orgparse_callbacks&gt;&gt;
+void weewiki_orgparse_setup(orgparse *op)
+{
+    orgparse_init(op);
+&lt;&lt;orgparse_html_setup&gt;&gt;
+}</pre></code>
+
+<h5>14.3.1. Header</h5>
+
+<p><a id="wm_002_0360"></a>Since <code><h1></code> is only reserved for titles, make all
+the header sizes one level smaller.
+<div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_header(void *ud,
+                        const char *h,
+                        size_t sz,
+                        int lvl)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+    lvl++;
+    fprintf(fp, "\n&lt;h%d&gt;", lvl + 1);
+    fwrite(h, 1, sz, fp);
+    fprintf(fp, "&lt;/h%d&gt;\n\n", lvl + 1);
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_header(op, html_header);</pre></code>
+
+<h5>14.3.2. Text</h5>
+
+<p><a id="wm_002_0368"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_text(void *ud,
+                      const char *str,
+                      size_t sz)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+    fwrite(str, 1, sz, fp);
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_text(op, html_text);</pre></code>
+
+<h5>14.3.3. Bold</h5>
+
+<p><a id="wm_002_0373"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_bold(void *ud,
+                      const char *str,
+                      size_t sz)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+    fprintf(fp, "&lt;b&gt;");
+    fwrite(str, 1, sz, fp);
+    fprintf(fp, "&lt;/b&gt;");
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_bold(op, html_bold);</pre></code>
+
+<h5>14.3.4. Aux</h5>
+
+<p><a id="wm_002_0378"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_aux(void *ud,
+                     const char *str,
+                     size_t sz)
+{
+    weewiki_export_d *ex;
+    ex = ud;
+    janet_dobytes(ex-&gt;env,
+                  (const uint8_t *)str, sz,
+                  NULL, NULL);
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_aux(op, html_aux);</pre></code>
+
+<h5>14.3.5. Newline</h5>
+
+<p><a id="wm_002_0383"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_newline(void *ud,
+                         const char *str,
+                         size_t sz)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+    fprintf(fp, "&lt;br&gt;\n");
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_newline(op, html_newline);</pre></code>
+
+<h5>14.3.6. Code</h5>
+
+<p><a id="wm_002_0388"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_code(void *ud,
+                      const char *str,
+                      size_t sz)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+    fprintf(fp, "&lt;code&gt;");
+    fwrite(str, 1, sz, fp);
+    fprintf(fp, "&lt;/code&gt;");
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_code(op, html_code);</pre></code>
+
+<h5>14.3.7. Code Block</h5>
+
+<p><a id="wm_002_0393"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_codeblock(void *ud,
+                           const char *str,
+                           size_t sz)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    size_t n;
+    ex = ud;
+    fp = ex-&gt;fp;
+
+    fprintf(fp, "&lt;pre&gt;&lt;code&gt;");
+    for (n = 0; n &lt; sz; n++) {
+        switch (str[n]) {
+            case '&lt;':
+                fprintf(fp, "&lt;");
+                break;
+            case '&gt;':
+                fprintf(fp, "&gt;");
+                break;
+            default:
+                fputc(str[n], fp);
+                break;
+        }
+    }
+    fprintf(fp, "&lt;/pre&gt;&lt;/code&gt;\n");
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_codeblock(op, html_codeblock);</pre></code>
+
+<h5>14.3.8. Name</h5>
+
+<p><a id="wm_002_0398"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_name(void *ud,
+                      const char *str,
+                      size_t sz)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+
+    fprintf(fp, "&lt;div&gt;&lt;b&gt;&lt;i&gt;&lt;&lt;");
+    fwrite(str, 1, sz, fp);
+    fprintf(fp, "&gt;&gt;=&lt;/i&gt;&lt;/b&gt;&lt;/div&gt;");
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_name(op, html_name);</pre></code>
+
+<h5>14.3.9. Title</h5>
+
+<p><a id="wm_002_0403"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_title(void *ud,
+                           const char *str,
+                           size_t sz)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+    fprintf(fp, "&lt;title&gt;");
+    fwrite(str, 1, sz, fp);
+    fprintf(fp, "&lt;/title&gt;\n");
+    fprintf(fp, "&lt;h1&gt;");
+    fwrite(str, 1, sz, fp);
+    fprintf(fp, "&lt;/h1&gt;\n");
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_title(op, html_title);</pre></code>
+
+<h5>14.3.10. Link</h5>
+
+<p><a id="wm_002_0408"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_link(void *ud,
+                      const char *link,
+                      size_t link_sz,
+                      const char *name,
+                      size_t name_sz)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+    fprintf(fp, "&lt;a href=\"");
+    fwrite(link, 1, link_sz, fp);
+    fprintf(fp, "\"&gt;");
+    fwrite(name, 1, name_sz, fp);
+    fprintf(fp, "&lt;/a&gt;");
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_link(op, html_link);</pre></code>
+
+<h5>14.3.11. Paragraph</h5>
+
+<p><a id="wm_002_0413"></a><div><b><i>&lt;&lt;orgparse_callbacks&gt;&gt;=</i></b></div><pre><code>static void html_pgrph(void *ud, int mode)
+{
+    weewiki_export_d *ex;
+    FILE *fp;
+    ex = ud;
+    fp = ex-&gt;fp;
+
+    if (mode) {
+        fprintf(fp, "&lt;/p&gt;\n");
+    } else {
+        fprintf(fp, "&lt;p&gt;");
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;orgparse_html_setup&gt;&gt;=</i></b></div><pre><code>orgparse_set_pgrph(op, html_pgrph);</pre></code>
+
+<h4>14.4. Run</h4>
+
+<p><a id="wm_002_0418"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_export_run(weewiki_export_d *ex,
+                        const char *buf,
+                        size_t sz);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_export_run(weewiki_export_d *ex,
+                        const char *buf,
+                        size_t sz)
+{
+    orgparse_state_init(&ex-&gt;state, &ex-&gt;op, buf, sz, ex);
+    orgparse_state_run(&ex-&gt;state);
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_export_continue(weewiki_export_d *ex,
+                             const char *buf,
+                             size_t sz);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_export_continue(weewiki_export_d *ex,
+                             const char *buf,
+                             size_t sz)
+{
+    orgparse_state_flags *f;
+    orgparse_state state;
+    orgparse_state_init(&state, &ex-&gt;op, buf, sz, ex);
+    f = orgparse_state_flags_get(&ex-&gt;state);
+    orgparse_state_flags_set(&state, f);
+    orgparse_state_run(&state);
+}</pre></code>
+
+<h4>14.5. Write File</h4>
+
+<p><a id="wm_002_0427"></a>This generates a file
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void write_file(weewiki_export_d *ex,
+                       const unsigned char *txt,
+                       size_t txt_sz);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void write_file(weewiki_export_d *ex,
+                       const unsigned char *txt,
+                       size_t txt_sz)
+{
+    janet_dostring(ex-&gt;env,
+                   (const unsigned char *)"(html-header)",
+                   NULL, NULL);
+    weewiki_export_run(ex, (const char *)txt, txt_sz);
+    orgparse_end(&ex-&gt;op, ex, &ex-&gt;state);
+    janet_dostring(ex-&gt;env,
+                   (const unsigned char *)"(html-footer)",
+                   NULL, NULL);
+}</pre></code>
+
+<h4>14.6. Make Filehandle</h4>
+
+<p><a id="wm_002_0433"></a>Generates a filehandle. If null values are passed in,
+return <code>stdout</code>.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static FILE * mkfile(const unsigned char *dir,
+                     const unsigned char *name);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static FILE * mkfile(const unsigned char *dir,
+                     const unsigned char *name)
+{
+    FILE *fp;
+    char tmp[256];
+    if (name == NULL) return stdout;
+
+    if(!strcmp((const char *)name, "index")) {
+        sprintf(tmp, "%s/index.html", dir);
+    } else {
+        getcwd(tmp, 256);
+        chdir((const char *)dir);
+        mkdir((const char*)name, 0755);
+        chdir(tmp);
+        sprintf(tmp, "%s/%s/index.html", dir, name);
+    }
+    fp = fopen(tmp, "w");
+    if (fp == NULL) {
+        fprintf(stderr,
+                "Could not write to file %s\n",
+                tmp);
+    }
+    return fp;
+}</pre></code>
+
+<h4>14.7. Write Single File</h4>
+
+<p><a id="wm_002_0439"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void write_single_file(weewiki_d *ww,
+                              weewiki_export_d *ex,
+                              sqlite3 *db,
+                              const unsigned char *dir,
+                              const char *name);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void write_single_file(weewiki_d *ww,
+                              weewiki_export_d *ex,
+                              sqlite3 *db,
+                              const unsigned char *dir,
+                              const char *name)
+{
+    sqlite3_stmt *stmt;
+
+    if (!weewiki_exists(ww, name)) {
+        fprintf(stderr,
+                "Could not find page '%s'\n",
+                name);
+        return;
+    }
+
+    sqlite3_prepare_v2(db,
+                        "SELECT value "
+                        "FROM wiki WHERE (key==?1);",
+                        -1,
+                        &stmt,
+                        NULL);
+
+    sqlite3_bind_text(stmt, 1, name, -1, NULL);
+    sqlite3_step(stmt);
+
+    ex-&gt;fp = mkfile(dir, NULL);
+    ww-&gt;fp = ex-&gt;fp;
+    ww-&gt;ud = ex;
+    ww-&gt;name = name;
+
+    write_file(ex,
+               sqlite3_column_text(stmt, 0),
+               sqlite3_column_bytes(stmt, 0));
+
+    sqlite3_finalize(stmt);
+}</pre></code>
+
+<h4>14.8. Write Multiple Files</h4>
+
+<p><a id="wm_002_0444"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void write_multiple_files(weewiki_d *ww,
+                                 weewiki_export_d *ex,
+                                 sqlite3 *db,
+                                 const unsigned char *dir);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void write_multiple_files(weewiki_d *ww,
+                                 weewiki_export_d *ex,
+                                 sqlite3 *db,
+                                 const unsigned char *dir)
+{
+    sqlite3_stmt *stmt;
+    int rc;
+    const unsigned char *key;
+
+    sqlite3_prepare_v2(db,
+                        "SELECT key, value "
+                        "FROM wiki "
+                        "WHERE key NOT LIKE \"@%\";",
+                        -1,
+                        &stmt,
+                        NULL);
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        key = sqlite3_column_text(stmt, 0);
+        ex-&gt;fp = mkfile(dir,
+                        sqlite3_column_text(stmt, 0));
+        ww-&gt;fp = ex-&gt;fp;
+        ww-&gt;ud = ex;
+        ww-&gt;name = (const char *)key;
+        if (ex-&gt;fp != NULL) {
+            fprintf(stdout, "Writing %s\n", key);
+            write_file(ex,
+                    sqlite3_column_text(stmt, 1),
+                    sqlite3_column_bytes(stmt, 1));
+            fclose(ex-&gt;fp);
+        } else {
+            break;
+        }
+        rc = sqlite3_step(stmt);
+    }
+
+
+    sqlite3_finalize(stmt);
+}</pre></code>
+
+<h4>14.9. Parsing In Janet</h4>
+
+<p><a id="wm_002_0449"></a>With the addition of the weewiki server, there is a growing
+need make the Janet functions more flexible. In particular
+the <code>org</code> function, which may or may not use the
+<code>weewiki_export_d</code> data.
+</p>
+<p>The function <code>weewiki_janet_org</code> is a generic function
+called by the <code>cfun_org</code> function that only requires
+the weewiki data (exposed as a global variable), the
+text to be parsed, and the length of that text.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_org(weewiki_d *ww,
+                       const char *txt,
+                       unsigned int len);</pre></code>
+<p>By default, this just calls <code>weewiki_export_continue</code>,
+otherwise, it calls the custom callback.
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_org(weewiki_d *ww,
+                       const char *txt,
+                       unsigned int len)
+{
+
+    if (ww-&gt;parse == NULL) {
+        weewiki_export_d *ex;
+        ex = ww-&gt;ud;
+        weewiki_export_continue(ex, txt, len);
+    } else {
+        ww-&gt;parse(ww, txt, len);
+    }
+}</pre></code>
+</div>
+</body>
+</html>
