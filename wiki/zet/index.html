@@ -14,11 +14,88 @@
 <p><code>Zet</code> is a <a href="/wiki/zettelkasten">zettelkasten</a> built into
 <a href="/wiki/weewiki">weewiki</a>.
 </p>
-<p>I'm aiming to write a "getting started" tutorial here at
-some point.
+
+<h3>Zet Quickstart</h3>
+
+<p>Zet is a part of <a href="/wiki/weewiki">weewiki</a>. Install <code>weewiki</code>
+before getting started.
 </p>
+<p>In an empty directory, create a new weewiki database with:
+</p>
+<pre><code>$ weewiki create</pre></code>
+<p></p>
+<p>This will create a new sqlite database called <code>a.db</code>.
+</p>
+<p>Add a new message to the zet using the <code>say</code> command. A
+prompt will appear to type out your message, then press
+ENTER. The console will then print out a generated <code>UUID</code>
+that is associated with that message.
+</p>
+<pre><code>$ weewiki zet say
+say: hi zet.
+e0924b00-4def-48a9-bd35-45fec2afbc95</pre></code>
+<p></p>
+<p>Search for this message using the <code>search</code> command.
+</p>
+<pre><code>$ weewiki zet search hi
+2020-12-19 15:35:25     e0924b00-4def-48a9-bd35-45fec2afbc95    &gt;hi zet</pre></code>
+<p></p>
+<p>Appending partial UUIDs after the <code>say</code> command will create
+a <code>link</code> between the generated message and the items with
+that UUID.
+</p>
+<pre><code>$ weewiki zet say e0924
+say: this message links with the previous message!
+7d7a5ec9-2996-4bbb-a1b6-d432d19f60f9</pre></code>
+<p></p>
+<p>The zet can be exported to standard output
+with the zet <code>export</code> command as a tab-separated value
+(tsv) format.
+</p>
+<p>This will be piped to the <code>tee</code> command so it will write
+to a file and standard output.
+</p>
+<pre><code>$ weewiki zet export | tee zet.tsv
+2020-12-19 15:35:25     e0924b00-4def-48a9-bd35-45fec2afbc95    &gt;hi zet
+.
+2020-12-19 15:43:09     7d7a5ec9-2996-4bbb-a1b6-d432d19f60f9    &gt;this m
+essage links with the previous message!
+-       7d7a5ec9-2996-4bbb-a1b6-d432d19f60f9    #e0924b00-4def-48a9-bd3
+5-45fec2afbc95</pre></code>
+<p></p>
+<p>The exported zet has 3 columns: timestamp (- for none),
+UUID, and value. Each value has a prefix. In this example,
+'>' indicates a message, and '#' indicates a reference to
+another UUID. There are other type prefixes as well, like
+groups ('@'), wiki pages '!', and filepaths '/'. Those
+are for another time.
+</p>
+<p>The newly created <code>tsv</code> file is an ideal way to manage a
+zet in source control. It can be used to regenerate the
+zet with the zet <code>rebuild</code> command.
+</p>
+<pre><code>$ rm a.db # remove the weewiki database
+$ weewiki create # create a new wiki database again
+$ weewiki zet rebuild &lt; zet.tsv # and we're back</pre></code>
+<p></p>
+<p>It is usually ideal to pair the zet with the wiki. To do
+this, other commands will need to be used in order to
+rebuild both the wiki and the zet (in that order). Consult
+<a href="/wiki/weewiki#dumping">the section on weewiki dumps</a> in the weewiki wiki page for more info.
+</p>
+<p>Zets can get very big very quickly, especially when using
+it with the weewiki <code>crate</code> <a href="#">interface</a>.
+This makes for very large TSV files which are harder to
+manage. The solution for this problem right now is to split
+up zet exports by group. More on this later someday,
+possibly in the <a href="/wiki/sample_curation">sample curation</a> page.
+</p>
+
+<h3>Woven Source</h3>
+
 <p>For now, woven source code can be
-<a href="/loom/weewiki_zet">browsed online</a> via the <a href="/wiki/loom">loom</a></p>
+<a href="/loom/weewiki_zet">browsed online</a> via the <a href="/wiki/loom">loom</a>.
+</p>
 </div>
 </body>
 </html>
