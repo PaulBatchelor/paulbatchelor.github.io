@@ -11,98 +11,12 @@
 <div id="main">
 <title>PhaseWarp</title>
 <h1>PhaseWarp</h1>
-<p>This is a <code>sndkit</code> algorithm. A more up-to-date version
-can be found <a href="/sndkit/phasewarp">here</a>.
+<p><code>phasewarp</code> is a <a href="/wiki/sndkit">sndkit</a> DSP algorithm,
+implemented as a <code>literate program</code>.
 </p>
-
-<h3>Overview</h3>
-
-<p>PhaseWarp can be thought of as a special kind of filter for
-normalized phasor signals. When used with a phasor and a
-table-lookup oscillator this produces what is known as
-<a href="https://en.wikipedia.org/wiki/Phase_distortion_synthesis">phase distortion synthesis</a>, famously used on Casio
-synthesizers like the VZ-1.
+<p>The program has can now be found on the <code>sndkit</code>
+wiki <a href="/sndkit/phasewarp">here</a>.
 </p>
-
-<h3>Algorithm</h3>
-
-<p>The algorithm for PhaseWarp works by adjusting the midpoint
-position where the phasor reaches 0.5. The adjustment amount
-is usually a normalized bipolar signal in the range -1 to 1.
-When the position value is positive, it warps the midpoint
-towards the upper bounds, causing a greater slope in the
-upper half, while decreasing the slope in the lower half.
-A negative position does opposite, creating a higher slope
-in the lower half, and a lower slope in the upper half.
-</p>
-<p>(The whole thing makes a lot more sense when you graph it.
-Someday, I'll do that here. For now, you'll just have to
-take my word for it.)
-</p>
-
-<h3>Tangled Files</h3>
-
-<p><code>phasewarp.c</code> and <code>phasewarp.h</code>.
-</p>
-<div><b><i>&lt;&lt;phasewarp.c&gt;&gt;=</i></b></div><pre><code>#include "phasewarp.h"
-&lt;&lt;funcs&gt;&gt;</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;phasewarp.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_PHASEWARP_H
-#define SK_PHASEWARP_H
-
-#ifndef SKFLT
-#define SKFLT float
-#endif
-
-&lt;&lt;funcdefs&gt;&gt;
-#endif</pre></code>
-
-<h3>Compute</h3>
-
-<p>This algorithm is so simple, it can be done in a stateless
-function called <code>sk_phasewarp_tick</code>. Its arguments are
-the input phasor signal and the warp factor.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_phasewarp_tick(SKFLT in, SKFLT warp);</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_phasewarp_tick(SKFLT in, SKFLT warp)
-{
-    SKFLT out;
-    SKFLT wmp;
-
-    out = 0;
-
-    &lt;&lt;calculate_warped_midpoint&gt;&gt;
-    &lt;&lt;determine_side_and_warp&gt;&gt;
-    return out;
-}</pre></code>
-<p></p>
-<p>Calculate warped midpoint. Call it <code>wmp</code>.
-</p>
-<div><b><i>&lt;&lt;calculate_warped_midpoint&gt;&gt;=</i></b></div><pre><code>wmp = (warp + 1.0) * 0.5;</pre></code>
-<p></p>
-<p>Determine side and compute. If the phasor position is
-less than the warped midpoint, than compute
-with lefthand slope. Otherwise, compute righthand slope.
-</p>
-<div><b><i>&lt;&lt;determine_side_and_warp&gt;&gt;=</i></b></div><pre><code>if (in &lt; wmp) {
-    &lt;&lt;compute_with_lefthand_slope&gt;&gt;
-} else {
-    &lt;&lt;compute_with_righthand_slope&gt;&gt;
-}</pre></code>
-<p></p>
-<p>Compute With Lefthand Slope. This slope is equal to
-<code>0.5/wmp</code>. This value scales the phasor input <code>slope * in</code>.
-</p>
-<div><b><i>&lt;&lt;compute_with_lefthand_slope&gt;&gt;=</i></b></div><pre><code>if (wmp != 0) out = ((SKFLT)0.5 / wmp) * in;</pre></code>
-<p></p>
-<p>Compute Righthand Slope. The righthand slope is computed as
-<code>0.5/(1 - wmp)</code>. The output is computed as
-<code>slope * (in - wmp) + 0.5</code>.
-</p>
-<div><b><i>&lt;&lt;compute_with_righthand_slope&gt;&gt;=</i></b></div><pre><code>if (wmp != 1.0) {
-    out = ((SKFLT)0.5 / (SKFLT)(1.0 - wmp)) * (in - wmp) + 0.5;
-}</pre></code>
 </div>
 </body>
 </html>

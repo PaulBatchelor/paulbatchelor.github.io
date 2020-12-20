@@ -11,115 +11,11 @@
 <div id="main">
 <title>DC Blocker</title>
 <h1>DC Blocker</h1>
-<p>This is a <code>sndkit</code> algorithm. A more up-to-date version
-can be found <a href="/sndkit/dcblocker">here</a>.
+<p><code>dcblocker</code> is a <a href="/wiki/sndkit">sndkit</a> <code>DSP</code> algorithm,
+implemented as a <code>literate program</code>.
 </p>
-
-<h3>Introduction</h3>
-
-<p>This document outlines an implementation of a DC Blocker, a
-typical utility used to block out what is known as DC offset.
-DC Blockers are occasionally used to clean up recorded
-audio, but they are more often seen handling digital
-algorithms that tend to naturally introduce a lot of DC
-into their signal. This is common in the physical modelling
-family of DSP algorithms (Karplus-Strongs, waveguides,
-FDN reverberators, etc).
+<p>It can now be found on the <code>sndkit</code> wiki <a href="/sndkit/dcblocker">here</a>.
 </p>
-<p>Without knowing how a DC blocker works, it would seem to have
-magical characteristics. A DC blocker has the ability to
-"drag down" a waveform of audio with DC offset so that it is
-centered. But how does it know how much to drag?
-</p>
-<p>In truth, a DC blocker is typically nothing more than
-a recursive highpass filter whose cutoff set to be a
-sub-audio frequency. This has the effect of removing any
-slow moving waveforms that often are the culrpits of
-unwanted DC biasing.
-</p>
-
-<h3>Difference Equation</h3>
-
-<p>The difference equation for a
-<a href="https://ccrma.stanford.edu/~jos/filters/DC_Blocker.html">DC blocker</a> looks like this:
-</p>
-<p>$$
-y(n) = x(n) - x(n - 1) + Ry(n - 1)
-$$
-</p>
-<p>Where $R$ is usually a constant between 0.9 and 1.
-</p>
-<p>This difference equation outlines the whole darn algorithm!
-What will be needed is a function that takes in an input,
-and stores the previous input, output, as well as the
-constant $R$. And that's it.
-</p>
-
-<h3>Tangled Files</h3>
-
-<p>This program outputs two files: <code>dcblocker.c</code> and
-<code>dcblocker.h</code>. Using the macro <code>SK_DCBLOCKER_PRIV</code> will
-expose the main struct. Otherwise, it is opaque.
-</p>
-<div><b><i>&lt;&lt;dcblocker.c&gt;&gt;=</i></b></div><pre><code>#define SK_DCBLOCKER_PRIV
-#include "dcblocker.h"
-&lt;&lt;funcs&gt;&gt;</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;dcblocker.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_DCBLOCKER_H
-#define SK_DCBLOCKER_H
-#ifndef SKFLT
-#define SKFLT float
-#endif
-&lt;&lt;typedefs&gt;&gt;
-#ifdef SK_DCBLOCKER_PRIV
-&lt;&lt;structs&gt;&gt;
-#endif
-&lt;&lt;funcdefs&gt;&gt;
-#endif</pre></code>
-
-<h3>Struct Definition</h3>
-
-<p>The main struct for this DC blocker will be called
-<code>sk_dcblocker</code>. It only needs three parameters: an
-<code>x</code> value storing the previous input value, a <code>y</code> value
-storing the previous output value, and an <code>R</code> value
-storing the DC filter constant.
-</p>
-<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_dcblocker sk_dcblocker;</pre></code>
-<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_dcblocker {
-    SKFLT x, y, R;
-};</pre></code>
-
-<h3>Initialization</h3>
-
-<p>The <code>sk_dcblocker</code> can be initialized with
-<code>sk_dcblocker_init</code>. It zeros out <code>x</code> and <code>y</code>, and sets
-<code>R</code> to be a value of <code>0.99</code>, which is a reasonable DC
-coefficent value.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_dcblocker_init(sk_dcblocker *dcblk);</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_dcblocker_init(sk_dcblocker *dcblk)
-{
-    dcblk-&gt;x = 0;
-    dcblk-&gt;y = 0;
-    dcblk-&gt;R = 0.99; /* quite reasonable, indeed! */
-}</pre></code>
-
-<h3>Computation</h3>
-
-<p>A single sample of audio is processed with the function
-<code>sk_dcblocker_tick</code>. It performs the arithmetic for the
-difference equation, updates the internal values, then
-returns the output.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_dcblocker_tick(sk_dcblocker *dcblk, SKFLT in);</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_dcblocker_tick(sk_dcblocker *dcblk, SKFLT in)
-{
-    dcblk-&gt;y = in - dcblk-&gt;x + dcblk-&gt;R*dcblk-&gt;y;
-    return dcblk-&gt;y;
-}</pre></code>
 </div>
 </body>
 </html>
