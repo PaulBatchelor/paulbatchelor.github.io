@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>11. Metapatterns</h3>
+
+<p><a id="wm_017_0217"></a>A "metapattern" is a pattern that references another
+pattern, and applies some transformations to it. After it
+applies the transformations, it behaves just like a pattern
+would.
+</p>
+<p>The metapattern uses all bytes in the word as a single unit,
+rather than making between data + command.
+</p>
+<p>After the first metapattern identifying byte comes the byte
+that holds the pattern reference. Encoded in binary, the
+pattern reference the location in the cell pool. This
+reference can either be a pattern or another metapattern.
+</p>
+<p>The remaining 6 bytes are used as transformation commands
+that can be composed together. These transformation commands
+non-destructively alter the pattern in some way.
+</p>
+<p>A transformation command byte is divided up into two
+nibbles. The lower (lefthand) nibble displays the command,
+the upper (righthand) nibble is the parameter.
+</p>
+<p>Transformations may include:
+</p>
+<p>left/right rotational shift: shift the entire pattern
+by some amount with wraparound.
+</p>
+<p>shrink/expand: take a pattern and stretch/squash it by
+some factor.
+</p>
+<p>invert: flips the bits of the pattern.
+</p>
+<p>crop: takes only a portion of the pattern
+</p>
+<p>repeat: repeats a segment of a pattern a certain number
+of times
+</p>
+<p>reverse: reverses the pattern
+</p>
+<p>mirror: creates a mirror image of the pattern
+</p>
+<p>decimate: add some kind of noise/randomness to
+the pattern
+</p>
+<div><b><i>&lt;&lt;exfuncs&gt;&gt;=</i></b></div><pre><code>static int metaprocess(trig_vm *vm, int pos,
+                       uint32_t cmd,
+                       uint32_t data,
+                       uint32_t *cmdout,
+                       uint32_t *dataout)
+{
+    int pat;
+    uint32_t pcmd;
+    uint32_t pdat;
+    trig_cell *c;
+
+    pat = (cmd &gt;&gt; 8) & 0xFF;
+
+    if (pat &lt; 1 || pat &gt; 32) {
+        return empty(vm, pos, 0, 0);
+    }
+    pat--;
+
+    c = trig_vm_cell_get(vm, pat);
+
+    pcmd = c-&gt;cmd;
+    pdat = c-&gt;data;
+
+    if (pcmd & 8) {
+        if (pos == pat) return empty(vm, pos, 0, 0);
+        return metaprocess(vm, pos, pcmd, pdat, cmdout, dataout);
+    } else if (pcmd & 1) {
+        uint8_t ncmd;
+        uint8_t ndat;
+        uint8_t nib;
+        int n;
+        int update;
+        int next;
+
+        update = 0;
+        for (n = 0; n &lt; 6; n++) {
+            if (n &lt;= 1) {
+                nib = (cmd &gt;&gt; (16 + n*8)) & 0xFF;
+            } else {
+                nib = (data &gt;&gt; ((n - 2)*8)) & 0xFF;
+            }
+
+            ncmd = nib & 0xf;
+            ndat = (nib &gt;&gt; 4) & 0xf;
+
+            if (ncmd == 1) {
+&lt;&lt;simple_commands&gt;&gt;
+            } else if (ncmd == 2) {
+&lt;&lt;backward_shift&gt;&gt;
+            } else if (ncmd == 3) {
+&lt;&lt;forward_shift&gt;&gt;
+            } else if (ncmd == 15) {
+&lt;&lt;cellular_automata&gt;&gt;
+            }
+        }
+
+        next = pattern(vm, pos, pcmd, pdat);
+
+        if (update) {
+&lt;&lt;update_the_cell&gt;&gt;
+        }
+
+        return next;
+    }
+
+    return empty(vm, pos, 0, 0);
+}
+
+static int metapattern(trig_vm *vm,
+                       int pos,
+                       uint32_t cmd,
+                       uint32_t data)
+{
+    uint32_t pcmd;
+    uint32_t pdat;
+
+    pcmd = 0;
+    pdat = 0;
+
+    return metaprocess(vm, pos, cmd, data, &pcmd, &pdat);
+}</pre></code>
+
+<h4>11.1. Parameterless Transformations</h4>
+
+<p><a id="wm_017_0231"></a>To save on bits, all commands that do not require any
+parameters in the data nib are thrown into command nib 1.
+These are known as "simple" commands. The data portion
+of the simple commands is used to tell which command to use.
+</p>
+<p>At the moment:
+</p>
+<p>0: invert
+</p>
+<p>1: reverse
+</p>
+<p>2: update
+<div><b><i>&lt;&lt;simple_commands&gt;&gt;=</i></b></div><pre><code>if (ndat == 0) {
+&lt;&lt;command_invert&gt;&gt;
+} else if (ndat == 1) {
+&lt;&lt;reverse_command&gt;&gt;
+} else if (ndat == 2) {
+&lt;&lt;update_command&gt;&gt;
+}</pre></code>
+
+<h5>11.1.1. Inversion</h5>
+
+<p><a id="wm_017_0242"></a>Inversion (0) simply inverts the entire data bit. Anything
+that is a 1 becomes a 0, and vice versa.
+</p>
+<div><b><i>&lt;&lt;command_invert&gt;&gt;=</i></b></div><pre><code>pdat = ~pdat;</pre></code>
+
+<h5>11.1.2. Reverse</h5>
+
+<p><a id="wm_017_0247"></a>Reversal (1) reverses the pattern. This requires knowing the
+size of the pattern, so both the command and data words of
+the pattern are needed.
+</p>
+<div><b><i>&lt;&lt;reverse_command&gt;&gt;=</i></b></div><pre><code>pdat = reverse(pcmd, pdat);</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static uint32_t reverse(uint32_t cmd, uint32_t dat);</pre></code>
+<p></p>
+<p>Reversal does what you'd do for a reverse-in-place on
+a string, only with bits.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static uint32_t reverse(uint32_t cmd, uint32_t dat)
+{
+    uint32_t out;
+    uint8_t sz;
+    uint8_t szd2;
+    int n;
+
+    sz = (cmd &gt;&gt; 16) & 0xFF;
+    szd2 = sz / 2;
+
+    out = dat;
+
+    for (n = 0; n &lt; szd2; n++) {
+        int s1, s2;
+        int end;
+
+        end = sz - n - 1;
+
+        s1 = (dat &gt;&gt; n) & 1;
+        s2 = (dat &gt;&gt; end) & 1;
+
+        if (s1) {
+            out |= (1 &lt;&lt; end);
+        } else {
+            out &= ~(1 &lt;&lt; end);
+        }
+
+        if (s2) {
+            out |= (1 &lt;&lt; n);
+        } else {
+            out &= ~(1 &lt;&lt; n);
+        }
+
+   }
+
+    return out;
+}</pre></code>
+
+<h5>11.1.3. Update</h5>
+
+<p><a id="wm_017_0258"></a>The <code>update</code> copies over the metapattern as it exists back
+to the original pattern. This command will set an <code>update</code>
+flag to be 1.
+</p>
+<div><b><i>&lt;&lt;update_command&gt;&gt;=</i></b></div><pre><code>update = 1;</pre></code>
+<p></p>
+<p>The cell should only be updated when the pattern reaches
+the end. This is checked by seeing if the return position
+differs.
+</p>
+<div><b><i>&lt;&lt;update_the_cell&gt;&gt;=</i></b></div><pre><code>if (next != pos) {
+    c-&gt;cmd = pcmd;
+    c-&gt;data = pdat;
+}</pre></code>
+
+<h4>11.2. 1-bit CA</h4>
+
+<p><a id="wm_017_0267"></a>1-dimensional cellular automata (15, all on) can be applied
+to the 32-bit pattern data from a rule. A rule is an 8-bit
+number. Command nibbles are only 4 bits, so to make this
+work, this command gobbles up the following byte, and reads
+all 8 bits as the parameter for rule.
+</p>
+<p>This particular cellular automata implementation was adapted
+from
+<a href="https://rosettacode.org/wiki/Elementary_cellular_automaton#C">rosetta code</a>.
+<div><b><i>&lt;&lt;cellular_automata&gt;&gt;=</i></b></div><pre><code>uint8_t rule;
+uint32_t out;
+int j;
+
+rule = 0;
+out = 0;
+#define B(x) (1 &lt;&lt; (x))
+if (n &lt; 5) {
+    n++; /* skips the next byte */
+    if (n &lt;= 1) {
+        rule = (cmd &gt;&gt; (16 + n*8)) & 0xFF;
+    } else {
+        rule = (data &gt;&gt; ((n - 2)*8)) & 0xFF;
+    }
+
+    for (j = 0; j &lt; 32; j++) {
+        if (rule & B(7 & (pdat&gt;&gt;(j-1) | pdat&lt;&lt;(32+1-j))))
+            out |= B(j);
+    }
+
+    pdat = out;
+}
+#undef B</pre></code>
+
+<h4>11.3. WIP Shifts</h4>
+
+<p><a id="wm_017_0272"></a>ncmds 2 and 3 do rotational shifts of a pattern, with the
+ncmd being a value for how many times to shift.
+</p>
+<p>Normally, these shifts are referred to as left/right shifts,
+but this can be confusing with the little-endian binary
+representation. Instead, the terms <code>forward</code> and <code>backward</code>
+will be used relative to how they are displayed. 2 will be
+a forward (right) shift, and 3 will be a backward (left)
+shift.
+</p>
+<p>A rotational shift moves bits in a direction, and does wrap
+around. This operation to be specially built in order to
+compensate for pattern size. This operation does one shift
+at a time. It shifts the value, takes the shifted bit, and
+ORs it to the other side.
+</p>
+<p>A forward shift is actually a left shift on the the layout
+(counter-intuitive riight?).
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static uint32_t fshift_1(uint32_t n, uint32_t patsize);</pre></code>
+<p></p>
+<p>First, the rotated bit is retrieved by ANDing the value at
+the end of the pattern position.
+</p>
+<p>The value is then left shifted, masked, and then the rotated
+bit is OR'd into the first position.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static uint32_t fshift_1(uint32_t x, uint32_t patsize)
+{
+    uint32_t out;
+    int bit;
+
+    bit = (x & (1 &lt;&lt; (patsize - 1))) &gt; 0;
+    out = (x &lt;&lt; 1);
+    out |= bit;
+    if (patsize &lt; 32) out &= (1 &lt;&lt; patsize) - 1;
+    return out;
+}</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static uint32_t fshift(uint32_t cmd, uint32_t dat, int n);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static uint32_t fshift(uint32_t cmd, uint32_t dat, int n)
+{
+    uint32_t out;
+    uint32_t sz;
+    int i;
+    sz = (cmd &gt;&gt; 16) & 0xFF;
+    out = dat;
+
+    for (i = 0; i &lt; n; i++) out = fshift_1(out, sz);
+
+    return out;
+}</pre></code>
+<div><b><i>&lt;&lt;forward_shift&gt;&gt;=</i></b></div><pre><code>{
+    pdat = fshift(pcmd, pdat, ndat);
+}</pre></code>
+<p></p>
+<p>A backward shift (right shift) is mirror of the forward
+shift. The rotated bit is the very first bit, and gets OR'd
+into the last bit position in the pattern.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static uint32_t bshift_1(uint32_t n, uint32_t patsize);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static uint32_t bshift_1(uint32_t x, uint32_t patsize)
+{
+    uint32_t out;
+    int bit;
+
+    bit = (x & 1);
+    out = (x &gt;&gt; 1);
+    out |= (bit &lt;&lt; (patsize - 1));
+    if (patsize &lt; 32) out &= (1 &lt;&lt; patsize) - 1;
+    return out;
+}</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static uint32_t bshift(uint32_t cmd, uint32_t dat, int n);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static uint32_t bshift(uint32_t cmd, uint32_t dat, int n)
+{
+    uint32_t out;
+    uint32_t sz;
+    int i;
+    sz = (cmd &gt;&gt; 16) & 0xFF;
+    out = dat;
+
+    for (i = 0; i &lt; n; i++) out = bshift_1(out, sz);
+
+    return out;
+}</pre></code>
+<div><b><i>&lt;&lt;backward_shift&gt;&gt;=</i></b></div><pre><code>{
+    pdat = bshift(pcmd, pdat, ndat);
+}</pre></code>
+</div>
+</body>
+</html>
