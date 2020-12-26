@@ -16,6 +16,7 @@ Soundpipe. It is configured to work as a subprogram.
 #include &lt;stdlib.h&gt;
 #include &lt;string.h&gt;
 #include "soundpipe.h"
+#include "lib/dr_wav/dr_wav.h"
 
 #if 0
 /* Bring this back when sp_process is revamped */
@@ -29,12 +30,17 @@ static void process(sp_data *sp, void *ud)
 }
 #endif
 
+int sp_paulstretch_wavin(sp_data *sp,
+                         sp_paulstretch *p,
+                         drwav *wav,
+                         SPFLOAT *out);
+
 int stretcher_main(int argc, char *argv[])
 {
     sp_data *sp;
-    sp_ftbl *ft;
     sp_paulstretch *ps;
     sp_wavout *wavout;
+    drwav wavin;
 
     SPFLOAT stretch;
     SPFLOAT window;
@@ -52,8 +58,6 @@ int stretcher_main(int argc, char *argv[])
 
     sp_create(&sp);
 
-    printf("samplerate = %d\n", atoi(argv[1]));
-
     sp_paulstretch_create(&ps);
     sp_wavout_create(&wavout);
 
@@ -64,26 +68,28 @@ int stretcher_main(int argc, char *argv[])
     window = atof(argv[1]);
     printf("stretch = %g\n", atof(argv[2]));
     stretch = atof(argv[2]);
-    sp_ftbl_loadwav(sp, &ft, fin);
-    sp-&gt;len = ft-&gt;size * stretch;
+
+    drwav_init_file(&wavin, fin);
+    sp-&gt;len = wavin.totalSampleCount * stretch;
+
     printf("total dur = %gs\n", (SPFLOAT)sp-&gt;len / sp-&gt;sr);
     printf("input = %s\n", fin);
     printf("output = %s\n", fout);
 
     strncpy(sp-&gt;filename, fout, 60);
 
-    sp_paulstretch_init(sp, ps, ft, window, stretch);
+    sp_paulstretch_init(sp, ps, NULL, window, stretch);
     sp_wavout_init(sp, wavout, fout);
 
     ps-&gt;wrap = 0;
 
     for (s = 0; s &lt; sp-&gt;len; s++) {
         SPFLOAT p, w;
-        sp_paulstretch_compute(sp, ps, NULL, &p);
+        sp_paulstretch_wavin(sp, ps, &wavin, &p);
         sp_wavout_compute(sp, wavout, &p, &w);
     }
 
-    sp_ftbl_destroy(&ft);
+    drwav_uninit(&wavin);
     sp_paulstretch_destroy(&ps);
     sp_wavout_destroy(&wavout);
     sp_destroy(&sp);

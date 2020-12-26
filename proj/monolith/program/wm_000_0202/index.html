@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>5. DSP Kernel</h3>
+
+<p><a id="wm_000_0202"></a>The DSP kernel is the heartbeat of the signal processing
+chain. It is the DSP computation that happens inside of the
+audio render callback. It has a top-level compute function
+known as <code>monolith_compute</code>.
+</p>
+
+<h4>5.1. Top-level Kernel Compute</h4>
+
+<p><a id="wm_000_0204"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_compute(monolith_d *m, int nframes, PWFLT **out);</pre></code>
+<p></p>
+<p>When <code>out</code> is a null value, the compute function will compute but not
+not save any values.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;static_compute_functions&gt;&gt;
+&lt;&lt;cf_compute_function&gt;&gt;
+void monolith_compute(monolith_d *m, int nframes, PWFLT **out)
+{
+    int s;
+    PWFLT tmp;
+    PWFLT *outL;
+    PWFLT *outR;
+    int store;
+    int blksize;
+
+    store = 1;
+    if(out == NULL) {
+        store = 0;
+        outL = NULL;
+        outR = NULL;
+    } else {
+        outL = out[0];
+        outR = out[1];
+    }
+
+    m-&gt;nframes = nframes;
+    blksize = pw_patch_blksize(m-&gt;patch);
+    if(monolith_is_playing(m)) {
+        for(s = 0; s &lt; nframes; s++) {
+            if(m-&gt;count == 0) {
+                m-&gt;offset = s;
+                compute_block(m);
+            }
+            tmp = get_sample(m);
+
+&lt;&lt;cf_compute&gt;&gt;
+
+            if(store) {
+                outL[s] = tmp;
+                outR[s] = tmp;
+            }
+            /* update counters */
+            m-&gt;count = (m-&gt;count + 1) % blksize;
+        }
+    } else {
+        for(s = 0; s &lt; nframes; s++) {
+            if(store) {
+                outL[s] = 0;
+                outR[s] = 0;
+            }
+        }
+
+    }
+}</pre></code>
+<p></p>
+<p>Counter. This keeps track of when to render a new block of audio.
+</p>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int count;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;count = 0;</pre></code>
+<p></p>
+<p>In order to hook up jack inputs to patchwerk blocks, frame
+offset must be kept track of.
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int offset;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;offset = 0;</pre></code>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int nframes;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;nframes = 0;</pre></code>
+
+<h5>5.1.1. Computing patchwerk blocks</h5>
+
+<p><a id="wm_000_0232"></a><div><b><i>&lt;&lt;static_compute_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;hotswap_function&gt;&gt;
+static void compute_block(monolith_d *m)
+{
+&lt;&lt;cf_check_and_free&gt;&gt;
+    if(m-&gt;please_swap == 1) {
+        m-&gt;please_swap = 0;
+        hotswap(m);
+    }
+
+    pw_subpatch_compute(&m-&gt;cab_read-&gt;subpatch);
+&lt;&lt;cf_compute_write_block&gt;&gt;
+}</pre></code>
+<div><b><i>&lt;&lt;static_compute_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT get_sample(monolith_d *m)
+{
+    return m-&gt;cab_read-&gt;blk[m-&gt;count];
+}</pre></code>
+
+<h5>5.1.2. Swapping in the Audio callback</h5>
+
+<p><a id="wm_000_0244"></a>When the swap flag is set, the audio callback will call the static function
+<code>hotswap</code>.
+This hotswap function will check how many userbuffers there are
+at the end, and print a warning if there are any held userbuffers left.
+This is done to prevent any weird side effects from happening.
+<div><b><i>&lt;&lt;hotswap_function&gt;&gt;=</i></b></div><pre><code>static void hotswap(monolith_d *m)
+{
+    monolith_cable *tmp;
+    int nuserbuf;
+    tmp = m-&gt;cab_read;
+    m-&gt;cab_read = m-&gt;cab_write;
+    m-&gt;cab_write = tmp;
+
+    nuserbuf = pw_bufferpool_nactive(pw_patch_pool(m-&gt;patch));
+
+    if(nuserbuf != 0) {
+        fprintf(stderr,
+                "WARNING: there are %d userbuffers left, when there should be 0",
+                nuserbuf);
+        fprintf(stderr,
+                "This will eventually cause patchwerk to crash on re-compilation.\n");
+        fprintf(stderr,
+                "To fix, ensure that you are unholding all held cables with bunhold.\n");
+        fprintf(stderr,
+                "If that fails, use bunholdall.\n");
+    }
+
+    pw_subpatch_save(m-&gt;patch, &m-&gt;cab_read-&gt;subpatch);
+    pw_patch_reinit(m-&gt;patch);
+
+    if(m-&gt;cf_state == CROSSFADE_NONE) {
+        /* free and reinit old subpatch here */
+        pw_subpatch_destroy(&m-&gt;cab_write-&gt;subpatch);
+        pw_subpatch_free(&m-&gt;cab_write-&gt;subpatch);
+    }
+
+&lt;&lt;cf_begin&gt;&gt;
+}</pre></code>
+
+<h4>5.2. Hot Swapping</h4>
+
+<p><a id="wm_000_0251"></a>The term <b>hot-swapping</b> here refers to Monoliths ability to replace Patchwerk
+patches on the fly, which provides the user a means of live coding. Basic
+hot swapping in an audio patch isn't enough, as such an operation could cause
+an audible glitch or skip to occur. To mitigate this, a crossfade is used
+to smoothly transition between the old patch and the new patch.
+</p>
+<p>Luckily, most of these hotswapping mechanics have been laid out in the previous
+incarnation of monolith, monomer. Much of this code will come from this.
+</p>
+
+<h5>5.2.1. The Monolith Audio Cable</h5>
+
+<p><a id="wm_000_0253"></a>The Monolith Audio Cable is a the data type that actually gets swapped out.
+</p>
+<p>A monolith cable type is a struct called <code>monolith_cable</code>. Any patch
+in build in patchwerk will terminate at one of these monolith cable.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_cable monolith_cable;</pre></code>
+<p></p>
+<p>A monolith cable is special kind of audio-rate patchwerk cable. It maintains
+a it's own internal buffer instead of relying on the buffer pool that patchwerk
+provides. This is important for live coding because it provides persistence
+between swaps.
+</p>
+<p>A monolith cable is designed to be set inside of a patchwerk cable, so it also
+has an input signal which it saves to a <code>pw_cable</code> pointer <code>in</code>. This input
+signal then gets copied to the internal buffer.
+</p>
+<p>I forget why I needed the <code>pw_buffer</code> pointer, but I'm leaving it in for now.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct monolith_cable {
+    pw_cable *in;
+    pw_subpatch subpatch;
+    float blk[MONOLITH_BLKSIZE];
+};</pre></code>
+<p></p>
+<p>There are exactly 2 audio cables needed in the setup, one that is being written
+to, and the other that is being read. The read and write cables are set to be
+pointers, whose addresses get swapped.
+</p>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>monolith_cable cab[2];
+monolith_cable *cab_read; /* the one you hear */
+monolith_cable *cab_write; /* the one on deck */</pre></code>
+<p></p>
+<p>At init-time, the two internal cables are initialized, with cable 0 being
+assigned to <code>cab_read</code> and cable 1 being assigned to <code>cab_write</code>.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>pw_subpatch_init(&m-&gt;cab[0].subpatch);
+pw_subpatch_init(&m-&gt;cab[1].subpatch);
+monolith_cable_init(&m-&gt;cab[0]);
+monolith_cable_init(&m-&gt;cab[1]);
+m-&gt;cab_read = &m-&gt;cab[0];
+m-&gt;cab_write = &m-&gt;cab[1];</pre></code>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>pw_subpatch_destroy(&m-&gt;cab[0].subpatch);
+pw_subpatch_destroy(&m-&gt;cab[1].subpatch);
+pw_subpatch_free(&m-&gt;cab[0].subpatch);
+pw_subpatch_free(&m-&gt;cab[1].subpatch);</pre></code>
+<p></p>
+<p>Monolith cables are initialized with the function <code>monolith_cable_init</code>.
+This zeros out the buffer and nulls things out. Before to check for NULL
+before attempting to access data from <code>in</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_cable_init(monolith_cable *c);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_cable_init(monolith_cable *c)
+{
+    int n;
+    for(n = 0; n &lt; MONOLITH_BLKSIZE; n++) {
+        c-&gt;blk[n] = 0;
+    }
+    c-&gt;in = NULL;
+}</pre></code>
+
+<h5>5.2.2. Cable Output Node (monout)</h5>
+
+<p><a id="wm_000_0275"></a>Patchwerk cable output is written to a monolith cable via a patchwerk node,
+which will be arbitrarily be called <code>monout</code> to distinguish itself from the
+default patchwerk <code>out</code> keyword.
+</p>
+<br>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int node_monout(pw_node *node, monolith_d *d);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>/* typedef struct { */
+/*     monolith_d *m; */
+/*     monolith_cable *out; */
+/* } monout_d; */
+
+static void monout_compute(pw_node *node)
+{
+    monolith_cable *out;
+    int s;
+    int blksize;
+
+    out = pw_node_get_data(node);
+    blksize = pw_node_blksize(node);
+
+    for(s = 0; s &lt; blksize; s++) {
+        out-&gt;blk[s] = pw_cable_get(out-&gt;in, s);
+    }
+}
+
+static void monout_destroy(pw_node *node)
+{
+    monolith_cable *out;
+    out = pw_node_get_data(node);
+    monolith_cable_init(out);
+    pw_node_cables_free(node);
+}
+
+int node_monout(pw_node *node, monolith_d *m)
+{
+    pw_patch *patch;
+    int rc;
+    monolith_cable *out;
+    rc = pw_node_get_patch(node, &patch);
+    if(rc != PW_OK) return rc;
+
+    /* if(pw_patch_blksize(patch) != MONOLITH_BLKSIZE) { */
+    /*     fprintf(stderr, */
+    /*             "Block size mismatch between Patchwerk (%d) and Monolith (%d). Bye.\n", */
+    /*             pw_patch_blksize(patch), MONOLITH_BLKSIZE); */
+    /*     return PW_NOT_OK; */
+    /* } */
+
+    out = m-&gt;cab_write;
+
+    pw_node_cables_alloc(node, 1);
+    pw_node_get_cable(node, 0, &out-&gt;in);
+
+    pw_node_set_destroy(node, monout_destroy);
+    pw_node_set_compute(node, monout_compute);
+    pw_node_set_data(node, out);
+
+    return PW_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;monolith_runt_loader&gt;&gt;=</i></b></div><pre><code>monolith_runt_define(m, "monout", 6, rproc_monout);</pre></code>
+<div><b><i>&lt;&lt;runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monout(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    pw_patch *patch;
+    pw_node *node;
+    runt_int rc;
+    rpw_param in;
+
+    rc = rpw_get_param(vm, &in);
+    RUNT_ERROR_CHECK(rc);
+
+    m = runt_to_cptr(p);
+    patch = m-&gt;patch;
+
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    rc = node_monout(node, m);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rpw_set_param(vm, node, &in, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h5>5.2.3. TODO Cable Input Node (monin)</h5>
+
+<p><a id="wm_000_0287"></a>Lets in a mono input signal. For now, this input is a
+wrapper around a JACK audio cable.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int node_monin(pw_node *node, monolith_d *d);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void monin_compute(pw_node *node)
+{
+#ifndef MONOLITH_SIMPLE
+    monolith_d *m;
+    int blksize;
+    int s;
+    jack_default_audio_sample_t *in;
+    pw_cable *out;
+
+    m = pw_node_get_data(node);
+    blksize = pw_node_blksize(node);
+
+    in = (jack_default_audio_sample_t*)
+        jack_port_get_buffer(m-&gt;in[0], m-&gt;nframes);
+
+    if ((m-&gt;nframes - m-&gt;offset) &lt; blksize) {
+        blksize = m-&gt;nframes - m-&gt;offset;
+    }
+
+    pw_node_get_cable(node, 0, &out);
+
+    for(s = 0; s &lt; blksize; s++) {
+        pw_cable_set(out, s, in[m-&gt;offset + s]);
+    }
+#endif
+}
+
+int node_monin(pw_node *node, monolith_d *m)
+{
+    pw_node_cables_alloc(node, 1);
+    pw_node_set_block(node, 0);
+
+    pw_node_set_compute(node, monin_compute);
+    pw_node_set_data(node, m);
+
+    return PW_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;monolith_runt_loader&gt;&gt;=</i></b></div><pre><code>monolith_runt_define(m, "monin", 5, rproc_monin);</pre></code>
+<div><b><i>&lt;&lt;runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monin(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    pw_patch *patch;
+    pw_node *node;
+    runt_int rc;
+    runt_stacklet *out;
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    m = runt_to_cptr(p);
+    patch = m-&gt;patch;
+
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    rc = node_monin(node, m);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rpw_push_output(vm, node, out, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h5>5.2.4. Swap Flag</h5>
+
+<p><a id="wm_000_0297"></a>When a patch is done being populated, it sends a message to the audio DSP kernel
+to swap the patch by setting the flag <code>please_swap</code>.
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int please_swap;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;please_swap = 0;</pre></code>
+<p></p>
+<p>The hotswap flag can be set using the C function <code>monolith_please_swap</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_please_swap(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_please_swap(monolith_d *m)
+{
+    m-&gt;please_swap = 1;
+}</pre></code>
+<p></p>
+<p>The flag can also be set using the runt word <code>ps</code>.
+</p>
+<div><b><i>&lt;&lt;monolith_runt_loader&gt;&gt;=</i></b></div><pre><code>monolith_runt_define(m, "ps", 2, rproc_ps);</pre></code>
+<div><b><i>&lt;&lt;runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_ps(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    m = (monolith_d *)runt_to_cptr(p);
+    monolith_please_swap(m);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>5.3. Play/Pause</h4>
+
+<p><a id="wm_000_0313"></a>The DSP kernel can pause and resume computation. This is controlled via a state
+flag. By default, it is set to be 1, which is on.
+</p>
+
+<h5>5.3.1. Play/Pause Flags</h5>
+
+<p><a id="wm_000_0315"></a><div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int playstate;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;playstate = 1;</pre></code>
+
+<h5>5.3.2. Check if Monolith is Playing</h5>
+
+<p><a id="wm_000_0320"></a>The function <code>monolith_is_playing</code> will check the state flag to determine if
+it is playing.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_is_playing(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_is_playing(monolith_d *m)
+{
+    return m-&gt;playstate;
+}</pre></code>
+<p>The playback state can be read from scheme via <code>monolith:is-playing</code>.
+</p>
+</p>
+
+<h5>5.3.3. Play/Pause functions</h5>
+
+<p><a id="wm_000_0327"></a>The function <code>monolith_play</code> will explicitely set the playback state to be on.
+The function <code>monolith_pause</code> will explicitely pause playback.
+</p>
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:is-playing", pp_is_playing, 0, 0, {___,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_is_playing(cell p) {
+    monolith_d *m;
+    m = monolith_data_get();
+    if(monolith_is_playing(m)) return TRUE;
+    else return FALSE;
+}</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_play(monolith_d *m);
+void monolith_pause(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_play(monolith_d *m)
+{
+    m-&gt;playstate = 1;
+}
+void monolith_pause(monolith_d *m)
+{
+    m-&gt;playstate = 0;
+}</pre></code>
+<p></p>
+<p>The playback can be controlled with <code>monolith:play</code> and <code>monolith:pause</code>.
+</p>
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:play", pp_play, 0, 0, {___,___,___}},
+{"monolith:pause", pp_pause, 0, 0, {___,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_play(cell p) {
+    monolith_d *m;
+    m = monolith_data_get();
+    monolith_play(m);
+    return UNSPECIFIC;
+}
+static cell pp_pause(cell p) {
+    monolith_d *m;
+    m = monolith_data_get();
+    monolith_pause(m);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h4>5.4. Crossfade</h4>
+
+<p><a id="wm_000_0342"></a>Normal hotswapping will often cause a discontintunity in the sound between
+the signal of the new patch and the signal of the old patch. If this
+discontinuity is large enough, it will cause an unwanted audible click to be
+heard. This can be smoothed somewhat using a linear crossfade. This section
+will describe the underlying principles of how crossfading works on
+top of the hotswapping system.
+</p>
+
+<h5>5.4.1. Enabling/Disabling Crossfade</h5>
+
+<p><a id="wm_000_0344"></a>Crossfades can be enabled with the function <code>monolith_crossfade_enable</code>, and
+disabled with the function <code>monolith_crossfade_disable</code>. On success, they
+will return true (1).
+</p>
+
+<h6>5.4.1.1. Enabling/Disabling Crossfade in C</h6>
+
+<p><a id="wm_000_0346"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_crossfade_enable(monolith_d *m);
+int monolith_crossfade_disable(monolith_d *m);</pre></code>
+<p>Enabling the crossfade will set the crossfade state variable to
+<code>CROSSFADE_STANDBY</code>, assuming the state is currently set to be <code>CROSSFADE_NONE</code>.
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_crossfade_enable(monolith_d *m)
+{
+    if(m-&gt;cf_state == CROSSFADE_STANDBY) return 1; /* already enabled */
+    if(m-&gt;cf_state == CROSSFADE_NONE) {
+        m-&gt;cf_state = CROSSFADE_STANDBY;
+        return 1;
+    }
+    return 0;
+}</pre></code>
+<p>Crossfades can be disabled by setting the crossfade state to <code>CROSSFADE_NONE</code>.
+The state will need to be in <code>CROSSFADE_STANDBY</code>, in order to safely disable it.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_crossfade_disable(monolith_d *m)
+{
+    if(m-&gt;cf_state == CROSSFADE_NONE) return 1; /* already disabled */
+    if(m-&gt;cf_state == CROSSFADE_STANDBY) {
+        m-&gt;cf_state = CROSSFADE_NONE;
+        return 1;
+    }
+    return 0;
+}</pre></code>
+
+<h6>5.4.1.2. Enabling/Disabling Crossfade in Scheme</h6>
+
+<p><a id="wm_000_0355"></a>Crossfades can be enabled/disabled using the functions
+<code>monolith:crossfade-enable</code> and <code>monolith:crossfade-disable</code>.
+</p>
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:crossfade-enable", pp_crossfade_enable, 0, 0, {CHR,___,___}},
+{"monolith:crossfade-disable", pp_crossfade_disable, 0, 0, {CHR,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_crossfade_enable(cell x)
+{
+    int rc;
+    monolith_d *m;
+
+    m = monolith_data_get();
+    rc = monolith_crossfade_enable(m);
+
+    if(!rc) prints("Could not enable crossfade\n");
+
+    return UNSPECIFIC;
+}
+static cell pp_crossfade_disable(cell x)
+{
+    int rc;
+    monolith_d *m;
+
+    m = monolith_data_get();
+    rc = monolith_crossfade_disable(m);
+
+    if(!rc) prints("Could not disable crossfade\n");
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>5.4.2. Setting Crossfade size</h5>
+
+<p><a id="wm_000_0361"></a>The crossfade time is set in samples.
+</p>
+
+<h6>5.4.2.1. Setting the Crossfade Size in C</h6>
+
+<p><a id="wm_000_0363"></a>The crossfade size can be set in C with the function
+<code>monolith_crossfade_size_set</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_crossfade_size_set(monolith_d *m, int size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_crossfade_size_set(monolith_d *m, int size)
+{
+    m-&gt;cf_size = size;
+}</pre></code>
+
+<h6>5.4.2.2. Setting the Crossfade Size in Scheme</h6>
+
+<p><a id="wm_000_0369"></a>The crossfade size can be set from scheme using the function
+<code>monolith:crossfade-size-set</code>
+#+NAME: primitive_entries
+<pre><code>{"monolith:crossfade-size-set", pp_crossfade_size_set, 1, 1, {INT,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_crossfade_size_set(cell x)
+{
+    int size;
+    monolith_d *m;
+    char name[] = "monolith:crossfade-size-set";
+
+    size = integer_value(name, car(x));
+    m = monolith_data_get();
+    monolith_crossfade_size_set(m, size);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h5>5.4.3. Crossfade Struct Contents</h5>
+
+<p><a id="wm_000_0375"></a>Crossfade centers around a counter and a arbitrary crossfade size in samples.
+This is used to calculate a normalized alpha value used for a linear crossfade.
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int cf_counter;
+int cf_size;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;cf_counter = 0;
+m-&gt;cf_size = 64; /* default block size */</pre></code>
+
+<h5>5.4.4. Crossfade State</h5>
+
+<p><a id="wm_000_0381"></a>The behavior of the crossfade is stored in a single state variable. By default,
+crossfading is disabled, so the mode is set to be <code>CROSSFADE_NONE</code>. When
+crossfading is enabled, it is initially set to be <code>CROSSFADE_STANDBY</code>.
+</p>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int cf_state;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;cf_state = CROSSFADE_STANDBY;</pre></code>
+<p></p>
+<p>The total crossfade states are described below:
+</p>
+<p>- <code>CROSSFADE_NONE</code> disables all crossfade functionality.
+- <code>CROSSFADE_STANDBY</code> means crossfade is on and ready to happen
+- <code>CROSSFADE_COMPUTE</code> means crossfade is currently being computed
+- <code>CROSSFADE_DONE</code> means crossfade is done, and the write cable needs to be freed.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>enum {
+CROSSFADE_NONE,
+CROSSFADE_STANDBY,
+CROSSFADE_COMPUTE,
+CROSSFADE_DONE
+};</pre></code>
+
+<h5>5.4.5. Starting crossfades</h5>
+
+<p><a id="wm_000_0391"></a>A crossfade begins when a cable is hotswapped, which means a crossfade
+will always happen at the start of the block. The state flag is set to begin
+crossfading (<code>CROSSFADE_COMPUTE</code>), and the crossfade counter is set to be 0.
+</p>
+<div><b><i>&lt;&lt;cf_begin&gt;&gt;=</i></b></div><pre><code>if(m-&gt;cf_state == CROSSFADE_STANDBY) {
+    m-&gt;cf_state = CROSSFADE_COMPUTE;
+    m-&gt;cf_counter = 0;
+}</pre></code>
+
+<h5>5.4.6. Computing both blocks</h5>
+
+<p><a id="wm_000_0396"></a>When <code>CROSSFADE_COMPUTE</code> mode is set, both old (<code>write</code>) and new (<code>read</code>) cable
+blocks are computed. This is operation is handled in the <code>compute_block</code>
+function.
+</p>
+<div><b><i>&lt;&lt;cf_compute_write_block&gt;&gt;=</i></b></div><pre><code>if(m-&gt;cf_state == CROSSFADE_COMPUTE) {
+    pw_subpatch_compute(&m-&gt;cab_write-&gt;subpatch);
+}</pre></code>
+
+<h5>5.4.7. Crossfade computation</h5>
+
+<p><a id="wm_000_0401"></a>The crossfade itself is computed by taking a sample from both patches and
+linearly interpolating between the samples.
+</p>
+<p>When a crossfade is active, it will take the sample from the read patch, stored
+in a variable called <code>tmp</code>, and pass it into a function called <code>crossfade_samp</code>.
+</p>
+<div><b><i>&lt;&lt;cf_compute&gt;&gt;=</i></b></div><pre><code>if(m-&gt;cf_state == CROSSFADE_COMPUTE) {
+    tmp = crossfade_samp(m, tmp);
+&lt;&lt;cf_increment_counter&gt;&gt;
+}</pre></code>
+<div><b><i>&lt;&lt;cf_compute_function&gt;&gt;=</i></b></div><pre><code>static PWFLT crossfade_samp(monolith_d *m, PWFLT read)
+{
+    PWFLT write;
+    PWFLT a;
+
+    a = (PWFLT)m-&gt;cf_counter / m-&gt;cf_size;
+    write = m-&gt;cab_write-&gt;blk[m-&gt;count];
+
+    return a*read + (1 - a)*write;
+}</pre></code>
+
+<h5>5.4.8. Crossfade Cleanup</h5>
+
+<p><a id="wm_000_0411"></a>When the counter exceeds the crossfade duration, the state
+will be set to free the cable (<code>CROSSFADE_DONE</code>).
+</p>
+<div><b><i>&lt;&lt;cf_increment_counter&gt;&gt;=</i></b></div><pre><code>m-&gt;cf_counter++;
+if(m-&gt;cf_counter &gt;= m-&gt;cf_size) {
+    m-&gt;cf_state = CROSSFADE_DONE;
+}</pre></code>
+<p></p>
+<p>The next time the block
+computes, the write cable patch will be freed, and the patch will be ready
+to be populated again. The state will then be set back to <code>CROSSFADE_STANDBY</code>.
+</p>
+<div><b><i>&lt;&lt;cf_check_and_free&gt;&gt;=</i></b></div><pre><code>if(m-&gt;cf_state == CROSSFADE_DONE) {
+    pw_subpatch_destroy(&m-&gt;cab_write-&gt;subpatch);
+    pw_subpatch_free(&m-&gt;cab_write-&gt;subpatch);
+    m-&gt;cf_state = CROSSFADE_STANDBY;
+}</pre></code>
+</div>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>12. Hardware Listener</h3>
+
+<p><a id="wm_000_1759"></a>All hardware peripherals (monome, griffin) are polled inside
+of a single listener thread. Anytime a message is received
+by a hardware interface, it is immediately handled by the
+corresponding virtual interface.
+</p>
+
+<h4>12.1. Thread hardware listener callback</h4>
+
+<p><a id="wm_000_1761"></a>The hardware listener runs as a POSIX thread, so the pthread
+header is included.
+</p>
+<div><b><i>&lt;&lt;system_includes&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_OSX
+#include &lt;pthread/pthread.h&gt;
+#endif
+
+#ifdef MONOLITH_LINUX
+#include &lt;pthread.h&gt;
+#endif
+
+#include &lt;unistd.h&gt;</pre></code>
+<p></p>
+<p>The function <code>usleep</code> is always implicitely declared when
+enforcing c89 C mode. To remove this warning, the function
+prototype is explicitely written.
+</p>
+<p>This delcaration seems to cause problems when cross
+compiling for norns because it can't seem to find the
+<code>useconds_t</code>. For now, I am using a <code>ifndef</code> macro as a hack
+for now.
+</p>
+<div><b><i>&lt;&lt;system_includes&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_NORNS
+int usleep(useconds_t usec);
+#endif</pre></code>
+<p></p>
+<p>The listener itself is contained in a static pthread
+function called <code>listener</code>. Contained inside is a while loop
+which periodically polls the peripherals for any new events.
+Any new events found will be immediately processed with the
+virtual hardware interface.
+</p>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void* listener(void *data);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_poll(monolith_d *m)
+{
+&lt;&lt;poll_the_monome&gt;&gt;
+&lt;&lt;poll_the_griffin&gt;&gt;
+&lt;&lt;poll_the_g430&gt;&gt;
+&lt;&lt;poll_the_norns&gt;&gt;
+}
+static void* listener(void *data)
+{
+    monolith_d *m;
+    m = data;
+    while (m-&gt;listener_running) {
+        monolith_poll(m);
+        usleep(800);
+    }
+    pthread_exit(NULL);
+}</pre></code>
+
+<h4>12.2. Monolith listener data</h4>
+
+<p><a id="wm_000_1782"></a>The listener thread has a pthread data type called
+<code>listener_thread</code>
+
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>pthread_t listener_thread;</pre></code>
+<p></p>
+<p>On init, this is set to be NULL.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;listener_thread = 0;</pre></code>
+<p></p>
+<p>There is also a flag that is used to break out of the while
+loop called <code>listener_running</code>.
+</p>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int listener_running;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;listener_running = 0;</pre></code>
+<p></p>
+<p>By default, it's set to be 0.
+</p>
+
+<h4>12.3. Starting/Stopping the hardware listener</h4>
+
+<p><a id="wm_000_1795"></a>The hardware listener can be started with the callback
+<code>monolith_listener_start</code>. This will start the pthread
+listener.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_listener_start(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_listener_start(monolith_d *m)
+{
+    if(m-&gt;listener_running) {
+        fprintf(stderr, "Hardware listener seems to be running already\n");
+        return;
+    }
+    m-&gt;listener_running = 1;
+    pthread_create(&m-&gt;listener_thread, NULL, listener, m);
+}</pre></code>
+<p></p>
+<p>The hardware listener can be started from scheme using the
+function <code>monolith:listener-start</code>.
+</p>
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:listener-start", pp_listener_start, 0, 0, {CHR,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_listener_start(cell x) {
+    monolith_listener_start(monolith_data_get());
+    return UNSPECIFIC;
+}</pre></code>
+<div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/listener-start",
+j_listener_start,
+"Starts the main listener."
+},</pre></code>
+<div><b><i>&lt;&lt;janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_listener_start(int32_t argc, Janet *argv)
+{
+    monolith_d *m;
+    janet_fixarity(argc, 0);
+    m = monolith_data_get();
+    monolith_listener_start(m);
+    return janet_wrap_nil();
+}</pre></code>
+<p></p>
+<p>The hardware listern can be stopped with the callback
+<code>monolith_listener_stop</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_listener_stop(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_listener_stop(monolith_d *m)
+{
+    if(m-&gt;listener_running == 0) return;
+    m-&gt;listener_running = 0;
+    pthread_join(m-&gt;listener_thread, NULL);
+}</pre></code>
+
+<h4>12.4. Stopping the listener at cleanup</h4>
+
+<p><a id="wm_000_1815"></a>At cleanup, <code>monolith_listener_stop</code> is stopped. To prevent
+segfaults, hardware must be explicitely stopped after that.
+</p>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>monolith_listener_stop(m);
+&lt;&lt;hardware_cleanup&gt;&gt;</pre></code>
+
+<h4>12.5. Single-threaded event polling</h4>
+
+<p><a id="wm_000_1821"></a>This will create a blocking event loop. On the norns, this
+should be able to allow Janet functions to be called by the
+norns aux menu.
+</p>
+<p>SIGINT will be mapped so that a command line test will
+cleanly quit out of the listener loop.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_listener_loop(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;system_includes&gt;&gt;=</i></b></div><pre><code>#include &lt;signal.h&gt;</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int loop_running = 0;
+static void close_eventloop(int dummy)
+{
+    fprintf(stderr, "Stopping event loop.\n");
+    loop_running = 0;
+}
+
+void monolith_listener_loop(monolith_d *m)
+{
+    signal(SIGINT, close_eventloop);
+    loop_running = 1;
+    m-&gt;listener_running = 1;
+
+#ifdef MONOLITH_NORNS
+    while (loop_running && m-&gt;norns_running) {
+        monolith_poll(m);
+        usleep(800);
+    }
+#else
+    while (loop_running) {
+        monolith_poll(m);
+        usleep(800);
+    }
+#endif
+
+    m-&gt;listener_running = 0;
+}</pre></code>
+<p></p>
+<p>Call this from Janet with <code>monolith/event-loop</code>.
+<div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
+"monolith/event-loop",
+j_event_loop,
+"A single-threaded event loop.\n"
+},</pre></code>
+<div><b><i>&lt;&lt;janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_event_loop(int32_t argc, Janet *argv)
+{
+    janet_fixarity(argc, 0);
+    monolith_listener_loop(monolith_data_get());
+    return janet_wrap_nil();
+}</pre></code>
+</div>
+</body>
+</html>

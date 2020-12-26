@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>2. Command Line Program</h3>
+
+<p><a id="wm_032_0018"></a>This program can be built into a commandline program if
+<code>WAVDRAW_CLI</code> is built. The program itself is built into
+a program called <code>wavdraw_main</code> so it can be called
+as a subprogram in Monolith.
+</p>
+<div><b><i>&lt;&lt;main&gt;&gt;=</i></b></div><pre><code>int wavdraw_main(int argc, char *argv[])
+{
+    btprnt *bp;
+    btprnt_region r;
+
+    if (argc &lt; 3) {
+        printf("Usage: %s filename.wav out.pbm\n", argv[0]);
+        return 1;
+    }
+
+    bp = btprnt_new(500, 250);
+
+    btprnt_region_init(btprnt_canvas_get(bp),
+                       &r, 0, 0,
+                       500, 250);
+
+    btprnt_wavdraw(&r, argv[1], 1);
+
+    btprnt_buf_pbm(btprnt_buf_get(bp), argv[2]);
+
+    btprnt_del(&bp);
+    return 0;
+}
+
+#ifdef WAVDRAW_CLI
+int main(int argc, char *argv[])
+{
+    return wavdraw_main(argc, argv);
+}
+#endif</pre></code>
+</div>
+</body>
+</html>

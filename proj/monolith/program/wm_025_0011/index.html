@@ -140,22 +140,23 @@ int load_sqlar_loadwav(runt_vm *vm, runt_ptr pw)
     runt_int rc;
     runt_stacklet *s;
     pw_patch *patch;
-    sp_data *sp;
-    const char *db;
     const char *filename;
+    sqlite3 *db;
 
     rc = runt_ppop(vm, &s);
     RUNT_ERROR_CHECK(rc);
     filename = runt_to_string(s-&gt;p);
-
+/*
     rc = runt_ppop(vm, &s);
     RUNT_ERROR_CHECK(rc);
     db = runt_to_string(s-&gt;p);
+*/
+    rc = rpw_get_sqlite(vm, &db);
+    RUNT_ERROR_CHECK(rc);
 
     patch = rpw_get_patch(p);
-    sp = pw_patch_data_get(patch);
 
-    rc = sqlar_loadwav(sp, &ft, db, filename);
+    rc = sqlar_loadwav_db(db, filename, &ft);
 
     if(rc != SP_OK) {
         runt_print(vm,

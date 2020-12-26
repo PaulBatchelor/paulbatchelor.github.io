@@ -110,10 +110,14 @@ function <code>monolith:version</code>.
     return s9_make_string(MONOLITH_VERSION, strlen(MONOLITH_VERSION));
 }</pre></code>
 
-<h4>3.5. Checking for Keywords</h4>
+<h4>3.5. Subprograms</h4>
 
 <p><a id="wm_000_0075"></a>Monolith has a few sub programs that can be run from the
 commandline, using a style similar to that of git.
+</p>
+<p>The codeblock below checks for <code>keywords</code>, and if it finds
+a match, runs the program associated with it.
+</p>
 <div><b><i>&lt;&lt;check_for_keywords&gt;&gt;=</i></b></div><pre><code>if(argc &gt; 1) {
 &lt;&lt;start_sqlar&gt;&gt;
 &lt;&lt;start_runt&gt;&gt;
@@ -127,11 +131,12 @@ commandline, using a style similar to that of git.
 #endif
 &lt;&lt;start_cfloop&gt;&gt;
 &lt;&lt;start_scrambler&gt;&gt;
+&lt;&lt;start_wavdraw&gt;&gt;
 }</pre></code>
 
 <h5>3.5.1. Check for SQLar</h5>
 
-<p><a id="wm_000_0096"></a>Embedded in Monolith is SQLar, the SQLite archiver. This is a special
+<p><a id="wm_000_0098"></a>Embedded in Monolith is SQLar, the SQLite archiver. This is a special
 third party utility that can utilize SQLite as an archive file. The SQLar
 program can be instantiated with the function <code>sqlar_main</code>.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>int sqlar_main(int argc, char **argv);</pre></code>
@@ -146,7 +151,7 @@ passed after that will be treated as command line arguments to SQLar.
 
 <h5>3.5.2. Check for Runt</h5>
 
-<p><a id="wm_000_0105"></a>The runt interpretor for Monolith can be loaded explicitely
+<p><a id="wm_000_0107"></a>The runt interpretor for Monolith can be loaded explicitely
 using the word "runt". This will start an irunt interpretor
 via <code>irunt_begin</code>. This can be used to run runt code
 directly, rather than through the scheme interface.
@@ -156,14 +161,14 @@ directly, rather than through the scheme interface.
 
 <h5>3.5.3. Check for Janet</h5>
 
-<p><a id="wm_000_0110"></a>Runs the janet interpreter.
+<p><a id="wm_000_0112"></a>Runs the janet interpreter.
 <div><b><i>&lt;&lt;start_janet&gt;&gt;=</i></b></div><pre><code>if (!strncmp(argv[1], "janet", 5)) {
     return janet_main(argc - 1, argv + 1);
 }</pre></code>
 
 <h5>3.5.4. mkimg</h5>
 
-<p><a id="wm_000_0115"></a>Used to generated a monolith image.
+<p><a id="wm_000_0117"></a>Used to generated a monolith image.
 <div><b><i>&lt;&lt;start_mkimg&gt;&gt;=</i></b></div><pre><code>if (!strncmp(argv[1], "mkimg", 5)) {
     int img_argc = 5;
     char *img_argv[] = {
@@ -177,7 +182,7 @@ directly, rather than through the scheme interface.
 
 <h5>3.5.5. Stretcher</h5>
 
-<p><a id="wm_000_0120"></a>Stretcher is a small command line utility used to apply the
+<p><a id="wm_000_0122"></a>Stretcher is a small command line utility used to apply the
 paulstretch algorithm to audio files. This is only enabled
 if <code>MONOLITH_STRETCHER</code> is defined.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_STRETCHER
@@ -191,7 +196,7 @@ if (!strcmp(argv[1], "stretcher")) {
 
 <h5>3.5.6. JPM (Janet Plugin Manager)</h5>
 
-<p><a id="wm_000_0127"></a>The Janet Plugin Manager is used to build janet plugins.
+<p><a id="wm_000_0129"></a>The Janet Plugin Manager is used to build janet plugins.
 This version of JPM is built to run internally inside
 of monolith.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_STRETCHER
@@ -203,7 +208,7 @@ int monolith_jpm(int argc, char *argv[]);
 
 <h5>3.5.7. cfloop</h5>
 
-<p><a id="wm_000_0134"></a>cfloop is a tiny crossfade looper generator for wav files.
+<p><a id="wm_000_0136"></a>cfloop is a tiny crossfade looper generator for wav files.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_CFLOOP
 int run_cfloop(int argc, char *argv[]);
 #endif</pre></code>
@@ -215,13 +220,27 @@ if (!strcmp(argv[1], "cfloop")) {
 
 <h5>3.5.8. scrambler</h5>
 
-<p><a id="wm_000_0141"></a>scrambler is an offline FFT scrambler.
+<p><a id="wm_000_0143"></a>scrambler is an offline FFT scrambler.
+</p>
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_SCRAMBLER
 int scrambler_main(int argc, char *argv[]);
 #endif</pre></code>
 <div><b><i>&lt;&lt;start_scrambler&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_SCRAMBLER
 if (!strcmp(argv[1], "scrambler")) {
     return scrambler_main(argc - 1, argv + 1);
+}
+#endif</pre></code>
+
+<h5>3.5.9. wavdraw</h5>
+
+<p><a id="wm_000_0150"></a>wavdraw draws a waveform.
+</p>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_SCRAMBLER
+int wavdraw_main(int argc, char *argv[]);
+#endif</pre></code>
+<div><b><i>&lt;&lt;start_wavdraw&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_SCRAMBLER
+if (!strcmp(argv[1], "wavdraw")) {
+    return wavdraw_main(argc - 1, argv + 1);
 }
 #endif</pre></code>
 </div>

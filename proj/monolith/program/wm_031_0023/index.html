@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>2. Helper Macros</h3>
+
+<p><a id="wm_031_0023"></a>This interface expects the entire font to be loaded into
+a chunk memory somehow. From there, the interface will read
+the block.
+</p>
+<p>The font record interface is mostly stored as a series of
+words, or 16-bit values that take up two bytes, stored in
+big-endian. To convert these big-endian values to native,
+a macro called <code>BIG2INT</code> is used.
+</p>
+<div><b><i>&lt;&lt;macro_utils&gt;&gt;=</i></b></div><pre><code>#define BIGINT(n) (((n & 0xFF) &lt;&lt; 8) | n &gt;&gt; 8)</pre></code>
+<p></p>
+<p>To read integers, a macro called <code>MKINT</code> is used. Does the
+same thing, only it expects to read from a buffer of bytes.
+</p>
+<div><b><i>&lt;&lt;macro_utils&gt;&gt;=</i></b></div><pre><code>#define MKINT(d, pos) ((d[pos] &lt;&lt; 8) + d[pos + 1])</pre></code>
+<p></p>
+<p>Most of the other macros are just "getters" for particular
+values in the font record that use the <code>MKINT</code> macro.
+</p>
+<div><b><i>&lt;&lt;macro_getters&gt;&gt;=</i></b></div><pre><code>#define FONTTYPE(d) (MKINT(d, 0))
+#define FIRSTCHAR(d) (MKINT(d, 2))
+#define LASTCHAR(d) (MKINT(d, 4))
+#define WIDTHMAX(d) ((int16_t)MKINT(d, 6))
+#define KERNMAX(d) ((int16_t)MKINT(d, 8))
+#define NDESCENT(d) ((int16_t)MKINT(d, 10))
+#define RECTWIDTH(d) ((int16_t)MKINT(d, 12))
+#define RECTHEIGHT(d) ((int16_t)MKINT(d, 14))
+#define OWTLOC(d) ((int16_t)MKINT(d, 16))
+#define ASCENT(d) ((int16_t)MKINT(d, 18))
+#define DESCENT(d) ((int16_t)MKINT(d, 20))
+#define LEADING(d) ((int16_t)MKINT(d, 22))
+#define ROWWORDS(d) ((int16_t)MKINT(d, 24))
+#define BITMAPS(d) (&d[26])</pre></code>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>&lt;&lt;macro_utils&gt;&gt;
+&lt;&lt;macro_getters&gt;&gt;</pre></code>
+</div>
+</body>
+</html>

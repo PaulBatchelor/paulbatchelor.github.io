@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>9. Wrappers for getting/pushing sqlite</h3>
+
+<p><a id="wm_007_0112"></a>Runt has a dumb type system, which can be used to add a
+thin layer of confidence that the C data you are
+hucking is in fact a sqlite database handle, and not
+something like I don't know an ftable?
+</p>
+<p>Speaking of tables, the structure of these is based on the
+ftable wrappers found in the patchwerk codebase (the author
+is going over there right now...)
+</p>
+<p><code>rpw_get_sqlite</code> will pop a SQLite database off the stack.
+If that item is not a SQLite database, then it will throw
+an error.
+</p>
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>runt_int rpw_get_sqlite(runt_vm *vm, sqlite3 **db);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>runt_int rpw_get_sqlite(runt_vm *vm, sqlite3 **db)
+{
+    runt_int rc;
+    runt_stacklet *s;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    if (s-&gt;t != RUNT_END + TYPE_SQLITE) {
+        runt_print(vm, "Parameter does not seem to be sqlite.\n");
+        *db = NULL;
+        return RUNT_NOT_OK;
+    }
+
+    *db = runt_to_cptr(s-&gt;p);
+    return RUNT_OK;
+}</pre></code>
+<p></p>
+<p><code>rpw_stacklet_sqlite</code> will configure a runt stacklet to hold
+a sqlite database handle. The ID will be set to be
+<code>END + 5717</code>, where <code>END</code> is the end value from
+<code>rpw_get_end</code>.
+</p>
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>void rpw_stacklet_sqlite(runt_vm *vm, runt_stacklet *s, sqlite3 *db);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>void rpw_stacklet_sqlite(runt_vm *vm, runt_stacklet *s, sqlite3 *db)
+{
+    s-&gt;p = runt_mk_cptr(vm, db);
+    s-&gt;t = RUNT_END + TYPE_SQLITE;
+}</pre></code>
+<p></p>
+<p>The value 5717 is a number derived from
+taking the base64 value "sql" (0xb2a9), and right-shifting
+3: <code>base64("sql")>>3</code>
+
+<div><b><i>&lt;&lt;sqlar_macros&gt;&gt;=</i></b></div><pre><code>#define TYPE_SQLITE 5717</pre></code>
+</div>
+</body>
+</html>

@@ -9,19 +9,129 @@
 <body>
 <div id="main">
 
-<h3>1. Top</h3>
+<h3>1. Overview</h3>
 
-<p><a id="wm_032_0002"></a><div><b><i>&lt;&lt;dither.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
-#define MONOLITH_ANSI
+<p><a id="wm_032_0002"></a>This aims to be a basic btprnt drawing routine
+for drawing a waveform from a file. As inputs, a region
+and a WAV audio file are given, as well as the color (black
+or white). The output is a drawing of the waveform to that
+region. My hope is to use this to render some waveforms in
+my waveform collections. Rendering waveforms from a wav file
+is also a pretty handy thing to do typically as well.
+</p>
+<p>For now, only mono wav files will be considered.
+</p>
+<p>Waveform display is based onthe way Audacity
+does it. They split things up into blocks,
+and find the minimum and maximum samples in that block. This
+gets represented as a line at this length.
+</p>
+<div><b><i>&lt;&lt;wavdraw.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include &lt;stdio.h&gt;
 #include "janet/janet.h"
-#include "patchwerk.h"
-#include "runt.h"
-#include "monolith.h"
-&lt;&lt;grayscale&gt;&gt;
-&lt;&lt;algorithm&gt;&gt;
-&lt;&lt;janet_function&gt;&gt;
-&lt;&lt;funclist&gt;&gt;
-&lt;&lt;plugin_entry&gt;&gt;</pre></code>
+#include "dr_wav/dr_wav.h"
+#include "btprnt.h"
+
+#define BUFSIZE 512
+
+&lt;&lt;btprnt_wavdraw_drwav&gt;&gt;
+
+int btprnt_wavdraw(btprnt_region *r,
+                   const char *filename,
+                   int c)
+{
+    drwav wav;
+    int rc;
+
+    rc = drwav_init_file(&wav, filename);
+
+    if (!rc) {
+        fprintf(stderr, "There was a problem opening file '%s'\n",
+                filename);
+        return 0;
+    }
+
+    btprnt_wavdraw_drwav(r, &wav, c);
+    drwav_uninit(&wav);
+    return 1;
+}
+&lt;&lt;main&gt;&gt;
+#ifdef BUILD_BTPRNT_PLUGIN
+&lt;&lt;janet&gt;&gt;
+#endif</pre></code>
+<p></p>
+<p>Once the WAV file is loaded with <code>drwav</code>, it can be drawn
+with <code>btprnt_wavdraw_drwav</code>.
+</p>
+<p>This function has been created with the hopes that it
+can be more naturally integrated with the weewiki crate
+interface.
+</p>
+<div><b><i>&lt;&lt;btprnt_wavdraw_drwav&gt;&gt;=</i></b></div><pre><code>void btprnt_wavdraw_drwav(btprnt_region *r,
+                          drwav *wav,
+                          int c)
+{
+
+    float buf[BUFSIZE];
+    int spp; /* samps per pixel */
+    int nsmps;
+    int n;
+    int counter;
+    int pos;
+    int max_height;
+    float samp_min;
+    float samp_max;
+    float smp;
+
+    spp = wav-&gt;totalSampleCount / r-&gt;w;
+
+    counter = 0;
+    pos = 0;
+    max_height = r-&gt;h;
+    samp_min = 1;
+    samp_max = -1;
+
+    while (1) {
+        nsmps = drwav_read_f32(wav, BUFSIZE, buf);
+        if (nsmps &lt;= 0) break;
+
+        for (n = 0; n &lt; nsmps; n++) {
+            if (counter == spp) {
+                int len;
+                int top;
+
+                samp_min = (samp_min + 1) * 0.5;
+                samp_max = (samp_max + 1) * 0.5;
+                top = (1 - samp_max) * max_height;
+                len = (samp_max - samp_min) * max_height;
+
+                /* make DC line */
+                if (len == 0) {
+                    len = 1;
+                    top--; /* more centered this way */
+                }
+
+                btprnt_draw_vline(r,
+                                  pos,
+                                  top,
+                                  len,
+                                  c);
+
+                counter = 0;
+                pos++;
+                samp_min = 1;
+                samp_max = -1;
+            }
+
+            smp = buf[n];
+
+            if (smp &lt; samp_min) samp_min = smp;
+            if (smp &gt; samp_max) samp_max = smp;
+
+            counter++;
+        }
+    }
+}</pre></code>
 </div>
 </body>
 </html>
