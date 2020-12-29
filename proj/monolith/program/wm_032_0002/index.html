@@ -82,6 +82,7 @@ interface.
     float samp_min;
     float samp_max;
     float smp;
+    int ptop;
 
     spp = wav-&gt;totalSampleCount / r-&gt;w;
 
@@ -90,6 +91,7 @@ interface.
     max_height = r-&gt;h;
     samp_min = 1;
     samp_max = -1;
+    ptop = 0;
 
     while (1) {
         nsmps = drwav_read_f32(wav, BUFSIZE, buf);
@@ -105,22 +107,32 @@ interface.
                 top = (1 - samp_max) * max_height;
                 len = (samp_max - samp_min) * max_height;
 
-                /* make DC line */
-                if (len == 0) {
-                    len = 1;
-                    top--; /* more centered this way */
-                }
+                /* for low spp, just draw lines */
+                if (spp &gt; 2) {
+                    /* make DC line */
+                    if (len == 0) {
+                        len = 1;
+                        top--; /* more centered this way */
+                    }
 
-                btprnt_draw_vline(r,
-                                  pos,
-                                  top,
-                                  len,
-                                  c);
+                    btprnt_draw_vline(r,
+                                    pos,
+                                    top,
+                                    len,
+                                    c);
+                } else {
+                    if (pos &gt; 0) {
+                        btprnt_draw_line(r,
+                                         pos - 1, ptop,
+                                         pos, top, 1);
+                    }
+                }
 
                 counter = 0;
                 pos++;
                 samp_min = 1;
                 samp_max = -1;
+                ptop = top;
             }
 
             smp = buf[n];
@@ -132,6 +144,11 @@ interface.
         }
     }
 }</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+prev | <a href="/proj/monolith/program/wm_032">home</a> | <a href="/proj/monolith/program/wm_032_0018">next</a></p>
 </div>
 </body>
 </html>
