@@ -22,11 +22,11 @@ within the scope of monolith.
 
 <h3>The Tippy Top</h3>
 
-<p>Monolith is the name of software that I (Paul) use top
+<p>Monolith is the name of software that I (Paul) use to
 create computer generated sound and music.
 </p>
-<p>Monolith is a <code>live-coding</code> environment for sound, that
-typically is spawned inside of the <code>Emacs</code> text editor.
+<p>Monolith is a <code>live-coding</code> environment for sound,
+typically spawned inside of the <code>Emacs</code> text editor.
 In this setup, I write code (a dialect of <code>Scheme</code>), and
 this is sent to Monolith to tell it to create sound.
 </p>
@@ -49,8 +49,13 @@ waves, sound is a bunch of discrete numbers. These numbers
 produced using something known as digital signal processing,
 or <code>DSP</code>.
 </p>
+<p>The thing that handles all DSP is done with something called
+the <code>DSP Kernel</code>, which can be examined in <a href="/proj/monolith/program/wm_000_0202#wm_000_0202">5. DSP Kernel</a>.
+</p>
 <p>The majority of DSP is handled with Soundpipe, a library
-written in portable C code.
+written in portable C code. Soundpipe has a nice
+collection of DSP algorithms that provide monolith
+a good starting point.
 </p>
 <p>Because it's written in C, it's very hard to be creative in
 Soundpipe. For every musical thought, several of lines of
@@ -59,8 +64,10 @@ time.
 </p>
 <p>To fix this, a few constructs will be written on top of
 Soundpipe. Historically, this was a language called Sporth.
-Spiritually, Sporth lives on in two components: Patchwerk
-and Runt.
+Spiritually, Sporth lives on in two components: <code>Patchwerk</code>
+and <code>Runt</code>. Soundpipe is managed inside of Patchwerk. You
+can read more about this relationship in <a href="/proj/monolith/program/wm_000_0420#wm_000_0420">6. Patchwerk and Soundpipe</a>. Runt runs on
+top of Patchwerk, and will be covered later in the document.
 </p>
 
 <h3>Making structures with Patchwerk</h3>
@@ -86,25 +93,31 @@ tedious!
 It is trivial (and encouraged!) to build things on top of
 Patchwerk to make things a bit more manageable.
 </p>
-<p>The next layer immediately following Patchwerk is Runt.
+<p>To see how the Patchwerk C API is used in monolith, consult
+<a href="/proj/monolith/program/wm_000_0420#wm_000_0420">6. Patchwerk and Soundpipe</a>.
+</p>
+<p>The next layer immediately following Patchwerk is <code>Runt</code>.
 </p>
 
 <h3>Higher-level control with Runt</h3>
 
 <p><code>runt</code> is a funny little stack-based language written in C.
-It is designed to be very portable, every easy to embed,
-and very easy to extend.
+It is designed to be very portable, easy to embed,
+and easy to extend. Core of the Runt is managed in <a href="/proj/monolith/program/wm_000_0890#wm_000_0890">9. Runt</a>.
 </p>
 <p>Like most stack based languages and Forths, Runt maintains
 a list of keywords known as <code>words</code> in a <code>dictionary</code>. The
 Runt C API allows programs to add new words to the
 dictionary at run time. Patchwerk API has a number of words
 that it adds to Runt. Every Patchwerk node gets
-wrapped around a Runt word.
+wrapped around a Runt word and then added to the
+dictionary. This happens in <a href="/proj/monolith/program/wm_000_0890#wm_000_0907">9.2.1. The Main Runt Loader</a>.
 </p>
-<p>Runt allows patches in patchwerk to be described in a very
+<p>Runt allows patches in Patchwerk to be described in a very
 terse way. Patchwerk is also quite stack-oriented like Runt,
 so the flow really makes sense.
+</p>
+<p>A digression...
 </p>
 <p>Up to this point, only DSP code has been discussed. Actually
 hearing what this DSP code produces is another matter.
@@ -116,7 +129,10 @@ monolith layer comes in.
 terse language, and after about a page things get very hard
 to keep track of. Also, Runt doesn't have a very great REPL
 needed for live coding. Both of these problems get solved
-when scheme is used to evaluate Runt code.
+when Scheme is used to evaluate Runt code.
+</p>
+<p>Runt code evaluation is managed in <a href="/proj/monolith/program/wm_000_0890#wm_000_0953">9.3. Runt Evaluation</a>. In Scheme, runt code is evaluated with
+<code>monolith:runt-eval</code>.
 </p>
 
 <h3>Realtime audio and interfaces with Monolith</h3>
@@ -124,22 +140,26 @@ when scheme is used to evaluate Runt code.
 <p>The core monolith application layer is written in C, and is
 the heartbeat of the monolith system. It does many things,
 but the two biggest things it does are handling real-time
-audio and hardware interfaces like the <code>arc</code> and <code>monome</code>.
+audio and hardware interfaces like the <code>arc</code> and <code>monome</code>
+(<a href="/proj/monolith/program/wm_000_1834#wm_000_1834">13. Monome Hardware (Arc, Grid) and Libmonome</a>).
 </p>
-<p>For sound, Monolith uses JACK. It creates a jack client that
+<p>For sound, Monolith uses JACK
+(<a href="/proj/monolith/program/wm_000_0517#wm_000_0519">7.1. JACK audio</a>). It creates a JACK client that
 connects to an existing server, and then a callback that
 sits on top of that. This callback renders audio generated
 from a patchwerk patch. it also impelements a thing called
 <code>hot-swapping</code> in patchwerk, which makes it possible to
 throw out and old patchwerk patch and replace it with a new
 one. hot-swapping is the key element that makes live-coding
-possible.
+possible (<a href="/proj/monolith/program/wm_000_0202#wm_000_0251">5.2. Hot Swapping</a>).
 </p>
-<p>monolith also implements a <code>hardware listener</code> that listens
+<p>Monolith also implements a <code>hardware listener</code> )<a href="/proj/monolith/program/wm_000_1759#wm_000_1759">12. Hardware Listener</a>) that listens
 for events from plugged in interfaces. <code>libmonome</code> is used
-to poll events from the arc and grid, and <code>libusb</code> and
+to poll events from the arc and grid (<a href="/proj/monolith/program/#">???</a>), and <code>libusb</code> and
 a internal fork of <code>libhidapi</code> are used to manage everything
-else. Monome users should note that I'm not using OSC layer,
+else (Griffin, etc).
+</p>
+<p>Monome users should note that I'm not using OSC layer,
 but the api abstractions underneath that OSC layer. OSC
 and liblo caused more troubles than they were worth, and
 removing it ended up making things way more responsive
@@ -148,7 +168,7 @@ and predictable.
 <p>There's a thin layer between the actual
 hardware and monolith. Someday, this may make it easier
 build virtual versions of the hardware interfaces. Nothing
-much done here yet, but it's there.
+much done here yet, but it's there. (<a href="/proj/monolith/program/wm_000_0566#wm_000_0566">8. Virtual Interface Layer</a>).
 </p>
 <p>Special monolith applications are written for the arc and
 grid using what is called a <code>page</code> interface, which allow
