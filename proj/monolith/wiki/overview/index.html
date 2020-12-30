@@ -46,20 +46,21 @@ interfaces.
 </p>
 <p>Right before it reaches your speaker and comes out as sound
 waves, sound is a bunch of discrete numbers. These numbers
-produced using something known as digital signal processing,
-or <code>DSP</code>.
+are produced using something known as digital signal
+processing, or <code>DSP</code>.
 </p>
 <p>The thing that handles all DSP is done with something called
-the <code>DSP Kernel</code>, which can be examined in <a href="/proj/monolith/program/wm_000_0202#wm_000_0202">5. DSP Kernel</a>.
+the <code>DSP Kernel</code>, which can be examined in detail at
+<a href="/proj/monolith/program/wm_000_0202#wm_000_0202">5. DSP Kernel</a>.
 </p>
 <p>The majority of DSP is handled with Soundpipe, a library
 written in portable C code. Soundpipe has a nice
-collection of DSP algorithms that provide monolith
+collection of music DSP algorithms that provide monolith
 a good starting point.
 </p>
 <p>Because it's written in C, it's very hard to be creative in
 Soundpipe. For every musical thought, several of lines of
-C code need to be written. This takes time to do, too much
+C code need to be written. This takes time to do. Too much
 time.
 </p>
 <p>To fix this, a few constructs will be written on top of
@@ -72,7 +73,7 @@ top of Patchwerk, and will be covered later in the document.
 
 <h3>Making structures with Patchwerk</h3>
 
-<p><code>patchwerk</code> is another C library used on top of Soundpipe.
+<p><code>patchwerk</code> is another C library, used on top of Soundpipe.
 It solves one problem: how to connect self-contained DSP
 algorithms (like the ones seen in Soundpipe).
 </p>
@@ -89,7 +90,7 @@ node. It's very useful, but it's still very tedious to
 write Patchwerk C code by hand. Sometimes, it's even more
 tedious!
 </p>
-<p>Luckily, things in Patchwerk are tedious <b>and</b> predictable.
+<p>Luckily, things in Patchwerk are predictably tedious.
 It is trivial (and encouraged!) to build things on top of
 Patchwerk to make things a bit more manageable.
 </p>
@@ -103,7 +104,8 @@ Patchwerk to make things a bit more manageable.
 
 <p><code>runt</code> is a funny little stack-based language written in C.
 It is designed to be very portable, easy to embed,
-and easy to extend. Core of the Runt is managed in <a href="/proj/monolith/program/wm_000_0890#wm_000_0890">9. Runt</a>.
+and easy to extend. The core of the Runt is managed in
+<a href="/proj/monolith/program/wm_000_0890#wm_000_0890">9. Runt</a>.
 </p>
 <p>Like most stack based languages and Forths, Runt maintains
 a list of keywords known as <code>words</code> in a <code>dictionary</code>. The
@@ -117,19 +119,19 @@ dictionary. This happens in <a href="/proj/monolith/program/wm_000_0890#wm_000_0
 terse way. Patchwerk is also quite stack-oriented like Runt,
 so the flow really makes sense.
 </p>
-<p>A digression...
+<p>Now, a digression...
 </p>
 <p>Up to this point, only DSP code has been discussed. Actually
-hearing what this DSP code produces is another matter.
+<b>hearing</b> what this DSP code produces is another matter.
 In Monolith, sound needs to be heard in realtime. Also, it
 wants to be adjusted in realtime. This is where the core
 monolith layer comes in.
 </p>
 <p>There's also the issue of Runt code itself: Runt is a very
-terse language, and after about a page things get very hard
+terse language, and after about a page, things get very hard
 to keep track of. Also, Runt doesn't have a very great REPL
 needed for live coding. Both of these problems get solved
-when Scheme is used to evaluate Runt code.
+when <a href="/proj/monolith/wiki/runt#runt_scheme">Scheme is used to evaluate Runt code</a>.
 </p>
 <p>Runt code evaluation is managed in <a href="/proj/monolith/program/wm_000_0890#wm_000_0953">9.3. Runt Evaluation</a>. In Scheme, runt code is evaluated with
 <code>monolith:runt-eval</code>.
@@ -149,11 +151,11 @@ connects to an existing server, and then a callback that
 sits on top of that. This callback renders audio generated
 from a patchwerk patch. it also impelements a thing called
 <code>hot-swapping</code> in patchwerk, which makes it possible to
-throw out and old patchwerk patch and replace it with a new
+throw out an old patchwerk patch and replace it with a new
 one. hot-swapping is the key element that makes live-coding
 possible (<a href="/proj/monolith/program/wm_000_0202#wm_000_0251">5.2. Hot Swapping</a>).
 </p>
-<p>Monolith also implements a <code>hardware listener</code> )<a href="/proj/monolith/program/wm_000_1759#wm_000_1759">12. Hardware Listener</a>) that listens
+<p>Monolith also implements a <code>hardware listener</code> (<a href="/proj/monolith/program/wm_000_1759#wm_000_1759">12. Hardware Listener</a>) that listens
 for events from plugged in interfaces. <code>libmonome</code> is used
 to poll events from the arc and grid (<a href="/proj/monolith/program/wm_000_1834#wm_000_2036">13.7. Polling and Processing Monome/Arc Events</a>), and <code>libusb</code> and
 a internal fork of <code>libhidapi</code> are used to manage everything
@@ -171,12 +173,13 @@ build virtual versions of the hardware interfaces. Nothing
 much done here yet, but it's there. (<a href="/proj/monolith/program/wm_000_0566#wm_000_0566">8. Virtual Interface Layer</a>).
 </p>
 <p>Special monolith applications are written for the arc and
-grid using what is called a <code>page</code> interface, which allow
+grid using what is called a <code>page</code> interface
+(<a href="/proj/monolith/program/wm_000_1130#wm_000_1130">11. Pages</a>), which allow
 hardware interfaces to be used in different configurations
 within in the same patch. When a page is selected, it gains
 control of the hardware. Only one page can be selected at a
 time. Pages also the ability to save and load state data
-using a combination of SQLite and MSGPack blobs.
+using a combination of SQLite and MSGPack blobs (<a href="/proj/monolith/program/wm_002">moncmp.c</a>).
 </p>
 <p>This conceptually encompasses most of what Monolith is:
 a mother hen written C that takes care of all her various
@@ -191,11 +194,11 @@ Scheme, and sometimes Janet.
 <h3>Abstraction and expressiveness with Scheme/Janet</h3>
 
 <p>Monolith is mostly controlled using the Scheme programming
-language. Specifically it is forked from an implementation
+language. Specifically, it is forked from an implementation
 known as <code>s9</code> scheme, or s9fes, or scheme 9 from extended
 space.
 </p>
-<p>Monolith commands in C are bound to s9 scheme functions.
+<p>Monolith commands in C are bound to s9 scheme functions (<a href="/proj/monolith/program/wm_000_1033#wm_000_1035">10.1. Scheme Loader</a>).
 The s9 scheme interpreter is most often run as a REPL, which
 can be run inside of process controlled by emacs.
 </p>
@@ -207,33 +210,40 @@ live-coding. It's also a very elegant language for building
 abstractions on top of the fundamental monolith API
 functions from C.
 </p>
-<p>Not only does Scheme controlling the Monolith API, it can
+<p>Not only does Scheme control the Monolith API, it can
 also evaluate runt code as if it were inline code.
 In this regard, one can think of Scheme as a very powerful
 macro language for Runt. Scheme makes it possible to build
-reusable synths and sounds. Scheme also enables more complex
+reusable synths and sounds. In fact, virtually all of
+the <a href="/proj/monolith/wiki/ugens">core sound unit generators</a> used in
+Scheme are just wrappers around Runt code.
+</p>
+<p>Scheme also enables more complex
 patches to be built than if it were written in Runt.
 </p>
 
 <h3>Oh, there's also graphics too</h3>
 
-<p>Monolith has a very limited graphics interface. Monolith
-implements a small framebuffer interface with RGB color with
-a maximum 320x200 resolution. In addition, monolith
-also has a few basic drawing operations, and some less basic
-ones.
+<p>Monolith has a very <a href="/proj/monolith/wiki/graphics">limited graphics interface</a>.
+Monolith implements a small framebuffer interface with RGB
+color with a maximum 320x200 resolution (<a href="/proj/monolith/program/wm_000_2339#wm_000_2340">18.1. The Graphics Framebuffer</a>). In addition, monolith
+also has a few basic drawing operations
+(<a href="/proj/monolith/program/wm_027_0141#wm_027_0141">10. Drawing Operations</a>), and some
+less basic ones (ex: <a href="/proj/monolith/wiki/dither_1bit">dither_1bit</a>,
+<a href="/proj/monolith/wiki/fbm">fbm</a>, <a href="/proj/monolith/program/wm_037">fuzzydot.c</a>).
 </p>
 <p>Instead of using Scheme, drawing operations use the <code>Janet</code>
 programming language. (This was done because I wanted to try
 out Janet).
 </p>
 <p>Using <code>libx264</code>, framebuffer data can be encoded into h264
-video. Monolith sound buffers can also be rendered offline
+video (<a href="/proj/monolith/program/wm_000_2339#wm_000_2565">18.4. H264 Video Support</a>).
+Monolith sound buffers can also be rendered offline
 simultaneously. The <code>ffmpeg</code> application is then used to
 stitch them up together and create video.
 </p>
-<p>For audio-visual works, the Janet VM gets controlled inside
-Scheme.
+<p>For <a href="/proj/monolith/wiki/audiovisual">audio-visual works</a>, the Janet
+VM gets controlled inside Scheme.
 </p>
 
 <h3>In conclusion</h3>
