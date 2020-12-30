@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>9. Grid Patchwerk Nodes</h3>
+
+<p><a id="wm_009_0151"></a></p>
+
+<h4>9.1. Gridstate</h4>
+
+<p><a id="wm_009_0152"></a></p>
+
+<h5>9.1.1. Gridstate Patchwerk Node</h5>
+
+<p><a id="wm_009_0153"></a></p>
+
+<h6>9.1.1.1. Gridstate Node Function</h6>
+
+<p><a id="wm_009_0154"></a><div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_gridstate(pw_node *node, monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;gridstate_node_functions&gt;&gt;
+static int node_gridstate(pw_node *node, monolith_page *pg)
+{
+    pw_node_cables_alloc(node, 3);
+    pw_node_set_block(node, 2);
+    pw_node_set_data(node, pg);
+    pw_node_set_destroy(node, gridstate_destroy);
+    pw_node_set_compute(node, gridstate_compute);
+    /* TODO: "pin" page here */
+    return PW_OK;
+}</pre></code>
+
+<h6>9.1.1.2. Gridstate Compute</h6>
+
+<p><a id="wm_009_0161"></a><div><b><i>&lt;&lt;gridstate_node_functions&gt;&gt;=</i></b></div><pre><code>static void gridstate_compute(pw_node *node)
+{
+    int blksize;
+    int s;
+    PWFLT s_x, s_y, s_out;
+    pw_cable *x, *y, *out;
+    monolith_page *pg;
+    page_grid_d *grid;
+
+    blksize = pw_node_blksize(node);
+    pw_node_get_cable(node, 0, &x);
+    pw_node_get_cable(node, 1, &y);
+    pw_node_get_cable(node, 2, &out);
+    pg = pw_node_get_data(node);
+    grid = monolith_page_data_get(pg);
+
+    for(s = 0; s &lt; blksize; s++) {
+        s_x = pw_cable_get(x, s);
+        s_y = pw_cable_get(y, s);
+        s_out = monolith_page_mstate_get(grid-&gt;mstate, (int)s_x, (int)s_y);
+        pw_cable_set(out, s, s_out);
+    }
+}</pre></code>
+
+<h6>9.1.1.3. Gridstate Destroy</h6>
+
+<p><a id="wm_009_0165"></a><div><b><i>&lt;&lt;gridstate_node_functions&gt;&gt;=</i></b></div><pre><code>static void gridstate_destroy(pw_node *node)
+{
+    /* TODO: "unpin" page here */
+    pw_node_cables_free(node);
+}</pre></code>
+
+<h5>9.1.2. Gridstate Runt Word</h5>
+
+<p><a id="wm_009_0168"></a><div><b><i>&lt;&lt;grid_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "gridstate", 9, rproc_gridstate, m);</pre></code>
+<div><b><i>&lt;&lt;grid_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_gridstate(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    rpw_param x;
+    rpw_param y;
+    const char *name;
+    runt_stacklet *s;
+    runt_stacklet *out;
+    monolith_page *pg;
+    pw_patch *patch;
+    pw_node *node;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = rpw_get_param(vm, &y);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = rpw_get_param(vm, &x);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m, name,
+                                   "grid",
+                                   is_grid, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    patch = monolith_patchwerk_get(m);
+
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    node_gridstate(node, pg);
+
+    rpw_set_param(vm, node, &x, 0);
+    rpw_set_param(vm, node, &y, 1);
+    rpw_push_output(vm, node, out, 2);
+
+    return RUNT_OK;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_009_0132">prev</a> | <a href="/proj/monolith/program/wm_009">home</a> | next</p>
+</div>
+</body>
+</html>

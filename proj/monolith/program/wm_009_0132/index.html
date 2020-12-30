@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>8. Grid Scheme Functions</h3>
+
+<p><a id="wm_009_0132"></a></p>
+
+<h4>8.1. Create New Grid Page</h4>
+
+<p><a id="wm_009_0133"></a><div><b><i>&lt;&lt;grid_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:grid-new", pp_grid_new, 1, 1, {STR, ___, ___}},</pre></code>
+<div><b><i>&lt;&lt;grid_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_grid_new(cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    str = string(car(x));
+
+    rc = monolith_dict_newpage(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "could not create grid page (maybe it already exists?)",
+            car(x));
+    }
+
+    page_grid(pg);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h4>8.2. Set Grid Value</h4>
+
+<p><a id="wm_009_0140"></a><div><b><i>&lt;&lt;grid_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:grid-set", pp_grid_set, 4, 4, {STR, INT, INT}},</pre></code>
+<div><b><i>&lt;&lt;grid_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_grid_set(cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    page_grid_d *grid;
+    cell cstr;
+    int xpos, ypos, state;
+    char name[] = "monolith:grid-set";
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "could not find grid page",
+            cstr);
+    }
+
+    x = cdr(x);
+    xpos = integer_value(name, car(x));
+    x = cdr(x);
+    ypos = integer_value(name, car(x));
+    x = cdr(x);
+
+    if(!s9_integer_p(car(x))) {
+        return error("argument should have been an integer", car(x));
+    }
+    state = integer_value(name, car(x));
+
+    if(!is_grid(pg)){
+        return error("page is not a grid!", car(x));
+    }
+
+    grid = (page_grid_d *)monolith_page_data_get(pg);
+
+    monolith_page_mstate_set(grid-&gt;mstate, xpos, ypos, state);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h4>8.3. Get Grid Value</h4>
+
+<p><a id="wm_009_0146"></a><div><b><i>&lt;&lt;grid_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:grid-get", pp_grid_get, 3, 3, {STR, INT, INT}},</pre></code>
+<div><b><i>&lt;&lt;grid_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_grid_get(cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    page_grid_d *grid;
+    cell cstr;
+    int xpos, ypos, state;
+    char name[] = "monolith:grid-get";
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "could not find grid page",
+            cstr);
+    }
+
+    x = cdr(x);
+    xpos = integer_value(name, car(x));
+    x = cdr(x);
+    ypos = integer_value(name, car(x));
+    x = cdr(x);
+
+    if(!is_grid(pg)){
+        return error("page is not a grid!", car(x));
+    }
+
+    grid = (page_grid_d *)monolith_page_data_get(pg);
+
+    state = monolith_page_mstate_get(grid-&gt;mstate, xpos, ypos);
+
+    return s9_make_integer(state);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_009_0120">prev</a> | <a href="/proj/monolith/program/wm_009">home</a> | <a href="/proj/monolith/program/wm_009_0151">next</a></p>
+</div>
+</body>
+</html>

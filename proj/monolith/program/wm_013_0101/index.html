@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>3. Seq16 Helper Functions</h3>
+
+<p><a id="wm_013_0101"></a></p>
+
+<h4>3.1. Press Function</h4>
+
+<p><a id="wm_013_0102"></a>What happens when a press happens.
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void seq16_pressme(page_seq16_d *seq, int x, int y);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static void seq16_pressme(page_seq16_d *seq, int x, int y)
+{
+    int curval;
+    int newval;
+
+    curval = seq-&gt;seq[x];
+    newval = (7 - y) + 1;
+
+    if (newval == curval && curval != 0) {
+        newval = 0;
+    }
+
+    seq-&gt;seq[x] = newval;
+}</pre></code>
+
+<h4>3.2. Set value</h4>
+
+<p><a id="wm_013_0108"></a>Sets value in sequence.
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void seq16_valset(page_seq16_d *seq,
+                         int pos, int val);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static void seq16_valset(page_seq16_d *seq,
+                         int pos, int val)
+{
+    if (pos &lt; 0 || pos &gt;= 16) return;
+    seq-&gt;seq[pos] = val;
+}</pre></code>
+
+<h4>3.3. Draw column</h4>
+
+<p><a id="wm_013_0114"></a>Draws the value of a particular column on the grid.
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void seq16_draw_col(page_seq16_d *seq, int col);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static void seq16_draw_col(page_seq16_d *seq, int col)
+{
+    int val;
+    if (col &lt; 0 || col &gt;= 16) return;
+
+    if (seq-&gt;seq[col] == 0) val = 0;
+    else val = 1 &lt;&lt; (8 - seq-&gt;seq[col]);
+
+    monolith_page_mstate_led_col(seq-&gt;mstate,
+                                 col, 0, val);
+}</pre></code>
+
+<h4>3.4. Redraw</h4>
+
+<p><a id="wm_013_0120"></a><div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void seq16_redraw(page_seq16_d *seq);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static void seq16_redraw(page_seq16_d *seq)
+{
+    int c;
+    for (c = 0; c &lt; 16; c++) {
+        seq16_draw_col(seq, c);
+    }
+}</pre></code>
+
+<h4>3.5. Draw Playhead</h4>
+
+<p><a id="wm_013_0125"></a>Draws playhead at position.
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void seq16_draw_playhead(page_seq16_d *seq, int col);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static void seq16_draw_playhead(page_seq16_d *seq, int col)
+{
+    if (col &lt; 0 || col &gt;= 16) return;
+
+    if (seq-&gt;playhead) {
+        monolith_page_mstate_led_col(seq-&gt;mstate,
+                                    col, 0,
+                                    255);
+    }
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_013_0018">prev</a> | <a href="/proj/monolith/program/wm_013">home</a> | <a href="/proj/monolith/program/wm_013_0131">next</a></p>
+</div>
+</body>
+</html>

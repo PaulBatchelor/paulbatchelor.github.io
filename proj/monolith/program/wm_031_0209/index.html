@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>8. Macfont Glyph</h3>
+
+<p><a id="wm_031_0209"></a>The main way to write a glyph (using macfont info).
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int macfont_glyph(btprnt_region *r,
+                  macfont_info *info,
+                  int xpos,
+                  int ypos,
+                  char c,
+                  int color);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int macfont_glyph(btprnt_region *r,
+                  macfont_info *info,
+                  int xpos,
+                  int ypos,
+                  char c,
+                  int color)
+{
+    uint16_t ow;
+    uint16_t width;
+    uint16_t offset;
+    uint16_t pos;
+    uint16_t nextloc;
+    uint16_t loc;
+    uint16_t x, y;
+    uint16_t w, h;
+    uint16_t kern;
+
+    pos = c - info-&gt;firstchar;
+    ow = info-&gt;owtable[pos];
+    ow = ((ow & 0xFF) &lt;&lt; 8) | ow &gt;&gt; 8;
+
+    if (ow == 0xFFFF) return 0;
+
+    offset = (ow &gt;&gt; 8) & 0x00FF;
+    width = ow & 0x00FF;
+
+    loc = BIGINT(info-&gt;loctable[pos]);
+    nextloc = BIGINT(info-&gt;loctable[pos + 1]);
+
+    w = nextloc - loc;
+    h = info-&gt;rectheight;
+    kern = offset + info-&gt;kernmax;
+
+    for (y = 0; y &lt; h; y++) {
+        for (x = 0; x &lt; w; x++) {
+            int pos = loc + x;
+            uint8_t byte =
+                info-&gt;bitmaps[(info-&gt;stride * y) + (pos / 8)];
+            uint8_t val = (byte &gt;&gt; (7 - (pos % 8))) & 1;
+            if (val) {
+                btprnt_region_draw(r,
+                                   xpos + x + kern,
+                                   ypos + y,
+                                   color);
+            }
+        }
+    }
+
+    return width;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_031_0093">prev</a> | <a href="/proj/monolith/program/wm_031">home</a> | <a href="/proj/monolith/program/wm_031_0215">next</a></p>
+</div>
+</body>
+</html>

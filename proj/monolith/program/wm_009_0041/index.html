@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Grid Page Creation</h3>
+
+<p><a id="wm_009_0041"></a>A page is created with the function <code>page_grid</code>. This will take in a newly
+initialized monolith page, and then assigns callback functions.
+</p>
+<p>The Grid page only requires use of the monome, so the press callback is the only
+thing required.
+</p>
+<div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_grid(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>static void page_grid(monolith_page *pg)
+{
+    page_grid_d *grid;
+    grid = calloc(1, sizeof(page_grid_d));
+    if(grid == NULL) return;
+    if(grid_type == 0) grid_init(monolith_page_monolith(pg));
+    if(!monolith_page_mstate_new(pg, &grid-&gt;mstate)) return;
+&lt;&lt;grid_assign_callbacks&gt;&gt;
+    monolith_page_data_set(pg, grid);
+}</pre></code>
+
+<h4>4.1. Setting the Grid Type Flag</h4>
+
+<p><a id="wm_009_0049"></a><div><b><i>&lt;&lt;grid_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_type_set(pg, grid_type);</pre></code>
+
+<h4>4.2. Grid Open</h4>
+
+<p><a id="wm_009_0053"></a><div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static void grid_open(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>static void grid_open(monolith_page *pg)
+{
+    page_grid_d *grid;
+    grid = monolith_page_data_get(pg);
+    if(grid == NULL) return;
+    monolith_page_mstate_recall(grid-&gt;mstate);
+}</pre></code>
+<div><b><i>&lt;&lt;grid_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_open_set(pg, grid_open);</pre></code>
+
+<h4>4.3. Grid Free</h4>
+
+<p><a id="wm_009_0060"></a><div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static void grid_free(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>static void grid_free(monolith_page *pg)
+{
+    page_grid_d *grid;
+    grid = (page_grid_d *)monolith_page_data_get(pg);
+    if(grid == NULL) return;
+    monolith_page_mstate_free(&grid-&gt;mstate);
+    free(grid);
+}</pre></code>
+<div><b><i>&lt;&lt;grid_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_free_set(pg, grid_free);</pre></code>
+
+<h4>4.4. Monome Press Callback</h4>
+
+<p><a id="wm_009_0067"></a><div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static void grid_press(monolith_page *pg, int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>static void grid_press(monolith_page *pg, int x, int y, int s)
+{
+    page_grid_d *grid;
+    int curstate;
+    if(s == 0) return;
+    grid = monolith_page_data_get(pg);
+    if(grid == NULL) return;
+
+    curstate = monolith_page_mstate_get(grid-&gt;mstate, x, y);
+
+    if(curstate) {
+        monolith_page_mstate_set(grid-&gt;mstate, x, y, 0);
+    } else {
+        monolith_page_mstate_set(grid-&gt;mstate, x, y, 1);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;grid_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_press_set(pg, grid_press);</pre></code>
+
+<h4>4.5. TODO State Management</h4>
+
+<p><a id="wm_009_0074"></a></p>
+
+<h5>4.5.1. DONE Schema Generation</h5>
+
+<p><a id="wm_009_0075"></a>CLOSED: [2019-04-06 Sat 11:03]
+The Schema for the "grid" page is pretty straightforward. All it needs to save
+is the monome state.
+<div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static int grid_schema(page_grid_d *grid,
+                       monolith_state_schema **schema);</pre></code>
+<div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>static int grid_schema(page_grid_d *grid,
+                       monolith_state_schema **schema)
+{
+    monolith_state_schema_init(schema, 1);
+    monolith_param_mkmstate(*schema, 0, "mstate", 6, grid-&gt;mstate);
+    return 1;
+}</pre></code>
+
+<h5>4.5.2. TODO Grid Save Callback</h5>
+
+<p><a id="wm_009_0081"></a><div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static int grid_save(monolith_page *pg,
+                     monolith_state *s,
+                     const char *key,
+                     unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>static int grid_save(monolith_page *pg,
+                     monolith_state *s,
+                     const char *key,
+                     unsigned int len)
+{
+    page_grid_d *grid;
+    monolith_state_schema *schema;
+    grid = monolith_page_data_get(pg);
+    grid_schema(grid, &schema);
+    monolith_state_write_schema(s, schema, "grid", 4, key, len);
+    monolith_state_schema_cleanup(&schema);
+    return 1;
+}</pre></code>
+<div><b><i>&lt;&lt;grid_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_save_set(pg, grid_save);</pre></code>
+
+<h5>4.5.3. TODO Grid Load Callback</h5>
+
+<p><a id="wm_009_0088"></a><div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static int grid_load(monolith_page *pg,
+                     monolith_state *s,
+                     const char *key,
+                     unsigned int len);</pre></code>
+<div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>static int grid_load(monolith_page *pg,
+                     monolith_state *s,
+                     const char *key,
+                     unsigned int len)
+{
+    page_grid_d *grid;
+    monolith_state_schema *schema;
+    int rc;
+    grid = monolith_page_data_get(pg);
+
+    grid_schema(grid, &schema);
+    rc = monolith_state_read_schema(s, schema, "grid", 4, key, len);
+    monolith_param_mstate(schema, 0, grid-&gt;mstate);
+    if(monolith_page_selected(pg)) monolith_page_mstate_recall(grid-&gt;mstate);
+    monolith_state_schema_cleanup(&schema);
+    return rc;
+}</pre></code>
+<div><b><i>&lt;&lt;grid_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_load_set(pg, grid_load);</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_009_0031">prev</a> | <a href="/proj/monolith/program/wm_009">home</a> | <a href="/proj/monolith/program/wm_009_0095">next</a></p>
+</div>
+</body>
+</html>

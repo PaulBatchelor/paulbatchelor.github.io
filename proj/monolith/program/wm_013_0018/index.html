@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>2. Seq16 Data</h3>
+
+<p><a id="wm_013_0018"></a></p>
+
+<h4>2.1. Seq16 Data Contents</h4>
+
+<p><a id="wm_013_0019"></a></p>
+
+<h5>2.1.1. Seq16 Monome State Data</h5>
+
+<p><a id="wm_013_0020"></a><div><b><i>&lt;&lt;page_seq16_contents&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate *mstate;</pre></code>
+<div><b><i>&lt;&lt;seq16_init&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate_new(pg, &seq16-&gt;mstate);</pre></code>
+<div><b><i>&lt;&lt;seq16_cleanup&gt;&gt;=</i></b></div><pre><code>monolith_page_mstate_free(&seq16-&gt;mstate);</pre></code>
+
+<h5>2.1.2. Sequence Data</h5>
+
+<p><a id="wm_013_0030"></a><div><b><i>&lt;&lt;page_seq16_contents&gt;&gt;=</i></b></div><pre><code>uint8_t seq[16];</pre></code>
+<div><b><i>&lt;&lt;seq16_init&gt;&gt;=</i></b></div><pre><code>{
+    int i;
+    for (i = 0; i &lt; 16; i++) {
+        seq16-&gt;seq[i] = 0;
+    }
+}</pre></code>
+
+<h5>2.1.3. Position</h5>
+
+<p><a id="wm_013_0035"></a><div><b><i>&lt;&lt;page_seq16_contents&gt;&gt;=</i></b></div><pre><code>int pos;</pre></code>
+<p>Initialized to be -1.
+<div><b><i>&lt;&lt;seq16_init&gt;&gt;=</i></b></div><pre><code>seq16-&gt;pos = -1;</pre></code>
+
+<h5>2.1.4. Last Position</h5>
+
+<p><a id="wm_013_0041"></a>Stores the position from the last block. This is needed
+in order for the sample-accurate sequence to work.
+<div><b><i>&lt;&lt;page_seq16_contents&gt;&gt;=</i></b></div><pre><code>int lastpos;</pre></code>
+<p>Initialized to be -1.
+<div><b><i>&lt;&lt;seq16_init&gt;&gt;=</i></b></div><pre><code>seq16-&gt;lastpos = -1;</pre></code>
+
+<h5>2.1.5. Step Size</h5>
+
+<p><a id="wm_013_0048"></a>No more than 16.
+<div><b><i>&lt;&lt;page_seq16_contents&gt;&gt;=</i></b></div><pre><code>int size;</pre></code>
+<div><b><i>&lt;&lt;seq16_init&gt;&gt;=</i></b></div><pre><code>seq16-&gt;size = 16;</pre></code>
+
+<h5>2.1.6. Reset</h5>
+
+<p><a id="wm_013_0054"></a>A flag, when set, that resets at the next trigger.
+<div><b><i>&lt;&lt;page_seq16_contents&gt;&gt;=</i></b></div><pre><code>int reset;</pre></code>
+<div><b><i>&lt;&lt;seq16_init&gt;&gt;=</i></b></div><pre><code>seq16-&gt;reset = 0;</pre></code>
+
+<h5>2.1.7. Display Playhead Flag</h5>
+
+<p><a id="wm_013_0060"></a>Will display the playhead position. Disabled by default.
+<div><b><i>&lt;&lt;page_seq16_contents&gt;&gt;=</i></b></div><pre><code>int playhead;</pre></code>
+<div><b><i>&lt;&lt;seq16_init&gt;&gt;=</i></b></div><pre><code>seq16-&gt;playhead = 0;</pre></code>
+
+<h5>2.1.8. Event stack</h5>
+
+<p><a id="wm_013_0066"></a>Array that keeps track of event stacks. Maximum of 4 per
+render block. Assuming the default block size of 64 is used,
+this means guaranteed sample accuracy for ticks that are as
+small as 16 samples apart.
+</p>
+
+<h6>2.1.8.1. Struct Declaration</h6>
+
+<p><a id="wm_013_0068"></a><div><b><i>&lt;&lt;page_seq16_contents&gt;&gt;=</i></b></div><pre><code>int evt[4];
+int nevt;</pre></code>
+<div><b><i>&lt;&lt;seq16_init&gt;&gt;=</i></b></div><pre><code>{
+    seq16-&gt;nevt = 0;
+}</pre></code>
+
+<h4>2.2. Seq16 Typedef Declaration</h4>
+
+<p><a id="wm_013_0073"></a>All seq16 page data is contained in a struct called <code>page_seq16_d</code>.
+<div><b><i>&lt;&lt;seq16_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct page_seq16_d page_seq16_d;</pre></code>
+<div><b><i>&lt;&lt;seq16_struct&gt;&gt;=</i></b></div><pre><code>struct page_seq16_d {
+&lt;&lt;page_seq16_contents&gt;&gt;
+};</pre></code>
+
+<h4>2.3. Seq16 Data Allocation/Initialization</h4>
+
+<p><a id="wm_013_0083"></a>Seq16 data is initiatlized with the function <code>page_seq16_init</code>.
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_seq16_init(monolith_page *pg, page_seq16_d *seq16);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static void page_seq16_init(monolith_page *pg, page_seq16_d *seq16)
+{
+&lt;&lt;seq16_init&gt;&gt;
+}</pre></code>
+
+<h4>2.4. Seq16 Data Cleanup</h4>
+
+<p><a id="wm_013_0093"></a>Seq16 data is freed with the funciton <code>page_seq16_free</code>.
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_seq16_cleanup(page_seq16_d *seq16);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>static void page_seq16_cleanup(page_seq16_d *seq16)
+{
+&lt;&lt;seq16_cleanup&gt;&gt;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_013_0002">prev</a> | <a href="/proj/monolith/program/wm_013">home</a> | <a href="/proj/monolith/program/wm_013_0101">next</a></p>
+</div>
+</body>
+</html>

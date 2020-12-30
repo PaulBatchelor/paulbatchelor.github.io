@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>2. Framebuffer + Videobuffer</h3>
+
+<p><a id="wm_003_0025"></a>This section outlines data + operations needed to interact
+with the framebuffer.
+</p>
+
+<h4>2.1. Actual Framebuffer</h4>
+
+<p><a id="wm_003_0027"></a>The actual linux framebuffer.
+</p>
+
+<h5>2.1.1. typedef + struct contents</h5>
+
+<p><a id="wm_003_0029"></a><div><b><i>&lt;&lt;norns_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct norns_framebuffer norns_framebuffer;</pre></code>
+<div><b><i>&lt;&lt;norns_structs&gt;&gt;=</i></b></div><pre><code>struct norns_framebuffer {
+    int fbfd;
+    struct fb_var_screeninfo vinfo;
+    struct fb_fix_screeninfo finfo;
+    long int screensize;
+    char *fbp;
+};</pre></code>
+
+<h5>2.1.2. allocating/freeing</h5>
+
+<p><a id="wm_003_0036"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_framebuffer_new(norns_framebuffer **pfb);
+void norns_framebuffer_del(norns_framebuffer **pfb);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_framebuffer_new(norns_framebuffer **pfb)
+{
+    norns_framebuffer *fb;
+    fb = calloc(1, sizeof(norns_framebuffer));
+    *pfb = fb;
+}
+void norns_framebuffer_del(norns_framebuffer **fb)
+{
+    free(*fb);
+}</pre></code>
+
+<h5>2.1.3. opening the framebuffer</h5>
+
+<p><a id="wm_003_0043"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>int norns_framebuffer_open(norns_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>int norns_framebuffer_open(norns_framebuffer *fb)
+{
+    int rc;
+    fb-&gt;fbfd = open("/dev/fb0", O_RDWR);
+    if (fb-&gt;fbfd == -1) {
+        perror("Error: cannot open framebuffer device");
+        return 1;
+    }
+
+    rc = ioctl(fb-&gt;fbfd, FBIOGET_FSCREENINFO, &fb-&gt;finfo);
+
+    if (rc == -1) {
+        perror("Error reading fixed information");
+        return 2;
+    }
+
+    rc = ioctl(fb-&gt;fbfd, FBIOGET_VSCREENINFO, &fb-&gt;vinfo);
+
+    if (rc == -1) {
+        perror("Error reading variable information");
+        return 3;
+    }
+
+    fb-&gt;screensize = fb-&gt;vinfo.xres *
+        fb-&gt;vinfo.yres *
+        fb-&gt;vinfo.bits_per_pixel / 8;
+
+    fb-&gt;fbp = (char *)mmap(0,
+                           fb-&gt;screensize,
+                           PROT_READ | PROT_WRITE,
+                           MAP_SHARED,
+                           fb-&gt;fbfd,
+                           0);
+
+    return 0;
+}</pre></code>
+
+<h5>2.1.4. closing the framebuffer</h5>
+
+<p><a id="wm_003_0048"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_framebuffer_close(norns_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_framebuffer_close(norns_framebuffer *fb)
+{
+    munmap(fb-&gt;fbp, fb-&gt;screensize);
+    close(fb-&gt;fbfd);
+}</pre></code>
+
+<h5>2.1.5. Writing to the framebuffer</h5>
+
+<p><a id="wm_003_0053"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_framebuffer_write(norns_framebuffer *fb,
+                             int x, int y,
+                             unsigned char val);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_framebuffer_write(norns_framebuffer *fb,
+                             int x, int y,
+                             unsigned char val)
+{
+    long int loc;
+    loc = (x + fb-&gt;vinfo.xoffset) *
+        (fb-&gt;vinfo.bits_per_pixel/8) +
+        (y + fb-&gt;vinfo.yoffset) * fb-&gt;finfo.line_length;
+    fb-&gt;fbp[loc] = 0x0;
+    fb-&gt;fbp[loc + 1] = val;
+}</pre></code>
+
+<h4>2.2. Video Buffer</h4>
+
+<p><a id="wm_003_0058"></a>An array of 8-bit values to write to before copying over to
+the framebuffer.
+</p>
+
+<h5>2.2.1. typedef + struct contents</h5>
+
+<p><a id="wm_003_0060"></a><div><b><i>&lt;&lt;norns_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct norns_videobuf norns_videobuf;</pre></code>
+<p></p>
+<p>All that's really needed in a video buffer is a 128x64 array
+of unsigned 8-bit ints, which reduces to an array of size
+8192.
+</p>
+<div><b><i>&lt;&lt;norns_structs&gt;&gt;=</i></b></div><pre><code>struct norns_videobuf {
+    unsigned char buf[8192];
+};</pre></code>
+
+<h5>2.2.2. allocating/freeing</h5>
+
+<p><a id="wm_003_0066"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_new(norns_videobuf **pvb);
+void norns_videobuf_del(norns_videobuf **pvb);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_new(norns_videobuf **pvb)
+{
+    norns_videobuf *vb;
+    vb = calloc(1, sizeof(norns_videobuf));
+    *pvb = vb;
+}
+void norns_videobuf_del(norns_videobuf **vb)
+{
+    free(*vb);
+}</pre></code>
+
+<h5>2.2.3. initializing the video buffer</h5>
+
+<p><a id="wm_003_0071"></a>Zero out the array.
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_init(norns_videobuf *vb);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_init(norns_videobuf *vb)
+{
+    norns_videobuf_clear(vb);
+}</pre></code>
+
+<h5>2.2.4. getting the video buffer</h5>
+
+<p><a id="wm_003_0077"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>unsigned char *norns_videobuf_get(norns_videobuf *buf);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>unsigned char *norns_videobuf_get(norns_videobuf *buf)
+{
+    return buf-&gt;buf;
+}</pre></code>
+
+<h5>2.2.5. Writing a pixel to the video buffer</h5>
+
+<p><a id="wm_003_0082"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_write(norns_videobuf *vb,
+                          int x, int y,
+                          unsigned char val);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_write(norns_videobuf *vb,
+                          int x, int y,
+                          unsigned char val)
+{
+    if (x &gt;= 128 || y &gt;= 64) return;
+    vb-&gt;buf[x + y*128] = val;
+}</pre></code>
+
+<h5>2.2.6. Clearing the screen</h5>
+
+<p><a id="wm_003_0087"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_clear(norns_videobuf *vb);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_clear(norns_videobuf *vb)
+{
+    int x;
+    int y;
+    for (y = 0; y &lt; 64; y++) {
+        for (x = 0; x &lt; 128; x++) {
+            vb-&gt;buf[x + y*128] = 0;
+        }
+    }
+}</pre></code>
+
+<h5>2.2.7. copying the video buffer to the framebuffer</h5>
+
+<p><a id="wm_003_0092"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_copy(norns_videobuf *vb,
+                         norns_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_videobuf_copy(norns_videobuf *vb,
+                         norns_framebuffer *fb)
+{
+    int x, y;
+    unsigned char val;
+    int w, h;
+
+    h = fb-&gt;vinfo.yres;
+    w = fb-&gt;vinfo.xres;
+    for(y = 0; y &lt; h; y++) {
+        for(x = 0; x &lt; w; x++) {
+            if (x &gt;= 128 || y &gt;= 64) continue;
+            val = vb-&gt;buf[x + y * w];
+            norns_framebuffer_write(fb, x, y, val);
+        }
+    }
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_003_0002">prev</a> | <a href="/proj/monolith/program/wm_003">home</a> | <a href="/proj/monolith/program/wm_003_0097">next</a></p>
+</div>
+</body>
+</html>

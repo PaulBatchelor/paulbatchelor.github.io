@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>7. Macfont Info</h3>
+
+<p><a id="wm_031_0093"></a>To reduce the amount of overhead required to print a glyph,
+variables are read and stored in a struct called
+<code>macfont_info</code>.
+</p>
+
+<h4>7.1. typedef</h4>
+
+<p><a id="wm_031_0095"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct {
+&lt;&lt;macfont_info&gt;&gt;
+} macfont_info;</pre></code>
+
+<h4>7.2. init</h4>
+
+<p><a id="wm_031_0101"></a>The <code>macfont_info</code> struct is populated with
+<code>macfont_info_init</code>. It does this by reading the buffer
+where the font is located.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void macfont_info_init(macfont_info *info, uint8_t *font);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void macfont_info_init(macfont_info *info, uint8_t *font)
+{
+&lt;&lt;macfont_info_init&gt;&gt;
+}</pre></code>
+
+<h4>7.3. contents</h4>
+
+<p><a id="wm_031_0109"></a></p>
+
+<h5>7.3.1. Bitmaps</h5>
+
+<p><a id="wm_031_0110"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint8_t *bitmaps;</pre></code>
+
+<h5>7.3.2. Off</h5>
+
+<p><a id="wm_031_0114"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t off;</pre></code>
+<div><b><i>&lt;&lt;read_bitmap_and_off&gt;&gt;=</i></b></div><pre><code>info-&gt;off = ROWWORDS(font) * RECTHEIGHT(font);</pre></code>
+<div><b><i>&lt;&lt;read_bitmap_and_off&gt;&gt;=</i></b></div><pre><code>info-&gt;bitmaps = BITMAPS(font);</pre></code>
+
+<h5>7.3.3. Loctable</h5>
+
+<p><a id="wm_031_0122"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t *loctable;</pre></code>
+<div><b><i>&lt;&lt;macfont_info_init&gt;&gt;=</i></b></div><pre><code>&lt;&lt;read_bitmap_and_off&gt;&gt;
+info-&gt;loctable =
+    (uint16_t *) (info-&gt;bitmaps + (2 * info-&gt;off));
+&lt;&lt;owtable&gt;&gt;</pre></code>
+
+<h5>7.3.4. owtable</h5>
+
+<p><a id="wm_031_0132"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t *owtable;</pre></code>
+<div><b><i>&lt;&lt;owtable&gt;&gt;=</i></b></div><pre><code>&lt;&lt;read_nchars&gt;&gt;
+info-&gt;owtable = info-&gt;loctable + (info-&gt;nchars + 2);</pre></code>
+
+<h5>7.3.5. nchars</h5>
+
+<p><a id="wm_031_0140"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t nchars;</pre></code>
+<div><b><i>&lt;&lt;read_nchars&gt;&gt;=</i></b></div><pre><code>info-&gt;nchars = LASTCHAR(font) - FIRSTCHAR(font) + 1;</pre></code>
+<div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t stride;</pre></code>
+<div><b><i>&lt;&lt;macfont_info_init&gt;&gt;=</i></b></div><pre><code>info-&gt;stride = ROWWORDS(font) * 2;</pre></code>
+
+<h5>7.3.6. rectheight</h5>
+
+<p><a id="wm_031_0150"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t rectheight;</pre></code>
+<div><b><i>&lt;&lt;macfont_info_init&gt;&gt;=</i></b></div><pre><code>info-&gt;rectheight = RECTHEIGHT(font);</pre></code>
+
+<h5>7.3.7. kernmax</h5>
+
+<p><a id="wm_031_0155"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>int16_t kernmax;</pre></code>
+<div><b><i>&lt;&lt;macfont_info_init&gt;&gt;=</i></b></div><pre><code>info-&gt;kernmax = KERNMAX(font);</pre></code>
+
+<h5>7.3.8. firstchar</h5>
+
+<p><a id="wm_031_0160"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t firstchar;</pre></code>
+<div><b><i>&lt;&lt;macfont_info_init&gt;&gt;=</i></b></div><pre><code>info-&gt;firstchar = FIRSTCHAR(font);</pre></code>
+
+<h5>7.3.9. font height</h5>
+
+<p><a id="wm_031_0165"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t fontheight;</pre></code>
+<div><b><i>&lt;&lt;macfont_info_init&gt;&gt;=</i></b></div><pre><code>info-&gt;fontheight = ASCENT(font) - DESCENT(font);</pre></code>
+
+<h5>7.3.10. ascent + descent</h5>
+
+<p><a id="wm_031_0170"></a><div><b><i>&lt;&lt;macfont_info&gt;&gt;=</i></b></div><pre><code>uint16_t descent;
+uint16_t ascent;</pre></code>
+<div><b><i>&lt;&lt;macfont_info_init&gt;&gt;=</i></b></div><pre><code>info-&gt;ascent = ASCENT(font);
+info-&gt;descent = DESCENT(font);</pre></code>
+
+<h4>7.4. helper functions</h4>
+
+<p><a id="wm_031_0175"></a></p>
+
+<h5>7.4.1. macinfo_fontheight</h5>
+
+<p><a id="wm_031_0176"></a><code>macinfo_fontheight</code> returns the font height.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int macfont_info_fontheight(macfont_info *info);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int macfont_info_fontheight(macfont_info *info)
+{
+    return info-&gt;fontheight;
+}</pre></code>
+<p></p>
+<p>In janet, this is <code>macfont-height</code>.
+</p>
+<div><b><i>&lt;&lt;janet_entries&gt;&gt;=</i></b></div><pre><code>{F("macfont-height"), j_macfont_height, NULL},</pre></code>
+<div><b><i>&lt;&lt;janet_funcs&gt;&gt;=</i></b></div><pre><code>static Janet j_macfont_height(int32_t argc, Janet *argv)
+{
+    janet_macfont_d *mf;
+    int h;
+
+    janet_fixarity(argc, 1);
+
+    mf = get_macfont(argv, 0);
+
+    h = macfont_info_fontheight(&mf-&gt;info);
+
+    return janet_wrap_integer(h);
+}</pre></code>
+
+<h5>7.4.2. macinfo_rectheight</h5>
+
+<p><a id="wm_031_0187"></a><code>macinfo_rectheight</code> returns the font height.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int macfont_info_rectheight(macfont_info *info);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int macfont_info_rectheight(macfont_info *info)
+{
+    return info-&gt;rectheight;
+}</pre></code>
+<p></p>
+<p>In janet, this is <code>macfont-height</code>.
+</p>
+<div><b><i>&lt;&lt;janet_entries&gt;&gt;=</i></b></div><pre><code>{F("macfont-rectheight"), j_macfont_rectheight, NULL},</pre></code>
+<div><b><i>&lt;&lt;janet_funcs&gt;&gt;=</i></b></div><pre><code>static Janet j_macfont_rectheight(int32_t argc, Janet *argv)
+{
+    janet_macfont_d *mf;
+    int h;
+
+    janet_fixarity(argc, 1);
+
+    mf = get_macfont(argv, 0);
+
+    h = macfont_info_rectheight(&mf-&gt;info);
+
+    return janet_wrap_integer(h);
+}</pre></code>
+
+<h5>7.4.3. macinfo_descent</h5>
+
+<p><a id="wm_031_0198"></a>think it could be needed to dynamically draw
+symbols in a text string.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int macfont_info_descent(macfont_info *info);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int macfont_info_descent(macfont_info *info)
+{
+    return info-&gt;descent;
+}</pre></code>
+<p></p>
+<p>In janet, this is <code>macfont-height</code>.
+</p>
+<div><b><i>&lt;&lt;janet_entries&gt;&gt;=</i></b></div><pre><code>{F("macfont-descent"), j_macfont_descent, NULL},</pre></code>
+<div><b><i>&lt;&lt;janet_funcs&gt;&gt;=</i></b></div><pre><code>static Janet j_macfont_descent(int32_t argc, Janet *argv)
+{
+    janet_macfont_d *mf;
+    int d;
+
+    janet_fixarity(argc, 1);
+
+    mf = get_macfont(argv, 0);
+
+    d = macfont_info_descent(&mf-&gt;info);
+
+    return janet_wrap_integer(d);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_031_0088">prev</a> | <a href="/proj/monolith/program/wm_031">home</a> | <a href="/proj/monolith/program/wm_031_0209">next</a></p>
+</div>
+</body>
+</html>

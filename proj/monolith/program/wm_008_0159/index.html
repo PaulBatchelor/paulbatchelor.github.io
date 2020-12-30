@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Knobs Page Creation</h3>
+
+<p><a id="wm_008_0159"></a></p>
+
+<h4>6.1. Knobs Creation Main</h4>
+
+<p><a id="wm_008_0160"></a>A new knobs page is created with the function <code>page_knobs</code>.
+<div><b><i>&lt;&lt;knobs_function_declarations&gt;&gt;=</i></b></div><pre><code>static void page_knobs(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;knobs_functions&gt;&gt;=</i></b></div><pre><code>static void page_knobs(monolith_page *pg)
+{
+    page_knobs_d *knobs;
+    knobs = calloc(1, sizeof(page_knobs_d));
+    if(knobs == NULL) return;
+    page_knobs_init(pg, knobs);
+    if(knobs_type == 0)
+        page_knobs_runtime_init(monolith_page_monolith(pg));
+&lt;&lt;knobs_assign_callbacks&gt;&gt;
+    monolith_page_data_set(pg, knobs);
+}</pre></code>
+
+<h4>6.2. Knobs Set Typeflag</h4>
+
+<p><a id="wm_008_0168"></a><div><b><i>&lt;&lt;knobs_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_type_set(pg, knobs_type);</pre></code>
+
+<h4>6.3. Knobs Open</h4>
+
+<p><a id="wm_008_0172"></a>When a knobs page is opened, the monome state is set.
+<div><b><i>&lt;&lt;knobs_function_declarations&gt;&gt;=</i></b></div><pre><code>static void knobs_open(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;knobs_functions&gt;&gt;=</i></b></div><pre><code>static void knobs_open(monolith_page *pg)
+{
+    page_knobs_d *knobs;
+    knobs = monolith_page_data_get(pg);
+    if(knobs == NULL) return;
+    monolith_page_mstate_recall(knobs-&gt;mstate);
+    monolith_page_arcstate_recall(knobs-&gt;astate);
+}</pre></code>
+<div><b><i>&lt;&lt;knobs_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_open_set(pg, knobs_open);</pre></code>
+
+<h4>6.4. Knobs Free</h4>
+
+<p><a id="wm_008_0180"></a><div><b><i>&lt;&lt;knobs_function_declarations&gt;&gt;=</i></b></div><pre><code>static void knobs_free(monolith_page *pg);</pre></code>
+<div><b><i>&lt;&lt;knobs_functions&gt;&gt;=</i></b></div><pre><code>static void knobs_free(monolith_page *pg)
+{
+    page_knobs_d *knobs;
+    knobs = (page_knobs_d *)monolith_page_data_get(pg);
+    if(knobs == NULL) return;
+    page_knobs_cleanup(knobs);
+    free(knobs);
+}</pre></code>
+<div><b><i>&lt;&lt;knobs_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_free_set(pg, knobs_free);</pre></code>
+
+<h4>6.5. Knobs Press Callback</h4>
+
+<p><a id="wm_008_0187"></a>Used to select the value to modify for the current knob.
+<div><b><i>&lt;&lt;knobs_function_declarations&gt;&gt;=</i></b></div><pre><code>static void knobs_press(monolith_page *pg, int x, int y, int s);</pre></code>
+<div><b><i>&lt;&lt;knobs_functions&gt;&gt;=</i></b></div><pre><code>static void knobs_press(monolith_page *pg, int x, int y, int s)
+{
+    int lane, kx, ky;
+    page_knobs_d *knobs;
+    if (s == 0) return;
+    grid2knobs(x, y, &lane, &kx, &ky);
+    knobs = monolith_page_data_get(pg);
+    knobs_select(knobs, lane, kx, ky);
+    knobs_draw_lane(knobs, lane);
+}</pre></code>
+<div><b><i>&lt;&lt;knobs_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_press_set(pg, knobs_press);</pre></code>
+
+<h4>6.6. Knobs Turn Callback</h4>
+
+<p><a id="wm_008_0195"></a>A wildcard knob. Can be set to control any of the 128 knob
+values.
+<div><b><i>&lt;&lt;knobs_function_declarations&gt;&gt;=</i></b></div><pre><code>static void knobs_turn(monolith_page *pg, int s);</pre></code>
+<div><b><i>&lt;&lt;knobs_functions&gt;&gt;=</i></b></div><pre><code>static void knobs_turn(monolith_page *pg, int s)
+{
+    int aux_knob;
+    PWFLT val;
+    page_knobs_d *knobs;
+    int lane, sel;
+    int x, y;
+
+    knobs = monolith_page_data_get(pg);
+    aux_knob = knobs-&gt;aux_knob;
+
+    if (aux_knob &lt; 0) return;
+    if (aux_knob &gt;= 128) return;
+
+    val = knobs-&gt;vals[aux_knob];
+
+    val += s * knobs-&gt;inc * 3;
+
+    if (val &lt; 0) val = 0;
+    if (val &gt; 1) val = 1;
+
+    knobs-&gt;vals[aux_knob] = val;
+
+    x = aux_knob % 16;
+    y = aux_knob / 16;
+
+    lane = x / 4;
+    sel = y * 4 + (x % 4);
+
+    if (knobs-&gt;selected[lane] == sel) {
+        knobs_draw_lane(knobs, lane);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;knobs_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_turn_set(pg, knobs_turn);</pre></code>
+
+<h4>6.7. Knobs Delta Callback</h4>
+
+<p><a id="wm_008_0203"></a>This is used to change the value of the currently selected
+knob.
+</p>
+<div><b><i>&lt;&lt;knobs_function_declarations&gt;&gt;=</i></b></div><pre><code>static void knobs_delta(monolith_page *pg, int n, int delta);</pre></code>
+<div><b><i>&lt;&lt;knobs_functions&gt;&gt;=</i></b></div><pre><code>static void knobs_delta(monolith_page *pg, int n, int delta)
+{
+    page_knobs_d *knobs;
+    knobs = monolith_page_data_get(pg);
+    knobs_increment(knobs, n, delta);
+    knobs_draw_lane(knobs, n);
+}</pre></code>
+<div><b><i>&lt;&lt;knobs_assign_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_page_delta_set(pg, knobs_delta);</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_008_0143">prev</a> | <a href="/proj/monolith/program/wm_008">home</a> | <a href="/proj/monolith/program/wm_008_0211">next</a></p>
+</div>
+</body>
+</html>

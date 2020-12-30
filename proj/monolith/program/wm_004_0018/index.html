@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>2. Core Menu Mechanics</h3>
+
+<p><a id="wm_004_0018"></a>The main norns interface is based around a simple menu
+selection idea. These components are implemented here.
+</p>
+
+<h4>2.1. typedef + struct</h4>
+
+<p><a id="wm_004_0020"></a><div><b><i>&lt;&lt;norns_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct norns_menu norns_menu;
+&lt;&lt;norns_menu_item&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;norns_structs&gt;&gt;=</i></b></div><pre><code>struct norns_menu {
+&lt;&lt;norns_menu_contents&gt;&gt;
+};</pre></code>
+
+<h4>2.2. Initialization</h4>
+
+<p><a id="wm_004_0031"></a>The norns menu is initialized with <code>norns_menu_init</code>. Since
+it doesn't allocate anything internally, no cleanup is
+required.
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_menu_init(norns_menu *menu,
+                     const char *name,
+                     norns_videobuf *buf,
+                     norns_menu_item *items,
+                     int nitems,
+                     norns_poll_d *poll,
+                     void *ud);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_menu_init(norns_menu *menu,
+                     const char *name,
+                     norns_videobuf *buf,
+                     norns_menu_item *items,
+                     int nitems,
+                     norns_poll_d *poll,
+                     void *ud)
+{
+&lt;&lt;norns_menu_init&gt;&gt;
+    norns_menu_callbacks(menu, poll);
+}</pre></code>
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>static void norns_menu_callbacks(norns_menu *menu,
+                                 norns_poll_d *poll);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>static void norns_menu_callbacks(norns_menu *menu,
+                                 norns_poll_d *poll)
+{
+&lt;&lt;norns_menu_callbacks&gt;&gt;
+}</pre></code>
+<div><b><i>&lt;&lt;norns_menu_init&gt;&gt;=</i></b></div><pre><code>&lt;&lt;norns_menu_init_reinit&gt;&gt;</pre></code>
+
+<h4>2.3. Re-Initialization</h4>
+
+<p><a id="wm_004_0052"></a><div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_menu_reinit(norns_menu *menu,
+                       const char *name,
+                       norns_menu_item *items,
+                       int nitems,
+                       void *ud);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_menu_reinit(norns_menu *menu,
+                       const char *name,
+                       norns_menu_item *items,
+                       int nitems,
+                       void *ud)
+{
+&lt;&lt;norns_menu_init_reinit&gt;&gt;
+}</pre></code>
+
+<h4>2.4. Core Menu Data</h4>
+
+<p><a id="wm_004_0059"></a></p>
+
+<h5>2.4.1. DONE Video Buffer</h5>
+
+<p><a id="wm_004_0060"></a>CLOSED: [2019-11-22 Fri 15:04]
+A <code>norns_videobuf</code> instance is supplied to at runtime. This
+is what the norns will draw to.
+<div><b><i>&lt;&lt;norns_menu_contents&gt;&gt;=</i></b></div><pre><code>norns_videobuf *buf;</pre></code>
+<div><b><i>&lt;&lt;norns_menu_init&gt;&gt;=</i></b></div><pre><code>menu-&gt;buf = buf;</pre></code>
+
+<h5>2.4.2. DONE Menu Name</h5>
+
+<p><a id="wm_004_0067"></a>CLOSED: [2019-11-22 Fri 15:04]
+Every menu has a "name", displayed at the top of the screen
+<div><b><i>&lt;&lt;norns_menu_contents&gt;&gt;=</i></b></div><pre><code>const char *name;</pre></code>
+<div><b><i>&lt;&lt;norns_menu_init_reinit&gt;&gt;=</i></b></div><pre><code>menu-&gt;name = name;</pre></code>
+
+<h5>2.4.3. DONE Menu Items</h5>
+
+<p><a id="wm_004_0074"></a>CLOSED: [2019-11-22 Fri 15:04]
+Every menu has an array of zero or more items. This is
+assigned at initialization, and must be allocated
+externally. The size must be known as well.
+<div><b><i>&lt;&lt;norns_menu_contents&gt;&gt;=</i></b></div><pre><code>norns_menu_item *items;
+int nitems;</pre></code>
+<div><b><i>&lt;&lt;norns_menu_init_reinit&gt;&gt;=</i></b></div><pre><code>menu-&gt;items = items;
+menu-&gt;nitems = nitems;</pre></code>
+
+<h5>2.4.4. DONE Selected Item</h5>
+
+<p><a id="wm_004_0080"></a>CLOSED: [2019-11-22 Fri 15:04]
+Selected item starts at 1, so that 0 means nothing is
+selected. It is zero by default.
+<div><b><i>&lt;&lt;norns_menu_contents&gt;&gt;=</i></b></div><pre><code>int selected;</pre></code>
+<div><b><i>&lt;&lt;norns_menu_init_reinit&gt;&gt;=</i></b></div><pre><code>menu-&gt;selected = 0;</pre></code>
+
+<h5>2.4.5. User Data</h5>
+
+<p><a id="wm_004_0086"></a><div><b><i>&lt;&lt;norns_menu_contents&gt;&gt;=</i></b></div><pre><code>void *ud;</pre></code>
+<div><b><i>&lt;&lt;norns_menu_init&gt;&gt;=</i></b></div><pre><code>menu-&gt;ud = ud;</pre></code>
+
+<h5>2.4.6. Counter + Speed</h5>
+
+<p><a id="wm_004_0091"></a>Used to limit the speed of the knob turn.
+The <code>weight</code> variable changes the speed of this knob.
+The larger the value, the slower it gets.
+<div><b><i>&lt;&lt;norns_menu_contents&gt;&gt;=</i></b></div><pre><code>int counter;
+int weight;</pre></code>
+<div><b><i>&lt;&lt;norns_menu_init&gt;&gt;=</i></b></div><pre><code>menu-&gt;counter = 0;
+menu-&gt;weight = 2;</pre></code>
+
+<h5>2.4.7. Offset</h5>
+
+<p><a id="wm_004_0097"></a>Display offset, for when values go over.
+<div><b><i>&lt;&lt;norns_menu_contents&gt;&gt;=</i></b></div><pre><code>int offset;</pre></code>
+<div><b><i>&lt;&lt;norns_menu_init_reinit&gt;&gt;=</i></b></div><pre><code>menu-&gt;offset = 0;</pre></code>
+
+<h4>2.5. A single menu item</h4>
+
+<p><a id="wm_004_0103"></a>A menu item has a "name", and an action of what to do when
+selected. Presumably, these are stored in a constant, which
+is why the struct is exposed in the header.
+<div><b><i>&lt;&lt;norns_menu_item&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    const char *name;
+    void (*select)(norns_menu *, int);
+} norns_menu_item;</pre></code>
+
+<h4>2.6. Drawing the Menu</h4>
+
+<p><a id="wm_004_0108"></a></p>
+
+<h5>2.6.1. DONE Top Level Draw</h5>
+
+<p><a id="wm_004_0109"></a>CLOSED: [2019-11-22 Fri 14:59]
+Call this to (re)draw the menu to the video buffer. This
+does not copy to the framebuffer.
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>void norns_menu_draw(norns_menu *menu);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void norns_menu_draw(norns_menu *menu)
+{
+    norns_videobuf *vb;
+
+    vb = menu-&gt;buf;
+    norns_videobuf_clear(vb);
+&lt;&lt;draw_the_header&gt;&gt;
+&lt;&lt;draw_menu_items&gt;&gt;
+}</pre></code>
+
+<h5>2.6.2. DONE Write the header</h5>
+
+<p><a id="wm_004_0119"></a>CLOSED: [2019-11-22 Fri 21:08]
+Write the header at the top. Write a line separting the
+header and the menu items.
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>static void norns_menu_header(norns_menu *menu);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>static void norns_menu_header(norns_menu *menu)
+{
+    int i;
+    norns_draw_string(menu-&gt;buf,
+                    0, 0,
+                    0xff, 0x00,
+                    menu-&gt;name);
+    for (i = 0; i &lt; 128; i++) {
+        norns_videobuf_write(menu-&gt;buf, i, 11, 0xff);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;draw_the_header&gt;&gt;=</i></b></div><pre><code>norns_menu_header(menu);</pre></code>
+
+<h5>2.6.3. DONE Write items</h5>
+
+<p><a id="wm_004_0128"></a>CLOSED: [2019-11-22 Fri 21:14]
+Draw the items based on the current top position.
+Make sure the currently selected item is inverted. (black
+text on white instead of white text on black).
+<div><b><i>&lt;&lt;draw_menu_items&gt;&gt;=</i></b></div><pre><code>{
+    int i;
+    int item;
+    int x, y;
+    int selected;
+    unsigned char bg;
+    unsigned char fg;
+    int nrows;
+
+    selected = menu-&gt;selected;
+
+    nrows = menu-&gt;nitems - menu-&gt;offset;
+
+    if (nrows &gt; 6) nrows = 6;
+    if (nrows &lt; 0) nrows = 0;
+
+    for (i = 0; i &lt; nrows; i++) {
+        item = menu-&gt;offset + i;
+        if ((item + 1) == selected) {
+            fg = 0x00;
+            bg = 0xff;
+            for (y = 0; y &lt; 10; y++) {
+                for (x = 0; x &lt; 128; x++) {
+                    norns_videobuf_write(menu-&gt;buf,
+                                         x, (14 + 9*i) + y,
+                                         0xff);
+                }
+            }
+        } else {
+            fg = 0xff;
+            bg = 0x00;
+        }
+        norns_draw_string(vb,
+                        0, 15 + 9*i,
+                        fg, bg,
+                        menu-&gt;items[item].name);
+    }
+}</pre></code>
+
+<h4>2.7. Peripheral callbacks</h4>
+
+<p><a id="wm_004_0133"></a></p>
+
+<h5>2.7.1. DONE Setting Peripheral Callbacks</h5>
+
+<p><a id="wm_004_0134"></a>CLOSED: [2019-11-23 Sat 13:01]
+<div><b><i>&lt;&lt;norns_menu_callbacks&gt;&gt;=</i></b></div><pre><code>{
+&lt;&lt;set_key_callback&gt;&gt;
+&lt;&lt;set_knob_callback&gt;&gt;
+}</pre></code>
+
+<h5>2.7.2. DONE Key</h5>
+
+<p><a id="wm_004_0143"></a>CLOSED: [2019-11-23 Sat 13:01]
+Key 0 is used as a selection button.
+<div><b><i>&lt;&lt;norns_static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void menu_key(void *ud, int state);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>static void menu_key(void *ud, int state)
+{
+    norns_menu *menu;
+    int selected;
+
+    if (state == 0) return;
+    menu = ud;
+
+    selected = menu-&gt;selected;
+
+    if (selected &gt; 0) {
+        void (*f)(norns_menu *, int);
+        selected--;
+        f = menu-&gt;items[selected].select;
+        if (f != NULL) {
+            f(menu, selected);
+        }
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;set_key_callback&gt;&gt;=</i></b></div><pre><code>norns_poll_cb_key(poll, 1, menu_key, menu);</pre></code>
+
+<h5>2.7.3. DONE Knob</h5>
+
+<p><a id="wm_004_0153"></a>CLOSED: [2019-11-23 Sat 13:01]
+Knob is used to scroll up + down the menu.
+<div><b><i>&lt;&lt;norns_static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void menu_knob(void *ud, int pos);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>void monolith_norns_draw(monolith_d *m);
+static void menu_knob(void *ud, int pos)
+{
+    norns_menu *menu;
+
+    menu = ud;
+
+    norns_menu_step(menu, pos);
+    norns_menu_draw(menu);
+
+    monolith_norns_draw(monolith_data_get());
+}</pre></code>
+<div><b><i>&lt;&lt;norns_funcdefs&gt;&gt;=</i></b></div><pre><code>static void norns_menu_step(norns_menu *menu, int pos);</pre></code>
+<div><b><i>&lt;&lt;norns_functions&gt;&gt;=</i></b></div><pre><code>static void norns_menu_step(norns_menu *menu, int pos)
+{
+    int selected;
+    int offset;
+
+    menu-&gt;counter = (menu-&gt;counter + 1) % menu-&gt;weight;
+
+    if (menu-&gt;counter != 0) return;
+
+    selected = menu-&gt;selected;
+    offset = menu-&gt;offset;
+    selected += pos;
+
+    if (selected &lt; 1) {
+        selected = 1;
+        offset = 0;
+    }
+
+    if (selected &gt; menu-&gt;nitems) {
+        selected = menu-&gt;nitems;
+    }
+
+    if ((selected - offset) &gt; 5) {
+        offset++;
+    } else if ((selected - offset) &lt;= 0) {
+        offset--;
+    }
+
+    menu-&gt;selected = selected;
+    menu-&gt;offset = offset;
+}</pre></code>
+<div><b><i>&lt;&lt;set_knob_callback&gt;&gt;=</i></b></div><pre><code>norns_poll_cb_knob(poll, 1, menu_knob, menu);</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_004_0002">prev</a> | <a href="/proj/monolith/program/wm_004">home</a> | <a href="/proj/monolith/program/wm_004_0166">next</a></p>
+</div>
+</body>
+</html>
