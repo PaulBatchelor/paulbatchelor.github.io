@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>14. Griffin Hardware</h3>
+
+<p><a id="wm_000_2067"></a>The griffin knob is a secondary core peripharal used in
+Monolith that is used alongside the Monome. It is controlled
+using the hidapi wrapper.
+</p>
+
+<h4>14.1. hidapi system include</h4>
+
+<p><a id="wm_000_2069"></a>The hidapi uses a system include <code>hidapi/hidapi.h</code>
+
+<div><b><i>&lt;&lt;system_includes&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+#include "hidapi/hidapi.h"
+#endif</pre></code>
+
+<h4>14.2. Griffin Hardware Data</h4>
+
+<p><a id="wm_000_2073"></a>Griffin is stored in an hidapi handle of type <code>hid_device</code>
+called <code>griffin_handle</code>.
+</p>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+hid_device *griffin_handle;
+#endif</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+m-&gt;griffin_handle = NULL;
+#endif</pre></code>
+<p></p>
+<p>It is closed with <code>hid_close</code>.
+</p>
+<div><b><i>&lt;&lt;close_griffin_handle&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+if(m-&gt;griffin_handle != NULL) hid_close(m-&gt;griffin_handle);
+#endif</pre></code>
+
+<h4>14.3. Griffin Setup and Cleanup</h4>
+
+<p><a id="wm_000_2083"></a>The Griffin knob is started and initialized with the
+function <code>monolith_griffin_setup</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_griffin_setup(monolith_d *m);</pre></code>
+<p></p>
+<p>The nice thing about the hidapi wrapper is that is loads
+devices using Vendor and Product ID numbers, which are
+cross-platform. No os-dependent code needed with this layer,
+which is nice.
+</p>
+<p>We want pulling to be non-blocking, so this must be
+explicitely set using <code>hid_set_nonblocking</code>.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_griffin_setup(monolith_d *m)
+{
+#ifndef MONOLITH_SIMPLE
+    monolith_griffin_d *g;
+    g = &m-&gt;vgriffin;
+    if(m-&gt;griffin_handle != NULL) return;
+    m-&gt;griffin_handle = hid_open(0x077d, 0x0410, NULL);
+    if(m-&gt;griffin_handle == NULL) {
+        fprintf(stderr, "Could not open Griffin knob\n");
+        return;
+    }
+
+    hid_set_nonblocking(m-&gt;griffin_handle, 1);
+
+&lt;&lt;set_griffin_callbacks&gt;&gt;
+#endif
+}</pre></code>
+<p></p>
+<p>Griffin setup is implemented as a function called
+<code>monolith:griffin-setup</code>.
+</p>
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:griffin-setup", pp_griffin_setup, 0, 0, {CHR,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_griffin_setup(cell x) {
+    monolith_griffin_setup(monolith_data_get());
+    return UNSPECIFIC;
+}</pre></code>
+<p></p>
+<p>At the end of the program, the griffin is closed with the
+function <code>monolith_griffin_cleanup</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_griffin_cleanup(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_griffin_cleanup(monolith_d *m)
+{
+&lt;&lt;close_griffin_handle&gt;&gt;
+}</pre></code>
+<p></p>
+<p>This gets called at cleanup.
+</p>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>monolith_griffin_cleanup(m);</pre></code>
+
+<h4>14.4. Polling the Griffin</h4>
+
+<p><a id="wm_000_2107"></a>Griffin events are pulled with the function
+<code>monolith_griffin_poll</code>.
+</p>
+<p>This is code directly lifted from monomer.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_griffin_poll(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_griffin_poll(monolith_d *m)
+{
+#ifndef MONOLITH_SIMPLE
+    static unsigned char buf[16];
+    int res;
+    if(m-&gt;griffin_handle == NULL) return;
+    res = hid_read(m-&gt;griffin_handle, buf, 16);
+    if(res &gt; 0) {
+        if(buf[1] == 0) {
+            monolith_griffin_push(&m-&gt;vgriffin, buf[0]);
+        } else if(buf[1] &gt; 0) {
+            monolith_griffin_turn(&m-&gt;vgriffin,
+                                  (signed char)buf[1]);
+        }
+    }
+#endif
+}</pre></code>
+<p></p>
+<p>The poll function is called inside of the main poll callback.
+</p>
+<div><b><i>&lt;&lt;poll_the_griffin&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+monolith_griffin_poll(m);
+#endif</pre></code>
+
+<h4>14.5. Set Griffin Callbacks</h4>
+
+<p><a id="wm_000_2117"></a></p>
+
+<h5>14.5.1. Set Default Turn Callback</h5>
+
+<p><a id="wm_000_2118"></a><div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+static void griffin_turn(monolith_griffin_d *g, int state);
+#endif</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+static void griffin_turn(monolith_griffin_d *g, int state)
+{
+    if(g-&gt;md-&gt;curpage != NULL) {
+        monolith_page_turn(g-&gt;md-&gt;curpage, state);
+    }
+}
+#endif</pre></code>
+<div><b><i>&lt;&lt;set_griffin_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_griffin_turn_set(g, griffin_turn);</pre></code>
+
+<h5>14.5.2. Set Default Push Callback</h5>
+
+<p><a id="wm_000_2126"></a><div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+static void griffin_push(monolith_griffin_d *g, int state);
+#endif</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_SIMPLE
+static void griffin_push(monolith_griffin_d *g, int state)
+{
+    if(g-&gt;md-&gt;curpage != NULL) {
+        monolith_page_push(g-&gt;md-&gt;curpage, state);
+    }
+}
+#endif</pre></code>
+<div><b><i>&lt;&lt;set_griffin_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_griffin_push_set(g, griffin_push);</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_000_1848">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_2133">next</a></p>
+</div>
+</body>
+</html>

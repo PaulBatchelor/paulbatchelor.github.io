@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>20. Offline Rendering</h3>
+
+<p><a id="wm_000_3273"></a></p>
+
+<h4>20.1. What is Offline Rendering?</h4>
+
+<p><a id="wm_000_3274"></a>Offline rendering, or faster-than-realtime render,
+refers to generating sound without running it in realtime.
+Offline rendering is a tremendously necessary feature for any musical system.
+It helps in preserving/documenting a piece, and it can be very useful in
+debugging scenarios.
+Furthermore, the hope is to explore the offline medium to generate static
+animated audio-visual content.
+</p>
+
+<h4>20.2. Manual Compute from Scheme</h4>
+
+<p><a id="wm_000_3276"></a>Really, all that is needed is to be able to compute the DSP kernel for an
+arbitrary number of samples. File rendering can be done using nodes
+like <code>wavout</code>. Frames can be written to disk every N samples inside of
+loops to produce animations.
+</p>
+<p>Compute can be done using the function <code>monolith:compute</code>. NOTE: realtime
+audio should be disabled.
+</p>
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:compute", pp_compute, 1, 1, {INT,___,___}},</pre></code>
+<p></p>
+<p>All this function has to do is call <code>monolith_compute</code>, passing in a NULL
+value to the out parameter. This compute function will let the DSP kernel
+to compute, but not write.
+</p>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_compute(cell x) {
+    int nsmps;
+    nsmps = integer_value("monolith:compute", car(x));
+    monolith_compute(monolith_data_get(), nsmps, NULL);
+    return UNSPECIFIC;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_000_2720">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_3283">next</a></p>
+</div>
+</body>
+</html>
