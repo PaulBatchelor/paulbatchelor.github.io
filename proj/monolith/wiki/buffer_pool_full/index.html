@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>How to handle "Buffer Pool Full" error</title>
+<h1>How to handle "Buffer Pool Full" error</h1>
+<p>Monolith will squawk a "Buffer Pool Full" error
+when all the pools in the buffer pool are used up
+in the current patch. This can happen with large
+patches or when making heavy use of things like
+<code>cabtmp</code> and holding cables (see <a href="/proj/monolith/wiki/cables">cables</a>).
+</p>
+<p>When this error happens it is shuts down patchwerk
+on a global scale, which makes it tricky to recover
+from.
+</p>
+<p>Patchwerk (and therefore monolith) will not move until
+the global error flag has been reset.
+</p>
+<p>Here is how you do it.
+</p>
+<p>First, correct your patch but DO NOT RE-EVALUATE. The usual
+culprit is holding too many cables. The easiest thing to do
+is use <code>cabnew</code> instead of <code>cabtmp</code>, which will explicitely
+allocate a new buffer.
+</p>
+<p>Next, reset the error flag. In scheme this is done with
+<code>(monolith:reset-err)</code>.
+</p>
+<p>Free all the buffers being held in scheme with <code>(bunholdall)</code>.
+</p>
+<p>Clear all the runt registers with <code>(regclrall)</code>.
+</p>
+<p>Zero out monolith with <code>(out 0)</code>.
+</p>
+<p>Recompile the patch.
+</p>
+</div>
+</body>
+</html>
