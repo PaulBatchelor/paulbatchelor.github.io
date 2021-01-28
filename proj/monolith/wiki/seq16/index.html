@@ -13,9 +13,20 @@
 <p></p>
 <p>Seq16 is a simple step sequencer for the grid.
 </p>
+
+<h3>Setup and Creation</h3>
+
+<p>Make sure monolith is started.
+</p>
+<pre><code>(monolith:start)</pre></code>
+<p></p>
 <p>Make a new page with <code>monolith:seq16-new</code>
 
 <pre><code>(monolith:seq16-new "seq")</pre></code>
+<p></p>
+<p>Select it with <code>monolith:page-select</code>.
+</p>
+<pre><code>(monolith:page-select "seq")</pre></code>
 <p></p>
 <p>Import seq16 wrappers into scheme with:
 </p>
@@ -25,7 +36,9 @@
 clocked by an external clock source via <code>seq16clk</code>.
 </p>
 <pre><code>(seq16clk (clock 0 120 4) "seq")</pre></code>
-<p></p>
+
+<h3>Main Signals</h3>
+
 <p>There are two kinds of signals provided: the value
 and the gate. These are provided with <code>seq16val</code> and
 <code>seq16gt</code>. All that's needed is the page name here.
@@ -45,10 +58,29 @@ that this means the signal output will go from 1-8, with
 0 being ignored.
 </p>
 <pre><code>(samphold (mul (seq-clk) (seq16gt "seq")) (seq16val "seq"))</pre></code>
-<p></p>
+
+<h3>Resetting the Sequence</h3>
+
 <p>It is often useful to snap seq16 back to the beginning. Do
 this with <code>monolith:seq16-reset</code>.
 </p>
+
+<h3>Column Getter</h3>
+
+<p>Sometimes <code>seq16</code> is better used as a way to store 16 values
+with 8 states. This signal can be extracted using
+<code>seq16col</code>.
+</p>
+<pre><code>(seq16col 0 "seq") ;; get value from column 0
+(add zz 1) ;; bias by to put in range 1-8
+(mul zz 60) ;; multiply by 60hz
+(port zz 0.01) ;; add portamento smoothing
+(sine zz 0.3) ;; feed frequency into sine
+(out zz) ;; sine sine to output</pre></code>
+<p></p>
+<p>Note: be sure to load the main <a href="/proj/monolith/wiki/ugens">ugens</a> with:
+</p>
+<pre><code>(monolith:load "ugens.scm")</pre></code>
 </div>
 </body>
 </html>
