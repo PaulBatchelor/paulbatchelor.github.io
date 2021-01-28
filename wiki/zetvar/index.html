@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Variables in Zet</title>
+<h1>Variables in Zet</h1>
+<p>This page aims to outline how variables in <a href="/wiki/zet">zet</a>work.
+</p>
+<p>Variables are entries in Zet that have mutable state and can
+be addressed by a keyword. A variable is attached to a
+particular UUID item.
+</p>
+<p>If necessary, create a new weewiki in the current directory.
+</p>
+<pre><code>$ weewiki create</pre></code>
+<p></p>
+<p>Create a "hello world" message using <code>rawsay</code>. It will
+return the UUID.
+</p>
+<pre><code>$ weewiki zet rawsay "hello world"
+fc2a5658-a598-4de6-abe8-cb8b9b0de505</pre></code>
+<p></p>
+<p>All commands maintaining variables are done with the
+subcommand <code>var</code>. From now on, a command like <code>new</code>
+will mean <code>weewiki zet var new</code>.
+</p>
+<p>Create a new variable that is tied to the newly created
+zet entry <code>fc2a56</code> and call it <code>foo</code>. This is done with
+<code>new</code>
+
+<pre><code>$ weewiki zet var new fc2a56 foo</pre></code>
+<p></p>
+<p>By default, it is set to be empty. One can set it to be a
+message with <code>set</code>.
+</p>
+<pre><code>$ weewiki zet var set fc2a56 bar</pre></code>
+<p></p>
+<p>Using <code>get</code> will return the current value. (This currently
+hasn't been implemented yet, but will be soon).
+</p>
+<pre><code>$ weewiki zet var get fc2a56 bar
+&gt;bar</pre></code>
+<p></p>
+<p>Variables can also be set to be addresses of other items,
+which proves to be extremly helpful. They are the foundational
+building block for <a href="/wiki/zetdo">zetdo</a>, a TODO app written on
+top of zet.
+</p>
+<p>To explore this, first create two new groups "alpha" and
+"beta" using the <code>zet mkgroup</code> command. Also, make a new
+message again using <code>rawsay</code>.
+</p>
+<pre><code>$ weewiki zet mkgroup alpha
+3a17096d-3091-4baf-811d-943095d9982e
+$ weewiki zet mkgroup beta
+bd970e28-9dc5-46c2-a290-9c9f0037d6be
+$ weewiki zet rawsay "here is another message"
+5cca6d4e-0994-4473-a447-0d1209d120e7</pre></code>
+<p></p>
+<p>Create a <code>state</code> variable for entries <code>5cca6</code> and <code>fc2a5</code>,
+and use the (var) <code>link</code> command to set them both to the
+alpha group. Appending "@" tells the zet that it is a group,
+and will try to resolve it to find the UUID associated with
+it.
+</p>
+<pre><code>$ weewiki zet var new 5cca6 state
+$ weewiki zet var link 5cca6 state @alpha
+$ weewiki zet var new fc2a5 state
+$ weewiki zet var link fc2a5 state @alpha</pre></code>
+<p></p>
+<p>Using the <code>lists</code> command, one list all the zet entries
+associated with a particular variable set to a particular
+value.
+</p>
+<p>To see the messages just created, look for all items with
+a variable <code>state</code> set to be <code>@alpha</code>.
+</p>
+<pre><code>$ weewiki zet var list state @alpha
+2021-01-27 13:56:56     fc2a5658-a598-4de6-abe8-cb8b9b0de505    &gt;hello world
+2021-01-27 14:14:48     fc2a5658-a598-4de6-abe8-cb8b9b0de505    $foo:&gt;bar
+2021-01-27 14:27:51     5cca6d4e-0994-4473-a447-0d1209d120e7    &gt;here is another message
+2021-01-27 14:30:54     5cca6d4e-0994-4473-a447-0d1209d120e7    $state:#3a17096d-3091-4baf-811d-943095d9982e
+2021-01-27 14:32:08     fc2a5658-a598-4de6-abe8-cb8b9b0de505    $state:#3a17096d-3091-4baf-811d-943095d9982e</pre></code>
+<p></p>
+<p>But whoah, that's a lot of stuff! <code>awk</code> can be used to
+filter out some of the results
+</p>
+<pre><code>$ weewiki zet var list state @alpha | \
+&gt; awk -F "\t" '$3 ~ "^&gt;" {print $1, substr($2, 1, 8), substr($3, 2)}'
+2021-01-27 13:56:56 fc2a5658 hello world
+2021-01-27 14:27:51 5cca6d4e here is another message</pre></code>
+<p></p>
+<p>Setting the item <code>fc2a5</code> state to be <code>@beta</code> removes it
+from this list, and puts it on a similar beta command.
+</p>
+<pre><code>$ weewiki var link fc2a5 state @beta
+$ weewiki zet var list state @beta | \
+&gt; awk -F "\t" '$3 ~ "^&gt;" {print $1, substr($2, 1, 8), substr($3, 2)}'
+2021-01-27 13:56:56 fc2a5658 hello world</pre></code>
+<p></p>
+<p>In practice, it's best to write these one-liners as shell
+scripts. This is basically how <code>zetdo</code> was born.
+</p>
+<hr>
+<a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
