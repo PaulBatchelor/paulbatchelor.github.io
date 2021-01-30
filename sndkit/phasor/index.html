@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Phasor</title>
+<h1>Phasor</h1>
+
+<h3>Overview</h3>
+
+<p>The <code>phasor</code> (not to be confused with the phaser audio
+effect) is a name used to describe a classic signal
+generator that produces a periodic ramp signal normalized
+to be in range 0-1, set to move at a specified frequency.
+Phasors are typically used in the context of table-lookup
+oscillators such as <a href="/sndkit/oscf">oscf</a>.
+</p>
+<p>The term "phasor" comes from the engineering and physics
+world, used to describe the complex value of a sinusoid
+(phase, and amplitude). While not a complex value, the
+phasor in this computer music context could be the phase
+component of the phasor.
+</p>
+<p>The adoption of the phasor term in the computer music world
+can be traced back to one of the oldest opcodes in Csound,
+but the author believes it may go back even further to the
+MUSICN family of computer music languages. It is noteworthy
+that the word phasor is six letters, which was the
+character limit for opcodes in both MUSICN languages and
+the older versions of Csound. In this context, it is a
+really nice name to describe this.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p>Tangles to <code>phasor.h</code> and <code>phasor.c</code>.
+</p>
+<p>If <code>SK_PHASOR_PRIV</code> is defined, it exposes the struct
+<code>sk_phasor</code>, otherwise it is opaque.
+</p>
+<div><b><i>&lt;&lt;phasor.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_PHASOR_H
+#define SK_PHASOR_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+#ifdef SK_PHASOR_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;phasor.c&gt;&gt;=</i></b></div><pre><code>#define SK_PHASOR_PRIV
+#include "phasor.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h3>Struct and initialization</h3>
+
+<p>The state of phasor is wrapped in a struct
+called <code>sk_phasor</code>, and  initialized with <code>sk_phasor_init</code>.
+You'll need the sampling rate, and initial phase.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_phasor sk_phasor;</pre></code>
+<p></p>
+<p>In <code>sk_phasor</code>, <code>freq</code> stores the frequency, <code>phs</code> stores
+the previous phasor value, and <code>onedsr</code> is the inverse value
+of the sampling rate, which is used in order to shave off
+a traditionally more expensive divide operation.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_phasor {
+    SKFLT freq;
+    SKFLT phs;
+    SKFLT onedsr;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_phasor_init(sk_phasor *ph, int sr, SKFLT iphs);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_phasor_init(sk_phasor *ph, int sr, SKFLT iphs)
+{
+    ph-&gt;phs = iphs;
+    ph-&gt;onedsr = 1.0 / sr;
+    sk_phasor_freq(ph, 440);
+}</pre></code>
+
+<h3>Setting the Frequency</h3>
+
+<p>The frequency of the phasor can be set with
+<code>sk_phasor_freq</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_phasor_freq(sk_phasor *ph, SKFLT freq);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_phasor_freq(sk_phasor *ph, SKFLT freq)
+{
+    ph-&gt;freq = freq;
+}</pre></code>
+
+<h3>Computation</h3>
+
+<p>A single sample of audio is computed with
+<code>sk_phasor_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_phasor_tick(sk_phasor *ph);</pre></code>
+<p></p>
+<p>The output of the phasor is the current internal phase
+state before being incremented.
+</p>
+<p>The behavior of the phasor is to increment its internal
+phase by an increment amount, determined by <code>freq*onedsr</code>.
+It is then wrapped to be in range 0 and 1. Instead of
+using something <code>fmod</code> for the wrapping, conditionals
+and arithmetic are used. In addition to being simpler,
+this is often a faster approach.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_phasor_tick(sk_phasor *ph)
+{
+    SKFLT phs;
+    SKFLT incr;
+    SKFLT out;
+
+    phs = ph-&gt;phs;
+    incr = ph-&gt;freq * ph-&gt;onedsr;
+
+    out = phs;
+
+    phs += incr;
+
+    if (phs &gt;= 1.0) {
+        phs -= 1.0;
+    } else if (phs &lt; 0.0) {
+        phs += 1.0;
+    }
+
+    ph-&gt;phs = phs;
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>
