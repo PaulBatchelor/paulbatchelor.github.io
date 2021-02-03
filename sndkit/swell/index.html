@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Swell</title>
+<h1>Swell</h1>
+
+<h3>Overview</h3>
+
+<p>swell is a special kind of smoothing filter on a control
+signal that takes in two smoothing parameters A and B. when
+the signal is increasing it uses smoothing parameter A, and
+when it is decreasing it uses parameter B. No change will
+continue using whatever paremeter was chosen last. This
+creates a certain kind of resistance that is very useful
+for swellling effects, which is where it gets its name.
+</p>
+<p>An inertia filter is included in this design to allow for
+changes between the two smoothing states to be more
+gradual. This is another one pole smoothing filter, applied
+to the signal switching between the two smoothing times.
+</p>
+<p>To summarize the topology of this filter design: Swell is a
+one-pole smoothing filter whose smoothing factor is
+determined by the direction of the input signal, placed
+through another one-pole smoothing filter for inertial
+control.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p>Tangles to files <code>swell.c</code> and <code>swell.h</code>.
+</p>
+<p>Defining <code>SK_SWELL_PRIV</code> exposes the contents <code>sk_swell</code>
+struct. Otherwise, it is opaque.
+</p>
+<div><b><i>&lt;&lt;swell.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_SWELL_H
+#define SK_SWELL_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+
+#ifdef SK_SWELL_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;swell.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_SWELL_PRIV
+#include "swell.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h3>Initialization</h3>
+
+<p>The struct for swell is called <code>sk_swell</code>. It is
+initialized with <code>sk_swell_init</code>. The sampling rate is
+required.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_swell sk_swell;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_swell {
+    &lt;&lt;sk_swell&gt;&gt;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_swell_init(sk_swell *sw, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_swell_init(sk_swell *sw, int sr)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h3>Filter Components</h3>
+
+<p>There are two recursive one-pole IIR filters known as the
+smoothing filter and the switching filter. Both require 1
+sample of filter memory (which will be called <code>y</code>), as well
+as the coefficients used to
+compute the filter, which in a DSP context are known
+as <code>a1</code> and <code>b0</code>.
+</p>
+<p>The strength of the filters are each controlled by a
+variable in units of seconds, known as the half-time. This
+is time it takes for the function to slur itself over to
+the new value. This will be referred to as <code>amt</code>. This
+variable will be <code>cached</code> so that filter coefficients
+don't need to be updated every sample, called <code>pamt</code>.
+</p>
+<p>Here are the smoothing filter variables, prefixed with
+<code>smooth_</code>.
+</p>
+<div><b><i>&lt;&lt;sk_swell&gt;&gt;=</i></b></div><pre><code>SKFLT smooth_y;
+SKFLT smooth_a1;
+SKFLT smooth_b0;
+SKFLT smooth_pamt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sw-&gt;smooth_y = 0;
+sw-&gt;smooth_b0 = 0;
+sw-&gt;smooth_a1 = 0;
+sw-&gt;smooth_pamt = -100;</pre></code>
+<p></p>
+<p>Here are the inertia filter parameters, prefixed with =
+</p>
+<div><b><i>&lt;&lt;sk_swell&gt;&gt;=</i></b></div><pre><code>SKFLT inertia_y;
+SKFLT inertia_a1;
+SKFLT inertia_b0;
+SKFLT inertia_pamt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sw-&gt;inertia_y = 0;
+sw-&gt;inertia_b0 = 0;
+sw-&gt;inertia_a1 = 0;
+sw-&gt;inertia_pamt = -100;</pre></code>
+<p></p>
+<p>one divided by samplerate constant. Used to update filter
+coefficients.
+</p>
+<div><b><i>&lt;&lt;sk_swell&gt;&gt;=</i></b></div><pre><code>SKFLT onedsr;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sw-&gt;onedsr = 1.0 / (SKFLT) sr;</pre></code>
+
+<h3>Unit Delay For Direction Detection</h3>
+
+<p>In order to the direction of a sample, the previous
+sample is stored in what could be considered a
+1-sample delay, or <code>unit delay</code>.
+</p>
+<p>A more robust way to determine direction would be to
+examine more than just the previous sample. But this
+approach is faster, simpler, and good enough for the
+kinds of slow moving control signals that will be
+expected. Also, since there's also inertia filtering on
+top of this, having a flickering direction isn't too
+big of a deal.
+</p>
+<p>The variable, called <code>prev</code>, will be set to be an unlikely
+starting value of <code>-123.456</code>.
+</p>
+<div><b><i>&lt;&lt;sk_swell&gt;&gt;=</i></b></div><pre><code>SKFLT prev;</pre></code>
+<p></p>
+<pre><code>sw-&gt;prev = -123.456;</pre></code>
+
+<h3>Parameters</h3>
+
+<p>Swell takes in three parameters: smooth factor A, smooth
+factor B, and inertia.
+</p>
+<p>Set smoothing factor A with <code>sk_swell_smootha</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_swell_smootha(sk_swell *sw, SKFLT smooth);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_swell_smootha(sk_swell *sw, SKFLT smooth)
+{
+    sw-&gt;sm_a = smooth;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_swell&gt;&gt;=</i></b></div><pre><code>SKFLT sm_a;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_swell_smootha(sw, 10);</pre></code>
+<p></p>
+<p>Set smoothing factor B with <code>sk_swell_smoothb</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_swell_smoothb(sk_swell *sw, SKFLT smooth);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_swell_smoothb(sk_swell *sw, SKFLT smooth)
+{
+    sw-&gt;sm_b = smooth;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_swell&gt;&gt;=</i></b></div><pre><code>SKFLT sm_b;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_swell_smoothb(sw, 0.1);</pre></code>
+<p></p>
+<p>Set inertia with <code>sk_swell_inertia</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_swell_inertia(sk_swell *sw, SKFLT inertia);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_swell_inertia(sk_swell *sw, SKFLT inertia)
+{
+    sw-&gt;inertia_amt = inertia;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_swell&gt;&gt;=</i></b></div><pre><code>SKFLT inertia_amt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_swell_inertia(sw, 0.001);</pre></code>
+
+<h3>Direction Storage Pointer</h3>
+
+<p>At any point in time, the smoothing amount can either be
+parameter A or B. A pointer <code>dir</code> is used to store the
+address of one of these values.
+</p>
+<div><b><i>&lt;&lt;sk_swell&gt;&gt;=</i></b></div><pre><code>SKFLT *dir;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sw-&gt;dir = &sw-&gt;sm_a;</pre></code>
+
+<h3>Computation</h3>
+
+<p>The function <code>sk_swell_tick</code> computes one sample of audio
+from an input signal <code>in</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_swell_tick(sk_swell *sw, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_swell_tick(sk_swell *sw, SKFLT in)
+{
+    SKFLT out;
+    SKFLT switching;
+    SKFLT dir;
+    const SKFLT eps = 0.0001;
+    out = 0;
+    &lt;&lt;determine_direction&gt;&gt;
+    &lt;&lt;filter_switch_signal&gt;&gt;
+    &lt;&lt;snap_signal&gt;&gt;
+    &lt;&lt;compute_smoothing_filter&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<p>The direction is determined by comparing the current input
+signal with the previous input signal. A positive change
+will select the A smoothing factor. A negative change will
+select the B smoothing factor. No change will hold onto the
+last selected factor. This will be referred to as the
+<code>switching</code> signal.
+</p>
+<div><b><i>&lt;&lt;determine_direction&gt;&gt;=</i></b></div><pre><code>if (in &gt; sw-&gt;prev) {
+    sw-&gt;dir = &sw-&gt;sm_a;
+} else if (in &lt; sw-&gt;prev) {
+    sw-&gt;dir = &sw-&gt;sm_b;
+}
+sw-&gt;prev = in;
+dir = *sw-&gt;dir;
+switching = dir;</pre></code>
+<p></p>
+<p>The switching signal is put through a 1-pole filter known
+as the inertia filter. Before computing this filter, the
+inertia parameter is checked to see if it needs to be
+updated via <a href="#">parameter caching</a>.
+</p>
+<div><b><i>&lt;&lt;filter_switch_signal&gt;&gt;=</i></b></div><pre><code>if (sw-&gt;inertia_amt != sw-&gt;inertia_pamt) {
+    sw-&gt;inertia_pamt = sw-&gt;inertia_amt;
+    sw-&gt;inertia_a1 = pow(0.5, sw-&gt;onedsr/sw-&gt;inertia_amt);
+    sw-&gt;inertia_b0 = 1.0 - sw-&gt;inertia_a1;
+}
+
+switching =
+    sw-&gt;inertia_b0*switching +
+    sw-&gt;inertia_a1*sw-&gt;inertia_y;
+sw-&gt;inertia_y = switching;</pre></code>
+<p></p>
+<p>The filtered switching signal is then snapped to the A/B
+smoothing parameter if it is within an epsilon boundary.
+This is done to prevent the next smoothing filter from
+constantly re-calculating filter coefficients. Calls to
+math functions like <code>exp</code> can be expensive, and should be
+avoided if possible.
+</p>
+<div><b><i>&lt;&lt;snap_signal&gt;&gt;=</i></b></div><pre><code>if (fabs(switching - dir) &lt; eps) switching = dir;</pre></code>
+<p></p>
+<p>Using the filtered-and-snapped switching signal, the main
+smoothing filter can now be computed on the input signal.
+Similar to the inertia filter, parameter caching is also
+used.
+</p>
+<div><b><i>&lt;&lt;compute_smoothing_filter&gt;&gt;=</i></b></div><pre><code>if (switching != sw-&gt;smooth_pamt) {
+    sw-&gt;smooth_pamt = switching;
+    sw-&gt;smooth_a1 = pow(0.5, sw-&gt;onedsr/switching);
+    sw-&gt;smooth_b0 = 1.0 - sw-&gt;smooth_a1;
+}
+
+out =
+    sw-&gt;smooth_b0*in +
+    sw-&gt;smooth_a1*sw-&gt;smooth_y;
+sw-&gt;smooth_y = out;</pre></code>
+</div>
+</body>
+</html>
