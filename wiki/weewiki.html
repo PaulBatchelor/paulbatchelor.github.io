@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>WeeWiki</title>
+<h1>WeeWiki</h1>
+<p>A weewiki page about weewiki!
+</p>
+</p>
+
+<h2>Description</h2>
+
+<p>This is a tiny scriptable wiki engine designed to build
+personal mind maps.
+</p>
+<p>The core engine is written in C via the
+<a href="/proj/worgle">Worgle</a> literate programming environment.
+</p>
+<p>Wiki pages are primarly stored inside of a SQLite database,
+and are written using org syntax (presumably via org-mode
+and emacs). The org parsing is done via a custom parser,
+written in C.
+</p>
+<p>On top of the core engine is a scripting environment.
+For this, the <a href="https://janet-lang.org">Janet language</a> is
+used. Janet code can be run inside of a wiki page, and
+can be used to dynamically generate org content, which
+is then turned into HTML by the parser. This can be
+used to do things like create dynamic reference links,
+such as <a href="/wiki/weewiki.html">this one!</a></p>
+
+<h2>WeeWiki On Github</h2>
+
+<p>WeeWiki source coded is maintained using
+<a href="https://fossil-scm.org">Fossil</a>, but has been exported to
+a read-only git repo for convenience.
+</p>
+<p>The repository in question can be found at:
+<a href="https://www.github.com/paulbatchelor/weewiki.git">https://www.github.com/paulbatchelor/weewiki.git</a>.
+</p>
+
+<h2>Usage</h2>
+
+
+<h3>Creating a page</h3>
+
+<p>This can be done <code>weewiki add foo</code>, where <code>foo</code> is the name
+of your page.
+</p>
+
+<h3>Editing a page</h3>
+
+<p>To edit a page, run <code>weewiki edit foo</code>. This will create a
+page called foo and open it up inside of the text editor set
+by <code>EDITOR</code>.
+</p>
+
+<h3>Deleting a page</h3>
+
+<p>Should be <code>wiki del foo</code>, where <code>foo</code> is the name of the
+page.
+</p>
+
+<h3>Syncing Pages</h3>
+
+<p>Page syncing is a way to edit and manage pages externally.
+</p>
+<p>An (existing) page can be linked with
+<code>weewiki link foo foo.org</code>.
+</p>
+<p>Now, the page can be externally edited and tracked.
+</p>
+<p>Any new changes in the pages of the wiki can be
+synchronized with:
+</p>
+<pre><code>weewiki sync</pre></code>
+<p></p>
+<p>Synchronization works by comparing the modification
+time of the external file with the one stored in the
+link table, and will choose the newest to overwrite
+the entry in the database and the external file. Keep in
+mind that this is a simple overwrite with no fancy merging.
+</p>
+
+<h3>A bootstrap setup (deprecated)</h3>
+
+<p><b>Note</b>: now that sync is utilized, this should not be used,
+but, I'm leaving it up anyways.
+</p>
+<p>The following describes a bootleg weewiki sync setup using
+only push/pull commands and shell scripts.
+</p>
+
+<h4>mkwiki</h4>
+
+<p>On a new system, the wiki database must be bootstrapped.
+</p>
+<p>This will take all the external org files and push
+them to the database.
+<pre><code>#!/bin/sh
+
+for org in *.org
+do
+    key=${org%.org}
+    weewiki push $org $key
+done</pre></code>
+
+<h4>push</h4>
+
+<p>A mass <code>push</code> operation will update the internal pages to be
+the external pages.
+<pre><code>#!/bin/sh
+
+for p in $(weewiki ls)
+do
+    weewiki push $p.org $p
+done</pre></code>
+
+<h4>pull</h4>
+
+<p>A mass <code>pull</code> operation will update all external pages
+to be what is stored internally.
+<pre><code>#!/bin/sh
+
+for p in $(weewiki ls)
+do
+    weewiki pull $p $p.org
+done</pre></code>
+</div>
+</body>
+</html>
