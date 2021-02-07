@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Ergo ID</title>
+<h1>Ergo ID</h1>
+
+<h3>Overview</h3>
+
+<p>The <code>Ergo</code> ID system is a ergonomically efficient way
+to type out UUIDs on a QWERTY keyboard layout. It was
+specifically written for <a href="/wiki/zet">zet</a>, specifically
+<a href="/wiki/zetdo">zetdo</a>, as a faster, more comfortable means
+for managing tasks.
+</p>
+<p>As an example, this UUID4 value:
+</p>
+<p>6b73c608-f0cd-4f4b-97f7-11756e04f195
+</p>
+<p>Would translate to the following ergo-id:
+</p>
+<p>krlfukaq-paui-hphr-wlpl-ssljkoahpswj
+</p>
+<p>It's honestly a pretty bonkers system. I came up with this
+idea while dogfooding <a href="/wiki/zetdo">zetdo</a>. I particularly
+found typing UUIDs, even partially, to be a laborious
+operation, in particular when typing numbers on my
+<a href="/wiki/planck">planck keyboard</a>.
+</p>
+<p>I figured that while hexadecimal notation makes
+a lot of sense from a symbolic point of view, it's
+not great if you are tasked with actually typing
+them out. With my fingers resting on the home row,
+I thought about the issue. Next thing you know... Ergo ID!
+</p>
+
+<h3>Derivation</h3>
+
+<p>A <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a> is
+a 128-bit number, usually represented as 32 hexadecimal
+characters with 4 dashes. It is the convention to represent
+those 16 hexadecimal characters 0-9 and a-f. In the Ergo ID
+system, these characters are replaced with easy-to-reach
+ones found on the home and top rows of the keyboard.
+</p>
+<p>For a touch typist, the easiest characters to reach are
+on the home row without extending. On a QWERTY keyboard,
+these are:
+</p>
+<p>asdfjkl;
+</p>
+<p>These are all letters except for the ';'. That's a bit
+of an odd duck. ';' will be replaced with 'h'. it requires
+an extension, but it's not so bad. also, vi users will
+appreciate the hjkl pattern:
+</p>
+<p>asdfhjkl
+</p>
+<p>The next easiest keys are found on the top row without
+extension. 'p' has a bit of an extension, but it's not too
+bad (and it also feels slightly more comfortable than 'y'):
+</p>
+<p>qweruiop
+</p>
+<p>Together, these form 16 characters, which is how many
+we need to represent the hexadecimal characters:
+</p>
+<p>asdfhjklqweruiop
+</p>
+<p>0123456789abcdef
+</p>
+
+<h3>Sample C Implementation</h3>
+
+<p>Here's some starter C code, adapted from the <a href="/loom/weewiki">weewiki</a> source code. Each function takes in an input
+string, the input string size, and a pre-allocated buffer
+for the output string. The output string is assumed to be
+at least the same size as the input string (plus an extra
+byte for the null terminator), but does
+not do any checking so be careful!
+</p>
+<p>This code is placed in the public code.
+</p>
+<div><b><i>&lt;&lt;ergo.c&gt;&gt;=</i></b></div><pre><code>static const char *ergohex = "0??2a3?4d567??ef8b1?c?9";
+static const char *hexergo = "asdfhjklqweruiop";
+
+void hex_to_ergo(const char *hex, int sz, char *ergo)
+{
+    int i;
+
+    for (i = 0; i &lt; sz; i++) {
+        int pos;
+
+        pos = -1;
+        if (hex[i] &gt;= '0' && hex[i] &lt;= '9') {
+            pos = hex[i] - '0';
+        } else if (hex[i] &gt;= 'a' && hex[i] &lt;= 'f') {
+            pos = (hex[i] - 'a') + 10;
+        }
+
+        if (pos &gt;= 0) {
+            ergo[i] = hexergo[pos];
+        } else {
+            ergo[i] = hex[i];
+        }
+    }
+
+    ergo[sz] = '\0';
+}
+
+void ergo_to_hex(const char *ergo, int sz, char *hex)
+{
+    int i;
+    for (i = 0; i &lt; sz; i++) {
+        if (ergo[i] &gt;= 'a' && ergo[i] &lt;= 'w') {
+            int pos = ergo[i] - 'a';
+            hex[i] = ergohex[pos];
+        } else {
+            hex[i] = ergo[i];
+        }
+    }
+}</pre></code>
+<hr>
+<p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
