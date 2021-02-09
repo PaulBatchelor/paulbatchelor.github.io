@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Box It!</title>
+<h1>Box It!</h1>
+<p><code>boxit</code> is a small script written in awk and shell
+that puts text centered in a little ascii box.
+</p>
+<p>This is placed under the <a href="#">UNLICENSE</a>.
+</p>
+<div><b><i>&lt;&lt;boxit&gt;&gt;=</i></b></div><pre><code>#!/bin/sh
+
+NROWS=58 # NROWS - 2
+
+boxit() {
+    read -r -d '' SCRIPT &lt;&lt;EOF
+BEGIN {
+    NROWS=58
+    printf "+"
+    for (i = 0; i &lt; NROWS; i++) {
+        printf "-"
+    }
+    printf "+\n"
+}
+
+{
+    lsize = length(\$0)
+    lspace = (NROWS - lsize) / 2
+    rspace = lspace
+
+    if (lsize % 2 != 0) rspace--;
+
+    printf "|"
+
+    for (i = 0; i &lt; lspace; i++) {
+        printf " "
+    }
+
+    printf \$0
+
+    for (i = 0; i &lt; rspace; i++) {
+        printf " "
+    }
+
+    printf "|\n"
+}
+
+END {
+    printf "+"
+    for (i = 0; i &lt; NROWS; i++) {
+        printf "-"
+    }
+    printf "+\n"
+}
+EOF
+
+awk "$SCRIPT"
+}
+
+fold -s -w $NROWS | boxit</pre></code>
+<p></p>
+<p>Use it like so:
+</p>
+<pre><code>$ printf "do\nall\nthings\nwith\nartlessness" | ./boxit
++----------------------------------------------------------+
+|                            do                            |
+|                            all                           |
+|                          things                          |
+|                           with                           |
+|                        artlessness                       |
++----------------------------------------------------------+</pre></code>
+<hr>
+<p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
