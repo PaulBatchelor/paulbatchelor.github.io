@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Biramp</title>
+<h1>Biramp</h1>
+
+<h3>Overview</h3>
+
+<p>Produces an up-and-down ramp signal from an input phasor
+ramp signal. Things like this are useful for creating quick
+time-synced LFO signals. Because it ramps down to 0, it
+won't clip.
+</p>
+<p>A few flavors of biramp will be created: a stateless
+version with position control, a stateful version with
+position that only updates at the beginnig of the phasor,
+and a stateful version with no position contorl that
+inverts the direction of the phasor at the beginning of
+each phase.
+</p>
+
+<h3>Tangled Files</h3>
+
+<p>Tangles into <code>biramp.c</code> and <code>biramp.h</code>.
+</p>
+<div><b><i>&lt;&lt;biramp.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_BIRAMP_H
+#define SK_BIRAMP_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;biramp.c&gt;&gt;=</i></b></div><pre><code>#define SK_BIRAMP_PRIV
+#include "biramp.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h3>Version 1: Stateless</h3>
+
+<p>The stateless version of biramp is called
+<code>sk_biramp_stateless</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_biramp_stateless(SKFLT phs, SKFLT pos);</pre></code>
+<p></p>
+<p>The stateless version needs only the input phasor signal
+and split position (expected to be a normalized value).
+</p>
+<p>When the phasor is less than the position, the output is
+<code>phasor/position</code>.
+</p>
+<p>When the phasor is greater than or equal to the position,
+the output is <code>1 - phasor/1 - position</code>.
+</p>
+<p>The position cannot be 0 or 1 exactly. Instead of throwing
+an error, these will just return themselves.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_biramp_stateless(SKFLT phs, SKFLT pos)
+{
+    SKFLT out;
+    out = 0;
+
+    if (pos == 0 || pos == 1) return pos;
+
+    if (phs &lt; pos) out = phs / pos;
+    else out = (1 - phs) / (1 - pos);
+
+    return out;
+}</pre></code>
+
+<h3>Version 2: Stateful</h3>
+
+<p>The function <code>sk_biramp_stateful</code> is a variation of the
+stateless biramp with some managed internal state.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_biramp_stateful(SKFLT phs, SKFLT pos,
+                         SKFLT *lphs, SKFLT *lpos);</pre></code>
+<p></p>
+<p>The stateful version of this functionality can be used so
+that the position only updates when the phasor resets back
+to zero. To do this, two additional pointer values are
+given: the previous phase, and the used cached position
+parameter.
+</p>
+<p>This will use the cached position value instead of the
+immediation position value to compute the biramp. The
+cached value will update itself if it is less than 0, or if
+it finds the phasor has reset. The phasor resets when the
+last phasor value is greater than the current phasor value.
+</p>
+<p>The cached phasor value is updated here as well.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_biramp_stateful(SKFLT phs, SKFLT pos,
+                         SKFLT *lphs, SKFLT *lpos)
+{
+    SKFLT out;
+    out = 0;
+
+    if (*lphs &gt; phs || *lpos &lt; 0) {
+        *lpos = pos;
+    }
+
+    out = sk_biramp_stateless(phs, *lpos);
+
+    *lphs = phs;
+    return out;
+}</pre></code>
+
+<h3>Version 3: Flipper</h3>
+
+<p>The final variation, called a <code>flipper</code>, will
+produce a phasor signal whose direction is flipped when the
+phase is reset. The stateful variables here include the
+cached phasor signal from the previous signal, and an
+integer storing the direction. When the direction is 0, it
+is normal. Non-zero is a flip.
+</p>
+<p>The direction state is updated on a phase reset, when the
+cached phasor is greater than the current phasor.
+</p>
+<p>It's important that the cached last phase value is stored
+pre-flipped. That way, the phasor consistently stays in one
+direction and makes the reset checker very straight-forward.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_biramp_flipper(SKFLT phs, SKFLT *lphs, int *flipit);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_biramp_flipper(SKFLT phs, SKFLT *lphs, int *flipit)
+{
+    SKFLT out;
+    out = 0;
+
+    if (*lphs &gt; phs) {
+        (*flipit) =  ~(*flipit);
+    }
+
+    out = phs;
+    *lphs = phs;
+
+    if (*flipit) out = 1 - out;
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>
