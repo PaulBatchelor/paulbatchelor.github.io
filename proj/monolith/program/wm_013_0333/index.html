@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>9. Seq16 Runt Words</h3>
+
+<p><a id="wm_013_0333"></a></p>
+
+<h4>9.1. Runt Loader</h4>
+
+<p><a id="wm_013_0334"></a>All runt words are loaded with the function <code>seq16_runt_loader</code>. It is loaded
+at init time.
+<div><b><i>&lt;&lt;seq16_function_declarations&gt;&gt;=</i></b></div><pre><code>static int seq16_runt_loader(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;seq16_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;seq16_runt_functions&gt;&gt;
+static int seq16_runt_loader(monolith_d *m)
+{
+&lt;&lt;seq16_runt_keywords&gt;&gt;
+    monolith_runt_mark_set(m);
+    return RUNT_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;seq16_runtime_init&gt;&gt;=</i></b></div><pre><code>seq16_runt_loader(m);</pre></code>
+
+<h4>9.2. Seq16clk</h4>
+
+<p><a id="wm_013_0346"></a><div><b><i>&lt;&lt;seq16_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "seq16clk", 8, rproc_seq16clk, m);</pre></code>
+<div><b><i>&lt;&lt;seq16_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_seq16clk(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    rpw_param clk;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    monolith_page *pg;
+    page_seq16_d *seq16;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = rpw_get_param(vm, &clk);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m, name, "seq16", is_seq16, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    seq16 = monolith_page_data_get(pg);
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    node_seq16clk(node, seq16);
+    rpw_set_param(vm, node, &clk, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>9.3. Seq16val</h4>
+
+<p><a id="wm_013_0353"></a><div><b><i>&lt;&lt;seq16_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "seq16val", 8, rproc_seq16val, m);</pre></code>
+<div><b><i>&lt;&lt;seq16_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_seq16val(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    runt_stacklet *out;
+    monolith_page *pg;
+    page_seq16_d *seq16;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m, name, "seq16", is_seq16, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    seq16 = monolith_page_data_get(pg);
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    node_seq16val(node, seq16);
+    rpw_push_output(vm, node, out, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>9.4. Seq16gt</h4>
+
+<p><a id="wm_013_0358"></a><div><b><i>&lt;&lt;seq16_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "seq16gt", 7, rproc_seq16gt, m);</pre></code>
+<div><b><i>&lt;&lt;seq16_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_seq16gt(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    runt_stacklet *out;
+    monolith_page *pg;
+    page_seq16_d *seq16;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m, name, "seq16", is_seq16, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    seq16 = monolith_page_data_get(pg);
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    node_seq16gt(node, seq16);
+    rpw_push_output(vm, node, out, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>9.5. Seq16clkget</h4>
+
+<p><a id="wm_013_0363"></a><div><b><i>&lt;&lt;seq16_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "seq16clkget", 11, rproc_seq16clkget, m);</pre></code>
+<div><b><i>&lt;&lt;seq16_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_seq16clkget(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    runt_stacklet *out;
+    monolith_page *pg;
+    page_seq16_d *seq16;
+
+    m = runt_to_cptr(p);
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m, name, "seq16", is_seq16, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    seq16 = monolith_page_data_get(pg);
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    node_seq16clkget(node, seq16);
+    rpw_push_output(vm, node, out, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h4>9.6. Seq16col</h4>
+
+<p><a id="wm_013_0368"></a><div><b><i>&lt;&lt;seq16_runt_keywords&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "seq16col", 8, rproc_seq16col, m);</pre></code>
+<div><b><i>&lt;&lt;seq16_runt_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_seq16col(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    pw_patch *patch;
+    pw_node *node;
+    const char *name;
+    runt_stacklet *s;
+    runt_stacklet *out;
+    monolith_page *pg;
+    page_seq16_d *seq16;
+    rpw_param col;
+
+    m = runt_to_cptr(p);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+
+    name = runt_to_string(s-&gt;p);
+
+    rc = rpw_get_param(vm, &col);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_monolith_lookup_page(vm, m, name, "seq16", is_seq16, &pg);
+    RUNT_ERROR_CHECK(rc);
+
+    seq16 = monolith_page_data_get(pg);
+
+    patch = monolith_patchwerk_get(m);
+    rc = pw_patch_new_node(patch, &node);
+    PW_RUNT_ERROR_CHECK(rc);
+    node_seq16col(node, seq16);
+
+    rpw_set_param(vm, node, &col, 0);
+    rpw_push_output(vm, node, out, 1);
+    return RUNT_OK;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_013_0262">prev</a> | <a href="/proj/monolith/program/wm_013">home</a> | <a href="/proj/monolith/program/wm_013_0373">next</a></p>
+</div>
+</body>
+</html>
