@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>FM Synthesis</title>
+<h1>FM Synthesis</h1>
+<p><code>frequency modulation synthesis</code>, better known as
+<code>FM</code> synthesis, is a common sound synthesis technique
+that involves modulating the frequency of signals
+at audio-rate frequencies to produce spectrum.
+</p>
+<p>This page aims to define some of the various ways to do
+FM synthesis in Monolith.
+</p>
+
+<h3>fosc</h3>
+
+<p>The <code>fosc</code> ugen implements a classic FM pair. The parameters
+it exposes are: frequency, amplitude, C:M ratio, and index.
+A wavetable must also be supplied as a lambda. This is
+usually a sine wave. Note that wavetable sizes are limited
+to power-of-2 sizes.
+</p>
+<p>The scheme code below can be used to generate a 200hz
+FM oscillator with a 1:1 C:M ratio and a modulation
+index of 1.
+</p>
+<pre><code>(fosc 200 0.1 1 1 1 (lambda () (gen_sine (ftnew 4096))))
+(out zz)</pre></code>
+<p></p>
+<p>Here is the equivalent sound using inline <a href="/proj/monolith/wiki/runt">runt</a>code:
+</p>
+<pre><code>(rvl "200 0.1 1 1 1 4096 ftnew gen_sine fosc")
+(out zz)</pre></code>
+<p></p>
+<p>The <code>fosc</code> scheme function is defined
+in <a href="/proj/monolith/program/wm_038_0275#wm_038_0275">65. fosc</a>.
+</p>
+
+<h3>fmpair/fmpair2</h3>
+
+<p>The <code>fmpair</code> node is similar to <code>fosc</code> (using
+the same code), except that it has a feedback option,
+and it doesn't take in amplitude.
+</p>
+<p>Below is a 60hz FM pair with a 1:1 CM ratio, modulation
+index of 8, and the feedback amount being modulated by
+an LFO.
+</p>
+<pre><code>(fmpair
+  (param 60)
+  (param 1)
+  (param 1)
+  (param 8)
+  (scale (flipper (phasor 0.2 0)) 0 0.9)
+  (lambda () (gen_sine (ftnew 4096))))
+(mul zz 0.2)
+(out zz)</pre></code>
+<p></p>
+<p>And the equivalent inline <a href="/proj/monolith/wiki/runt">runt</a> code:
+</p>
+<pre><code>(rvl "60 1 1 8")
+(rvl "0.2 0 phasor flipper 0 0.9 scale")
+(rvl "4096 ftnew gen_sine fmpair 0.2 mul")
+(out zz)</pre></code>
+<p></p>
+<p><code>fmpair2</code> works like <code>fmpair</code>, but it allows one to
+use different wavetables for the carrier and modulator.
+Here's the example from above using a wavetable
+<code>gen_sinesum</code> to create a carrier wavetable with a bit more
+spectrum:
+</p>
+<pre><code>(fmpair2
+  (param 60)
+  (param 1)
+  (param 1)
+  (param 8)
+  (scale (flipper (phasor 0.2 0)) 0 0.7)
+  (lambda () (gen_sine (ftnew 4096)))
+  (lambda ()
+    (gen_sinesum
+      (ftnew 4096)
+      "1 0.5 1 0.5 0.2 0.2 0.9" )))
+(mul zz 0.2)
+(out zz)</pre></code>
+<p></p>
+<p>The fmpair scheme functions are defined in
+<a href="/proj/monolith/program/wm_038_0436#wm_038_0436">105. fmpair/fmpair2</a>.
+</p>
+</div>
+</body>
+</html>
