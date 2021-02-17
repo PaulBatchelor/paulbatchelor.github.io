@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Android Development Setup</title>
+<h1>Android Development Setup</h1>
+<p>Notes on how I set up an android development setup
+with minimal bloat. No IDE, no Gradle, and just
+using C and Makefiles.
+</p>
+<p>Instructions are more or less similar to the ones
+found on this project:
+<a href="https://github.com/cnlohr/rawdrawandroid">https://github.com/cnlohr/rawdrawandroid</a>.
+</p>
+<p>install packages. on arch linux
+</p>
+<pre><code>pacman -S extra/jre11-openjdk-headless
+pacman -S extra/jdk11-openjdk
+pacman -S android-tools</pre></code>
+<p></p>
+<p>mkdir ~/android
+export ANDROID_HOME=~/android
+</p>
+<p>Download command line tools from
+<a href="https://developer.android.com/studio">https://developer.android.com/studio</a>.
+</p>
+<p>Unzip contents to <code>cmdline-tools/3.0</code> folder in <code>ANDROID_HOME</code>.
+</p>
+<p>(sdkmananger will give you path warnings. trying to fix as I go).
+</p>
+<p>save some keystrokes
+</p>
+<pre><code>alias sdkman=$ANDROID_HOME/cmdline-tools/3.0/bin/sdkmanager --sdk_root='${ANDROID_HOME}'</pre></code>
+<p></p>
+<p>Agree to licenses:
+</p>
+<pre><code>yes | sdkman --licenses</pre></code>
+<p></p>
+<p>Install stuff. Note: I'm making sure build-tools and
+platform-tools are the same version (29). Otherwise the
+rawdrawandroid session gets messed up.
+</p>
+<pre><code>sdkman "build-tools;29.0.3" "ndk;21.1.6352462" "platform-tools" "platforms;android-29"</pre></code>
+<p></p>
+<p>Now try cloning rawdrawandroid
+</p>
+<pre><code>git clone https://github.com/cnlohr/rawdrawandroid --recurse-submodules+BEGIN_SRC </pre></code>
+<p></p>
+<p>Try building it with
+</p>
+<pre><code>make</pre></code>
+<p></p>
+<p>Plug in properly configured device with:
+</p>
+<pre><code>make push run</pre></code>
+<p></p>
+<p>On Linux, sometimes permissions are a bit screwy. Figure out
+the vendor id with dmesg, and put this in
+something like <code>/etc/udev/rules.d/</code> as something like
+<code>51-android.rules</code>, where VENDOR_ID is your vendor ID.
+</p>
+<p>Unplug, and plug in again and it should work.
+</p>
+<pre><code>SUBSYSTEM=="usb", ATTR{idVendor}=="VENDOR_ID", MODE="0666"</pre></code>
+<hr>
+<p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
