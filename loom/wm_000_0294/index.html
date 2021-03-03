@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>10. Circle</h3>
+
+<p><a id="wm_000_0294"></a></p>
+
+<h4>10.1. Stroked Circle</h4>
+
+<p><a id="wm_000_0295"></a>Midpoint circle algorithm.
+</p>
+<p>I don't know where I found the code for the first algorithm,
+but it was too pointy at the compass coordinates. This one
+is slightly more expensive, but makes for a much smoother
+circle:
+<a href="https://iq.opengenus.org/bresenhams-circle-drawing-algorithm/">https://iq.opengenus.org/bresenhams-circle-drawing-algorithm/</a></p>
+<br>
+<p>That ones a bit boxy, so I tried this one:
+<a href="https://zcsaha.github.io/computer-graphics/midpoint-circle-drawing-algorithm-in-c.html">https://zcsaha.github.io/computer-graphics/midpoint-circle-drawing-algorithm-in-c.html</a></p>
+<br>
+<p>I'm not great either. Kind of looks like a polygon when the
+radius is 16. We're keeping it at that for now.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_circ(btprnt_region *r,
+                      int cx, int cy,
+                      int rad,
+                      int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void circ_pixel(btprnt_region *r,
+                       int cx, int cy,
+                       int x, int y,
+                       int clr)
+{
+    btprnt_region_draw(r, cx - x, cy + y, clr);
+    btprnt_region_draw(r, cx + x, cy + y, clr);
+    btprnt_region_draw(r, cx - y, cy + x, clr);
+    btprnt_region_draw(r, cx + y, cy + x, clr);
+    btprnt_region_draw(r, cx + x, cy - y, clr);
+    btprnt_region_draw(r, cx - x, cy - y, clr);
+    btprnt_region_draw(r, cx + y, cy - x, clr);
+    btprnt_region_draw(r, cx - y, cy - x, clr);
+}
+
+void btprnt_draw_circ(btprnt_region *r,
+                      int cx, int cy,
+                      int rad,
+                      int clr)
+{
+    int x;
+    int y;
+    int err;
+
+    x = 0;
+    y = rad;
+    err = 1 - rad;
+
+    circ_pixel(r, cx, cy, x, y, clr);
+
+    while (x &lt; y) {
+        x++;
+
+        if (err &lt; 0) {
+            err += 2 * x + 1;
+        } else {
+            y--;
+            err += 2 * (x - y) + 1;
+        }
+
+        circ_pixel(r, cx, cy, x, y, clr);
+    }
+}</pre></code>
+
+<h4>10.2. Filled Circle</h4>
+
+<p><a id="wm_000_0301"></a><code>btprnt_draw_circ_filled</code> uses an adaptation of the midpoint
+circle algorithm to draw a filled circle. It has been
+adapated from <code>btprnt_draw_circ</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_circ_filled(btprnt_region *r,
+                      int cx, int cy,
+                      int rad,
+                      int clr);</pre></code>
+<p></p>
+<br>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void circ_line(btprnt_region *r,
+                       int cx, int cy,
+                       int x, int y,
+                       int clr)
+{
+    btprnt_draw_line(r,
+                     cx - x, cy + y,
+                     cx + x, cy + y,
+                     clr);
+    btprnt_draw_line(r,
+                     cx - y, cy + x,
+                     cx + y, cy + x,
+                     clr);
+    btprnt_draw_line(r,
+                     cx + x, cy - y,
+                     cx - x, cy - y,
+                     clr);
+    btprnt_draw_line(r,
+                     cx + y, cy - x,
+                     cx - y, cy - x,
+                     clr);
+
+}
+
+void btprnt_draw_circ_filled(btprnt_region *r,
+                      int cx, int cy,
+                      int rad,
+                      int clr)
+{
+    int x;
+    int y;
+    int err;
+
+    x = 0;
+    y = rad;
+    err = 1 - rad;
+
+    circ_line(r, cx, cy, x, y, clr);
+
+    while (x &lt; y) {
+        x++;
+
+        if (err &lt; 0) {
+            err += 2 * x + 1;
+        } else {
+            y--;
+            err += 2 * (x - y) + 1;
+        }
+
+        circ_line(r, cx, cy, x, y, clr);
+    }
+}</pre></code>
+
+<h4>10.3. Thick Circle</h4>
+
+<p><a id="wm_000_0308"></a><code>btprnt_draw_thickcirc</code> will draw a circle
+with a thick outline with a radius <code>rad</code>, thickness
+<code>thick</code>, and color <code>c</code>.
+This works like the normal midpoint circle algorithm,
+except that it draws filled circles instead of pixels.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_thickcirc(btprnt_region *r,
+                           int cx, int cy,
+                           int rad, int thick,
+                           int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void circ_dots(btprnt_region *r,
+                       int cx, int cy,
+                       int x, int y,
+                       int clr, int thick)
+{
+    btprnt_draw_circ_filled(r, cx - x, cy + y, thick, clr);
+    btprnt_draw_circ_filled(r, cx + x, cy + y, thick, clr);
+    btprnt_draw_circ_filled(r, cx - y, cy + x, thick, clr);
+    btprnt_draw_circ_filled(r, cx + y, cy + x, thick, clr);
+    btprnt_draw_circ_filled(r, cx + x, cy - y, thick, clr);
+    btprnt_draw_circ_filled(r, cx - x, cy - y, thick, clr);
+    btprnt_draw_circ_filled(r, cx + y, cy - x, thick, clr);
+    btprnt_draw_circ_filled(r, cx - y, cy - x, thick, clr);
+}
+
+void btprnt_draw_thickcirc(btprnt_region *r,
+                           int cx, int cy,
+                           int rad, int thick,
+                           int clr)
+{
+    int x;
+    int y;
+    int err;
+
+    x = 0;
+    y = rad;
+    err = 1 - rad;
+
+    circ_dots(r, cx, cy, x, y, clr, thick);
+
+    while (x &lt; y) {
+        x++;
+
+        if (err &lt; 0) {
+            err += 2 * x + 1;
+        } else {
+            y--;
+            err += 2 * (x - y) + 1;
+        }
+
+        circ_dots(r, cx, cy, x, y, clr, thick);
+    }
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_000_0283">prev</a> | <a href="/loom/btprnt">home</a> | <a href="/loom/wm_000_0314">next</a></p>
+</div>
+</body>
+</html>

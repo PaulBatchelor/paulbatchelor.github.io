@@ -213,9 +213,37 @@ non-zero value is an error.
     return err;
 }</pre></code>
 
-<h5>3.1.7. Resolve a UUID</h5>
+<h5>3.1.7. Get UUID from ergo ID</h5>
 
-<p><a id="wm_006_0070"></a><code>wwzet_uuid_resolve</code> smartly resolves a UUID from
+<p><a id="wm_006_0070"></a><code>wwzet_uuid_fromergo</code> will expand a UUID expressed in
+ergo format.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_fromergo(weewiki_d *ww,
+                        const char *ergo,
+                        int sz,
+                        wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_fromergo(weewiki_d *ww,
+                        const char *ergo,
+                        int sz,
+                        wwzet_uuid *uuid)
+{
+    char *partial;
+    int rc;
+
+    partial = calloc(1, sz + 1);
+
+    wwzet_ergo_to_hex(ergo, sz, partial);
+
+    rc = wwzet_uuid_expand(ww, partial, sz, uuid);
+
+    free(partial);
+
+    return rc;
+}</pre></code>
+
+<h5>3.1.8. Resolve a UUID</h5>
+
+<p><a id="wm_006_0076"></a><code>wwzet_uuid_resolve</code> smartly resolves a UUID from
 a string value. Will return a non-zero value on error.
 </p>
 <p>The default behavior of resolve is to expand a partial UUID.
@@ -251,6 +279,9 @@ of a chance of being unique.
     if (special_prefix) {
         rc = wwzet_uuid_fromval(ww, val, sz, uuid);
         if (rc) err = 1;
+    } else if (val[0] == 'g') {
+        rc = wwzet_uuid_fromergo(ww, val + 1, sz - 1, uuid);
+        if (rc != 1) err = 1;
     } else {
         rc = wwzet_uuid_expand(ww, val, sz, uuid);
         if (rc != 1) err = 1;
@@ -261,7 +292,7 @@ of a chance of being unique.
 
 <h4>3.2. Create Zet Entry</h4>
 
-<p><a id="wm_006_0076"></a><code>wwzet_entry</code> creates a generic zet entry given a message
+<p><a id="wm_006_0082"></a><code>wwzet_entry</code> creates a generic zet entry given a message
 and timestamps it based on the current system time.
 </p>
 <p>If <code>uuid</code> is not NULL, the generated UUID is saved here.
@@ -312,7 +343,7 @@ calling this function.
 
 <h4>3.3. Create Zet Entry (With Symbol)</h4>
 
-<p><a id="wm_006_0082"></a>The function <code>wwzet_entry_withsymbol</code> wraps around
+<p><a id="wm_006_0088"></a>The function <code>wwzet_entry_withsymbol</code> wraps around
 <code>wwzet_entry</code> to create a new timestamped entry and
 prepends it with a single-character symbol.
 </p>
@@ -345,7 +376,7 @@ prepends it with a single-character symbol.
 
 <h4>3.4. Insert an Entry</h4>
 
-<p><a id="wm_006_0088"></a>The function <code>wwzet_insert</code> will perform a low-level
+<p><a id="wm_006_0094"></a>The function <code>wwzet_insert</code> will perform a low-level
 insert command into the wikizet table. The timestamp,
 uuid, and value should already be generated or known.
 </p>
@@ -383,7 +414,7 @@ uuid, and value should already be generated or known.
 
 <h4>3.5. Create Zet Message</h4>
 
-<p><a id="wm_006_0094"></a>The function <code>wwzet_message</code> will create a
+<p><a id="wm_006_0100"></a>The function <code>wwzet_message</code> will create a
 timestamped entry with a message in the zet table
 with a new UUID.
 </p>
@@ -450,7 +481,7 @@ insert SQLite statement using the SQLite API.
 
 <h4>3.6. Create Zet Link</h4>
 
-<p><a id="wm_006_0101"></a>The function <code>wwzet_link</code> will link UUID A to
+<p><a id="wm_006_0107"></a>The function <code>wwzet_link</code> will link UUID A to
 UUID B.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_link(weewiki_d *ww, wwzet_uuid *a, wwzet_uuid *b);</pre></code>
@@ -472,7 +503,7 @@ with a '#'.
 
 <h4>3.7. Create Zet File</h4>
 
-<p><a id="wm_006_0108"></a>A file entry is created with <code>wwzet_file</code>.
+<p><a id="wm_006_0114"></a>A file entry is created with <code>wwzet_file</code>.
 </p>
 <p>An inserted file is not actually the file, but just
 a file path, prepended with a forward slash <code>/</code>.
@@ -495,7 +526,7 @@ Presumably, this would link to an entry in the SQLar table
 
 <h4>3.8. Create Zet Group</h4>
 
-<p><a id="wm_006_0114"></a>A group entry is created with <code>wwzet_group</code>.
+<p><a id="wm_006_0120"></a>A group entry is created with <code>wwzet_group</code>.
 </p>
 <p>Groups are used with the crate interface, and are used
 to link files to specific sqlar archives.
@@ -513,11 +544,127 @@ to link files to specific sqlar archives.
 {
     return wwzet_entry_withsymbol(ww, '@', filename, sz, uuid);
 }</pre></code>
+
+<h4>3.9. Ergo IDs</h4>
+
+<p><a id="wm_006_0126"></a>Ergonomic IDs, or Ergo IDs are a way of of representing
+UUIDs in a more typist-friendly QWERTY format. traditional
+representations of hex values are replaced by easy to
+access characters in the QWERTY format.
+</p>
+<p>So. What are the easy characters?
+</p>
+<p>The home row is easiest: asdfghjkl;
+</p>
+<p>The top row comes next: qwertyuiop
+</p>
+<p>The keys that do not require any extensions are the most
+ergonomically efficient. These include:
+</p>
+<p>home: asdfjkl;
+</p>
+<p>top: qweruiop
+</p>
+<p>The semi-colon ';' is a bit of an outlier. To limit things
+to only the alphabet, one could use 'h', which is familiar
+enough for vi-inclined individuals used to hjkl.
+</p>
+<p>So that leaves us with:
+</p>
+<p>home: asdfhjkl
+</p>
+<p>top: qweruoip
+</p>
+<p>treating the number system as left-to-right, home-to-top,
+we get:
+</p>
+<p>asdfhjklqweruiop
+</p>
+<p>0123456789abcdef
+</p>
+<p>Convert from a hex string to ergo ID with
+<code>wwzet_hex_to_ergo</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_hex_to_ergo(const char *hex, int sz, char *ergo);</pre></code>
+<p></p>
+<p>Converting to this ergo-id format is a pretty
+straightforward process. convert the ascii hex value to a
+number and send it to a lookup table which is just an array.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;hexergo_lookup&gt;&gt;
+void wwzet_hex_to_ergo(const char *hex, int sz, char *ergo)
+{
+    int i;
+
+    for (i = 0; i &lt; sz; i++) {
+        int pos;
+
+        pos = -1;
+        if (hex[i] &gt;= '0' && hex[i] &lt;= '9') {
+            pos = hex[i] - '0';
+        } else if (hex[i] &gt;= 'a' && hex[i] &lt;= 'f') {
+            pos = (hex[i] - 'a') + 10;
+        }
+
+        if (pos &gt;= 0) {
+            ergo[i] = hexergo[pos];
+        } else {
+            ergo[i] = hex[i];
+        }
+    }
+
+    ergo[sz] = '\0';
+}</pre></code>
+<div><b><i>&lt;&lt;hexergo_lookup&gt;&gt;=</i></b></div><pre><code>static const char *hexergo = "asdfhjklqweruiop";</pre></code>
+<p></p>
+<p>Convert from ergo to hex string with <code>wwzet_ergo_to_hex</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_ergo_to_hex(const char *ergo, int sz, char *hex);</pre></code>
+<p></p>
+<p>Converting from the ergo-id to the hex value is a little
+less straightforward.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;ergohex_lookup&gt;&gt;
+void wwzet_ergo_to_hex(const char *ergo, int sz, char *hex)
+{
+    int i;
+    for (i = 0; i &lt; sz; i++) {
+        if (ergo[i] &gt;= 'a' && ergo[i] &lt;= 'w') {
+            int pos = ergo[i] - 'a';
+            hex[i] = ergohex[pos];
+        } else {
+            hex[i] = ergo[i];
+        }
+    }
+}</pre></code>
+<p></p>
+<p>A lookup table will be produced by sorting the values in
+ascii order:
+</p>
+<p>adefhijklopqrsuw
+</p>
+<p>with the corresponding hex values:
+</p>
+<p>02a34d567ef8b1c9
+</p>
+<p>With '?' as filler:
+</p>
+<p>a??def?hijkl??opqrs?u?w
+</p>
+<p>or
+</p>
+<p>0??2a3?4d567??ef8b1?c?9
+</p>
+<br>
+<p>or ascii values 97-112. which means a lookup table of size
+23 with empty values.
+</p>
+<div><b><i>&lt;&lt;ergohex_lookup&gt;&gt;=</i></b></div><pre><code>static const char *ergohex = "0??2a3?4d567??ef8b1?c?9";</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_006_0004">prev</a> | <a href="/loom/weewiki_zet">home</a> | <a href="/loom/wm_006_0120">next</a></p>
+<a href="/loom/wm_006_0004">prev</a> | <a href="/loom/weewiki_zet">home</a> | <a href="/loom/wm_006_0150">next</a></p>
 </div>
 </body>
 </html>

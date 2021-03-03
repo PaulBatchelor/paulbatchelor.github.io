@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>4. Variables</h3>
+
+<p><a id="wm_006_0150"></a></p>
+
+<h4>4.1. Variables Overview</h4>
+
+<p><a id="wm_006_0151"></a>A variable type in zet is a thing that can be chaned over
+time. The format is "$key:value". The message starts with
+"$" to inidicate the type flag. The variable name "key" is
+inbetween the "$" and the ":". The remaining part of the
+message is the value, which can be treated like another zet
+value.
+</p>
+
+<h4>4.2. Create a New Variable</h4>
+
+<p><a id="wm_006_0153"></a>A variable must be explicitely created before it can be
+used. This is done to minimize typo-related errors. (At the
+time of writing, zet doesn't isn't great at removing or
+editing commands). <code>wwzet_var_new</code> will create a new
+variable <code>var</code> and tie it to a item with UUID <code>id</code>. The
+value will be set to be empty.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_var_new(weewiki_d *ww,
+                  wwzet_uuid *id,
+                  const char *var,
+                  int sz);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_var_new(weewiki_d *ww,
+                  wwzet_uuid *id,
+                  const char *var,
+                  int sz)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int err;
+    db = weewiki_db(ww);
+
+    err = 0;
+
+    sqlite3_prepare_v2(db,
+    "INSERT INTO wikizet(time, UUID, value) "
+    "SELECT datetime(), ?1, '$' || ?2 || ':' "
+    "WHERE NOT EXISTS (SELECT 1 from wikizet WHERE "
+    "UUID LIKE ?1 AND "
+    "VALUE like '$' || ?2 || ':%');",
+    -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, id-&gt;str, -1, NULL);
+    sqlite3_bind_text(stmt, 2, var, sz, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        err = 1;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return err;
+}</pre></code>
+
+<h4>4.3. Setting a Variable to be a Link</h4>
+
+<p><a id="wm_006_0159"></a>A variable can be set to link to another UUID with
+<code>wwzet_var_link</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_var_link(weewiki_d *ww,
+                   wwzet_uuid *id,
+                   const char *var, int sz,
+                   wwzet_uuid *ref);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_var_link(weewiki_d *ww,
+                   wwzet_uuid *id,
+                   const char *var, int sz,
+                   wwzet_uuid *ref)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int err;
+    db = weewiki_db(ww);
+
+    err = 0;
+
+    sqlite3_prepare_v2(db,
+    "UPDATE wikizet "
+    "SET time = datetime(), "
+    "value = '$' || ?1 || ':#' || ?2"
+    "WHERE (UUID is ?3 AND "
+    "value LIKE '$' || ?1 || ':%');",
+    -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, var, sz, NULL);
+    sqlite3_bind_text(stmt, 2, ref-&gt;str, -1, NULL);
+    sqlite3_bind_text(stmt, 3, id-&gt;str, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        err = 1;
+    }
+
+    if (sqlite3_changes(db) == 0) {
+        err = 1;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return err;
+}</pre></code>
+
+<h4>4.4. Setting a Variable to be a Message</h4>
+
+<p><a id="wm_006_0165"></a>A variable can be set to be a message with
+<code>wwzet_var_message</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_var_message(weewiki_d *ww,
+                      wwzet_uuid *id,
+                      const char *var, int vsz,
+                      const char *msg, int msz);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_var_message(weewiki_d *ww,
+                      wwzet_uuid *id,
+                      const char *var, int vsz,
+                      const char *msg, int msz)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int err;
+    db = weewiki_db(ww);
+
+    err = 0;
+
+    sqlite3_prepare_v2(db,
+    "UPDATE wikizet "
+    "SET time = datetime(), "
+    "value = '$' || ?1 || ':&gt;' || ?2"
+    "WHERE (UUID is ?3 AND "
+    "value LIKE '$' || ?1 || ':%');",
+    -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, var, vsz, NULL);
+    sqlite3_bind_text(stmt, 2, msg, msz, NULL);
+    sqlite3_bind_text(stmt, 3, id-&gt;str, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        err = 1;
+    }
+
+    if (sqlite3_changes(db) == 0) {
+        err = 1;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return err;
+}</pre></code>
+
+<h4>4.5. Touching A Variable</h4>
+
+<p><a id="wm_006_0171"></a><code>wwzet_var_touch</code> will touch a variable in a UUID, updating
+the timestamp to the present. Touch gets its name from the
+Unix command which is used in a similar way.
+</p>
+<p>If the variable can't be found or another error happens,
+a non-zero value will be returned.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_var_touch(weewiki_d *ww,
+                    wwzet_uuid *id,
+                    const char *var, int vsz);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_var_touch(weewiki_d *ww,
+                    wwzet_uuid *id,
+                    const char *var, int vsz)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int err;
+    db = weewiki_db(ww);
+
+    err = 0;
+
+    sqlite3_prepare_v2(db,
+    "UPDATE wikizet "
+    "SET time = datetime() "
+    "WHERE (UUID is ?2 AND "
+    "value LIKE '$' || ?1 || ':%');",
+    -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, var, vsz, NULL);
+    sqlite3_bind_text(stmt, 2, id-&gt;str, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        err = 1;
+    }
+
+    if (sqlite3_changes(db) == 0) {
+        err = 1;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return err;
+}</pre></code>
+
+<h4>4.6. Command Line Interface</h4>
+
+<p><a id="wm_006_0177"></a>Here are some command line operations, all under the
+subcommand "var"
+</p>
+
+<h5>4.6.1. Top Level</h5>
+
+<p><a id="wm_006_0179"></a>All variable subcommands get here.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int zet_var(weewiki_d *ww, int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int zet_var(weewiki_d *ww, int argc, char *argv[])
+{
+    argc--;
+    argv++;
+
+    if (argc &lt;= 0) {
+        fprintf(stderr, "Please enter a command.\n");
+        return 1;
+    }
+
+    if (!strcmp(argv[0], "new")) {
+        return p_varnew(ww, argc, argv);
+    } else if (!strcmp(argv[0], "link")) {
+        return p_varlink(ww, argc, argv);
+    } else if (!strcmp(argv[0], "list")) {
+        return p_varlist(ww, argc, argv);
+    } else if (!strcmp(argv[0], "set")) {
+        return p_varset(ww, argc, argv);
+    } else if (!strcmp(argv[0], "touch")) {
+        return p_vartouch(ww, argc, argv);
+    } else if (!strcmp(argv[0], "get")) {
+        return p_varget(ww, argc, argv);
+    } else {
+        fprintf(stderr, "Could not find command '%s'\n", argv[0]);
+    }
+    return 1;
+}</pre></code>
+
+<h5>4.6.2. New</h5>
+
+<p><a id="wm_006_0186"></a>usage: new uuid name
+</p>
+<p>creates a new variable called <code>name</code>. with a uuid <code>uuid</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_varnew(weewiki_d *ww, int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_varnew(weewiki_d *ww, int argc, char *argv[])
+{
+    int rc;
+    wwzet_uuid id;
+    const char *idstr;
+    const char *name;
+
+    if (argc &lt; 3) {
+        fprintf(stderr, "Usage: new UUID name\n");
+        return 1;
+    }
+
+    idstr = argv[1];
+    name = argv[2];
+
+    rc = wwzet_uuid_resolve(ww, idstr, strlen(idstr), &id);
+
+    if (rc) {
+        fprintf(stderr, "Could not resolve '%s'\n", idstr);
+        return 1;
+    }
+
+    rc = wwzet_var_new(ww, &id, name, strlen(name));
+
+    if (rc) {
+        fprintf(stderr,
+                "Issue with creating variable '%s'\n",
+                name);
+        return 1;
+    }
+
+    return 0;
+}</pre></code>
+
+<h5>4.6.3. Link</h5>
+
+<p><a id="wm_006_0192"></a>usage: link uuid name value
+</p>
+<p>sets a variable to link with an existing item. <code>value</code> can
+be a UUID, group, page, or anything else that the zet can
+resolve.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_varlink(weewiki_d *ww, int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_varlink(weewiki_d *ww, int argc, char *argv[])
+{
+    int rc;
+    wwzet_uuid id;
+    const char *idstr;
+    const char *name;
+    wwzet_uuid ref;
+    const char *refstr;
+
+    if (argc &lt; 4) {
+        fprintf(stderr, "Usage: link UUID name value\n");
+        return 1;
+    }
+
+    idstr = argv[1];
+    name = argv[2];
+    refstr = argv[3];
+
+    rc = wwzet_uuid_resolve(ww, idstr, strlen(idstr), &id);
+
+    if (rc) {
+        fprintf(stderr, "Could not resolve '%s'\n", idstr);
+        return 1;
+    }
+
+    rc = wwzet_uuid_resolve(ww, refstr, strlen(refstr), &ref);
+
+    if (rc) {
+        fprintf(stderr, "Could not resolve '%s'\n", refstr);
+        return 1;
+    }
+
+    rc = wwzet_var_link(ww, &id, name, strlen(name), &ref);
+
+    if (rc) {
+        fprintf(stderr,
+                "Issue linking variable '%s' (does it exist?)\n",
+                name);
+        return 1;
+    }
+
+    return 0;
+}</pre></code>
+
+<h5>4.6.4. List</h5>
+
+<p><a id="wm_006_0198"></a>usage: list name item
+</p>
+<p>List UUIDs with the variable <code>name</code> and item name <code>item</code>.
+For example, running <code>list state @TODO</code> would list all
+UUIDs with the variable state pointing to the TODO group.
+</p>
+<p>These will be ordered by timestamp in ascending order.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_varlist(weewiki_d *ww, int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_varlist(weewiki_d *ww, int argc, char *argv[])
+{
+    int rc;
+    const char *name;
+    wwzet_uuid ref;
+    const char *refstr;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+
+    if (argc &lt; 3) {
+        fprintf(stderr, "Usage: list name value\n");
+        return 1;
+    }
+
+    name = argv[1];
+    refstr = argv[2];
+
+    rc = wwzet_uuid_resolve(ww, refstr, strlen(refstr), &ref);
+
+    if (rc) {
+        fprintf(stderr, "Could not resolve '%s'\n", refstr);
+        return 1;
+    }
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+    "SELECT datetime(time, 'localtime'), UUID, value FROM wikizet "
+    "WHERE UUID in (SELECT UUID from wikizet "
+    "WHERE VALUE LIKE '$' || ?1 || ':#' || ?2 "
+    "ORDER by strftime(time) ASC);", -1, &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, name, -1, NULL);
+    sqlite3_bind_text(stmt, 2, ref.str, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        const char *t, *u, *v;
+
+        t = (const char *)sqlite3_column_text(stmt, 0);
+        u = (const char *)sqlite3_column_text(stmt, 1);
+        v = (const char *)sqlite3_column_text(stmt, 2);
+
+        printf("%s\t%s\t%s\n", (t == NULL ? "-" : t), u, v);
+
+        rc = sqlite3_step(stmt);
+    }
+
+
+    sqlite3_finalize(stmt);
+    return 0;
+}</pre></code>
+
+<h5>4.6.5. Set</h5>
+
+<p><a id="wm_006_0204"></a>usage: set uuid name value
+</p>
+<p>Sets the variable <code>name</code> to be <code>value</code>. Note that this
+implicitely sets the value type to be a message.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_varset(weewiki_d *ww, int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_varset(weewiki_d *ww, int argc, char *argv[])
+{
+    int rc;
+    wwzet_uuid id;
+    const char *idstr;
+    const char *name;
+    const char *msg;
+    char *line;
+
+    line = NULL;
+
+    if (argc &lt; 3) {
+        fprintf(stderr, "Usage: set UUID name value\n");
+        return 1;
+    }
+
+    idstr = argv[1];
+    name = argv[2];
+
+    if (argc == 4) {
+        msg = argv[3];
+    } else {
+        line = linenoise("set: ");
+        msg = line;
+    }
+
+    rc = wwzet_uuid_resolve(ww, idstr, strlen(idstr), &id);
+
+    if (rc) {
+        fprintf(stderr, "Could not resolve '%s'\n", idstr);
+        return 1;
+    }
+
+    rc = wwzet_var_message(ww, &id,
+                           name, strlen(name),
+                           msg, strlen(msg));
+
+    if (rc) {
+        fprintf(stderr,
+                "Issue setting variable '%s' (does it exist?)\n",
+                name);
+        return 1;
+    }
+
+
+    if (line != NULL) free(line);
+
+    return 0;
+}</pre></code>
+
+<h5>4.6.6. Get</h5>
+
+<p><a id="wm_006_0210"></a>usage: get uuid name
+</p>
+<p>gets the variable <code>name</code> associated with <code>uuid</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_varget(weewiki_d *ww, int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_varget(weewiki_d *ww, int argc, char *argv[])
+{
+    int rc;
+    wwzet_uuid id;
+    const char *idstr;
+    const char *name;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int e;
+
+    e = 0;
+
+    if (argc &lt; 2) {
+        fprintf(stderr, "Usage: get UUID name\n");
+        return 1;
+    }
+
+    idstr = argv[1];
+    name = argv[2];
+
+    rc = wwzet_uuid_resolve(ww, idstr, strlen(idstr), &id);
+
+    if (rc) {
+        fprintf(stderr, "Could not resolve '%s'\n", idstr);
+        return 1;
+    }
+
+
+    db = weewiki_db(ww);
+
+    rc = sqlite3_prepare_v2(db,
+                       "SELECT substr(value, length(?2) + 3) FROM wikizet "
+                       "WHERE UUID is ?1 "
+                       "AND value LIKE '$'||?2||':%' "
+                       "LIMIT 1 "
+                       ";", -1, &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, id.str, -1, NULL);
+    sqlite3_bind_text(stmt, 2, name, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr, "Could not find variable '%s'\n", name);
+        e = 1;
+    } else {
+        fwrite(sqlite3_column_text(stmt, 0), 1,
+               sqlite3_column_bytes(stmt, 0), stdout);
+        fflush(stdout);
+    }
+
+    sqlite3_finalize(stmt);
+
+    return e;
+}</pre></code>
+
+<h5>4.6.7. Touch</h5>
+
+<p><a id="wm_006_0216"></a>usage: touch uuid varname
+</p>
+<p>Update the timestamp of a variable to the present.
+Useful in programs like zetdo where lists are ordered
+chronologically.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_vartouch(weewiki_d *ww, int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_vartouch(weewiki_d *ww, int argc, char *argv[])
+{
+    int rc;
+    wwzet_uuid id;
+    const char *idstr;
+    const char *name;
+
+    if (argc &lt; 3) {
+        fprintf(stderr, "Usage: touch UUID varname\n");
+        return 1;
+    }
+
+    idstr = argv[1];
+    name = argv[2];
+
+    rc = wwzet_uuid_resolve(ww, idstr, strlen(idstr), &id);
+
+    if (rc) {
+        fprintf(stderr, "Could not resolve '%s'\n", idstr);
+        return 1;
+    }
+
+    rc = wwzet_var_touch(ww, &id, name, strlen(name));
+
+    if (rc) {
+        fprintf(stderr,
+                "Issue setting variable '%s' (does it exist?)\n",
+                name);
+        return 1;
+    }
+
+    return 0;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_006_0024">prev</a> | <a href="/loom/weewiki_zet">home</a> | <a href="/loom/wm_006_0222">next</a></p>
+</div>
+</body>
+</html>

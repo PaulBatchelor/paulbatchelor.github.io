@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>6. Text</h3>
+
+<p><a id="wm_000_0187"></a>Text is next most important thing after all the
+fundamentals. This can be broken up into levels.
+</p>
+
+<h4>6.1. Level 1: Drawing tiles from a map</h4>
+
+<p><a id="wm_000_0189"></a>The lowest layer involves drawing a single tile
+from a tile map stored in memory.
+</p>
+
+<h5>6.1.1. Top Level Draw Tile</h5>
+
+<p><a id="wm_000_0191"></a>The static function <code>draw_tile</code> will draw the tile using
+a specified <code>draw</code> callback, to allow for regular or
+wraparound drawing.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void draw_tile(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int mx, int my,
+                      int w, int h,
+                      int scale, int color,
+                      void (*draw)(btprnt_region*,int,int,int));</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void draw_tile(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int mx, int my,
+                      int w, int h,
+                      int scale, int color,
+                      void (*draw)(btprnt_region*,int,int,int))
+{
+    int startx;
+    int starty;
+    int x;
+    int y;
+    int c;
+
+    startx = mx * w;
+    starty = my * h;
+
+    for (y = 0; y &lt; h; y++) {
+        for (x = 0; x &lt; w; x++) {
+            c = btprnt_buf_read(map,
+                                startx + x,
+                                starty + y);
+            if (c) {
+                if (scale == 1) {
+                    draw(reg, xpos + x, ypos + y, color);
+                } else {
+                    int sx, sy;
+                    for (sy = 0; sy &lt; scale; sy++) {
+                        for (sx = 0; sx &lt; scale; sx++) {
+                            draw(reg,
+                                 xpos + x*scale + sx,
+                                 ypos + y*scale + sy,
+                                 color);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}</pre></code>
+
+<h5>6.1.2. Default Draw Tile</h5>
+
+<p><a id="wm_000_0198"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_tile(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int mx, int my,
+                      int w, int h,
+                      int scale, int color);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_tile(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int mx, int my,
+                      int w, int h,
+                      int scale, int color)
+{
+    draw_tile(reg, map,
+              xpos, ypos,
+              mx, my,
+              w, h,
+              scale, color,
+              btprnt_region_draw);
+}</pre></code>
+
+<h5>6.1.3. Draw Tile with Wraparound</h5>
+
+<p><a id="wm_000_0203"></a>This draws a tile in a region, but using wraparound.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_tile_wrap(btprnt_region *reg,
+                           btprnt_buf *map,
+                           int xpos, int ypos,
+                           int mx, int my,
+                           int w, int h,
+                           int scale, int color);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_tile_wrap(btprnt_region *reg,
+                           btprnt_buf *map,
+                           int xpos, int ypos,
+                           int mx, int my,
+                           int w, int h,
+                           int scale, int color)
+{
+    draw_tile(reg, map,
+              xpos, ypos,
+              mx, my,
+              w, h,
+              scale, color,
+              btprnt_region_draw_wrap);
+}</pre></code>
+
+<h4>6.2. Level 2: Drawing a character</h4>
+
+<p><a id="wm_000_0209"></a>To draw the right tile, we need to be be able to match
+an ASCII character to the position on the map. Right now,
+the layout for the map matches that of many of the C64
+tileset dumps found online. More details on that later.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_char(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int w, int h,
+                      char c, int scale, int color);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_char(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int w, int h,
+                      char c, int scale, int color)
+{
+    int gx, gy;
+    char o;
+
+    o = c - ' '; /* start at 0 */
+
+    gx = o % (map-&gt;stride);
+    gy = o / (map-&gt;stride);
+
+    btprnt_draw_tile(reg, map,
+                     xpos, ypos,
+                     gx, gy,
+                     w, h,
+                     scale, color);
+}</pre></code>
+<p></p>
+<p><code>btprnt_draw_char_wrap</code> can do the same thing, but with
+wrapping.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_char_wrap(btprnt_region *reg,
+                           btprnt_buf *map,
+                           int xpos, int ypos,
+                           int w, int h,
+                           char c, int scale, int color);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_char_wrap(btprnt_region *reg,
+                           btprnt_buf *map,
+                           int xpos, int ypos,
+                           int w, int h,
+                           char c, int scale, int color)
+{
+    int gx, gy;
+    char o;
+
+    o = c - ' '; /* start at 0 */
+
+    gx = o % (map-&gt;stride);
+    gy = o / (map-&gt;stride);
+
+    btprnt_draw_tile_wrap(reg, map,
+                          xpos, ypos,
+                          gx, gy,
+                          w, h,
+                          scale, color);
+}</pre></code>
+
+<h4>6.3. Level 3: Drawing a string</h4>
+
+<p><a id="wm_000_0220"></a>From there, a string characters can be drawn onto a
+region.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_text(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int w, int h,
+                      const char *str);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_text(btprnt_region *reg,
+                      btprnt_buf *map,
+                      int xpos, int ypos,
+                      int w, int h,
+                      const char *str)
+{
+    int len;
+    int n;
+    len = strlen(str);
+
+    for (n = 0; n &lt; len; n++) {
+        btprnt_draw_char(reg, map,
+                         xpos + w*n, ypos,
+                         w, h,
+                         str[n], 1, 1);
+    }
+}</pre></code>
+<p></p>
+<p><code>btprnt_draw_scrolling_text</code> will draw text with bounds
+wrapping.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_scrolling_text(btprnt_region *reg,
+                                btprnt_buf *map,
+                                int xpos, int ypos,
+                                int w, int h,
+                                const char *str);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_scrolling_text(btprnt_region *reg,
+                                btprnt_buf *map,
+                                int xpos, int ypos,
+                                int w, int h,
+                                const char *str)
+{
+    int len;
+    int n;
+    len = strlen(str);
+
+    for (n = 0; n &lt; len; n++) {
+        btprnt_draw_char_wrap(reg, map,
+                              xpos + w*n, ypos,
+                              w, h,
+                              str[n], 1, 1);
+    }
+}</pre></code>
+
+<h4>6.4. Level 4: Text wrapping</h4>
+
+<p><a id="wm_000_0231"></a>Since the dimensions of the textbox are known, some basic
+text wrapping can be implemented.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_wraptext(btprnt_region *reg,
+                          btprnt_buf *map,
+                          int xpos, int ypos,
+                          int w, int h,
+                          const char *str);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_wraptext(btprnt_region *reg,
+                          btprnt_buf *map,
+                          int xpos, int ypos,
+                          int w, int h,
+                          const char *str)
+{
+    int len;
+    int n;
+    int curpos;
+    int line;
+    int c;
+    len = strlen(str);
+    line = 0;
+    curpos = 0;
+    c = 0;
+
+    for (n = 0; n &lt; len; n++) {
+        curpos = xpos + w*c;
+
+        if (curpos &gt;= reg-&gt;w) {
+            curpos = xpos;
+            line++;
+            c = 0;
+        }
+
+        btprnt_draw_char(reg, map,
+                         curpos, ypos + line*h,
+                         w, h,
+                         str[n], 1, 1);
+        c++;
+    }
+}</pre></code>
+
+<h4>6.5. Level 5: Word Wrapping</h4>
+
+<p><a id="wm_000_0237"></a>With a bit more sophistication, some basic word wrapping can
+done by writing the text chunks between spaces. If a word is
+larger than what it left, it will know to go to the next
+line. If the word is larger than how many characters there
+are on a line, it will do the best it can to break to
+wrap the text up.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_textbox(btprnt_region *reg,
+                         btprnt_buf *map,
+                         int xpos, int ypos,
+                         int w, int h,
+                         const char *str,
+                         int scale,
+                         int color);</pre></code>
+<p></p>
+<p>This function works by counting characters until it reaches
+a space. Once it finds that space, it will write that chunk
+of letters up to (and including) that space. Some arithmetic
+will done. If it happens that the number of characters
+exceeds the bounds of the current line position, it will
+start a new line. (Space needs to be included with this
+count so there aren't any trailing spaces at the end of a
+line.) If it happens that the number of characters is
+greater than the length of the line, it won't matter
+if a newline happens, and the word will be split up as
+best as it can.
+</p>
+<p>To be clear: a newline <b>shouldn't</b> happen if the number
+of characters in a word is longer than the width. A weird
+edge case I ran into involved having the first word in
+the textbox be long. The original code added a empty
+line on the first line, which looked weird.
+</p>
+<p>When the text has reached the end, it has to print out
+the last word, if there is any. This process is pretty
+much indentical to what happens in the for loop, except
+that some of the variables updated don't matter.
+</p>
+<p>For now, I literally copy-pasted this twice because I'm
+tired and lazy. I may come back at some point and do
+something more elegant when I have the time.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_textbox(btprnt_region *reg,
+                         btprnt_buf *map,
+                         int xpos, int ypos,
+                         int w, int h,
+                         const char *str,
+                         int scale,
+                         int color)
+{
+    int len;
+    int n;
+    int start;
+    int nchars;
+    int c;
+    int line;
+    len = strlen(str);
+
+    start = 0;
+    nchars = 0;
+    c = 0;
+    line = 0;
+    for (n = 0; n &lt; len; n++) {
+        nchars++;
+        if (str[n] == ' ' || str[n] == '\n') {
+            int wordlen;
+            int off;
+            int i;
+            int curpos;
+            char x;
+
+            wordlen = nchars*w*scale;
+            off = xpos + c*w*scale;
+
+            if ((off + wordlen) &gt; reg-&gt;w) {
+                /* nested if is a clumsy, but it works */
+                if (wordlen &lt; reg-&gt;w) {
+                    line++;
+                    c = 0;
+                }
+            }
+
+            for (i = 0; i &lt; nchars; i++) {
+                curpos = xpos + c*w*scale;
+
+                x = str[start + i];
+
+                if ((curpos + w*scale) &gt; reg-&gt;w || x == '\n') {
+                    curpos = xpos;
+                    line++;
+                    c = 0;
+                }
+
+
+                if (x != '\n') {
+                    btprnt_draw_char(reg, map,
+                                     curpos,
+                                     ypos + line*h*scale,
+                                     w, h, x, scale, color);
+                    c++;
+                }
+            }
+
+            start = n + 1;
+            nchars = 0;
+        }
+    }
+
+    if (nchars &gt; 0) {
+        /* duplicate code alert ring ring ring */
+        int wordlen;
+        int off;
+        int i;
+        int curpos;
+
+        wordlen = nchars * w * scale;
+        off = xpos + c*w*scale;
+
+        if ((off + wordlen) &gt; reg-&gt;w) {
+            line++;
+            c = 0;
+        }
+
+        for (i = 0; i &lt; nchars; i++) {
+            curpos = xpos + c*w*scale;
+
+            if ((curpos + w*scale) &gt; reg-&gt;w) {
+                curpos = xpos;
+                line++;
+                c = 0;
+            }
+
+            btprnt_draw_char(reg, map,
+                             curpos, ypos + line*h*scale,
+                             w, h,
+                             str[start + i], scale, color);
+            c++;
+        }
+
+        start = n + 1;
+        nchars = 0;
+    }
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_000_0166">prev</a> | <a href="/loom/btprnt">home</a> | <a href="/loom/wm_000_0244">next</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h3>5. Command Line Operations</h3>
+
+<p><a id="wm_006_0222"></a></p>
+
+<h4>5.1. top-level processor</h4>
+
+<p><a id="wm_006_0223"></a>The entry point for the top-level CLI is done with
+<code>ww_zet</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int ww_zet(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int ww_zet(int argc, char *argv[])
+{
+    if (argc &lt;= 1) {
+        fprintf(stderr, "Zet: supply a command\n");
+        return 1;
+    }
+
+    argv++; argc--;
+
+    if (!strcmp(argv[0], "say")) {
+        return p_say(argc, argv);
+    } else if (!strcmp(argv[0], "export")) {
+        return p_export(argc, argv);
+    } else if (!strcmp(argv[0], "import")) {
+        return p_import(argc, argv);
+    } else if (!strcmp(argv[0], "rebuild")) {
+        return p_rebuild(argc, argv);
+    } else if (!strcmp(argv[0], "groups")) {
+        return p_groups(argc, argv);
+    } else if (!strcmp(argv[0], "link")) {
+        return p_link(argc, argv);
+    } else if (!strcmp(argv[0], "search")) {
+        return p_search(argc, argv);
+    } else if (!strcmp(argv[0], "mkgroup")) {
+        return p_mkgroup(argc, argv);
+    } else if (!strcmp(argv[0], "pages")) {
+        return p_pages(argc, argv);
+    } else if (!strcmp(argv[0], "mkpage")) {
+        return p_mkpage(argc, argv);
+    } else if (!strcmp(argv[0], "resolve")) {
+        return p_resolve(argc, argv);
+    } else if (!strcmp(argv[0], "shuffle")) {
+        return p_shuffle(argc, argv);
+    } else if (!strcmp(argv[0], "var")) {
+        return p_var(argc, argv);
+    } else if (!strcmp(argv[0], "rawsay")) {
+        return p_rawsay(argc, argv);
+    } else if (!strcmp(argv[0], "tags")) {
+        return p_tags(argc, argv);
+    } else if (!strcmp(argv[0], "entry")) {
+        return p_entry(argc, argv);
+    } else if (!strcmp(argv[0], "ergoify")) {
+        return p_ergoify(argc, argv);
+    } else if (!strcmp(argv[0], "uuid")) {
+        return p_uuid(argc, argv);
+    } else if (!strcmp(argv[0], "ergo")) {
+        return p_ergo(argc, argv);
+    } else {
+        fprintf(stderr, "Could not find command '%s'\n", argv[0]);
+    }
+
+    return 1;
+}</pre></code>
+
+<h4>5.2. say</h4>
+
+<p><a id="wm_006_0229"></a>creates a new UUID with a timestamped message. Any arguments
+provided are expected to be partial UUIDs of pre-existing
+zet items.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_say(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;do_say&gt;&gt;=</i></b></div><pre><code>static int do_say(int argc, char *argv[], int use_linenoise)
+{
+    char *line;
+
+    if (use_linenoise) line = linenoise("say: ");
+    else {
+        line = argv[1];
+        argc--;
+        argv++;
+    }
+
+    if (line != NULL) {
+        weewiki_d *ww;
+        wwzet_uuid uuid;
+        int rc;
+
+        ww = malloc(weewiki_sizeof());
+        weewiki_init(ww);
+        weewiki_open(ww, weewiki_dbname_get());
+
+        wwzet_uuid_rng_init();
+        wwzet_uuid_init(&uuid);
+        rc = wwzet_message(ww, line, strlen(line), &uuid);
+
+        if (!rc) printf("%s\n", uuid.str);
+
+        if (argc &gt; 1) {
+            wwzet_uuid res;
+            int p;
+
+            for (p = 1; p &lt; argc; p++) {
+                const char *part;
+                part = argv[p];
+
+                wwzet_uuid_init(&res);
+                rc = wwzet_uuid_resolve(ww,
+                                        part,
+                                        strlen(part),
+                                        &res);
+                if (rc) {
+                    fprintf(stderr, "Could not resolve '%s'\n", part);
+                } else {
+                    wwzet_link(ww, &uuid, &res);
+                }
+            }
+        }
+
+        weewiki_close(ww);
+        weewiki_clean(ww);
+        if (use_linenoise) free(line);
+        free(ww);
+        return 0;
+    }
+
+    return 1;
+}</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;do_say&gt;&gt;
+static int p_say(int argc, char *argv[])
+{
+    return do_say(argc, argv, 1);
+}</pre></code>
+
+<h4>5.3. rawsay</h4>
+
+<p><a id="wm_006_0240"></a>like say, but read the message as the first argument.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_rawsay(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_rawsay(int argc, char *argv[])
+{
+    return do_say(argc, argv, 0);
+}</pre></code>
+
+<h4>5.4. export</h4>
+
+<p><a id="wm_006_0246"></a>Export. This will dump all the zet pairs as list of
+tab-separated values to stdout. The idea would then be that
+this information could then be processed further by
+some external program.
+</p>
+
+<h5>5.4.1. Top level Function</h5>
+
+<p><a id="wm_006_0248"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_export(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;export_group&gt;&gt;
+&lt;&lt;export_all&gt;&gt;
+static int p_export(int argc, char *argv[])
+{
+    if (argc == 1) return export_all();
+    return export_group(argv[1]);
+}</pre></code>
+
+<h5>5.4.2. Export All</h5>
+
+<p><a id="wm_006_0257"></a>When no extra arguments are given, all of the zet is
+exported.
+</p>
+<div><b><i>&lt;&lt;export_all&gt;&gt;=</i></b></div><pre><code>static int export_all(void)
+{
+    weewiki_d *ww;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT time,UUID,value from wikizet;",
+                       -1,
+                       &stmt,
+                       NULL);
+
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        const char *t = (const char *)sqlite3_column_text(stmt, 0);
+        printf("%s\t%s\t%s\n",
+               (t == NULL) ? "-" : t,
+               sqlite3_column_text(stmt, 1),
+               sqlite3_column_text(stmt, 2));
+        rc = sqlite3_step(stmt);
+    }
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return 0;
+}</pre></code>
+
+<h5>5.4.3. Group Export</h5>
+
+<p><a id="wm_006_0262"></a>For larger zettelkastens (such as managing a sample
+library via the crate interface), it makes more sense to
+export things by group rather than all at once. A group can
+be exported by supplying it as an optional argument on the
+commandline. Any zet items linked to that group will be
+exported, including the group entry itself.
+</p>
+<p>To begin group export, the UUID of the groupname must be
+found via SQL query. This entry will be the first thing
+to be exported.
+</p>
+<p>In order to look for a groupname, an <code>@</code> must be prepended
+to the beginning of the string.
+</p>
+<div><b><i>&lt;&lt;find_group_uuid&gt;&gt;=</i></b></div><pre><code>{
+    sqlite3_stmt *stmt;
+    char *g;
+    const char *idstr;
+    const char *t;
+    const char *v;
+    int rc;
+    int i;
+
+    g = calloc(1, strlen(group) + 2);
+
+    g[0] = '@';
+
+    strcpy(&g[1], group);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT uuid, time, value FROM wikizet "
+                       "WHERE value LIKE ?1;", -1,
+                       &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, g, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr, "Could not find group %s\n", group);
+        free(g);
+        sqlite3_finalize(stmt);
+        err = 1;
+        goto cleanup;
+    }
+
+    wwzet_uuid_init(&groupid);
+
+    idstr = (const char *)sqlite3_column_text(stmt, 0);
+    t = (const char *)sqlite3_column_text(stmt, 1);
+    v = (const char *)sqlite3_column_text(stmt, 2);
+
+    printf("%s\t%s\t%s\n", t, idstr, v);
+
+    for (i = 0; i &lt; 36; i++) {
+        groupid.str[i] = idstr[i];
+    }
+
+    sqlite3_finalize(stmt);
+    free(g);
+}</pre></code>
+<p></p>
+<p>From there, another query happens where every reference to
+that UUID is found. This requires converting the UUID to an
+address, done by prepending a <code>#</code> to it.
+</p>
+<p>Update: this query-within-a-query ended up being massively
+slow, so I figured out how to do the same thing in a
+subquery.
+</p>
+<div><b><i>&lt;&lt;find_references&gt;&gt;=</i></b></div><pre><code>{
+    char *ref;
+    sqlite3_stmt *stmt;
+    int rc;
+    int i;
+
+    ref = calloc(1, 38);
+
+    ref[0] = '#';
+
+    for (i = 0; i &lt; 36; i++) {
+        ref[i + 1] = groupid.str[i];
+    }
+
+    sqlite3_prepare_v2(db,
+                       "SELECT time, UUID, value FROM wikizet "
+                       "WHERE UUID IN ("
+                       "SELECT UUID "
+                       "FROM wikizet "
+                       "WHERE value LIKE ?1);", -1,
+                       &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, ref, -1, NULL);
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        const char *t, *v, *id;
+        t = (const char *)sqlite3_column_text(stmt, 0);
+        id = (const char *)sqlite3_column_text(stmt, 1);
+        v = (const char *)sqlite3_column_text(stmt, 2);
+        printf("%s\t%s\t%s\n",
+               (t == NULL) ? "-" : t,
+               id,
+               v);
+        rc = sqlite3_step(stmt);
+    }
+
+    sqlite3_finalize(stmt);
+    free(ref);
+}</pre></code>
+<p></p>
+<p>For every row that shows up, query item that has that UUID,
+and export. Included in this should be the link to the
+group, so this link is implicitly exported along with
+everything else.
+</p>
+<div><b><i>&lt;&lt;export_group&gt;&gt;=</i></b></div><pre><code>static int export_group(const char *group)
+{
+    wwzet_uuid groupid;
+    weewiki_d *ww;
+    sqlite3 *db;
+    int err;
+
+    err = 0;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    db = weewiki_db(ww);
+
+&lt;&lt;find_group_uuid&gt;&gt;
+&lt;&lt;find_references&gt;&gt;
+
+    cleanup:
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return err;
+}</pre></code>
+
+<h4>5.5. import</h4>
+
+<p><a id="wm_006_0279"></a>Import. Imports a list of tab-separated pairs into the zet
+table.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_import(int argc, char *argv[]);</pre></code>
+<p></p>
+<p>This import is very generalized, and will parse any
+3-column TSV file without validation. It is assumed that
+the input comes from a previous export.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void import_line(weewiki_d *ww, const char *line, int sz)
+{
+    int pos;
+    int i;
+    const char *val[3];
+    int vlen[3];
+    int count;
+
+
+    sz--; /* chomp line break */
+
+    for (i = 0; i &lt; 3; i++) {
+        val[i] = NULL;
+        vlen[i] = 0;
+    }
+
+    pos = 0;
+    val[pos] = &line[0];
+    count = 1;
+
+    for (i = 0; i &lt; sz; i++) {
+        if (line[i] == '\t') {
+            vlen[pos] = count - 1;
+            val[pos + 1] = &line[i + 1];
+            pos++;
+            count = 0;
+            if (pos &gt;= 3) break;
+        }
+        count++;
+    }
+
+    /* wrap-up, address last count, minus linebreak */
+    vlen[2] = count - 1;
+
+    /* set timestamp to NULL if input is '-' */
+
+    if (*val[0] == '-') {
+        val[0] = NULL;
+        vlen[0] = 1;
+    }
+
+    wwzet_insert(ww,
+                 val[0], vlen[0],
+                 val[1], vlen[1],
+                 val[2], vlen[2]);
+}
+
+static int import_values(weewiki_d *ww)
+{
+    FILE *fp;
+    sqlite3 *db;
+    int err;
+    char *buf;
+    int sz;
+    char c;
+
+    fp = stdin;
+
+    err = 0;
+
+    db = weewiki_db(ww);
+    sqlite3_exec(db, "BEGIN;\n", NULL, NULL, NULL);
+    buf = calloc(1, 1024);
+    sz = 0;
+
+    while (1) {
+        c = fgetc(fp);
+        if (feof(fp)) break;
+        buf[sz] = c;
+        sz++;
+
+        if (sz == 1023) {
+            fprintf(stderr, "import buffer size too small\n");
+            err = 1;
+            goto clean;
+        }
+
+        if (c == '\n') {
+            import_line(ww, buf, sz);
+            sz = 0;
+        }
+    }
+
+    sqlite3_exec(db, "COMMIT;\n", NULL, NULL, NULL);
+
+    clean:
+        free(buf);
+        return err;
+}
+
+static int p_import(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int rc;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    rc = import_values(ww);
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return rc;
+}</pre></code>
+
+<h4>5.6. rebuild</h4>
+
+<p><a id="wm_006_0286"></a><code>rebuild</code> is similar to <code>import</code>, except that the operation
+replaces the existing contents in the zet.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_rebuild(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_rebuild(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int rc;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    sqlite3_exec(weewiki_db(ww),
+                 "DELETE FROM wikizet WHERE 1;\n",
+                 NULL, NULL, NULL);
+
+    rc = import_values(ww);
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return rc;
+}</pre></code>
+
+<h4>5.7. link</h4>
+
+<p><a id="wm_006_0292"></a>Link. Link item A to item B. A new zet pair will be made
+with the A UUID value and the B reference. A and B can be
+partial UUID values.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_link(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_link(int argc, char *argv[])
+{
+    int err;
+    weewiki_d *ww;
+    wwzet_uuid a, b;
+    int rc;
+
+    err = 0;
+
+    if (argc &lt;= 2) {
+        fprintf(stderr, "Usage: %s UUIDA UUIDB\n", argv[0]);
+        return 1;
+    }
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    rc = wwzet_uuid_resolve(ww, argv[1], strlen(argv[1]), &a);
+
+    if (rc) {
+        fprintf(stderr,
+                "Could not resolve '%s'\n", argv[1]);
+        err = 1;
+        goto clean;
+    }
+
+    rc = wwzet_uuid_resolve(ww, argv[2], strlen(argv[2]), &b);
+
+    if (rc) {
+        fprintf(stderr,
+                "Could not resolve '%s'\n", argv[2]);
+        err = 1;
+        goto clean;
+    }
+
+    wwzet_link(ww, &a, &b);
+
+    clean:
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+
+    return err;
+}</pre></code>
+
+<h4>5.8. search</h4>
+
+<p><a id="wm_006_0298"></a>Performs full-text search on the zet table.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_search(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_search(int argc, char *argv[])
+{
+    int err;
+    weewiki_d *ww;
+    int rc;
+    sqlite3_stmt *stmt;
+
+    err = 0;
+
+    if (argc &lt; 2) {
+        fprintf(stderr, "Usage: %s keyword\n", argv[0]);
+        return 1;
+    }
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    sqlite3_prepare_v2(weewiki_db(ww),
+                       "SELECT time, UUID, value FROM wikizet "
+                       "WHERE value MATCH ?1;", -1,
+                       &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, argv[1], -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        const char *t, *i, *v;
+
+        t = (const char *) sqlite3_column_text(stmt, 0);
+        i = (const char *) sqlite3_column_text(stmt, 1);
+        v = (const char *) sqlite3_column_text(stmt, 2);
+
+        printf("%s\t%s\t%s\n", t, i, v);
+        rc = sqlite3_step(stmt);
+    }
+
+    sqlite3_finalize(stmt);
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+
+    return err;
+}</pre></code>
+
+<h4>5.9. mkgroup</h4>
+
+<p><a id="wm_006_0304"></a>makes a new group.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_mkgroup(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_mkgroup(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    wwzet_uuid uuid;
+
+    if (argc &lt; 2) {
+        fprintf(stderr, "Usage: %s group\n", argv[0]);
+        return 1;
+    }
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    wwzet_uuid_rng_init();
+    wwzet_uuid_init(&uuid);
+
+    wwzet_entry_withsymbol(ww,
+                           '@',
+                           argv[1],
+                           strlen(argv[1]),
+                           &uuid);
+    printf("%s\n", uuid.str);
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return 0;
+}</pre></code>
+
+<h4>5.10. mkpage</h4>
+
+<p><a id="wm_006_0310"></a>Creates an entry linking to an existing weewiki page.
+</p>
+<p>This will check if the page exists first before creating.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_mkpage(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_mkpage(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    wwzet_uuid uuid;
+    int rc;
+    const char *page;
+    int err;
+
+    if (argc &lt; 2) {
+        fprintf(stderr, "Usage: %s page\n", argv[0]);
+        return 1;
+    }
+
+    err = 0;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    page = argv[1];
+
+    rc = weewiki_exists(ww, page);
+
+    if (!rc) {
+        fprintf(stderr, "Could not find page '%s'\n", page);
+        err = 1;
+        goto cleanup;
+    }
+
+    wwzet_uuid_rng_init();
+    wwzet_uuid_init(&uuid);
+
+    wwzet_entry_withsymbol(ww,
+                           '!',
+                           page,
+                           strlen(page),
+                           &uuid);
+
+    printf("%s\n", uuid.str);
+
+    cleanup:
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return err;
+}</pre></code>
+
+<h4>5.11. pages</h4>
+
+<p><a id="wm_006_0316"></a>prints list of pages and their UUIDs.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_pages(int argc, char *argv[]);</pre></code>
+<p></p>
+<p><code>TODO</code>: maybe refactor this functionality because it's
+virtually identical to <code>p_groups</code> minus one character?
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_pages(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int rc;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT uuid, value from wikizet "
+                       "where value like '!%'",
+                       -1, &stmt, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        const char *uuid;
+        const char *value;
+
+        uuid = (const char *)sqlite3_column_text(stmt, 0);
+        value = (const char *)sqlite3_column_text(stmt, 1);
+        printf("%s\t%s\n", uuid, value + 1);
+        rc = sqlite3_step(stmt);
+    }
+
+    sqlite3_finalize(stmt);
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return rc;
+}</pre></code>
+
+<h4>5.12. resolve</h4>
+
+<p><a id="wm_006_0323"></a><code>resolve</code> will resolve input argument(s) and print the
+UUID(s).
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_resolve(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_resolve(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int err;
+    int i;
+    wwzet_uuid id;
+
+    err = 0;
+
+    if (argc == 1) {
+        fprintf(stderr,
+            "Usage: %s str1 str2 ... strN\n", argv[0]);
+        return 1;
+    }
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    for (i = 1; i &lt; argc; i++) {
+        err = wwzet_uuid_resolve(ww,
+                                 argv[i],
+                                 strlen(argv[i]),
+                                 &id);
+        if (err) {
+            fprintf(stderr,
+                    "Could not resolve '%s'\n",
+                    argv[i]);
+            break;
+        }
+
+        printf("%s\n", id.str);
+    }
+
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+
+    return err;
+}</pre></code>
+
+<h4>5.13. shuffle</h4>
+
+<p><a id="wm_006_0329"></a>Prints N random zet entries given a pattern. Intended to
+be used to find random crate files for sample curation
+excersizes.
+</p>
+<p>An optional argument provided is (presumably) a group to
+ignore. It works by resolving the pattern and getting the
+UUID, and ignore all items that link to that UUID.
+</p>
+<p>This is intended to be used for sample curation
+and exploration. Samples already auditioned and would be
+added to a "listened to" group, which allow randomly chosen
+samples to be fresh.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_shuffle(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_shuffle(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int err;
+    int N;
+    const char *pat;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    err = 0;
+
+    if (argc &lt; 3) {
+        fprintf(stderr,
+            "Usage: %s N pattern [ignore]\n", argv[0]);
+        return 1;
+    }
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    N = atoi(argv[1]);
+    pat = argv[2];
+
+    db = weewiki_db(ww);
+    stmt = NULL;
+
+    if (argc == 3) {
+        sqlite3_prepare_v2(db,
+                        "SELECT time, UUID, value "
+                        "FROM wikizet "
+                        "WHERE value like ?1 "
+                        "ORDER BY RANDOM() "
+                        "LIMIT ?2;", -1,
+                        &stmt, NULL);
+        sqlite3_bind_text(stmt, 1, pat, -1, NULL);
+        sqlite3_bind_int(stmt, 2, N);
+    } else { /* use ignore pattern */
+        wwzet_uuid uuid;
+
+        rc = wwzet_uuid_resolve(ww,
+                                argv[3], strlen(argv[3]),
+                                &uuid);
+
+        if (rc) {
+            fprintf(stderr, "Could not resolve '%s'\n", argv[3]);
+            err = 1;
+            goto cleanup;
+        }
+
+        sqlite3_prepare_v2(db,
+                        "SELECT time, UUID, value "
+                        "FROM wikizet "
+                        "WHERE UUID in (SELECT UUID from wikizet "
+                        "WHERE value NOT LIKE '#' || ?3) "
+                        "AND value LIKE ?1 "
+                        "ORDER BY RANDOM() "
+                        "LIMIT ?2;", -1,
+                        &stmt, NULL);
+        sqlite3_bind_text(stmt, 1, pat, -1, NULL);
+        sqlite3_bind_int(stmt, 2, N);
+        sqlite3_bind_text(stmt, 3, uuid.str, -1, NULL);
+    }
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        const char *t;
+        const char *u;
+        const char *v;
+
+        t = (const char *)sqlite3_column_text(stmt, 0);
+        u = (const char *)sqlite3_column_text(stmt, 1);
+        v = (const char *)sqlite3_column_text(stmt, 2);
+
+        printf("%s\t%s\t%s\n", (t == NULL ? "-" : t), u, v);
+
+        rc = sqlite3_step(stmt);
+    }
+
+    cleanup:
+    sqlite3_finalize(stmt);
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+
+    return err;
+}</pre></code>
+
+<h4>5.14. groups</h4>
+
+<p><a id="wm_006_0335"></a>prints list of groups and their UUIDs.
+</p>
+<p>If an additional argument is provided, it will try to
+resolve that to a UUID then list all the groups it
+belongs to.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_groups(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_groups(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int rc;
+    sqlite3 *db;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    db = weewiki_db(ww);
+    rc = 0;
+
+    if (argc &lt;= 1) {
+        sqlite3_stmt *stmt;
+
+        sqlite3_prepare_v2(db,
+                        "SELECT uuid, value from wikizet "
+                        "where value like '@%'",
+                        -1, &stmt, NULL);
+
+        rc = sqlite3_step(stmt);
+
+        while (rc == SQLITE_ROW) {
+            const char *uuid;
+            const char *value;
+
+            uuid = (const char *)sqlite3_column_text(stmt, 0);
+            value = (const char *)sqlite3_column_text(stmt, 1);
+            printf("%s\t%s\n", uuid, value + 1);
+            rc = sqlite3_step(stmt);
+        }
+        sqlite3_finalize(stmt);
+    } else {
+        wwzet_uuid id;
+        sqlite3_stmt *stmt;
+
+        rc = wwzet_uuid_resolve(ww,
+                                argv[1],
+                                strlen(argv[1]),
+                                &id);
+
+        if (rc) {
+            fprintf(stderr,
+                    "Could not resolve '%s'\n",
+                    argv[1]);
+            goto clean;
+        }
+
+        sqlite3_prepare_v2(db,
+                           "SELECT UUID, LTRIM(value, '@') FROM wikizet "
+                           "WHERE UUID in "
+                           "(SELECT LTRIM(value, \"#\") "
+                           "FROM wikizet WHERE UUID in "
+                           "(SELECT UUID FROM wikizet WHERE "
+                           "UUID like ?1) AND "
+                           "VALUE like \"#%\") "
+                           "AND value like \"@%\";",
+                           -1,
+                           &stmt, NULL);
+        sqlite3_bind_text(stmt, 1, id.str, -1, NULL);
+
+        rc = sqlite3_step(stmt);
+
+        while (rc == SQLITE_ROW) {
+            const char *u, *v;
+
+            u = (const char *)sqlite3_column_text(stmt, 0);
+            v = (const char *)sqlite3_column_text(stmt, 1);
+
+            printf("%s\t%s\n", u, v);
+
+            rc = sqlite3_step(stmt);
+        }
+    }
+
+    clean:
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return rc;
+}</pre></code>
+
+<h4>5.15. var</h4>
+
+<p><a id="wm_006_0341"></a>Does things with zet variables. Calls the
+variable CLI subprogram.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_var(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_var(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int rc;
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    rc = zet_var(ww, argc, argv);
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+
+    return rc;
+}</pre></code>
+
+<h4>5.16. tags</h4>
+
+<p><a id="wm_006_0347"></a>Print tags that a particular UUID is linked to.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_tags(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_tags(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int rc;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    wwzet_uuid uuid;
+
+    if (argc &lt;= 1) {
+        fprintf(stderr, "Usage: %s tags UUID\n", argv[0]);
+        return 1;
+    }
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    db = weewiki_db(ww);
+    rc = 0;
+    rc = wwzet_uuid_resolve(ww,
+                            argv[1],
+                            strlen(argv[1]),
+                            &uuid);
+    if (rc) {
+        fprintf(stderr, "Could not resolve %s\n", argv[1]);
+        goto clean;
+    }
+
+    rc = sqlite3_prepare_v2(db,
+    "SELECT substr(g.value, 2) from wikizet "
+    "INNER JOIN "
+    "(SELECT value, UUID FROM wikizet WHERE value LIKE '@%') g "
+    "ON wikizet.value = '#' || g.UUID "
+    "WHERE wikizet.UUID "
+    "LIKE ?1;",
+    -1, &stmt, NULL);
+
+    if (rc) {
+       fprintf(stderr, "SQLite: %s\n", sqlite3_errmsg(db));
+       goto clean;
+    }
+
+    sqlite3_bind_text(stmt, 1, uuid.str, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        printf("%s\n", sqlite3_column_text(stmt, 0));
+        rc = sqlite3_step(stmt);
+    }
+
+    rc = 0;
+    sqlite3_finalize(stmt);
+
+    clean:
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return rc;
+}</pre></code>
+
+<h4>5.17. entry</h4>
+
+<p><a id="wm_006_0353"></a>Usage: entry UUID
+</p>
+<p>Looks up entry UUID and prints all items with that UUID.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_entry(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_entry(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    int rc;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    wwzet_uuid uuid;
+
+    if (argc &lt;= 1) {
+        fprintf(stderr, "Usage: %s UUID\n", argv[0]);
+        return 1;
+    }
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    db = weewiki_db(ww);
+    rc = 0;
+    rc = wwzet_uuid_resolve(ww,
+                            argv[1],
+                            strlen(argv[1]),
+                            &uuid);
+    if (rc) {
+        fprintf(stderr, "Could not resolve %s\n", argv[1]);
+        goto clean;
+    }
+
+    rc = sqlite3_prepare_v2(db,
+    "SELECT time, UUID, value from wikizet "
+    "WHERE wikizet.UUID IS ?1;",
+    -1, &stmt, NULL);
+
+    if (rc) {
+       fprintf(stderr, "SQLite: %s\n", sqlite3_errmsg(db));
+       goto clean;
+    }
+
+    sqlite3_bind_text(stmt, 1, uuid.str, -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW) {
+        const char *t, *u, *v;
+        t = (const char *)sqlite3_column_text(stmt, 0);
+        u = (const char *)sqlite3_column_text(stmt, 1);
+        v = (const char *)sqlite3_column_text(stmt, 2);
+        printf("%s\t%s\t%s\n", t == NULL ? "-" : t, u, v);
+        rc = sqlite3_step(stmt);
+    }
+
+    rc = 0;
+    sqlite3_finalize(stmt);
+
+    clean:
+
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
+    return rc;
+}</pre></code>
+
+<h4>5.18. ergoify</h4>
+
+<p><a id="wm_006_0359"></a>The <code>ergoify</code> command takes the UUID an incoming zet tsv
+stream and converts it to an ergo ID.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_ergoify(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static size_t smol_getline(char **lineptr, size_t *n, FILE *stream)
+{
+    char *bufptr = NULL;
+    size_t size;
+    int c;
+    size_t pos;
+
+    if (lineptr == NULL) {
+        return -1;
+    }
+
+    if (stream == NULL) {
+        return -1;
+    }
+
+    if (n == NULL) {
+        return -1;
+    }
+
+    bufptr = *lineptr;
+    size = *n;
+
+    c = fgetc(stream);
+
+    if (c == EOF) {
+        return -1;
+    }
+
+    if (bufptr == NULL) {
+        bufptr = malloc(128);
+        if (bufptr == NULL) {
+            return -1;
+        }
+        size = 128;
+    }
+
+    pos = 0;
+
+    while(c != EOF) {
+        if (pos &gt;= (size - 1)) {
+            size = size + 128;
+            bufptr = realloc(bufptr, size);
+            if (bufptr == NULL) {
+                return -1;
+            }
+        }
+        bufptr[pos] = (char)c;
+        pos++;
+        if (c == '\n') {
+            break;
+        }
+        c = fgetc(stream);
+    }
+
+    bufptr[pos] = '\0';
+    (*lineptr) = bufptr;
+    (*n) = size;
+    return pos;
+}
+
+static int p_ergoify(int argc, char *argv[])
+{
+    FILE *fp;
+    size_t len;
+    long read;
+    char *line;
+    char tmp[64];
+
+    len = 0;
+    line = NULL;
+
+    fp = stdin;
+
+    while ((read = smol_getline(&line, &len, fp)) != -1) {
+        int off, size;
+
+        off = 0;
+
+        size = 0;
+
+        while (line[off + size] != '\t') size++;
+        fwrite(&line[off], 1, size, stdout);
+
+        printf("\tg");
+        off += size + 1;
+        size = 0;
+        while (line[off + size] != '\t') size++;
+        wwzet_hex_to_ergo(&line[off], size, tmp);
+        /* fwrite(&line[off], 1, size, stdout); */
+        fwrite(tmp, 1, size, stdout);
+
+        printf("\t");
+        off += size + 1;
+        size = read - off;
+
+        fwrite(&line[off], 1, size, stdout);
+
+    }
+
+    free(line);
+    return 0;
+}</pre></code>
+
+<h4>5.19. UUID</h4>
+
+<p><a id="wm_006_0365"></a>Generates a UUIDv4 number.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_uuid(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_uuid(int argc, char *argv[])
+{
+    wwzet_uuid uuid;
+    wwzet_uuid_rng_init();
+    wwzet_uuid_init(&uuid);
+    wwzet_uuid_generate(&uuid);
+    fwrite(uuid.str, 1, 36, stdout);
+    return 0;
+}</pre></code>
+
+<h4>5.20. ergo</h4>
+
+<p><a id="wm_006_0371"></a>Converts an incoming string to ergo. Ignores non-hexademical
+characters.
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_ergo(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_ergo(int argc, char *argv[])
+{
+    int len;
+
+    if (argc == 1) {
+        fprintf(stderr, "Usage: %s str\n", argv[0]);
+        return 1;
+    }
+
+    len = strlen(argv[1]);
+    wwzet_hex_to_ergo(argv[1], len, argv[1]);
+
+    fwrite(argv[1], 1, len, stdout);
+    fflush(stdout);
+    return 0;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_006_0150">prev</a> | <a href="/loom/weewiki_zet">home</a> | next</p>
+</div>
+</body>
+</html>
