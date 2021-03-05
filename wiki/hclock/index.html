@@ -12,7 +12,7 @@
 <title>HClock</title>
 <h1>HClock</h1>
 
-<h3>Foreword</h3>
+<h2>Foreword</h2>
 
 <p>HClock is a synchronized clock generator with humanization.
 </p>
@@ -53,7 +53,7 @@ humanized clock source that occasionally checks in with a
 master clock.
 </p>
 
-<h3>How it works</h3>
+<h2>How it works</h2>
 
 <p>The humanizing clock works by reconstructing triggers in
 a clock signal. The input signal expects a subdivided master
@@ -86,7 +86,7 @@ for the next trigger from the master clock, where it will
 produce all of this again.
 </p>
 
-<h3>Generated File (hclock.c)</h3>
+<h2>Generated File (hclock.c)</h2>
 
 <div><b><i>&lt;&lt;hclock.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
 #include &lt;math.h&gt;
@@ -98,7 +98,7 @@ produce all of this again.
 &lt;&lt;funcdefs&gt;&gt;
 &lt;&lt;funcs&gt;&gt;</pre></code>
 
-<h3>HClock struct and init</h3>
+<h2>HClock struct and init</h2>
 
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct hclock_d hclock_d;</pre></code>
 <p></p>
@@ -114,10 +114,10 @@ produce all of this again.
     &lt;&lt;hclock_init&gt;&gt;
 }</pre></code>
 
-<h3>Cable Parameters</h3>
+<h2>Cable Parameters</h2>
 
 
-<h4>Trigger in</h4>
+<h3>Trigger in</h3>
 
 <p>the input clock signal, assumed to be pre-subdivided with
 something like <code>tdiv</code>.
@@ -128,7 +128,7 @@ something like <code>tdiv</code>.
 <p></p>
 <div><b><i>&lt;&lt;bind_cables&gt;&gt;=</i></b></div><pre><code>pw_node_get_cable(node, 0, &h-&gt;in);</pre></code>
 
-<h4>Jitter Amount</h4>
+<h3>Jitter Amount</h3>
 
 <p>jitter amount: in units of seconds. This will be the
 (+/-) amount to add.
@@ -139,7 +139,7 @@ something like <code>tdiv</code>.
 <p></p>
 <div><b><i>&lt;&lt;bind_cables&gt;&gt;=</i></b></div><pre><code>pw_node_get_cable(node, 1, &h-&gt;jitter);</pre></code>
 
-<h4>NTicks</h4>
+<h3>NTicks</h3>
 
 <p>the number of ticks to produce, including the
 sync beat. this is parametric: it will be read every time
@@ -151,7 +151,7 @@ a trigger happens
 <p></p>
 <div><b><i>&lt;&lt;bind_cables&gt;&gt;=</i></b></div><pre><code>pw_node_get_cable(node, 2, &h-&gt;nticks);</pre></code>
 
-<h4>Output Cable</h4>
+<h3>Output Cable</h3>
 
 <p>An output cable, where the trigger signal actually goes.
 <div><b><i>&lt;&lt;hclock&gt;&gt;=</i></b></div><pre><code>pw_cable *out;</pre></code>
@@ -160,12 +160,12 @@ a trigger happens
 <p></p>
 <div><b><i>&lt;&lt;bind_cables&gt;&gt;=</i></b></div><pre><code>pw_node_get_cable(node, 3, &h-&gt;out);</pre></code>
 
-<h3>Counters</h3>
+<h2>Counters</h2>
 
 <p>Like all good clocks, <code>hclock</code> is rooted in counters.
 </p>
 
-<h4>Main Counter</h4>
+<h3>Main Counter</h3>
 
 <p>The main counter is used schedule new ticks. This counter
 ticks down to 0, where it will then output a tick and then
@@ -177,7 +177,7 @@ update the parameters.
 <p></p>
 <div><b><i>&lt;&lt;update_main_counter&gt;&gt;=</i></b></div><pre><code>h-&gt;cnt--;</pre></code>
 
-<h4>Target Duration</h4>
+<h3>Target Duration</h3>
 
 <p>The target duration is the ideal spacing between each tick.
 </p>
@@ -212,7 +212,7 @@ preserve fractional sample amounts.
     }
 }</pre></code>
 
-<h4>Resetting the Counter</h4>
+<h3>Resetting the Counter</h3>
 
 <p>When a counter is reset, it uses the target duration plus
 some jitter amount. First, a random number generator is used
@@ -236,7 +236,7 @@ converted from seconds to samples.
     h-&gt;cnt = h-&gt;target_dur + ijit;
 }</pre></code>
 
-<h4>Tick Position</h4>
+<h3>Tick Position</h3>
 
 <p>An hclock is designed to produce a fixed number of ticks
 before waiting for the master clock. Another counter is used
@@ -268,7 +268,7 @@ in wait mode with a zero position.
 </p>
 <div><b><i>&lt;&lt;tick_guard&gt;&gt;=</i></b></div><pre><code>if (h-&gt;tkpos &lt; 0) smp = 0;</pre></code>
 
-<h4>Timer</h4>
+<h3>Timer</h3>
 
 <p>A timer counter is used to measure distance between master
 clock triggers, which is subsequently used to measure
@@ -283,7 +283,7 @@ reset to be zero every time there is a new tick.
 <p></p>
 <div><b><i>&lt;&lt;reset_timer&gt;&gt;=</i></b></div><pre><code>h-&gt;timer = 0;</pre></code>
 
-<h3>Compute</h3>
+<h2>Compute</h2>
 
 <p>The main compute function consists of checking the trigger
 signal and reacting, or just producing ticks internally.
@@ -345,7 +345,7 @@ pw_cable_set(h-&gt;out, n, smp);</pre></code>
 <div><b><i>&lt;&lt;update_counters&gt;&gt;=</i></b></div><pre><code>&lt;&lt;update_timer&gt;&gt;
 &lt;&lt;update_main_counter&gt;&gt;</pre></code>
 
-<h3>Patchwerk and Runt</h3>
+<h2>Patchwerk and Runt</h2>
 
 <p>hclock is wrapped inside of a patchwerk node, which is then
 wrapped inside of a runt word + loader. The runt word is
@@ -353,10 +353,10 @@ then fit to be exported as a runt plugin, should the
 <code>HCLOCK_PLUGIN</code> macro be defined.
 </p>
 
-<h4>Node</h4>
+<h3>Node</h3>
 
 
-<h5>Create</h5>
+<h4>Create</h4>
 
 <p>A new node instance of hclock is created with <code>node_hclock</code>.
 It takes in initial tempo and subdivision as init-time
@@ -402,7 +402,7 @@ int node_hclock(pw_node *node, PWFLT tempo, PWFLT subdiv)
     return PW_OK;
 }</pre></code>
 
-<h5>Compute</h5>
+<h4>Compute</h4>
 
 <div><b><i>&lt;&lt;nodefuncs&gt;&gt;=</i></b></div><pre><code>static void compute(pw_node *node)
 {
@@ -415,7 +415,7 @@ int node_hclock(pw_node *node, PWFLT tempo, PWFLT subdiv)
     hclock_compute(h, blksize);
 }</pre></code>
 
-<h5>Destroy</h5>
+<h4>Destroy</h4>
 
 <div><b><i>&lt;&lt;nodefuncs&gt;&gt;=</i></b></div><pre><code>static void destroy(pw_node *node)
 {
@@ -433,10 +433,10 @@ int node_hclock(pw_node *node, PWFLT tempo, PWFLT subdiv)
     pw_memory_free(patch, &ptr);
 }</pre></code>
 
-<h4>Runt</h4>
+<h3>Runt</h3>
 
 
-<h5>Runt Word</h5>
+<h4>Runt Word</h4>
 
 <div><b><i>&lt;&lt;word&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_hclock(runt_vm *vm, runt_ptr p)
 {
@@ -493,7 +493,7 @@ int node_hclock(pw_node *node, PWFLT tempo, PWFLT subdiv)
     return RUNT_OK;
 }</pre></code>
 
-<h5>Runt Loader</h5>
+<h4>Runt Loader</h4>
 
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void load_hclock(runt_vm *vm, runt_ptr pw);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;word&gt;&gt;
@@ -504,7 +504,7 @@ void load_hclock(runt_vm *vm, runt_ptr pw)
     runt_cell_data(vm, c, pw);
 }</pre></code>
 
-<h4>Plugin Entry</h4>
+<h3>Plugin Entry</h3>
 
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>#ifdef HCLOCK_PLUGIN
 runt_int rplug_hclock(runt_vm *vm)
