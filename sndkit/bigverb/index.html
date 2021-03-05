@@ -11,7 +11,7 @@
 <title>Bigverb</title>
 <h1>Bigverb</h1>
 
-<h3>Introduction</h3>
+<h2>Introduction</h2>
 
 <p>Bigverb is an implementation of a classic waveguide
 reverberator. It is composed up
@@ -29,13 +29,13 @@ realistic, and is not an ideal choice for anything that
 needs room modelling.
 </p>
 
-<h3>Distinct Characterstics</h3>
+<h2>Distinct Characterstics</h2>
 
 <p>The "sound" of this algorithm comes from a few major
 things.
 </p>
 
-<h4>Use of Jitter Modulation</h4>
+<h3>Use of Jitter Modulation</h3>
 
 <p>Every delay line has a bit of jitter applied to
 the delay time, which causes a little of pitch modulation.
@@ -52,7 +52,7 @@ modulation to every single delay line. As a result, you get
 a very dense-sounding reverb output.
 </p>
 
-<h4>Parameter Tunings</h4>
+<h3>Parameter Tunings</h3>
 
 <p>The parameter tunings of this reverb add to the
 particular character of this sound. All units are set in
@@ -91,7 +91,7 @@ static const struct bigverb_paramset params[8] = {
     {0x078d, 0x06, 0xc95, 0x3851}
 };</pre></code>
 
-<h4>Delay Line Configuration</h4>
+<h3>Delay Line Configuration</h3>
 
 <p>Normally, this family of reverbs is a combination of allpass
 filters and comb filters in various series/parallel
@@ -102,10 +102,10 @@ control. If it weren't for the massive amount delay
 modulation, this would be a pretty metallic sounding reverb!
 </p>
 
-<h3>Top Level Files and Structs</h3>
+<h2>Top Level Files and Structs</h2>
 
 
-<h4>Files to Tangle To</h4>
+<h3>Files to Tangle To</h3>
 
 <p>This Bigverb document tanlges to two files:
 <code>bigverb.c</code> and <code>bigverb.h</code>.
@@ -119,6 +119,9 @@ macro <code>SK_BIGVERB_PRIV</code>.
 #include &lt;math.h&gt;
 #define SK_BIGVERB_PRIV
 #include "bigverb.h"
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 &lt;&lt;parameter_set&gt;&gt;
 &lt;&lt;fdelay_constants&gt;&gt;
 &lt;&lt;static_funcdefs&gt;&gt;
@@ -138,7 +141,7 @@ macro <code>SK_BIGVERB_PRIV</code>.
 #endif
 #endif</pre></code>
 
-<h4>The Bigverb Struct</h4>
+<h3>The Bigverb Struct</h3>
 
 <p>An instance of Bigverb is contained inside of a struct
 called <code>sk_bigverb</code>.
@@ -150,7 +153,7 @@ struct sk_bigverb {
     &lt;&lt;sk_bigverb&gt;&gt;
 };</pre></code>
 
-<h3>Setup and Cleanup</h3>
+<h2>Setup and Cleanup</h2>
 
 <p>A new instance of bigverb is created with
 <code>sk_bigverb_new</code>. The only argument required is the sampling
@@ -183,7 +186,7 @@ with <code>sk_bigverb_del</code>.
     bv = NULL;
 }</pre></code>
 
-<h3>High level parameters</h3>
+<h2>High level parameters</h2>
 
 <p>High level parametric control of bigverb includes
 "size" and "cutoff". Set parameters before computing
@@ -192,7 +195,7 @@ in the struct that can be indirectly set with setters in
 situations where the struct is opaque.
 </p>
 
-<h4>Size</h4>
+<h3>Size</h3>
 
 <p>Set the reverb size with <code>sk_bigverb_size</code>
 
@@ -214,7 +217,7 @@ controls the feedback level for the delay line.
     bv-&gt;size = size;
 }</pre></code>
 
-<h4>Cutoff</h4>
+<h3>Cutoff</h3>
 
 <p>The tone of bigverb can be set with <code>sk_bigverb_cutoff</code>.
 </p>
@@ -246,7 +249,7 @@ SKFLT pcutoff;</pre></code>
     bv-&gt;cutoff = cutoff;
 }</pre></code>
 
-<h3>Filter</h3>
+<h2>Filter</h2>
 
 <p>State in a constant called <code>filt</code>.
 </p>
@@ -254,7 +257,7 @@ SKFLT pcutoff;</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;init_variables&gt;&gt;=</i></b></div><pre><code>bv-&gt;filt = 1.0;</pre></code>
 
-<h3>Computing Audio</h3>
+<h2>Computing Audio</h2>
 
 <p>After bigverb has been initialized, it is ready to
 process audio. This implementation uses what is known
@@ -265,7 +268,7 @@ of performance overhead, depending on the compiler and
 optimization settings.
 </p>
 
-<h4>Top-Level Tick Function</h4>
+<h3>Top-Level Tick Function</h3>
 
 <p>The function to tick one sample unit of audio is done with
 <code>sk_bigverb_tick</code>. It takes in two stereo input
@@ -293,7 +296,7 @@ values, and returns two stereo output values.
     *outR = rsum;
 }</pre></code>
 
-<h4>Updating filter coefficients</h4>
+<h3>Updating filter coefficients</h3>
 
 <p>Bigverb uses parameter caching for the <code>cutoff</code> parameter in
 order to save on computation time.
@@ -313,7 +316,7 @@ line.
     bv-&gt;filt = bv-&gt;filt - sqrt(bv-&gt;filt * bv-&gt;filt - 1.0);
 }</pre></code>
 
-<h4>Calculating Resultant Junction Pressure Amount</h4>
+<h3>Calculating Resultant Junction Pressure Amount</h3>
 
 <p>The resultant junction pressure amount is calculated from
 the delay bank, and then factored into the input signals.
@@ -337,7 +340,7 @@ the delay bank, and then factored into the input signals.
     inR = jp + inR;
 }</pre></code>
 
-<h4>Computing the delay bank</h4>
+<h3>Computing the delay bank</h3>
 
 <p>The delay bank is then computed. Each delay line is computed
 and summed with either the left or right input signal, and
@@ -367,13 +370,13 @@ is hard coded to be 35 percent.
 rsum *= 0.35f;
 lsum *= 0.35f;</pre></code>
 
-<h3>The Feedback Delay Line Bank</h3>
+<h2>The Feedback Delay Line Bank</h2>
 
 <p>8 delay units come together to make the delay line bank.
 Each is initialized using one of the parameter sets.
 </p>
 
-<h4>Memory Allocation + Setup</h4>
+<h3>Memory Allocation + Setup</h3>
 
 <div><b><i>&lt;&lt;sk_bigverb&gt;&gt;=</i></b></div><pre><code>SKFLT *buf;</pre></code>
 <p></p>
@@ -440,7 +443,7 @@ bv-&gt;buf = buf;</pre></code>
     }
 }</pre></code>
 
-<h4>A Single Delay Line Unit</h4>
+<h3>A Single Delay Line Unit</h3>
 
 <p>A delay unit in a bank consists of variable delay line with
 cubic interpolation with a 1 pole low-pass filter for tone
@@ -448,7 +451,7 @@ control, whose frequency is determined using a master
 parameter, as well as a jitter generator. Feedback as well.
 </p>
 
-<h5>Struct Declaration</h5>
+<h4>Struct Declaration</h4>
 
 <p>A delay unit is known as a struct called <code>sk_bigverb_delay</code>.
 </p>
@@ -458,7 +461,7 @@ parameter, as well as a jitter generator. Feedback as well.
     &lt;&lt;bigverb_delay&gt;&gt;
 };</pre></code>
 
-<h5>Initialization</h5>
+<h4>Initialization</h4>
 
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void delay_init(sk_bigverb_delay *d,
                        const struct bigverb_paramset *p,
@@ -525,7 +528,7 @@ d-&gt;frpos = floor((readpos - d-&gt;irpos) * FRACSCALE);</pre></code>
 <div><b><i>&lt;&lt;delay_init&gt;&gt;=</i></b></div><pre><code>&lt;&lt;init_jitter&gt;&gt;
 generate_next_line(d, sr);</pre></code>
 
-<h5>Top-Level Compute</h5>
+<h4>Top-Level Compute</h4>
 
 <p>The delay line computation is done in a tick function. It
 takes in an input sample, returns an output sample. In
@@ -686,7 +689,7 @@ if (del-&gt;counter &lt;= 0) {
     generate_next_line(del, sr);
 }</pre></code>
 
-<h5>Feedback Fractional Delay Line</h5>
+<h4>Feedback Fractional Delay Line</h4>
 
 <p>A delay line is initialized with a pre-allocated zeroed
 buffer its size. Memory will be managed outside of this
@@ -728,7 +731,7 @@ get carried over to the integer read position.
 </p>
 <div><b><i>&lt;&lt;fdelay_constants&gt;&gt;=</i></b></div><pre><code>#define FRACNBITS 28</pre></code>
 
-<h5>Jitter</h5>
+<h4>Jitter</h4>
 
 <p>Jitter in this context, is a random line segment
 generator. It linearly interpolates between random values in
@@ -831,7 +834,7 @@ fractional read.
     &lt;&lt;set_fractional_read&gt;&gt;
 }</pre></code>
 
-<h5>Filter Memory</h5>
+<h4>Filter Memory</h4>
 
 <p>A one-pole lowpass filter such as the one used in the delay
 line requires one sample of memory, which stores the output

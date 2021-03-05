@@ -11,7 +11,7 @@
 <title>FM Pair Oscillator</title>
 <h1>FM Pair Oscillator</h1>
 
-<h3>Introduction</h3>
+<h2>Introduction</h2>
 
 <p>This document outlines an implementation of a classic
 FM oscillator with frequency, C:M ratio, and modulation
@@ -31,7 +31,7 @@ be the building block for grokking more complex modulation
 configurations, such as those found on the DX7.
 </p>
 
-<h3>Some words on FM synthesis</h3>
+<h2>Some words on FM synthesis</h2>
 
 <p>(I can't help but ramble a little bit about the topic of
 FM synthesis. Feel free to scroll/skip/page ahead.)
@@ -88,7 +88,7 @@ arcade machines. The most famous of these chips was the
 <a href="https://en.wikipedia.org/wiki/Yamaha_YM2151">YM2151</a>, also known as the OPM chip.
 </p>
 
-<h3>Overview of Algorithm and Implementation</h3>
+<h2>Overview of Algorithm and Implementation</h2>
 
 <p>An FM Pair uses two oscillators, sometimes referred to as
 <code>operators</code>. One of these operators synthesizes audble sound.
@@ -142,7 +142,7 @@ of this article, but are described in the implementation
 referenced above.
 </p>
 
-<h3>Tangled Files</h3>
+<h2>Tangled Files</h2>
 
 <p><code>fmpair.c</code> contains the ANSI C code required for the
 implementation.
@@ -169,7 +169,7 @@ It contains all the forward declarations. If
 #endif
 #endif</pre></code>
 
-<h3>Structs</h3>
+<h2>Structs</h2>
 
 <p>The main FM oscillator algorithm is encapsulated in a struct
 called <code>sk_fmpair</code>.
@@ -179,10 +179,10 @@ called <code>sk_fmpair</code>.
     &lt;&lt;sk_fmpair&gt;&gt;
 };</pre></code>
 
-<h3>Table-lookup oscillator data and constants</h3>
+<h2>Table-lookup oscillator data and constants</h2>
 
 
-<h4>Constants</h4>
+<h3>Constants</h3>
 
 <p>The constant <code>SK_FMPAIR_MAXLEN</code> is the maximum length a
 lookup table can be.
@@ -192,7 +192,7 @@ the fixed point phasor.
 <div><b><i>&lt;&lt;constants&gt;&gt;=</i></b></div><pre><code>#define SK_FMPAIR_MAXLEN 0x1000000L
 #define SK_FMPAIR_PHASEMASK 0x0FFFFFFL</pre></code>
 
-<h4>Struct Data</h4>
+<h3>Struct Data</h3>
 
 <p>The FM oscillator implements two independent table-[ookup
 oscillators. Each one needs their own set of wavetables,
@@ -274,7 +274,7 @@ fmp-&gt;minlb = 1.0 / (1&lt;&lt;fmp-&gt;mnlb);
 
 fmp-&gt;maxlens = 1.0 * SK_FMPAIR_MAXLEN / sr;</pre></code>
 
-<h3>Initialization</h3>
+<h2>Initialization</h2>
 
 <p>The FM oscillator is initialize with <code>sk_fmpair_init</code>.
 It needs the sampling rate <code>sr</code>, and two sets of
@@ -298,10 +298,10 @@ sine wave.
     &lt;&lt;init&gt;&gt;
 }</pre></code>
 
-<h3>Parameter Control</h3>
+<h2>Parameter Control</h2>
 
 
-<h4>Frequency</h4>
+<h3>Frequency</h3>
 
 <p>Set with <code>sk_fmpair_freq</code>.
 </p>
@@ -318,7 +318,7 @@ sine wave.
 </p>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_fmpair_freq(fmp, 440);</pre></code>
 
-<h4>Carrier/Modulator Ratios</h4>
+<h3>Carrier/Modulator Ratios</h3>
 
 <p>Set with <code>sk_fmpair_modulator</code> and <code>sk_fmpair_carrier</code>.
 </p>
@@ -343,7 +343,7 @@ SKFLT mod;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_fmpair_carrier(fmp, 1);
 sk_fmpair_modulator(fmp, 1);</pre></code>
 
-<h4>Modulation Index</h4>
+<h3>Modulation Index</h3>
 
 <p>Set with <code>sk_fmpair_modindex</code>.
 </p>
@@ -361,7 +361,7 @@ a very warm and versatile initial sound.
 </p>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_fmpair_modindex(fmp, 1);</pre></code>
 
-<h3>Computing a Sample</h3>
+<h2>Computing a Sample</h2>
 
 <p>A single sample of audio is computed with <code>sk_fmpair_tick</code>.
 </p>
@@ -453,7 +453,7 @@ value.
 <div><b><i>&lt;&lt;update_phase_positions&gt;&gt;=</i></b></div><pre><code>fmp-&gt;clphs += floor(cfreq * fmp-&gt;maxlens);
 fmp-&gt;mlphs += floor(mfreq * fmp-&gt;maxlens);</pre></code>
 
-<h3>Feedback FM Variation</h3>
+<h2>Feedback FM Variation</h2>
 
 <p><a id="feedback_fm"></a>The original FM pair algorithm can be slightly modified to
 include <code>feedback</code>. To do this, the <code>sk_fmpair</code> struct is
@@ -549,7 +549,7 @@ modulator is scaled.
 <div><b><i>&lt;&lt;apply_feedback&gt;&gt;=</i></b></div><pre><code>modout += f-&gt;prev * f-&gt;feedback;
 f-&gt;prev = modout;</pre></code>
 
-<h3>C:M Ratio tips</h3>
+<h2>C:M Ratio tips</h2>
 
 <p>Some suggestions to get started with picking out good C,M
 and I parameters. For those starting out, these should help

@@ -11,7 +11,7 @@
 <title>Core</title>
 <h1>Core</h1>
 
-<h3>Overview</h3>
+<h2>Overview</h2>
 
 <p>This document describes and outlines a small API for
 sndkit. It is primarily designed to be a small layer on top
@@ -25,7 +25,7 @@ stack is the primary means of sharing data between nodes.
 Registers are for more persitently used values.
 </p>
 
-<h3>Tangled files</h3>
+<h2>Tangled files</h2>
 
 <p><code>core.h</code> and <code>core.c</code>.
 </p>
@@ -53,7 +53,7 @@ Registers are for more persitently used values.
 &lt;&lt;enums&gt;&gt;
 &lt;&lt;funcs&gt;&gt;</pre></code>
 
-<h3>Engine Management</h3>
+<h2>Engine Management</h2>
 
 <p>All this behavior is defined in a struct called <code>sk_core</code>.
 </p>
@@ -136,10 +136,10 @@ seconds to a number of render blocks.
     return nblocks;
 }</pre></code>
 
-<h3>Stack</h3>
+<h2>Stack</h2>
 
 
-<h4>Core Data Types</h4>
+<h3>Core Data Types</h3>
 
 <p>An item on a stack is contained in a thing known as a
 <code>stacklet</code>. A stacklet has integer for a type flag, a
@@ -199,7 +199,7 @@ stack.
     s-&gt;pos = -1;
 }</pre></code>
 
-<h4>Types</h4>
+<h3>Types</h3>
 
 <p>The typeflag currently supports the following types:
 </p>
@@ -211,7 +211,7 @@ stack.
    SK_TYPE_GENERIC
 };</pre></code>
 
-<h4>Push/Pop</h4>
+<h3>Push/Pop</h3>
 
 <p>Push and pop are the core operations for the stack. Both
 return non-zero values on error.
@@ -255,7 +255,7 @@ int sk_stack_push(sk_stack *stack, sk_stacklet **out);</pre></code>
     return 0;
 }</pre></code>
 
-<h3>Parameters and Cables</h3>
+<h2>Parameters and Cables</h2>
 
 <p><code>sndkit_param</code> is an abstraction used to deal with
 patchwerk cables, and is designed to link up with the
@@ -267,7 +267,7 @@ manage the buffer stack in patchwerk. If it is a constant,
 it will only manipulate the sndkit stack.
 </p>
 
-<h4>Struct</h4>
+<h3>Struct</h3>
 
 <p>A parameter is stored in a struct called <code>sk_param</code>.
 </p>
@@ -279,7 +279,7 @@ it will only manipulate the sndkit stack.
     } data;
 } sk_param;</pre></code>
 
-<h4>Getting a Parameter</h4>
+<h3>Getting a Parameter</h3>
 
 <p>Get a parameter from the core stack via <code>sk_param_get</code>.
 </p>
@@ -317,7 +317,7 @@ from the buffer stack.
     return 0;
 }</pre></code>
 
-<h4>Setting a Parameter</h4>
+<h3>Setting a Parameter</h3>
 
 <p>Set a parameter with <code>sk_param_set</code>.
 </p>
@@ -351,7 +351,7 @@ cable as a consant. A cable parameter will be connected to
 the node cable.
 </p>
 
-<h4>Pushing Constants</h4>
+<h3>Pushing Constants</h3>
 
 <p>Constant values can be pushed to the stack with the
 function <code>sk_core_constant</code>.
@@ -375,7 +375,7 @@ function <code>sk_core_constant</code>.
     return 0;
 }</pre></code>
 
-<h4>Pushing Output</h4>
+<h3>Pushing Output</h3>
 
 <p>An signal cable from a node is pushed to the stack via
 <code>sk_param_out</code>.
@@ -417,7 +417,154 @@ process can be mostly automated or abstracted away.
 It will also push the cable's buffer onto the stack.
 </p>
 
-<h3>Error Checking</h3>
+<h2>Registers</h2>
+
+<p>A register interface is used alongside the stack
+interface to store and retrieve data. A value stored
+in a register can be directly referenced by an id value.
+</p>
+<p>Registers are very useful for storing data that is
+used more than once throughout the patch, or for situations
+where using stack operations to manipulate the day becomes
+tedious. Examples of
+this include cables containing clock signals and lookup
+tables.
+</p>
+
+<h3>structs</h3>
+
+<p>A single register entry is encapsulated in a struct called
+<code>sk_register_entry</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_register_entry sk_register_entry;</pre></code>
+<p></p>
+<p>A register entry contains an <code>sk_stacklet</code> as well as a flag
+to indicate the current state of the register.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_register_entry {
+    sk_stacklet data;
+    int flags;
+};</pre></code>
+<p></p>
+<p>A register is initialized with <code>sk_register_entry_init</code>,
+which will initialize the stacklet and zero out the flags.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_register_entry_init(sk_register_entry *e);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_register_entry_init(sk_register_entry *e)
+{
+    sk_stacklet_init(&e-&gt;data);
+    e-&gt;flags = 0;
+}</pre></code>
+<p></p>
+<p>A register collection is
+encapsulated in a struct called <code>sk_regtbl</code>,
+and is a fixed array of <code>sk_register_entry</code> values. The
+size is defined via a macro.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_regtbl sk_regtbl;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>#define SK_REGSIZE 16
+struct sk_regtbl {
+    sk_register_entry r[SK_REGSIZE];
+};</pre></code>
+<p></p>
+<p>Registers are initialized with <code>sk_regtbl_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_regtbl_init(sk_regtbl *rs);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_regtbl_init(sk_regtbl *rs)
+{
+    int i;
+
+    for (i = 0; i &lt; SK_REGSIZE; i++) {
+        sk_register_entry_init(&rs-&gt;r[i]);
+    }
+}</pre></code>
+
+<h3>TODO regset/regget</h3>
+
+<p>Setting/getting values are done with <code>sk_core_regget</code> and
+<code>sk_core_regset</code>, making calls to the underlying functions
+<code>sk_register_set</code> and <code>sk_register_get</code>.
+</p>
+<p>Values are assumed to be encapsulated in
+a <code>sk_stacklet</code>, and registers are addressed by id.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_regget(sk_core *core, int pos, sk_stacklet **s);
+int sk_register_get(sk_regtbl *rt, int pos, sk_stacklet **s);
+int sk_core_regset(sk_core *core, int pos, sk_stacklet **s);
+int sk_register_set(sk_regtbl *rt, int pos, sk_stacklet **s);</pre></code>
+
+<h3>TODO regmrk</h3>
+
+<p><code>sk_core_regmrk</code>, marks a register as being used. this makes
+an underlying call to <code>sk_register_mark</code>.
+</p>
+
+<h3>TODO regclr</h3>
+
+<p><code>sk_core_clear</code> clears the register, making it free to be
+claimed. This makes an underlying call to
+<code>sk_register_clear</code>.
+</p>
+
+<h3>TODO regnxt</h3>
+
+<p><code>sk_core_regnxt</code> returns the next free register, which
+makes an underlying call to <code>sk_register_nextfree</code>
+
+this will iterate through
+the registers until it finds one that is free. it will
+return the id of this register.
+</p>
+
+<h2>Buffer Operations</h2>
+
+<p>Patchwerk works by reading and writing to fixed-size blocks
+of samples known as buffers. Buffers are manipulated using
+a <code>stack</code>, and are managed/queried from a <code>pool</code>.
+</p>
+
+<h3>TODO bdup</h3>
+
+<p>The function <code>sk_core_bdup</code> duplicates a buffer that is on
+the stack. This will perform the dup operation on both the
+patchwerk stack and the sndkit stack.
+</p>
+
+<h3>TODO bdrop</h3>
+
+<p>The function <code>sk_core_bdrop</code> drops a buffer that is on the
+stack. This will before the drop operation on both the
+patchwerk stack and the sndkit stack.
+</p>
+
+<h3>TODO bhold/bunhold</h3>
+
+<p>The functions <code>sk_core_bhold</code> and <code>sk_core_bunhold</code> pop the
+last item off the stack (which expects to be a cable), and
+marks the internal buffer in the cable to be held or unheld,
+respectively.
+</p>
+<p>Holding a buffer tells patchwerk not to re-use it
+in the buffer pool, allowing the signal inside of it to be
+used as many times as needed until the buffer is explicitely
+unheld. If you don't unhold buffers, it makes them
+inaccessible later, thereby causing a sort of resource leak.
+Left unchecked, this eventually causes patchwerk to lock up.
+</p>
+<p>The <code>sk_core_bhold</code> operation pushes the item back onto the
+stack, which allows it to be stored in a register.
+</p>
+
+<h2>Tables</h2>
+
+<p>A small abstraction for dealing with tables that are managed
+by patchwerk.
+</p>
+
+<h2>Error Checking</h2>
 
 <p><code>SK_ERROR_CHECK</code> is a convenient macro used that will
 check an error code and exit if it is non-zero.
@@ -428,45 +575,6 @@ check an error code and exit if it is non-zero.
     fprintf(stderr, "Error: %s\n", pw_error(rc));\
     return 1;\
 }</pre></code>
-
-<h3>Tables</h3>
-
-<p>A small abstraction for dealing with tables that are managed
-by patchwerk.
-</p>
-
-<h3>Registers</h3>
-
-
-<h4>TODO regset/regget</h4>
-
-
-<h4>TODO regmrk</h4>
-
-<p>marks a register as being used
-</p>
-
-<h4>TODO regclr</h4>
-
-<p>clears the register, making it free to be claimed.
-</p>
-
-<h4>TODO regnxt</h4>
-
-<p>returns the next free register
-</p>
-
-<h3>Buffer Operations</h3>
-
-
-<h4>TODO bdup</h4>
-
-
-<h4>TODO bhold/bunhold</h4>
-
-
-<h4>TODO bdrop</h4>
-
 </div>
 </body>
 </html>
