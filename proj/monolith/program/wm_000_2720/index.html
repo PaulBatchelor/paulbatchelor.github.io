@@ -9,16 +9,16 @@
 <body>
 <div id="main">
 
-<h3>19. State</h3>
+<h2>19. State</h2>
 
 <p><a id="wm_000_2720"></a>Monolith has the ability to save and load data. We call this data <code>state</code>.
 </p>
 
-<h4>19.1. SQLite Header Include</h4>
+<h3>19.1. SQLite Header Include</h3>
 
 <p><a id="wm_000_2722"></a><div><b><i>&lt;&lt;system_includes&gt;&gt;=</i></b></div><pre><code>#include "sqlite3.h"</pre></code>
 
-<h4>19.2. Monolith State in Top-level Struct</h4>
+<h3>19.2. Monolith State in Top-level Struct</h3>
 
 <p><a id="wm_000_2725"></a>At any given time, exactly one state file is open. This state file is
 managed inside of the struct.
@@ -39,7 +39,7 @@ will happen if there isn't anything open.
     return &m-&gt;state;
 }</pre></code>
 
-<h4>19.3. Monolith State Data</h4>
+<h3>19.3. Monolith State Data</h3>
 
 <p><a id="wm_000_2739"></a>The monolith state is mostly powered by SQLite! SQLite doesn't need to be seen
 by other parts of monolith, so we wrap all the bits inside of monolith state and
@@ -65,14 +65,14 @@ database is empty.
     return s-&gt;db == NULL;
 }</pre></code>
 
-<h4>19.4. Parameter and Schema State Data</h4>
+<h3>19.4. Parameter and Schema State Data</h3>
 
 <p><a id="wm_000_2755"></a>While the monolith state does use SQLite, pages shouldn't be writing SQLite
 statements directly. Parameters can be saved and loaded using this parameter
 interface.
 </p>
 
-<h5>19.4.1. Parameter Data</h5>
+<h4>19.4.1. Parameter Data</h4>
 
 <p><a id="wm_000_2757"></a>A parameter is a single unit which stores a single data value. It is known
 as a <code>monolith_state_param</code>.
@@ -81,7 +81,7 @@ as a <code>monolith_state_param</code>.
 &lt;&lt;state_param_contents&gt;&gt;
 };</pre></code>
 
-<h6>19.4.1.1. Parameter Struct Initialization/Cleanup</h6>
+<h5>19.4.1.1. Parameter Struct Initialization/Cleanup</h5>
 
 <p><a id="wm_000_2765"></a>The struct is initialized with <code>monolith_state_param_init</code>.
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_state_param_init(monolith_state_param *msp);</pre></code>
@@ -98,11 +98,11 @@ with <code>monolith_state_param_cleanup</code>.
 &lt;&lt;monolith_state_param_cleanup&gt;&gt;
 }</pre></code>
 
-<h6>19.4.1.2. Parameter Struct Contents</h6>
+<h5>19.4.1.2. Parameter Struct Contents</h5>
 
 <p><a id="wm_000_2780"></a></p>
 
-<h7>19.4.1.2.1. Param Name</h7>
+<h6>19.4.1.2.1. Param Name</h6>
 
 <p><a id="wm_000_2781"></a>The parameter name is the string used to identify what the parameter is.
 In addition to the name, the string length is stored as well.
@@ -146,7 +146,7 @@ non-null.
     return p-&gt;name;
 }</pre></code>
 
-<h7>19.4.1.2.2. Param Type Flag</h7>
+<h6>19.4.1.2.2. Param Type Flag</h6>
 
 <p><a id="wm_000_2803"></a><div><b><i>&lt;&lt;state_param_contents&gt;&gt;=</i></b></div><pre><code>int type;</pre></code>
 <div><b><i>&lt;&lt;monolith_state_param_init&gt;&gt;=</i></b></div><pre><code>msp-&gt;type = 0;</pre></code>
@@ -165,7 +165,7 @@ int monolith_state_param_type_get(monolith_state_param *p)
     return p-&gt;type;
 }</pre></code>
 
-<h7>19.4.1.2.3. Param User Data</h7>
+<h6>19.4.1.2.3. Param User Data</h6>
 
 <p><a id="wm_000_2813"></a><div><b><i>&lt;&lt;state_param_contents&gt;&gt;=</i></b></div><pre><code>void *ud;</pre></code>
 <div><b><i>&lt;&lt;monolith_state_param_init&gt;&gt;=</i></b></div><pre><code>msp-&gt;ud = NULL;</pre></code>
@@ -199,7 +199,7 @@ void * monolith_state_param_data_get(monolith_state_param *p)
     return p-&gt;ud;
 }</pre></code>
 
-<h7>19.4.1.2.4. Param Destructor (Optional)</h7>
+<h6>19.4.1.2.4. Param Destructor (Optional)</h6>
 
 <p><a id="wm_000_2826"></a>A destructor function pointer is used as an alternative to <code>free</code> for
 freeing the internal userdata. If it is non-null, it will call this function
@@ -217,11 +217,11 @@ the default system <code>free</code>.
     msp-&gt;dtor = dtor;
 }</pre></code>
 
-<h6>19.4.1.3. Parameter State Types</h6>
+<h5>19.4.1.3. Parameter State Types</h5>
 
 <p><a id="wm_000_2837"></a></p>
 
-<h7>19.4.1.3.1. Type Enum Declaration</h7>
+<h6>19.4.1.3.1. Type Enum Declaration</h6>
 
 <p><a id="wm_000_2838"></a>All types are stored inside of an enum, which gets dynamically populated here.
 <div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>enum {
@@ -230,7 +230,7 @@ the default system <code>free</code>.
     PARAM_END /* so we don't have to worry about comma warning */
 };</pre></code>
 
-<h7>19.4.1.3.2. Floating Point Parameter</h7>
+<h6>19.4.1.3.2. Floating Point Parameter</h6>
 
 <p><a id="wm_000_2844"></a>A floating point parameter uses the enum type <code>PARAM_FLOAT</code>.
 <div><b><i>&lt;&lt;parameter_enum&gt;&gt;=</i></b></div><pre><code>PARAM_FLOAT,</pre></code>
@@ -238,7 +238,7 @@ the default system <code>free</code>.
 <code>monolith_state_param_mkfloat</code>.
 </p>
 
-<h8>19.4.1.3.2.1. state_param_mkfloat</h8>
+<h7>19.4.1.3.2.1. state_param_mkfloat</h7>
 
 <p><a id="wm_000_2850"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_state_param_mkfloat(monolith_state_param *p,
                                  const char *name,
@@ -260,7 +260,7 @@ the default system <code>free</code>.
     return 1;
 }</pre></code>
 
-<h8>19.4.1.3.2.2. state_param_float</h8>
+<h7>19.4.1.3.2.2. state_param_float</h7>
 
 <p><a id="wm_000_2855"></a>The value of a float can be retrieved using the function
 <code>monolith_param_float</code>. This will do type checking. If it's not a float,
@@ -275,7 +275,7 @@ it will return 0.
     return 1;
 }</pre></code>
 
-<h8>19.4.1.3.2.3. state_param_float_set</h8>
+<h7>19.4.1.3.2.3. state_param_float_set</h7>
 
 <p><a id="wm_000_2861"></a>The value of a float can be set using the function
 <code>monolith_param_float_set</code>. If the parameter is not a float, it will
@@ -292,7 +292,7 @@ return 0.
     return 1;
 }</pre></code>
 
-<h7>19.4.1.3.3. Integer Parameter</h7>
+<h6>19.4.1.3.3. Integer Parameter</h6>
 
 <p><a id="wm_000_2867"></a>An integer parameter uses the enum type <code>PARAM_INT</code>.
 <div><b><i>&lt;&lt;parameter_enum&gt;&gt;=</i></b></div><pre><code>PARAM_INT,</pre></code>
@@ -300,7 +300,7 @@ return 0.
 <code>monolith_state_param_mkint</code>.
 </p>
 
-<h8>19.4.1.3.3.1. state_param_mkint</h8>
+<h7>19.4.1.3.3.1. state_param_mkint</h7>
 
 <p><a id="wm_000_2872"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_state_param_mkint(monolith_state_param *p,
                                const char *name,
@@ -326,7 +326,7 @@ return 0.
 it will return 0.
 </p>
 
-<h8>19.4.1.3.3.2. state_param_int</h8>
+<h7>19.4.1.3.3.2. state_param_int</h7>
 
 <p><a id="wm_000_2878"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_state_param_int(monolith_state_param *p, int **i);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_state_param_int(monolith_state_param *p, int **i)
@@ -338,7 +338,7 @@ it will return 0.
     return 1;
 }</pre></code>
 
-<h8>19.4.1.3.3.3. state_param_int_set</h8>
+<h7>19.4.1.3.3.3. state_param_int_set</h7>
 
 <p><a id="wm_000_2883"></a>The value of an integer can be set using the function
 <code>monolith_param_int_set</code>. If the parameter is not an integer, it will
@@ -355,11 +355,11 @@ return 0.
     return 1;
 }</pre></code>
 
-<h7>19.4.1.3.4. String Parameter</h7>
+<h6>19.4.1.3.4. String Parameter</h6>
 
 <p><a id="wm_000_2889"></a></p>
 
-<h8>19.4.1.3.4.1. state_param_mkstring</h8>
+<h7>19.4.1.3.4.1. state_param_mkstring</h7>
 
 <p><a id="wm_000_2890"></a>CLOSED: [2019-01-13 Sun 18:57]
 A string parameter uses the enum type <code>PARAM_STRING</code>.
@@ -394,7 +394,7 @@ as well.
 If it's not a string, it will return 0.
 </p>
 
-<h8>19.4.1.3.4.2. state_param_string</h8>
+<h7>19.4.1.3.4.2. state_param_string</h7>
 
 <p><a id="wm_000_2900"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_state_param_string(monolith_state_param *p, char **str);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_state_param_string(monolith_state_param *p, char **str)
@@ -406,19 +406,19 @@ If it's not a string, it will return 0.
     return 1;
 }</pre></code>
 
-<h7>19.4.1.3.5. Monome State Parameter</h7>
+<h6>19.4.1.3.5. Monome State Parameter</h6>
 
 <p><a id="wm_000_2905"></a>The monome LED state has it's own parameter. The parameter itself stores the
 current state of the LED grid as a string. More information can be found
 in the section <a href="How monome state data is stored">How monome state data is stored</a>.
 </p>
 
-<h8>19.4.1.3.5.1. monome state type enum</h8>
+<h7>19.4.1.3.5.1. monome state type enum</h7>
 
 <p><a id="wm_000_2907"></a>A monome state parameter uses the enum type <code>PARAM_MSTATE</code>.
 <div><b><i>&lt;&lt;parameter_enum&gt;&gt;=</i></b></div><pre><code>PARAM_MSTATE,</pre></code>
 
-<h8>19.4.1.3.5.2. state_param_mkmstate</h8>
+<h7>19.4.1.3.5.2. state_param_mkmstate</h7>
 
 <p><a id="wm_000_2911"></a>When the monolith state is saved, it only saves the string. The data allocated
 is all the data needed for the string, plus the null terminator. With 3 bytes
@@ -444,7 +444,7 @@ per row, and 8 rows, this totals to be 25 bytes.
     return 1;
 }</pre></code>
 
-<h8>19.4.1.3.5.3. state_param_mstate</h8>
+<h7>19.4.1.3.5.3. state_param_mstate</h7>
 
 <p><a id="wm_000_2917"></a>This function will read information from the state param and read it into the
 monolith monome state.
@@ -462,7 +462,7 @@ monolith monome state.
     return 1;
 }</pre></code>
 
-<h8>19.4.1.3.5.4. state_param_mstate_set</h8>
+<h7>19.4.1.3.5.4. state_param_mstate_set</h7>
 
 <p><a id="wm_000_2923"></a>The value of an integer can be set using the function
 <code>monolith_param_int_set</code>. If the parameter is not an integer, it will
@@ -482,18 +482,18 @@ return 0.
     return 1;
 }</pre></code>
 
-<h7>19.4.1.3.6. DONE Blob Parameter [4/4]</h7>
+<h6>19.4.1.3.6. DONE Blob Parameter [4/4]</h6>
 
 <p><a id="wm_000_2929"></a>CLOSED: [2019-04-05 Fri 21:36]
 </p>
 
-<h8>19.4.1.3.6.1. DONE Blob Enum</h8>
+<h7>19.4.1.3.6.1. DONE Blob Enum</h7>
 
 <p><a id="wm_000_2931"></a>CLOSED: [2019-03-17 Sun 23:05]
 A blob is used to store binary data.
 <div><b><i>&lt;&lt;parameter_enum&gt;&gt;=</i></b></div><pre><code>PARAM_BLOB,</pre></code>
 
-<h8>19.4.1.3.6.2. DONE state_param_mkblob</h8>
+<h7>19.4.1.3.6.2. DONE state_param_mkblob</h7>
 
 <p><a id="wm_000_2935"></a>CLOSED: [2019-04-05 Fri 21:26]
 The function <code>state_param_mkblob</code> creates a blob entry. If the blob needs to be
@@ -550,7 +550,7 @@ int monolith_state_param_mkblob(monolith_state_param *p,
     return 1;
 }</pre></code>
 
-<h8>19.4.1.3.6.3. DONE state_param_blob</h8>
+<h7>19.4.1.3.6.3. DONE state_param_blob</h7>
 
 <p><a id="wm_000_2948"></a>CLOSED: [2019-04-05 Fri 21:32]
 This function will read a state parameter, and store the pointer and size into
@@ -572,7 +572,7 @@ the variables <code>blob</code> and <code>blobsize</code>.
     return 1;
 }</pre></code>
 
-<h8>19.4.1.3.6.4. DONE state_param_blob_set</h8>
+<h7>19.4.1.3.6.4. DONE state_param_blob_set</h7>
 
 <p><a id="wm_000_2954"></a>CLOSED: [2019-05-12 Sun 10:42]
 An initialized Blob parameter (initialized with empty values) can be set
@@ -598,7 +598,7 @@ require the blob, the blob size, and an optional destructor callback.
     return 1;
 }</pre></code>
 
-<h5>19.4.2. Monolith Schema Data</h5>
+<h4>19.4.2. Monolith Schema Data</h4>
 
 <p><a id="wm_000_2960"></a>A group of parameters (for say, a page) is known as a <code>schema</code>. In practice,
 one uses schemas to read and write data to a SQLite table.
@@ -607,7 +607,7 @@ one uses schemas to read and write data to a SQLite table.
 destroyed when it is being used.
 </p>
 
-<h6>19.4.2.1. Schema Initialization/Cleanup</h6>
+<h5>19.4.2.1. Schema Initialization/Cleanup</h5>
 
 <p><a id="wm_000_2962"></a></p>
 <p>When schema is initialized, it pre-allocates a fixed number of parameters.
@@ -636,18 +636,18 @@ with variable names and values.
     free(s);
 }</pre></code>
 
-<h6>19.4.2.2. Schema Contents</h6>
+<h5>19.4.2.2. Schema Contents</h5>
 
 <p><a id="wm_000_2977"></a></p>
 
-<h7>19.4.2.2.1. Schema Struct Declaration</h7>
+<h6>19.4.2.2.1. Schema Struct Declaration</h6>
 
 <p><a id="wm_000_2978"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_state_schema monolith_state_schema;</pre></code>
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct monolith_state_schema {
 &lt;&lt;schema_contents&gt;&gt;
 };</pre></code>
 
-<h7>19.4.2.2.2. Param Array</h7>
+<h6>19.4.2.2.2. Param Array</h6>
 
 <p><a id="wm_000_2985"></a><div><b><i>&lt;&lt;schema_contents&gt;&gt;=</i></b></div><pre><code>monolith_state_param *params;</pre></code>
 <p></p>
@@ -678,20 +678,20 @@ if(s-&gt;params != NULL) free(s-&gt;params);</pre></code>
     return 1;
 }</pre></code>
 
-<h7>19.4.2.2.3. Number of Parameters</h7>
+<h6>19.4.2.2.3. Number of Parameters</h6>
 
 <p><a id="wm_000_3001"></a>The number of parameters is stored inside of a variable called <code>nparams</code>.
 <div><b><i>&lt;&lt;schema_contents&gt;&gt;=</i></b></div><pre><code>int nparams;</pre></code>
 <div><b><i>&lt;&lt;schema_init&gt;&gt;=</i></b></div><pre><code>s-&gt;nparams = nparams;</pre></code>
 
-<h6>19.4.2.3. Schema Parameter Setters/Getters</h6>
+<h5>19.4.2.3. Schema Parameter Setters/Getters</h5>
 
 <p><a id="wm_000_3007"></a>Parameters inside of the schema can be indirectly set using schema functions.
 Pages will uses these functions, so they get the shorter prefix
 <code>monolith_param</code>.
 </p>
 
-<h7>19.4.2.3.1. Schema Floating Point Parameter</h7>
+<h6>19.4.2.3.1. Schema Floating Point Parameter</h6>
 
 <p><a id="wm_000_3009"></a>A monolith parameter can be created using the function <code>monolith_param_mkfloat</code>.
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_param_mkfloat(monolith_state_schema *s,
@@ -724,11 +724,11 @@ Pages will uses these functions, so they get the shorter prefix
     return rc;
 }</pre></code>
 
-<h7>19.4.2.3.2. Schema Integer Parameter</h7>
+<h6>19.4.2.3.2. Schema Integer Parameter</h6>
 
 <p><a id="wm_000_3020"></a></p>
 
-<h8>19.4.2.3.2.1. Integer Param Maker</h8>
+<h7>19.4.2.3.2.1. Integer Param Maker</h7>
 
 <p><a id="wm_000_3021"></a>A monolith parameter can be created using the function <code>monolith_param_mkfloat</code>.
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_param_mkint(monolith_state_schema *s,
@@ -761,11 +761,11 @@ Pages will uses these functions, so they get the shorter prefix
     return rc;
 }</pre></code>
 
-<h7>19.4.2.3.3. Schema String Parameter</h7>
+<h6>19.4.2.3.3. Schema String Parameter</h6>
 
 <p><a id="wm_000_3033"></a></p>
 
-<h8>19.4.2.3.3.1. String Param Maker</h8>
+<h7>19.4.2.3.3.1. String Param Maker</h7>
 
 <p><a id="wm_000_3034"></a>A monolith parameter can be created using the function <code>monolith_param_mkfloat</code>.
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_param_mkstring(monolith_state_schema *s,
@@ -796,7 +796,7 @@ Pages will uses these functions, so they get the shorter prefix
     return monolith_state_param_string(p, val);
 }</pre></code>
 
-<h8>19.4.2.3.3.3. Const String Param Getter</h8>
+<h7>19.4.2.3.3.3. Const String Param Getter</h7>
 
 <p><a id="wm_000_3046"></a>In many situations, <code>const</code> strings are used more often, so a wrapper function
 has been created called <code>monolith_param_stringc</code>. On error, the function
@@ -809,12 +809,12 @@ will return NULL.
     return str;
 }</pre></code>
 
-<h7>19.4.2.3.4. Schema Monolith State Parameter</h7>
+<h6>19.4.2.3.4. Schema Monolith State Parameter</h6>
 
 <p><a id="wm_000_3052"></a>This refers to the <a href="Monome Page State">LED state</a> of the monome grid.
 </p>
 
-<h8>19.4.2.3.4.1. Schema State Param Maker</h8>
+<h7>19.4.2.3.4.1. Schema State Param Maker</h7>
 
 <p><a id="wm_000_3054"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_param_mkmstate(monolith_state_schema *s,
                             int pos,
@@ -832,7 +832,7 @@ will return NULL.
     return monolith_state_param_mkmstate(p, name, len, ms);
 }</pre></code>
 
-<h8>19.4.2.3.4.2. Schema State Param Getter</h8>
+<h7>19.4.2.3.4.2. Schema State Param Getter</h7>
 
 <p><a id="wm_000_3059"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_param_mstate(monolith_state_schema *s,
                           int pos,
@@ -846,12 +846,12 @@ will return NULL.
     return monolith_state_param_mstate(p, ms);
 }</pre></code>
 
-<h7>19.4.2.3.5. DONE Schema Blob Parameter</h7>
+<h6>19.4.2.3.5. DONE Schema Blob Parameter</h6>
 
 <p><a id="wm_000_3064"></a>CLOSED: [2019-04-05 Fri 21:36]
 </p>
 
-<h8>19.4.2.3.5.1. DONE Blob Param Maker</h8>
+<h7>19.4.2.3.5.1. DONE Blob Param Maker</h7>
 
 <p><a id="wm_000_3066"></a>CLOSED: [2019-04-05 Fri 21:34]
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_param_mkblob(monolith_state_schema *s,
@@ -874,7 +874,7 @@ will return NULL.
     return monolith_state_param_mkblob(p, name, len, blob, blobsize, dtor);
 }</pre></code>
 
-<h8>19.4.2.3.5.2. DONE Blob Param Getter</h8>
+<h7>19.4.2.3.5.2. DONE Blob Param Getter</h7>
 
 <p><a id="wm_000_3072"></a>CLOSED: [2019-04-05 Fri 21:36]
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_param_blob(monolith_state_schema *s,
@@ -891,7 +891,7 @@ will return NULL.
     return monolith_state_param_blob(p, blob, blobsize);
 }</pre></code>
 
-<h8>19.4.2.3.5.3. DONE Blob Param Setter</h8>
+<h7>19.4.2.3.5.3. DONE Blob Param Setter</h7>
 
 <p><a id="wm_000_3078"></a>CLOSED: [2019-05-09 Thu 08:20]
 Unlike other parameter times, making a blob parameter and setting
@@ -932,7 +932,7 @@ int monolith_param_setblob_default(monolith_state_schema *s,
     return monolith_param_setblob(s, pos, blob, blobsize, free_blob);
 }</pre></code>
 
-<h5>19.4.3. Monolith Schema write test</h5>
+<h4>19.4.3. Monolith Schema write test</h4>
 
 <p><a id="wm_000_3089"></a>This is a quick function to make sure the schema things work out okay.
 From there, this can be swapped out to write to an actual SQLite database.
@@ -989,7 +989,7 @@ From there, this can be swapped out to write to an actual SQLite database.
     printf("%s\n", buf);
 }</pre></code>
 
-<h4>19.5. How monome state data is stored</h4>
+<h3>19.5. How monome state data is stored</h3>
 
 <p><a id="wm_000_3095"></a>The Grid state data is encoded as in a non standard ascii base 64 string,
 which allows the data to be stored in a portable manner, while sacrificing
@@ -1004,7 +1004,7 @@ ascii characters that also contain the entire alphabet (capital and lowercase).
 This chosen range is an aesthetic choice by the author.
 </p>
 
-<h5>19.5.1. Encoding/Decoding 6 bit values</h5>
+<h4>19.5.1. Encoding/Decoding 6 bit values</h4>
 
 <p><a id="wm_000_3097"></a>The atomic operation for the monolith base64 algorithm are 6 bit values,
 which get represented as printable ascii character.
@@ -1030,7 +1030,7 @@ adding the starting bias of 58.
     return x - 58;
 }</pre></code>
 
-<h5>19.5.2. Encoding/Decoding a monome row</h5>
+<h4>19.5.2. Encoding/Decoding a monome row</h4>
 
 <p><a id="wm_000_3107"></a>A monome state is encoded/decoded one row at a time. Rows are represented as
 2-byte unsigned short values (16 bits), which get mapped to the monome in a
@@ -1066,7 +1066,7 @@ and using bitshifting operations to create a row.
     return out;
 }</pre></code>
 
-<h5>19.5.3. Encoding/Decoding a monome grid</h5>
+<h4>19.5.3. Encoding/Decoding a monome grid</h4>
 
 <p><a id="wm_000_3117"></a>The monome grid consists of 8 rows of 16 bits. The encode/decode functions
 handle converting to and from the C representation of 8 16-bit values
@@ -1102,7 +1102,7 @@ void monolith_base64_grid_decode(monolith_page_mstate *mstate, char *bytes)
     }
 }</pre></code>
 
-<h5>19.5.4. Base64 Scheme functions</h5>
+<h4>19.5.4. Base64 Scheme functions</h4>
 
 <p><a id="wm_000_3123"></a>Rows are encoded and decoded with <code>monolith:base64-16bit-encode</code> and
 <code>monolith:base64-16bit-decode</code>.
@@ -1127,7 +1127,7 @@ void monolith_base64_grid_decode(monolith_page_mstate *mstate, char *bytes)
     return s9_make_integer(x);
 }</pre></code>
 
-<h4>19.6. Generating SQL commands from Schema data</h4>
+<h3>19.6. Generating SQL commands from Schema data</h3>
 
 <p><a id="wm_000_3131"></a>The Schema, once populated with parameters, is passed of to the monolith
 state to be translated to a SQL database. In order to do this, the Schema needs
@@ -1141,14 +1141,14 @@ do a runthrough to get the number of bytes needed to allocate. second, to
 actually write to the buffer.
 </p>
 
-<h5>19.6.1. SQL Create Command from Schema</h5>
+<h4>19.6.1. SQL Create Command from Schema</h4>
 
 <p><a id="wm_000_3133"></a>This will create the necessary table creation command. This SQL command will
 check if the table exists first before writing, so it is safe to call every
 time.
 </p>
 
-<h6>19.6.1.1. monolith_state_schema_sql_create</h6>
+<h5>19.6.1.1. monolith_state_schema_sql_create</h5>
 
 <p><a id="wm_000_3135"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>unsigned int monolith_state_schema_sql_create(monolith_state_schema *s,
                                               const char *tabname,
@@ -1195,37 +1195,37 @@ time.
     return pos + 1; /* don't forget the NULL terminator :) */
 }</pre></code>
 
-<h6>19.6.1.2. Parameter types</h6>
+<h5>19.6.1.2. Parameter types</h5>
 
 <p><a id="wm_000_3142"></a></p>
 
-<h7>19.6.1.2.1. No Parameter</h7>
+<h6>19.6.1.2.1. No Parameter</h6>
 
 <p><a id="wm_000_3143"></a><div><b><i>&lt;&lt;schema_sql_create_types&gt;&gt;=</i></b></div><pre><code>case PARAM_NONE:
     break;</pre></code>
 
-<h7>19.6.1.2.2. SQLite Float</h7>
+<h6>19.6.1.2.2. SQLite Float</h6>
 
 <p><a id="wm_000_3147"></a><div><b><i>&lt;&lt;schema_sql_create_types&gt;&gt;=</i></b></div><pre><code>case PARAM_FLOAT:
     if(write) pos += sprintf(&buf[pos], "%s FLOAT", param-&gt;name);
     else pos += snprintf(NULL, 0, "%s FLOAT", param-&gt;name);
     break;</pre></code>
 
-<h7>19.6.1.2.3. SQLite Integer</h7>
+<h6>19.6.1.2.3. SQLite Integer</h6>
 
 <p><a id="wm_000_3150"></a><div><b><i>&lt;&lt;schema_sql_create_types&gt;&gt;=</i></b></div><pre><code>case PARAM_INT:
     if(write) pos += sprintf(&buf[pos], "%s INT", param-&gt;name);
     else pos += snprintf(NULL, 0, "%s INT", param-&gt;name);
     break;</pre></code>
 
-<h7>19.6.1.2.4. SQLite String</h7>
+<h6>19.6.1.2.4. SQLite String</h6>
 
 <p><a id="wm_000_3153"></a><div><b><i>&lt;&lt;schema_sql_create_types&gt;&gt;=</i></b></div><pre><code>case PARAM_STRING:
     if(write) pos += sprintf(&buf[pos], "%s TEXT", param-&gt;name);
     else pos += snprintf(NULL, 0, "%s TEXT", param-&gt;name);
     break;</pre></code>
 
-<h7>19.6.1.2.5. SQLite Monome State</h7>
+<h6>19.6.1.2.5. SQLite Monome State</h6>
 
 <p><a id="wm_000_3156"></a>Well, this is really represented as the TEXT type.
 <div><b><i>&lt;&lt;schema_sql_create_types&gt;&gt;=</i></b></div><pre><code>case PARAM_MSTATE:
@@ -1233,7 +1233,7 @@ time.
     else pos += snprintf(NULL, 0, "%s TEXT", param-&gt;name);
     break;</pre></code>
 
-<h7>19.6.1.2.6. SQLite Blob</h7>
+<h6>19.6.1.2.6. SQLite Blob</h6>
 
 <p><a id="wm_000_3160"></a>SQLite uses its own BLOB type.
 <div><b><i>&lt;&lt;schema_sql_create_types&gt;&gt;=</i></b></div><pre><code>case PARAM_BLOB:
@@ -1241,7 +1241,7 @@ time.
     else pos += snprintf(NULL, 0, "%s BLOB", param-&gt;name);
     break;</pre></code>
 
-<h5>19.6.2. SQL Insert Command from Schema</h5>
+<h4>19.6.2. SQL Insert Command from Schema</h4>
 
 <p><a id="wm_000_3164"></a>The following function described below will create an SQLite template string,
 which can then be used by the SQLite API to write data into a string.
@@ -1303,7 +1303,7 @@ which can then be used by the SQLite API to write data into a string.
     return pos + 1; /* don't forget the NULL terminator :) */
 }</pre></code>
 
-<h5>19.6.3. SQL Select Command from Schema</h5>
+<h4>19.6.3. SQL Select Command from Schema</h4>
 
 <p><a id="wm_000_3170"></a>When a state is read from disk, a SQLite select command must be prepared.
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>unsigned int monolith_state_schema_sql_select(monolith_state_schema *s,
@@ -1341,12 +1341,12 @@ which can then be used by the SQLite API to write data into a string.
     return pos + 1; /* don't forget the NULL terminator :) */
 }</pre></code>
 
-<h4>19.7. SQLite File I/O</h4>
+<h3>19.7. SQLite File I/O</h3>
 
 <p><a id="wm_000_3176"></a>Actual operations involving the SQLite API happen with these functions below.
 </p>
 
-<h5>19.7.1. Opening/Closing a SQLite database.</h5>
+<h4>19.7.1. Opening/Closing a SQLite database.</h4>
 
 <p><a id="wm_000_3178"></a>A database is opened with the function <code>monolith_state_dbopen</code>. This is a
 wrapper around <code>sqlite3_open</code>. A database is closed with
@@ -1377,7 +1377,7 @@ pointer (a design addition I made after this section).
     sqlite3_close(state-&gt;db);
 }</pre></code>
 
-<h5>19.7.2. A Note on Blobs</h5>
+<h4>19.7.2. A Note on Blobs</h4>
 
 <p><a id="wm_000_3188"></a>NOTE: blobs opt to use the normal blob rather than the blob64 type, which takes
 in a signed integer for size (<code>sqlite3_bind_blob</code>).
@@ -1417,7 +1417,7 @@ a wrapper around the system <code>free</code>.
     free(ud);
 }</pre></code>
 
-<h5>19.7.3. Writing a Schema to a SQLite database</h5>
+<h4>19.7.3. Writing a Schema to a SQLite database</h4>
 
 <p><a id="wm_000_3202"></a>The function <code>monolith_state_write_schema</code> writes a schema to disk. This
 function typically gets called inside of a page save callback.
@@ -1529,7 +1529,7 @@ function typically gets called inside of a page save callback.
     return 1;
 }</pre></code>
 
-<h5>19.7.4. Reading from a SQLite databse to a Schema</h5>
+<h4>19.7.4. Reading from a SQLite databse to a Schema</h4>
 
 <p><a id="wm_000_3211"></a>The function <code>monolith_state_read_schema</code> reads a schema from disk.
 This function typically gets called inside of a page load callback.
@@ -1623,16 +1623,16 @@ This function typically gets called inside of a page load callback.
     return 1;
 }</pre></code>
 
-<h4>19.8. Opening/Closing a Monolith State database</h4>
+<h3>19.8. Opening/Closing a Monolith State database</h3>
 
 <p><a id="wm_000_3219"></a>This opens the state stored inside of the monolith struct.
 </p>
 
-<h5>19.8.1. Opening The Monolith State</h5>
+<h4>19.8.1. Opening The Monolith State</h4>
 
 <p><a id="wm_000_3221"></a></p>
 
-<h6>19.8.1.1. Opening State From C</h6>
+<h5>19.8.1.1. Opening State From C</h5>
 
 <p><a id="wm_000_3222"></a>This can be done with the function <code>monolith_state_open</code>.
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_state_open(monolith_d *m, const char *filename);</pre></code>
@@ -1641,7 +1641,7 @@ This function typically gets called inside of a page load callback.
     return monolith_state_dbopen(&m-&gt;state, filename);
 }</pre></code>
 
-<h6>19.8.1.2. Opening State from Scheme</h6>
+<h5>19.8.1.2. Opening State from Scheme</h5>
 
 <p><a id="wm_000_3228"></a>This can be done with the function <code>monolith:state-open</code>.
 <div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:state-open", pp_state_open, 1, 1, {STR,___,___}},</pre></code>
@@ -1657,7 +1657,7 @@ This function typically gets called inside of a page load callback.
     return UNSPECIFIC;
 }</pre></code>
 
-<h6>19.8.1.3. Opening State from Janet</h6>
+<h5>19.8.1.3. Opening State from Janet</h5>
 
 <p><a id="wm_000_3234"></a>This is done with <code>monolith/state-open</code>.
 <div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
@@ -1684,11 +1684,11 @@ j_state_open,
     return janet_wrap_nil();
 }</pre></code>
 
-<h5>19.8.2. Closing Monolith State</h5>
+<h4>19.8.2. Closing Monolith State</h4>
 
 <p><a id="wm_000_3240"></a></p>
 
-<h6>19.8.2.1. Closing the State from C</h6>
+<h5>19.8.2.1. Closing the State from C</h5>
 
 <p><a id="wm_000_3241"></a>This can be done with <code>monolith_state_close</code>
 #+NAME: function_declarations
@@ -1698,7 +1698,7 @@ j_state_open,
     monolith_state_dbclose(&m-&gt;state);
 }</pre></code>
 
-<h6>19.8.2.2. Closing the State from Scheme</h6>
+<h5>19.8.2.2. Closing the State from Scheme</h5>
 
 <p><a id="wm_000_3247"></a>State can be explicitely closed with <code>monolith:state-close</code>.
 <div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:state-close", pp_state_close, 0, 0, {___,___,___}},</pre></code>
@@ -1709,7 +1709,7 @@ j_state_open,
     return UNSPECIFIC;
 }</pre></code>
 
-<h6>19.8.2.3. Opening State from Janet</h6>
+<h5>19.8.2.3. Opening State from Janet</h5>
 
 <p><a id="wm_000_3253"></a>This is done with <code>monolith/state-close</code>.
 <div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
@@ -1728,13 +1728,13 @@ j_state_close,
     return janet_wrap_nil();
 }</pre></code>
 
-<h4>19.9. Raw SQLite commands on open state file</h4>
+<h3>19.9. Raw SQLite commands on open state file</h3>
 
 <p><a id="wm_000_3259"></a>Occasionally, it is desirable to evaluate raw sqlite
 commands on an open state file.
 </p>
 
-<h5>19.9.1. In C</h5>
+<h4>19.9.1. In C</h4>
 
 <p><a id="wm_000_3261"></a>This can be done with <code>monolith_state_sql</code>.
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_state_sql(monolith_d *m, const char *cmd);</pre></code>
@@ -1753,7 +1753,7 @@ commands on an open state file.
     return 1;
 }</pre></code>
 
-<h5>19.9.2. In Scheme</h5>
+<h4>19.9.2. In Scheme</h4>
 
 <p><a id="wm_000_3267"></a>This can be done with <code>monolith:state-sql</code>
 #+NAME: primitive_entries

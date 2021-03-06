@@ -9,7 +9,7 @@
 <body>
 <div id="main">
 
-<h3>13. Monome Hardware (Arc, Grid) and Libmonome</h3>
+<h2>13. Monome Hardware (Arc, Grid) and Libmonome</h2>
 
 <p><a id="wm_000_1848"></a>The monome is one of the core peripherals in monolith. This
 will outline how this peripheral is managed.
@@ -21,13 +21,13 @@ interface and the liblo library. At this level, it is
 overkill.
 </p>
 
-<h4>13.1. Header Includes</h4>
+<h3>13.1. Header Includes</h3>
 
 <p><a id="wm_000_1850"></a>The libmonome library uses the header file <code>monome.h</code>.
 </p>
 <div><b><i>&lt;&lt;system_includes&gt;&gt;=</i></b></div><pre><code>#include &lt;monome.h&gt;</pre></code>
 
-<h4>13.2. Device Location (Platform-dependent)</h4>
+<h3>13.2. Device Location (Platform-dependent)</h3>
 
 <p><a id="wm_000_1854"></a>The libmonome library communicates with the monome directly,
 rather than through an OSC layer. This path is OS dependent,
@@ -51,7 +51,7 @@ so C macros are used to define the monome path.
 #define ARC_DEVICE "/dev/cu.usbserial-m1100203"
 #endif</pre></code>
 
-<h4>13.3. Determining Device Path (Linux Only)</h4>
+<h3>13.3. Determining Device Path (Linux Only)</h3>
 
 <p><a id="wm_000_1861"></a>On Linux, both the Arc and Grid are listed as being
 <code>/dev/ttyN</code>, where N could be 0 or 1. In order to run both,
@@ -70,14 +70,14 @@ work because the symlink permissions are wrong
 &lt;&lt;pathfinder_functions&gt;&gt;
 #endif</pre></code>
 
-<h5>13.3.1. Path finder system includes</h5>
+<h4>13.3.1. Path finder system includes</h4>
 
 <p><a id="wm_000_1873"></a><div><b><i>&lt;&lt;system_includes&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_LINUX
 #include &lt;sys/types.h&gt;
 #include &lt;sys/stat.h&gt;
 #endif</pre></code>
 
-<h5>13.3.2. Get TTY Function</h5>
+<h4>13.3.2. Get TTY Function</h4>
 
 <p><a id="wm_000_1876"></a>This is code directly copied and pasted from my initil
 playground. Is is a function that checks symlinks of an
@@ -167,7 +167,7 @@ static const char * get_tty(const char *address)
     }
 }</pre></code>
 
-<h5>13.3.3. Get Grid Path</h5>
+<h4>13.3.3. Get Grid Path</h4>
 
 <p><a id="wm_000_1881"></a>The function <code>monolith_path_grid</code> returns the proper path to
 the monome grid.
@@ -179,7 +179,7 @@ the monome grid.
     return get_tty(grid_address);
 }</pre></code>
 
-<h5>13.3.4. Get Arc Path</h5>
+<h4>13.3.4. Get Arc Path</h4>
 
 <p><a id="wm_000_1889"></a>The function <code>monolith_path_grid</code> returns the proper path to
 the monome arc.
@@ -191,7 +191,7 @@ the monome arc.
     return get_tty(arc_address);
 }</pre></code>
 
-<h4>13.4. Libmonome Data (grid + arc)</h4>
+<h3>13.4. Libmonome Data (grid + arc)</h3>
 
 <p><a id="wm_000_1895"></a>libmonome handles two monome devices: the arc and the grid.
 The grid data is stored in the <code>monome</code> struct, while the
@@ -202,13 +202,13 @@ The grid data is stored in the <code>monome</code> struct, while the
 <div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>monome_t *arc;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;arc = NULL;</pre></code>
 
-<h4>13.5. Monome (Grid) Setup and Cleanup</h4>
+<h3>13.5. Monome (Grid) Setup and Cleanup</h3>
 
 <p><a id="wm_000_1905"></a>Grid setup and cleanup is done with the functions
 <code>monolith_monome_setup</code> and <code>monolith_monome_cleanup</code>.
 </p>
 
-<h5>13.5.1. Monome Setup/Cleanup Top-level Callbacks</h5>
+<h4>13.5.1. Monome Setup/Cleanup Top-level Callbacks</h4>
 
 <p><a id="wm_000_1907"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_monome_setup(monolith_d *monome);
 void monolith_monome_cleanup(monolith_d *monome);</pre></code>
@@ -243,7 +243,7 @@ server hasn't been started.
 </p>
 <div><b><i>&lt;&lt;hardware_cleanup&gt;&gt;=</i></b></div><pre><code>monolith_monome_cleanup(m);</pre></code>
 
-<h5>13.5.2. Monome Press Handlers</h5>
+<h4>13.5.2. Monome Press Handlers</h4>
 
 <p><a id="wm_000_1925"></a><div><b><i>&lt;&lt;set_monome_press_handlers&gt;&gt;=</i></b></div><pre><code>monome_register_handler(m-&gt;monome, MONOME_BUTTON_DOWN, handle_press_down, m);
 monome_register_handler(m-&gt;monome, MONOME_BUTTON_UP, handle_press_up, m);</pre></code>
@@ -267,14 +267,14 @@ static void handle_press_up(const monome_event_t *e, void *data)
     monolith_monome_press(&m-&gt;vmonome, e-&gt;grid.x, e-&gt;grid.y, 0);
 }</pre></code>
 
-<h5>13.5.3. Monome Virtual Interface Binding</h5>
+<h4>13.5.3. Monome Virtual Interface Binding</h4>
 
 <p><a id="wm_000_1933"></a>In this section, the monome will bind callbacks to the
 monome virtual interface.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>&lt;&lt;monome_callback_declarations&gt;&gt;</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;monome_callbacks&gt;&gt;</pre></code>
 
-<h6>13.5.3.1. Set Monome Hardware Data</h6>
+<h5>13.5.3.1. Set Monome Hardware Data</h5>
 
 <p><a id="wm_000_1943"></a>The only data the monome virtual interface should need
 to communicate with the monome is the <code>monome_d</code> struct.
@@ -282,7 +282,7 @@ This gets set with the function <code>monolith_monome_data_set</code>.
 </p>
 <div><b><i>&lt;&lt;set_monome_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_monome_data_set(&m-&gt;vmonome, m-&gt;monome);</pre></code>
 
-<h6>13.5.3.2. Set Monome Hardware Press Callback</h6>
+<h5>13.5.3.2. Set Monome Hardware Press Callback</h5>
 
 <p><a id="wm_000_1948"></a><div><b><i>&lt;&lt;monome_callback_declarations&gt;&gt;=</i></b></div><pre><code>static void monome_press(monolith_monome_d *m, int x, int y, int s);</pre></code>
 <div><b><i>&lt;&lt;monome_callbacks&gt;&gt;=</i></b></div><pre><code>static void monome_press(monolith_monome_d *m, int x, int y, int s)
@@ -293,7 +293,7 @@ This gets set with the function <code>monolith_monome_data_set</code>.
 }</pre></code>
 <div><b><i>&lt;&lt;set_monome_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_monome_press_set(&m-&gt;vmonome, monome_press);</pre></code>
 
-<h6>13.5.3.3. Set Monome LED set Callback</h6>
+<h5>13.5.3.3. Set Monome LED set Callback</h5>
 
 <p><a id="wm_000_1957"></a><div><b><i>&lt;&lt;monome_callback_declarations&gt;&gt;=</i></b></div><pre><code>static void led_set(monolith_monome_d *m, int x, int y, int s);</pre></code>
 <div><b><i>&lt;&lt;monome_callbacks&gt;&gt;=</i></b></div><pre><code>static void led_set(monolith_monome_d *m, int x, int y, int s)
@@ -304,7 +304,7 @@ This gets set with the function <code>monolith_monome_data_set</code>.
 }</pre></code>
 <div><b><i>&lt;&lt;set_monome_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_monome_led_set_set(&m-&gt;vmonome, led_set);</pre></code>
 
-<h6>13.5.3.4. Set Monome LED row callback</h6>
+<h5>13.5.3.4. Set Monome LED row callback</h5>
 
 <p><a id="wm_000_1964"></a><div><b><i>&lt;&lt;monome_callback_declarations&gt;&gt;=</i></b></div><pre><code>static void led_row(monolith_monome_d *m, int x, int y, int s);</pre></code>
 <div><b><i>&lt;&lt;monome_callbacks&gt;&gt;=</i></b></div><pre><code>static void led_row(monolith_monome_d *m, int x, int y, int s)
@@ -315,7 +315,7 @@ This gets set with the function <code>monolith_monome_data_set</code>.
 }</pre></code>
 <div><b><i>&lt;&lt;set_monome_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_monome_led_row_set(&m-&gt;vmonome, led_row);</pre></code>
 
-<h6>13.5.3.5. Set Monome LED all callback</h6>
+<h5>13.5.3.5. Set Monome LED all callback</h5>
 
 <p><a id="wm_000_1971"></a><div><b><i>&lt;&lt;monome_callback_declarations&gt;&gt;=</i></b></div><pre><code>static void led_all(monolith_monome_d *m, int s);</pre></code>
 <div><b><i>&lt;&lt;monome_callbacks&gt;&gt;=</i></b></div><pre><code>static void led_all(monolith_monome_d *m, int s)
@@ -326,7 +326,7 @@ This gets set with the function <code>monolith_monome_data_set</code>.
 }</pre></code>
 <div><b><i>&lt;&lt;set_monome_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_monome_led_all_set(&m-&gt;vmonome, led_all);</pre></code>
 
-<h6>13.5.3.6. DONE Set Monome LED column Callback</h6>
+<h5>13.5.3.6. DONE Set Monome LED column Callback</h5>
 
 <p><a id="wm_000_1978"></a>CLOSED: [2019-12-05 Thu 19:31]
 <div><b><i>&lt;&lt;monome_callback_declarations&gt;&gt;=</i></b></div><pre><code>static void led_col(monolith_monome_d *m, int x, int y, int s);</pre></code>
@@ -338,13 +338,13 @@ This gets set with the function <code>monolith_monome_data_set</code>.
 }</pre></code>
 <div><b><i>&lt;&lt;set_monome_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_monome_led_col_set(&m-&gt;vmonome, led_col);</pre></code>
 
-<h4>13.6. Arc Setup and Cleanup</h4>
+<h3>13.6. Arc Setup and Cleanup</h3>
 
 <p><a id="wm_000_1986"></a>Arc and setup and cleanup is done with the functions
 <code>monolith_arc_setup</code> and <code>monolith_arc_cleanup</code>.
 </p>
 
-<h5>13.6.1. Arc Setup/Cleanup Top-level Callbacks</h5>
+<h4>13.6.1. Arc Setup/Cleanup Top-level Callbacks</h4>
 
 <p><a id="wm_000_1988"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_arc_setup(monolith_d *monome);
 void monolith_arc_cleanup(monolith_d *monome);</pre></code>
@@ -381,7 +381,7 @@ hasn't been started.
 </p>
 <div><b><i>&lt;&lt;hardware_cleanup&gt;&gt;=</i></b></div><pre><code>monolith_arc_cleanup(m);</pre></code>
 
-<h5>13.6.2. Arc Handlers</h5>
+<h4>13.6.2. Arc Handlers</h4>
 
 <p><a id="wm_000_2005"></a><div><b><i>&lt;&lt;set_arc_handlers&gt;&gt;=</i></b></div><pre><code>monome_register_handler(m-&gt;arc, MONOME_ENCODER_DELTA, handle_delta, m);</pre></code>
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void handle_delta(const monome_event_t *e, void *data);</pre></code>
@@ -394,18 +394,18 @@ hasn't been started.
     monolith_arc_delta(&m-&gt;varc, e-&gt;encoder.number, e-&gt;encoder.delta);
 }</pre></code>
 
-<h5>13.6.3. Arc Virtual Interface Binding</h5>
+<h4>13.6.3. Arc Virtual Interface Binding</h4>
 
 <p><a id="wm_000_2013"></a>In this section, the monome will bind callbacks to the
 monome virtual interface.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>&lt;&lt;arc_callback_declarations&gt;&gt;</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;arc_callbacks&gt;&gt;</pre></code>
 
-<h6>13.6.3.1. Set Arc Hardware Data</h6>
+<h5>13.6.3.1. Set Arc Hardware Data</h5>
 
 <p><a id="wm_000_2023"></a><div><b><i>&lt;&lt;set_arc_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_arc_data_set(&m-&gt;varc, m-&gt;arc);</pre></code>
 
-<h6>13.6.3.2. Set Arc Hardware Delta Callback</h6>
+<h5>13.6.3.2. Set Arc Hardware Delta Callback</h5>
 
 <p><a id="wm_000_2027"></a><div><b><i>&lt;&lt;arc_callback_declarations&gt;&gt;=</i></b></div><pre><code>static void arc_delta(monolith_arc_d *a, int n, int delta);</pre></code>
 <div><b><i>&lt;&lt;arc_callbacks&gt;&gt;=</i></b></div><pre><code>static void arc_delta(monolith_arc_d *a, int n, int delta)
@@ -416,7 +416,7 @@ monome virtual interface.
 }</pre></code>
 <div><b><i>&lt;&lt;set_arc_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_arc_delta_set(&m-&gt;varc, arc_delta);</pre></code>
 
-<h6>13.6.3.3. Set Arc Map Callback</h6>
+<h5>13.6.3.3. Set Arc Map Callback</h5>
 
 <p><a id="wm_000_2036"></a><div><b><i>&lt;&lt;arc_callback_declarations&gt;&gt;=</i></b></div><pre><code>static void arc_map(monolith_arc_d *a, int n, unsigned char *map);</pre></code>
 <div><b><i>&lt;&lt;arc_callbacks&gt;&gt;=</i></b></div><pre><code>static void arc_map(monolith_arc_d *a, int n, unsigned char *map)
@@ -427,7 +427,7 @@ monome virtual interface.
 }</pre></code>
 <div><b><i>&lt;&lt;set_arc_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_arc_map_set(&m-&gt;varc, arc_map);</pre></code>
 
-<h6>13.6.3.4. Set Arc All Callback</h6>
+<h5>13.6.3.4. Set Arc All Callback</h5>
 
 <p><a id="wm_000_2043"></a><div><b><i>&lt;&lt;arc_callback_declarations&gt;&gt;=</i></b></div><pre><code>static void arc_all(monolith_arc_d *a, int n, int l);</pre></code>
 <div><b><i>&lt;&lt;arc_callbacks&gt;&gt;=</i></b></div><pre><code>static void arc_all(monolith_arc_d *a, int n, int l)
@@ -438,13 +438,13 @@ monome virtual interface.
 }</pre></code>
 <div><b><i>&lt;&lt;set_arc_callbacks&gt;&gt;=</i></b></div><pre><code>monolith_arc_all_set(&m-&gt;varc, arc_all);</pre></code>
 
-<h4>13.7. Polling and Processing Monome/Arc Events</h4>
+<h3>13.7. Polling and Processing Monome/Arc Events</h3>
 
 <p><a id="wm_000_2050"></a>These function is called inside the listener thread.
 <div><b><i>&lt;&lt;poll_the_monome&gt;&gt;=</i></b></div><pre><code>monolith_monome_poll(m);
 monolith_arc_poll(m);</pre></code>
 
-<h5>13.7.1. Monome (Grid)</h5>
+<h4>13.7.1. Monome (Grid)</h4>
 
 <p><a id="wm_000_2055"></a>Monome events are polled with the function
 <code>monolith_monome_poll</code>.
@@ -455,7 +455,7 @@ monolith_arc_poll(m);</pre></code>
     while(monome_event_handle_next(m-&gt;monome));
 }</pre></code>
 
-<h5>13.7.2. DONE Arc</h5>
+<h4>13.7.2. DONE Arc</h4>
 
 <p><a id="wm_000_2061"></a>CLOSED: [2019-05-27 Mon 12:19]
 Monome Arc events are polled with the function

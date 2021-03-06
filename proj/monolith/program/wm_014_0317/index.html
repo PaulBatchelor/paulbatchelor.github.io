@@ -9,11 +9,11 @@
 <body>
 <div id="main">
 
-<h3>9. WIP Trig Patchwerk Nodes</h3>
+<h2>9. WIP Trig Patchwerk Nodes</h2>
 
 <p><a id="wm_014_0317"></a></p>
 
-<h4>9.1. Handling sample-accuracy</h4>
+<h3>9.1. Handling sample-accuracy</h3>
 
 <p><a id="wm_014_0318"></a>Trig interfaces with audio-rate signals using wires. Wires
 read/write at clock-rate (every time the clock triggers),
@@ -68,13 +68,13 @@ can be a maximum of around 2kHz, way faster than any clock
 that will be practically used.
 </p>
 
-<h4>9.2. Trig Clock (trigclk)</h4>
+<h3>9.2. Trig Clock (trigclk)</h3>
 
 <p><a id="wm_014_0331"></a>This sets the clock signal for Trig. It stores any triggers
 as block events in an event stack.
 </p>
 
-<h5>9.2.1. Trigclk Node Function</h5>
+<h4>9.2.1. Trigclk Node Function</h4>
 
 <p><a id="wm_014_0333"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigclk(pw_node *node, page_trig_d *trig);</pre></code>
 <div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;trig_nodeclk_functions&gt;&gt;
@@ -87,7 +87,7 @@ static int node_trigclk(pw_node *node, page_trig_d *trig)
     return PW_OK;
 }</pre></code>
 
-<h5>9.2.2. Trigclk Compute</h5>
+<h4>9.2.2. Trigclk Compute</h4>
 
 <p><a id="wm_014_0340"></a><div><b><i>&lt;&lt;trig_nodeclk_functions&gt;&gt;=</i></b></div><pre><code>static void trigclk_compute(pw_node *n)
 {
@@ -121,20 +121,20 @@ static int node_trigclk(pw_node *node, page_trig_d *trig)
 
 }</pre></code>
 
-<h5>9.2.3. Trigclk Destroy</h5>
+<h4>9.2.3. Trigclk Destroy</h4>
 
 <p><a id="wm_014_0344"></a><div><b><i>&lt;&lt;trig_nodeclk_functions&gt;&gt;=</i></b></div><pre><code>static void trigclk_destroy(pw_node *node)
 {
      pw_node_cables_free(node);
 }</pre></code>
 
-<h4>9.3. Trig Execute (trigex)</h4>
+<h3>9.3. Trig Execute (trigex)</h3>
 
 <p><a id="wm_014_0347"></a>This will step through the trigger VM at the clock rate.
 Should be called just once per patch.
 </p>
 
-<h5>9.3.1. Trigex Node Function</h5>
+<h4>9.3.1. Trigex Node Function</h4>
 
 <p><a id="wm_014_0349"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigex(pw_node *node, page_trig_d *trig);</pre></code>
 <div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;node_trigex_functions&gt;&gt;
@@ -146,11 +146,11 @@ static int node_trigex(pw_node *node, page_trig_d *trig)
     return PW_OK;
 }</pre></code>
 
-<h5>9.3.2. Trigex Compute</h5>
+<h4>9.3.2. Trigex Compute</h4>
 
 <p><a id="wm_014_0356"></a></p>
 
-<h6>9.3.2.1. Overview</h6>
+<h5>9.3.2.1. Overview</h5>
 
 <p><a id="wm_014_0357"></a>There are many moving parts that occur in <code>trigex</code>.
 Some explanation is warranted.
@@ -172,7 +172,7 @@ it will copy the event over to the cable.
 called.
 </p>
 
-<h6>9.3.2.2. Setting wires at audio rate</h6>
+<h5>9.3.2.2. Setting wires at audio rate</h5>
 
 <p><a id="wm_014_0359"></a>Wires used for output signals are taken out of the VM using
 a special callback interface. Any time a write command
@@ -197,7 +197,7 @@ this case, this callback pops a value onto the event stack.
 }</pre></code>
 <div><b><i>&lt;&lt;trig_wire_setter&gt;&gt;=</i></b></div><pre><code>trig_vm_setter(&trig-&gt;tvm, wire_cb, trig);</pre></code>
 
-<h6>9.3.2.3. What happens if the VM writes to cable more than once?</h6>
+<h5>9.3.2.3. What happens if the VM writes to cable more than once?</h5>
 
 <p><a id="wm_014_0368"></a>What happens if the VM writes to a cable more than once?
 Without some kind of protection, the VM is at risk of
@@ -215,7 +215,7 @@ event stack at the beginning of every block, making only
 the last signal the valid one.
 </p>
 
-<h6>9.3.2.4. The Callback Itself</h6>
+<h5>9.3.2.4. The Callback Itself</h5>
 
 <p><a id="wm_014_0370"></a><div><b><i>&lt;&lt;node_trigex_functions&gt;&gt;=</i></b></div><pre><code>static void trigex_compute(pw_node *n)
 {
@@ -274,21 +274,21 @@ the last signal the valid one.
     check_and_draw(trig);
 }</pre></code>
 
-<h5>9.3.3. Trigex Destroy</h5>
+<h4>9.3.3. Trigex Destroy</h4>
 
 <p><a id="wm_014_0374"></a><div><b><i>&lt;&lt;node_trigex_functions&gt;&gt;=</i></b></div><pre><code>static void trigex_destroy(pw_node *node)
 {
      pw_node_cables_free(node);
 }</pre></code>
 
-<h4>9.4. WIP Wire Get (trigwget)</h4>
+<h3>9.4. WIP Wire Get (trigwget)</h3>
 
 <p><a id="wm_014_0377"></a>This returns a wire. Should be called after <code>trigex</code>. The
 wire number is specified as an init-time constant, and
 should be a number between 1 and 8 (inclusive).
 </p>
 
-<h5>9.4.1. Trigwget Node Function</h5>
+<h4>9.4.1. Trigwget Node Function</h4>
 
 <p><a id="wm_014_0379"></a>At init-time the wire used is used to specify which
 wire to choose from. Internally, the wires are addressed
@@ -317,7 +317,7 @@ static int node_trigwget(pw_node *node,
     return PW_OK;
 }</pre></code>
 
-<h5>9.4.2. Trigwget Compute</h5>
+<h4>9.4.2. Trigwget Compute</h4>
 
 <p><a id="wm_014_0387"></a>Reading from a wire is a matter of parsing the event stack
 for that wire. If the event stack is empty, then the value
@@ -363,14 +363,14 @@ is read from the VM wire directly.
     wes-&gt;last = val;
 }</pre></code>
 
-<h5>9.4.3. Trigwget Destroy</h5>
+<h4>9.4.3. Trigwget Destroy</h4>
 
 <p><a id="wm_014_0392"></a><div><b><i>&lt;&lt;node_trigwget_functions&gt;&gt;=</i></b></div><pre><code>static void trigwget_destroy(pw_node *node)
 {
      pw_node_cables_free(node);
 }</pre></code>
 
-<h4>9.5. TODO Wire Set (trigwset)</h4>
+<h3>9.5. TODO Wire Set (trigwset)</h3>
 
 <p><a id="wm_014_0395"></a>Copies a signal to a wire. Copies the signal to event
 stacks, so should be called after <code>trigclk</code> and before
@@ -388,7 +388,7 @@ and input cables ready to be parsed.
 When this node is destroyed, it is unmarked.
 </p>
 
-<h4>9.6. WIP Trig Re-Execute (trigrex)</h4>
+<h3>9.6. WIP Trig Re-Execute (trigrex)</h3>
 
 <p><a id="wm_014_0397"></a><code>trigrex</code> creates another program reader that can work
 concurrently with the main reader, but with a different
@@ -399,7 +399,7 @@ patterns simultaneously.
 main <code>trigex</code> function.
 </p>
 
-<h5>9.6.1. Trigrex Node Function</h5>
+<h4>9.6.1. Trigrex Node Function</h4>
 
 <p><a id="wm_014_0399"></a>The node function will allocate a new instance <code>trig_state</code>,
 and then store the starting position and <code>trig_vm</code> data.
@@ -440,7 +440,7 @@ static int node_trigrex(pw_node *node,
     return PW_OK;
 }</pre></code>
 
-<h5>9.6.2. Trigrex Compute</h5>
+<h4>9.6.2. Trigrex Compute</h4>
 
 <p><a id="wm_014_0407"></a>This behaves very similarly to <code>trigex</code>. It iterates through
 the blocks event stack, but instead of calling
@@ -496,7 +496,7 @@ the blocks event stack, but instead of calling
     draw_position(trig, ts-&gt;pos);
 }</pre></code>
 
-<h5>9.6.3. Trigrex Destroy</h5>
+<h4>9.6.3. Trigrex Destroy</h4>
 
 <p><a id="wm_014_0412"></a><div><b><i>&lt;&lt;node_trigrex_functions&gt;&gt;=</i></b></div><pre><code>static void trigrex_destroy(pw_node *node)
 {

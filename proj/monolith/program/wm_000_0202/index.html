@@ -9,7 +9,7 @@
 <body>
 <div id="main">
 
-<h3>5. DSP Kernel</h3>
+<h2>5. DSP Kernel</h2>
 
 <p><a id="wm_000_0202"></a>The DSP kernel is the heartbeat of the signal processing
 chain. It is the DSP computation that happens inside of the
@@ -17,7 +17,7 @@ audio render callback. It has a top-level compute function
 known as <code>monolith_compute</code>.
 </p>
 
-<h4>5.1. Top-level Kernel Compute</h4>
+<h3>5.1. Top-level Kernel Compute</h3>
 
 <p><a id="wm_000_0204"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_compute(monolith_d *m, int nframes, PWFLT **out);</pre></code>
 <p></p>
@@ -87,7 +87,7 @@ offset must be kept track of.
 <div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int nframes;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;nframes = 0;</pre></code>
 
-<h5>5.1.1. Computing patchwerk blocks</h5>
+<h4>5.1.1. Computing patchwerk blocks</h4>
 
 <p><a id="wm_000_0232"></a><div><b><i>&lt;&lt;static_compute_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;hotswap_function&gt;&gt;
 static void compute_block(monolith_d *m)
@@ -106,7 +106,7 @@ static void compute_block(monolith_d *m)
     return m-&gt;cab_read-&gt;blk[m-&gt;count];
 }</pre></code>
 
-<h5>5.1.2. Swapping in the Audio callback</h5>
+<h4>5.1.2. Swapping in the Audio callback</h4>
 
 <p><a id="wm_000_0244"></a>When the swap flag is set, the audio callback will call the static function
 <code>hotswap</code>.
@@ -147,7 +147,7 @@ This is done to prevent any weird side effects from happening.
 &lt;&lt;cf_begin&gt;&gt;
 }</pre></code>
 
-<h4>5.2. Hot Swapping</h4>
+<h3>5.2. Hot Swapping</h3>
 
 <p><a id="wm_000_0251"></a>The term <b>hot-swapping</b> here refers to Monoliths ability to replace Patchwerk
 patches on the fly, which provides the user a means of live coding. Basic
@@ -159,7 +159,7 @@ to smoothly transition between the old patch and the new patch.
 incarnation of monolith, monomer. Much of this code will come from this.
 </p>
 
-<h5>5.2.1. The Monolith Audio Cable</h5>
+<h4>5.2.1. The Monolith Audio Cable</h4>
 
 <p><a id="wm_000_0253"></a>The Monolith Audio Cable is a the data type that actually gets swapped out.
 </p>
@@ -221,7 +221,7 @@ before attempting to access data from <code>in</code>.
     c-&gt;in = NULL;
 }</pre></code>
 
-<h5>5.2.2. Cable Output Node (monout)</h5>
+<h4>5.2.2. Cable Output Node (monout)</h4>
 
 <p><a id="wm_000_0275"></a>Patchwerk cable output is written to a monolith cable via a patchwerk node,
 which will be arbitrarily be called <code>monout</code> to distinguish itself from the
@@ -306,7 +306,7 @@ int node_monout(pw_node *node, monolith_d *m)
     return RUNT_OK;
 }</pre></code>
 
-<h5>5.2.3. TODO Cable Input Node (monin)</h5>
+<h4>5.2.3. TODO Cable Input Node (monin)</h4>
 
 <p><a id="wm_000_0287"></a>Lets in a mono input signal. For now, this input is a
 wrapper around a JACK audio cable.
@@ -372,7 +372,7 @@ int node_monin(pw_node *node, monolith_d *m)
     return RUNT_OK;
 }</pre></code>
 
-<h5>5.2.4. Swap Flag</h5>
+<h4>5.2.4. Swap Flag</h4>
 
 <p><a id="wm_000_0297"></a>When a patch is done being populated, it sends a message to the audio DSP kernel
 to swap the patch by setting the flag <code>please_swap</code>.
@@ -398,18 +398,18 @@ to swap the patch by setting the flag <code>please_swap</code>.
     return RUNT_OK;
 }</pre></code>
 
-<h4>5.3. Play/Pause</h4>
+<h3>5.3. Play/Pause</h3>
 
 <p><a id="wm_000_0313"></a>The DSP kernel can pause and resume computation. This is controlled via a state
 flag. By default, it is set to be 1, which is on.
 </p>
 
-<h5>5.3.1. Play/Pause Flags</h5>
+<h4>5.3.1. Play/Pause Flags</h4>
 
 <p><a id="wm_000_0315"></a><div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>int playstate;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;playstate = 1;</pre></code>
 
-<h5>5.3.2. Check if Monolith is Playing</h5>
+<h4>5.3.2. Check if Monolith is Playing</h4>
 
 <p><a id="wm_000_0320"></a>The function <code>monolith_is_playing</code> will check the state flag to determine if
 it is playing.
@@ -422,7 +422,7 @@ it is playing.
 </p>
 </p>
 
-<h5>5.3.3. Play/Pause functions</h5>
+<h4>5.3.3. Play/Pause functions</h4>
 
 <p><a id="wm_000_0327"></a>The function <code>monolith_play</code> will explicitely set the playback state to be on.
 The function <code>monolith_pause</code> will explicitely pause playback.
@@ -462,7 +462,7 @@ static cell pp_pause(cell p) {
     return UNSPECIFIC;
 }</pre></code>
 
-<h4>5.4. Crossfade</h4>
+<h3>5.4. Crossfade</h3>
 
 <p><a id="wm_000_0342"></a>Normal hotswapping will often cause a discontintunity in the sound between
 the signal of the new patch and the signal of the old patch. If this
@@ -472,14 +472,14 @@ will describe the underlying principles of how crossfading works on
 top of the hotswapping system.
 </p>
 
-<h5>5.4.1. Enabling/Disabling Crossfade</h5>
+<h4>5.4.1. Enabling/Disabling Crossfade</h4>
 
 <p><a id="wm_000_0344"></a>Crossfades can be enabled with the function <code>monolith_crossfade_enable</code>, and
 disabled with the function <code>monolith_crossfade_disable</code>. On success, they
 will return true (1).
 </p>
 
-<h6>5.4.1.1. Enabling/Disabling Crossfade in C</h6>
+<h5>5.4.1.1. Enabling/Disabling Crossfade in C</h5>
 
 <p><a id="wm_000_0346"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_crossfade_enable(monolith_d *m);
 int monolith_crossfade_disable(monolith_d *m);</pre></code>
@@ -507,7 +507,7 @@ The state will need to be in <code>CROSSFADE_STANDBY</code>, in order to safely 
     return 0;
 }</pre></code>
 
-<h6>5.4.1.2. Enabling/Disabling Crossfade in Scheme</h6>
+<h5>5.4.1.2. Enabling/Disabling Crossfade in Scheme</h5>
 
 <p><a id="wm_000_0355"></a>Crossfades can be enabled/disabled using the functions
 <code>monolith:crossfade-enable</code> and <code>monolith:crossfade-disable</code>.
@@ -539,12 +539,12 @@ static cell pp_crossfade_disable(cell x)
     return UNSPECIFIC;
 }</pre></code>
 
-<h5>5.4.2. Setting Crossfade size</h5>
+<h4>5.4.2. Setting Crossfade size</h4>
 
 <p><a id="wm_000_0361"></a>The crossfade time is set in samples.
 </p>
 
-<h6>5.4.2.1. Setting the Crossfade Size in C</h6>
+<h5>5.4.2.1. Setting the Crossfade Size in C</h5>
 
 <p><a id="wm_000_0363"></a>The crossfade size can be set in C with the function
 <code>monolith_crossfade_size_set</code>.
@@ -554,7 +554,7 @@ static cell pp_crossfade_disable(cell x)
     m-&gt;cf_size = size;
 }</pre></code>
 
-<h6>5.4.2.2. Setting the Crossfade Size in Scheme</h6>
+<h5>5.4.2.2. Setting the Crossfade Size in Scheme</h5>
 
 <p><a id="wm_000_0369"></a>The crossfade size can be set from scheme using the function
 <code>monolith:crossfade-size-set</code>
@@ -573,7 +573,7 @@ static cell pp_crossfade_disable(cell x)
     return UNSPECIFIC;
 }</pre></code>
 
-<h5>5.4.3. Crossfade Struct Contents</h5>
+<h4>5.4.3. Crossfade Struct Contents</h4>
 
 <p><a id="wm_000_0375"></a>Crossfade centers around a counter and a arbitrary crossfade size in samples.
 This is used to calculate a normalized alpha value used for a linear crossfade.
@@ -582,7 +582,7 @@ int cf_size;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;cf_counter = 0;
 m-&gt;cf_size = 64; /* default block size */</pre></code>
 
-<h5>5.4.4. Crossfade State</h5>
+<h4>5.4.4. Crossfade State</h4>
 
 <p><a id="wm_000_0381"></a>The behavior of the crossfade is stored in a single state variable. By default,
 crossfading is disabled, so the mode is set to be <code>CROSSFADE_NONE</code>. When
@@ -605,7 +605,7 @@ CROSSFADE_COMPUTE,
 CROSSFADE_DONE
 };</pre></code>
 
-<h5>5.4.5. Starting crossfades</h5>
+<h4>5.4.5. Starting crossfades</h4>
 
 <p><a id="wm_000_0391"></a>A crossfade begins when a cable is hotswapped, which means a crossfade
 will always happen at the start of the block. The state flag is set to begin
@@ -616,7 +616,7 @@ crossfading (<code>CROSSFADE_COMPUTE</code>), and the crossfade counter is set t
     m-&gt;cf_counter = 0;
 }</pre></code>
 
-<h5>5.4.6. Computing both blocks</h5>
+<h4>5.4.6. Computing both blocks</h4>
 
 <p><a id="wm_000_0396"></a>When <code>CROSSFADE_COMPUTE</code> mode is set, both old (<code>write</code>) and new (<code>read</code>) cable
 blocks are computed. This is operation is handled in the <code>compute_block</code>
@@ -626,7 +626,7 @@ function.
     pw_subpatch_compute(&m-&gt;cab_write-&gt;subpatch);
 }</pre></code>
 
-<h5>5.4.7. Crossfade computation</h5>
+<h4>5.4.7. Crossfade computation</h4>
 
 <p><a id="wm_000_0401"></a>The crossfade itself is computed by taking a sample from both patches and
 linearly interpolating between the samples.
@@ -649,7 +649,7 @@ in a variable called <code>tmp</code>, and pass it into a function called <code>
     return a*read + (1 - a)*write;
 }</pre></code>
 
-<h5>5.4.8. Crossfade Cleanup</h5>
+<h4>5.4.8. Crossfade Cleanup</h4>
 
 <p><a id="wm_000_0411"></a>When the counter exceeds the crossfade duration, the state
 will be set to free the cable (<code>CROSSFADE_DONE</code>).
