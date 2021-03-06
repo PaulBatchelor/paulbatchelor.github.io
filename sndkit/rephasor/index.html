@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Rephasor</title>
+<h1>Rephasor</h1>
+
+<h2>Overview</h2>
+
+<p><code>rephasor</code> is an unusual little algorithm that is designed
+to recreate an incoming phasor signal at a slightly
+different frequency.
+</p>
+<p>This works by examining the incremental amount of change
+happening between each phasor sample, then using a scaled
+version of that signal to produce a new phasor.
+</p>
+<p>Why? Because I'm having a bit of a phasor a renaissance.
+I am discovering that these phasors are actually quite
+useful control signals, not just for table lookup
+oscillators. In the spirit of that, I'm looking for ways to
+explore ways to modify phasor signals.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>Tangles to <code>rephasor.c</code> and <code>rephasor.h</code>.
+</p>
+<p><code>SK_REPHASOR_PRIV</code> exposes structs.
+</p>
+<div><b><i>&lt;&lt;rephasor.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_REPHASOR_H
+#define SK_REPHASOR_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+&lt;&lt;typedefs&gt;&gt;
+#ifdef SK_REPHASOR_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;rephasor.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_REPHASOR_PRIV
+#include "rephasor.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Struct</h2>
+
+<p>Called <code>sk_rephasor</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_rephasor sk_rephasor;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_rephasor {
+    &lt;&lt;sk_rephasor&gt;&gt;
+};</pre></code>
+<p></p>
+<p>Initialized with <code>sk_rephasor_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rephasor_init(sk_rephasor *rp);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rephasor_init(sk_rephasor *rp)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>The struct is needed to store stateful data. The previous
+sample of the input phasor signal (<code>extphs</code>), and the
+previous phase of the internal phasor signal is used
+(<code>phs</code>).
+</p>
+<div><b><i>&lt;&lt;sk_rephasor&gt;&gt;=</i></b></div><pre><code>SKFLT extphs;
+SKFLT phs;</pre></code>
+<p></p>
+<p>Internal and external phasor memory are both marked as
+being initialized but not set by setting them to be -1.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>rp-&gt;extphs = -1;
+rp-&gt;phs = -1;</pre></code>
+<p></p>
+<p>A value holding the scale amount is also stored here. It
+is set to a sensible of default of 1. In theory, this should
+create an identical phasor signal as the input with a
+unit delay.
+</p>
+<div><b><i>&lt;&lt;sk_rephasor&gt;&gt;=</i></b></div><pre><code>SKFLT scale;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_rephasor_scale(rp, 1.0);</pre></code>
+
+<h2>Setting the scaling value</h2>
+
+<p>Called <code>sk_rephasor_scale</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rephasor_scale(sk_rephasor *rp, SKFLT scale);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rephasor_scale(sk_rephasor *rp, SKFLT scale)
+{
+    rp-&gt;scale = scale;
+}</pre></code>
+
+<h2>Compute</h2>
+
+<p>Done with <code>sk_rephasor_tick</code>. Expects an incoming input
+phasor signal.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasor_tick(sk_rephasor *rp, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasor_tick(sk_rephasor *rp, SKFLT in)
+{
+    SKFLT out;
+    SKFLT delta;
+    out = 0;
+    &lt;&lt;set_output&gt;&gt;
+    &lt;&lt;calculate_delta&gt;&gt;
+    &lt;&lt;cache_external_phasor&gt;&gt;
+    &lt;&lt;update_internal_phasor&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<p>The current phase of the internal phasor is set to be
+the output of the current sample. If it is negative, it
+is assumed to be initalized but not set, and the current
+phasor signal is set to be the output, and the
+internal phasor value is set to be the current external
+phasor value.
+</p>
+<div><b><i>&lt;&lt;set_output&gt;&gt;=</i></b></div><pre><code>if (rp-&gt;phs &lt; 0) {
+   rp-&gt;phs = in;
+}
+
+out = rp-&gt;phs;</pre></code>
+<p></p>
+<p>The <code>delta</code> amount is calculated next. This is the absolute
+value of the difference between the current and previous
+external phasor. The absolute value is used to compensate
+for phasor resets. If the previous phasor hasn't been
+initialized, the delta value is zero.
+</p>
+<div><b><i>&lt;&lt;calculate_delta&gt;&gt;=</i></b></div><pre><code>if (rp-&gt;extphs &lt; 0 || in &lt; rp-&gt;extphs) delta = 0;
+else delta = in - rp-&gt;extphs;</pre></code>
+<p></p>
+<p>At this point, it is safe to cache the external phasor
+signal.
+</p>
+<div><b><i>&lt;&lt;cache_external_phasor&gt;&gt;=</i></b></div><pre><code>rp-&gt;extphs = in;</pre></code>
+<p></p>
+<p>The internal phasor is updated. The increment value
+is the <code>delta</code> multiplied by the internal <code>scale</code> value.
+Wraparound is applied so that the range is within 0 and 1.
+</p>
+<div><b><i>&lt;&lt;update_internal_phasor&gt;&gt;=</i></b></div><pre><code>rp-&gt;phs += delta * rp-&gt;scale;
+while (rp-&gt;phs &gt;= 1.0) rp-&gt;phs -= 1.0;
+while (rp-&gt;phs &lt; 0.0) rp-&gt;phs += 1.0;</pre></code>
+</div>
+</body>
+</html>
