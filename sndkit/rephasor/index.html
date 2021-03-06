@@ -157,6 +157,190 @@ Wraparound is applied so that the range is within 0 and 1.
 <div><b><i>&lt;&lt;update_internal_phasor&gt;&gt;=</i></b></div><pre><code>rp-&gt;phs += delta * rp-&gt;scale;
 while (rp-&gt;phs &gt;= 1.0) rp-&gt;phs -= 1.0;
 while (rp-&gt;phs &lt; 0.0) rp-&gt;phs += 1.0;</pre></code>
+
+<h2>Rephasorx</h2>
+
+<p>The <code>rephasorx</code> is a specialized version of <code>rephasor</code> that
+is designed to stay synchronized with the external phasor
+signal. This allows it to be used in a long-term
+contexts without having to worry about phase drift.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_rephasorx sk_rephasorx;</pre></code>
+<p></p>
+<p>Rephasorx is limited to whole-integer divisions to ensure
+that they line up with the the external phasor.
+</p>
+<p>There are two kinds of operations rephasorx operations: a
+<code>divider</code> will divide a phasor signal into <code>N</code> smaller
+sections, while a <code>multiplier</code> will stretch out that phasor
+by a factor of <code>N</code>.
+</p>
+<p>Both dividers and multipliers share the same base struct
+<code>sk_rephasorx</code>, which contains an instance of <code>sk_rephasor</code>,
+a <code>counter</code>, and counter <code>limit</code>. Counters are used to keep
+track of phasor resets. Which
+phasor resets it keeps track of (external or output)
+depends on if it is a multiplier or divider.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_rephasorx {
+   sk_rephasor rp;
+   int counter;
+   int limit;
+   SKFLT N;
+};</pre></code>
+<p></p>
+<p>Rephasorx is initialized with the function
+<code>sk_rephasorx_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rephasorx_init(sk_rephasorx *rpx);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rephasorx_init(sk_rephasorx *rpx)
+{
+    sk_rephasor_init(&rpx-&gt;rp);
+    rpx-&gt;counter = -1;
+    rpx-&gt;limit = -1;
+    rpx-&gt;N = 1;
+}</pre></code>
+<p></p>
+<p>The N-factor value is set with <code>sk_rephasorx_factor</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rephasorx_factor(sk_rephasorx *rpx, SKFLT N);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rephasorx_factor(sk_rephasorx *rpx, SKFLT N)
+{
+    rpx-&gt;N = N;
+}</pre></code>
+<p></p>
+<p>Rephasorx has two tick functions: <code>sk_rephasorx_tick_div</code>
+for the divider behavior, and <code>sk_rephasorx_tick_mul</code> for
+the multiplier behavior.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasorx_tick_div(sk_rephasorx *rpx, SKFLT in);
+SKFLT sk_rephasorx_tick_mul(sk_rephasorx *rpx, SKFLT in);</pre></code>
+<p></p>
+<p>A phasor divider works by taking an external phasor signal
+and shrinking it by a factor of N.
+To be a divider, the scale of the rephasor is set to be <code>N</code>.
+The counter keeps track of how many times the internal
+rephasor resets. When it reaches N, the signal holds at 1
+until the external phasor resets. At this point, the
+internal phasor is set to be the external phasor, which
+is presumably at or very close to 0. If the external phasor
+resets before the internal phasor has a chance to hold at 1,
+it gets reset a bit earlier. The early or late arrival of
+the internal phasor should be negligible.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasorx_tick_div(sk_rephasorx *rpx, SKFLT in)
+{
+    SKFLT out;
+    SKFLT delta;
+    out = 0;
+
+    if (rpx-&gt;counter &lt; 0) {
+        /* initialize */
+        rpx-&gt;counter = 0;
+        rpx-&gt;limit = floor(rpx-&gt;N);
+        rpx-&gt;rp.scale = rpx-&gt;limit;
+    }
+
+    if (rpx-&gt;rp.phs &lt; 0) {
+        rpx-&gt;rp.phs = in;
+    }
+
+    out = rpx-&gt;rp.phs;
+
+    if (rpx-&gt;rp.extphs &lt; 0 || in &lt; rpx-&gt;rp.extphs) delta = 0;
+    else delta = in - rpx-&gt;rp.extphs;
+
+    if (in &lt; rpx-&gt;rp.extphs) {
+        /* hard reset */
+        rpx-&gt;rp.phs = in;
+
+        rpx-&gt;counter = 0;
+        rpx-&gt;limit = floor(rpx-&gt;N);
+        rpx-&gt;rp.scale = rpx-&gt;limit;
+    }
+
+    if (rpx-&gt;counter &lt; rpx-&gt;limit) {
+        SKFLT phs;
+        rpx-&gt;rp.extphs = in;
+
+        phs = rpx-&gt;rp.phs;
+        phs += delta * rpx-&gt;rp.scale;
+        while (phs &gt;= 1.0) phs -= 1.0;
+        while (phs &lt; 0.0) phs += 1.0;
+
+        if (phs &lt; rpx-&gt;rp.phs) {
+            rpx-&gt;counter++;
+        }
+
+        rpx-&gt;rp.phs = phs;
+    } else {
+       /* hang out at 1, wait for external phasor to reset */
+       rpx-&gt;rp.phs = 1;
+    }
+
+    return out;
+}</pre></code>
+<p></p>
+<p>A phasor multiplier works by taking an external phasor
+signal and shrinking it by a factor of N. To be a
+multiplier, the scale of the rephasor is set to be <code>1/N</code>.
+The counter keeps track of how many times the external
+phasor rests. When it reaches N, it sets the internal phasor
+to be the external phasor. At this point, the internal
+phasor was producing a long ramp that was going to be
+approaching or already approaching 1 and due to loop back to
+0 anyways. Similar to the divider, the multiplier will hang
+at one and wait for the external phasor to reset. Again,
+this amount of time should be negligible.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasorx_tick_mul(sk_rephasorx *rpx, SKFLT in)
+{
+    SKFLT out;
+    SKFLT delta;
+    out = 0;
+
+    if (rpx-&gt;counter &lt; 0) {
+        /* initialize */
+        rpx-&gt;counter = 0;
+        rpx-&gt;limit = floor(rpx-&gt;N);
+        rpx-&gt;rp.scale = 1.0 / rpx-&gt;limit;
+    }
+
+    if (rpx-&gt;rp.phs &lt; 0) {
+        rpx-&gt;rp.phs = in;
+    }
+
+    out = rpx-&gt;rp.phs;
+
+    if (rpx-&gt;rp.extphs &lt; 0 || in &lt; rpx-&gt;rp.extphs) delta = 0;
+    else delta = in - rpx-&gt;rp.extphs;
+
+    if (in &lt; rpx-&gt;rp.extphs) {
+        rpx-&gt;counter++;
+    }
+
+    if (rpx-&gt;counter &gt;= rpx-&gt;limit) {
+        /* hard reset */
+        rpx-&gt;rp.phs = in;
+
+        rpx-&gt;counter = 0;
+        rpx-&gt;limit = floor(rpx-&gt;N);
+        rpx-&gt;rp.scale = 1.0 / rpx-&gt;limit;
+    }
+
+
+    if (rpx-&gt;rp.extphs &lt; 0 || in &lt; rpx-&gt;rp.extphs) delta = 0;
+    else delta = in - rpx-&gt;rp.extphs;
+    rpx-&gt;rp.phs += delta * rpx-&gt;rp.scale;
+    rpx-&gt;rp.extphs = in;
+
+    /* hang at 1 and wait until external phasor resets */
+    if (rpx-&gt;rp.phs &gt; 1) rpx-&gt;rp.phs = 1;
+
+    return out;
+}</pre></code>
 </div>
 </body>
 </html>
