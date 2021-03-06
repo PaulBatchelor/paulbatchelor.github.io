@@ -23,11 +23,83 @@ file.
 <p>The homepage of LIL can be found at
 <a href="http://runtimeterror.com/tech/lil/">http://runtimeterror.com/tech/lil/</a>.
 </p>
+<p>Most of the documentation for syntax and API can be found
+here: <a href="http://runtimeterror.com/tech/lil/readme.txt">http://runtimeterror.com/tech/lil/readme.txt</a>.
+</p>
 
-<h2>TODO Syntax Examples</h2>
+<h2>Syntax Examples</h2>
 
-<p> TODO API Usage Examples</p>
+<p>Hello world:
+</p>
+<div><b><i>&lt;&lt;hello.lil&gt;&gt;=</i></b></div><pre><code>print hello world</pre></code>
+<p></p>
+<p>Function starts with the first word, arguments follow.
+Arguments are words separated by spaces.
+</p>
+<p>Arithmetic is done with <code>expr</code>. Bitwise operations
+work! It seems attention to operator precedence
+is also here as well.
+</p>
+<pre><code>print [expr 4 + 4 * 2]
+print [1 &lt;&lt; 4]</pre></code>
+<p></p>
+<p>A new function starts at each line break by
+default. Alternatively, semi-colons can be
+used to have multiple function calls on
+one line.
+</p>
+<pre><code># print hi there on two lines
+print hi
+print there
+
+# same thing, but put the calls on one line
+print hi ;print there
+
+# break up function into lines
+print hi \
+    there</pre></code>
+<p></p>
+<pre><code>func foo {a b} {print $a $b}</pre></code>
+<p></p>
+<p>Variables are set with <code>set</code>.
+</p>
+<pre><code>set x 4; print $x</pre></code>
+
+<h2>API Usage Examples</h2>
+
+<p>Here's a really quick "hello world" API example
+I made:
+</p>
+<div><b><i>&lt;&lt;lil_api_hello.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include "lil.h"
+
+static lil_value_t foo(lil_t lil, size_t argc, lil_value_t *argv)
+{
+    printf("hello from C!\n");
+    printf("nargs: %ld\n", argc);
+    return NULL;
+}
+
+int main(int argc, char *argv[])
+{
+    lil_t lil;
+    lil_value_t val;
+
+    lil = lil_new();
+
+    val = lil_parse(lil, "print hello there!\n", 19, 0);
+    lil_free_value(val);
+
+    lil_register(lil, "foo", foo);
+
+    val = lil_parse(lil, "foo 1.234\n", 10, 0);
+    lil_free_value(val);
+
+    lil_free(lil);
+    return 0;
+}</pre></code>
 <hr>
-<a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+<p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
 </body>
 </html>
