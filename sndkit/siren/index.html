@@ -200,7 +200,46 @@ add
 
 sr 10 * _compute rep</pre></code>
 
-<h2>Implementation 4: Sporth</h2>
+<h2>Implementation 4: Monolith and Scheme</h2>
+
+<p><code>monolith</code> is primarily controlled via a Scheme REPL spawned
+inside of Emacs, the flavor of scheme being a fork of s9
+scheme.
+</p>
+<p>The scheme <code>ugens</code> are wrappers around runt code, so it is
+structurally identical to the runt and monolith code.
+</p>
+<div><b><i>&lt;&lt;siren.scm&gt;&gt;=</i></b></div><pre><code>(monolith:start-offline)
+(monolith:load "ugens.scm")
+(sine 0.1 0.5)
+(bhold zz)
+(cabset zz 0)
+
+(fmpair
+ (biscale (cabget 0) 100 600)
+ (param 1)
+ (param 1)
+ (biscale (cabget 0) 0.1 2)
+ (param 0)
+ (lambda () (gen_sine (ftnew 8192))))
+
+(mul zz 0.5)
+
+(bdup)
+(bdup)
+
+(revsc zz zz 0.97 10000)
+(bdrop)
+(mul zz 0.1)
+(dcblock zz)
+(add zz zz)
+(wavout zz "siren.wav")
+(bunhold (cabget 0))
+(out zz)
+
+(monolith:compute (* 44100 10))</pre></code>
+
+<h2>Implementation 5: Sporth</h2>
 
 <p><code>sporth</code> was my first ever stack-based audio system.
 Runt syntax and Sporth syntax are very similar to one
@@ -221,7 +260,7 @@ dup dup
 drop 0.1 mul dcblk
 add</pre></code>
 
-<h2>Implementation 5: C and Patchwerk</h2>
+<h2>Implementation 6: C and Patchwerk</h2>
 
 <p>This comes from my original
 <a href="https://github.com/paulbatchelor/patchwerk-siren">siren patch</a>.
