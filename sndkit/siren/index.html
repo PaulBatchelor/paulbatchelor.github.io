@@ -14,12 +14,13 @@
 <h2>Overview</h2>
 
 <p>This document provides a rosetta stone for a <code>siren</code> patch.
-It's not exactly the most interseting patch, but it is
+It's not exactly the most interesting patch, but it
 succinctly shows how to work with a stack-based
 modular environment.
 </p>
 <p>I originally wrote this patch as a bridge to show the
-relationship between runt code and C + patchwerk code.
+relationship between runt code and C + patchwerk code
+(included amongst the examples).
 Now, I have adapated a version of it that works in sndkit!
 </p>
 
@@ -78,6 +79,11 @@ computes 10</pre></code>
 <p>This implementation shows the siren written in C using
 the sndkit <a href="/sndkit/core">core API</a>. The core
 patch construction can be seen in the <code>patch</code> function.
+What's really cool is how closely it matches the LIL code.
+If you take away the syntactic sugar in LIL, the underlying
+sndkit calls are essentially 1:1. This patch was written by
+hand looking at the LIL code above. It was a surprisingly
+trivial process!
 </p>
 <div><b><i>&lt;&lt;siren.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
 #include &lt;stdio.h&gt;
@@ -177,7 +183,10 @@ int main(int argc, char *argv[])
 
 <p><code>Monolith</code> is a realtime computer music environment I wrote
 for myself as a precursor to sndkit. <code>runt</code> is a quirky
-stack based language used to notate patches.
+homemade stack based language used to notate patches.
+</p>
+<p>Even though sndkit uses TCL and C syntax, the thought
+process and structure I use is still in stacks.
 </p>
 <div><b><i>&lt;&lt;siren.rnt&gt;&gt;=</i></b></div><pre><code>patchwerk nodes
 
@@ -202,9 +211,12 @@ sr 10 * _compute rep</pre></code>
 
 <h2>Implementation 4: Monolith and Scheme</h2>
 
-<p><code>monolith</code> is primarily controlled via a Scheme REPL spawned
+<p><code>monolith</code> is usually controlled via a Scheme REPL spawned
 inside of Emacs, the flavor of scheme being a fork of s9
-scheme.
+scheme. Runt code is then executed in scheme as inline code.
+The scheme language is used as a kind of macro language,
+making it possible to build more complex structures and
+abstractions.
 </p>
 <p>The scheme <code>ugens</code> are wrappers around runt code, so it is
 structurally identical to the runt and monolith code.
