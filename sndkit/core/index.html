@@ -47,6 +47,7 @@ Registers are for more persitently used values.
 <p></p>
 <div><b><i>&lt;&lt;core.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
 #include &lt;math.h&gt;
+#include &lt;string.h&gt;
 #include "patchwerk.h"
 #define SK_CORE_PRIV
 #include "core.h"
@@ -77,6 +78,7 @@ void sk_core_del(sk_core *core);</pre></code>
     pw_patch_srate_set(patch, sr);
 
     sk_stack_init(&core-&gt;stack);
+    sk_regtbl_init(&core-&gt;regtbl);
     return core;
 }</pre></code>
 <p></p>
@@ -97,6 +99,7 @@ void sk_core_del(sk_core *core);</pre></code>
 <div><b><i>&lt;&lt;core&gt;&gt;=</i></b></div><pre><code>struct sk_core {
     pw_patch *patch;
     sk_stack stack;
+    sk_regtbl regtbl;
 };</pre></code>
 <p></p>
 <p>A internal block of audio can be computed with
@@ -274,6 +277,123 @@ int sk_stack_push(sk_stack *stack, sk_stacklet **out);</pre></code>
     return 0;
 }</pre></code>
 
+<h3>Peak</h3>
+
+<p>The function <code>sk_stack_peak</code> will look at the last item on
+the stack, but not pop it off the stack.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_stack_peak(sk_stack *stack, sk_stacklet **out);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_stack_peak(sk_stack *stack, sk_stacklet **out)
+{
+    sk_stacklet *s;
+    if (stack-&gt;pos &lt; 0) return 1;
+    if (stack-&gt;pos &gt;= SK_STACKSIZE) return 2;
+
+    s = &stack-&gt;stack[stack-&gt;pos];
+    *out = s;
+    return 0;
+}</pre></code>
+
+<h3>Dup</h3>
+
+<p><code>dup</code> is an operation that duplicates an item on the stack.
+</p>
+<p>The basic operation can be done with <code>sk_stack_dup</code>. The
+operation will store the duplicated stack item to <code>out</code> if
+the argument is not <code>NULL</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_stack_dup(sk_stack *stack, sk_stacklet **out);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_stack_dup(sk_stack *stack, sk_stacklet **out)
+{
+    int rc;
+    sk_stacklet *a, *b;
+
+    rc = sk_stack_peak(stack, &a);
+    SK_ERROR_CHECK(rc);
+
+    rc = sk_stack_push(stack, &b);
+    SK_ERROR_CHECK(rc);
+
+    *b = *a;
+
+    if (out != NULL) *out = b;
+
+    return 0;
+}</pre></code>
+<p></p>
+<br>
+<p><code>sk_core_dup</code> will call <code>sk_stack_dup</code> on the internal
+stack, but also will call a dup operation on the patchwerk
+stack if the item is a patchwerk cable.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_dup(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_dup(sk_core *core)
+{
+    sk_stacklet *s;
+    int rc;
+
+    rc = sk_stack_dup(&core-&gt;stack, &s);
+    SK_ERROR_CHECK(rc);
+
+    if (s-&gt;type == SK_TYPE_CABLE) {
+        pw_stack *stack;
+        stack = pw_patch_stack(core-&gt;patch);
+        pw_stack_dup(stack);
+    }
+
+    return 0;
+}</pre></code>
+
+<h3>Drop</h3>
+
+<p><code>drop</code> is an operation that drops an item on the stack.
+</p>
+<p>The basic operation is done with <code>sk_stack_drop</code>.
+</p>
+<p>The dropped value will be saved to <code>out</code> if <code>out</code> is
+not <code>NULL</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_stack_drop(sk_stack *stack, sk_stacklet **out);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_stack_drop(sk_stack *stack, sk_stacklet **out)
+{
+    int rc;
+    sk_stacklet *s;
+
+    rc = sk_stack_pop(stack, &s);
+
+    SK_ERROR_CHECK(rc);
+
+    if (out != NULL) *out = s;
+    return 0;
+}</pre></code>
+<p></p>
+<p>The function <code>sk_core_drop</code> performs a drop on the stack
+in the core struct. If the item is a patchwerk cable, it
+will also perform a drop on the patchwerk buffer stack.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_drop(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_drop(sk_core *core)
+{
+    int rc;
+    sk_stacklet *s;
+    rc = sk_stack_drop(&core-&gt;stack, &s);
+
+    SK_ERROR_CHECK(rc);
+
+    if (s-&gt;type == SK_TYPE_CABLE) {
+        pw_stack *stack;
+        stack = pw_patch_stack(core-&gt;patch);
+        pw_stack_pop(stack, NULL);
+    }
+
+    return 0;
+}</pre></code>
+
 <h2>Parameters and Cables</h2>
 
 <p><code>sndkit_param</code> is an abstraction used to deal with
@@ -333,6 +453,31 @@ from the buffer stack.
         return 1;
     }
 
+    return 0;
+}</pre></code>
+<p></p>
+<p>For situations where only constants are allowed, use
+<code>sk_param_get_constant</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_param_get_constant(sk_core *core, SKFLT *val);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_param_get_constant(sk_core *core, SKFLT *val)
+{
+    sk_stack *stk;
+    sk_stacklet *s;
+    int rc;
+
+    stk = &core-&gt;stack;
+
+    rc = sk_stack_pop(stk, &s);
+    SK_ERROR_CHECK(rc);
+
+    if (s-&gt;type != SK_TYPE_CONSTANT) {
+        /* Wrong type! */
+        return 1;
+    }
+
+    *val = s-&gt;f;
     return 0;
 }</pre></code>
 
@@ -501,7 +646,7 @@ struct sk_regtbl {
     }
 }</pre></code>
 
-<h3>TODO regset/regget</h3>
+<h3>WIP regset/regget</h3>
 
 <p>Setting/getting values are done with <code>sk_core_regget</code> and
 <code>sk_core_regset</code>, making calls to the underlying functions
@@ -510,33 +655,160 @@ struct sk_regtbl {
 <p>Values are assumed to be encapsulated in
 a <code>sk_stacklet</code>, and registers are addressed by id.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_regget(sk_core *core, int pos, sk_stacklet **s);
-int sk_register_get(sk_regtbl *rt, int pos, sk_stacklet **s);
-int sk_core_regset(sk_core *core, int pos, sk_stacklet **s);
-int sk_register_set(sk_regtbl *rt, int pos, sk_stacklet **s);</pre></code>
+<p>Will return a non-zero value on error.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_regget(sk_core *core, int pos);
+int sk_register_get(sk_regtbl *rt, int pos, sk_stacklet *s);
+int sk_core_regset(sk_core *core, int pos);
+int sk_register_set(sk_regtbl *rt, int pos, sk_stacklet *s);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_register_get(sk_regtbl *rt, int pos, sk_stacklet *s)
+{
+    if (pos &lt; 0 || pos &gt;= SK_REGSIZE) return 1;
 
-<h3>TODO regmrk</h3>
+    *s = rt-&gt;r[pos].data;
+    return 0;
+}</pre></code>
+<p></p>
+<p>Things get a bit more involved the item in the register
+is a patchwerk cable. This requires pushing the buffer
+contained inside of the cable back onto the buffer stack.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_regget(sk_core *core, int pos)
+{
+    int rc;
+    sk_stacklet *s;
+
+    rc = sk_stack_push(&core-&gt;stack, &s);
+    SK_ERROR_CHECK(rc);
+    rc = sk_register_get(&core-&gt;regtbl, pos, s);
+    SK_ERROR_CHECK(rc);
+
+    /* also push to buffer stack if cable */
+    if (s-&gt;type == SK_TYPE_CABLE) {
+        pw_cable *c;
+        pw_buffer *b;
+        pw_stack *bstack;
+        c = (pw_cable *) s-&gt;ptr;
+        b = pw_cable_get_buffer(c);
+        bstack = pw_patch_stack(core-&gt;patch);
+        pw_stack_push_buffer(bstack, b);
+    }
+
+    return 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_register_set(sk_regtbl *rt, int pos, sk_stacklet *s)
+{
+    if (pos &lt; 0 || pos &gt;= SK_REGSIZE) return 1;
+
+    rt-&gt;r[pos].data = *s;
+    return 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_regset(sk_core *core, int pos)
+{
+    int rc;
+    sk_stacklet *s;
+
+    rc = sk_stack_pop(&core-&gt;stack, &s);
+    SK_ERROR_CHECK(rc);
+    rc = sk_register_set(&core-&gt;regtbl, pos, s);
+    SK_ERROR_CHECK(rc);
+
+    return 0;
+}</pre></code>
+
+<h3>regmrk</h3>
 
 <p><code>sk_core_regmrk</code>, marks a register as being used. this makes
 an underlying call to <code>sk_register_mark</code>.
 </p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_regmrk(sk_core *core, int pos);
+int sk_register_mark(sk_regtbl *rt, int pos);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_register_mark(sk_regtbl *rt, int pos)
+{
+    if (pos &lt; 0 || pos &gt;= SK_REGSIZE) return 1;
 
-<h3>TODO regclr</h3>
+    rt-&gt;r[pos].flags |= 1;
+    return 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_regmrk(sk_core *core, int pos)
+{
+    return sk_register_mark(&core-&gt;regtbl, pos);
+}</pre></code>
 
-<p><code>sk_core_clear</code> clears the register, making it free to be
+<h3>regclr</h3>
+
+<p><code>sk_core_regclr</code> clears the register, making it free to be
 claimed. This makes an underlying call to
 <code>sk_register_clear</code>.
 </p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_regclr(sk_core *core, int pos);
+int sk_register_clear(sk_regtbl *rt, int pos);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_register_clear(sk_regtbl *rt, int pos)
+{
+    if (pos &lt; 0 || pos &gt;= SK_REGSIZE) return 1;
 
-<h3>TODO regnxt</h3>
+    rt-&gt;r[pos].flags = 0;
+    return 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_regclr(sk_core *core, int pos)
+{
+    return sk_register_clear(&core-&gt;regtbl, pos);
+}</pre></code>
+
+<h3>regnxt</h3>
 
 <p><code>sk_core_regnxt</code> returns the next free register, which
-makes an underlying call to <code>sk_register_nextfree</code>
-
-this will iterate through
+makes an underlying call to <code>sk_register_nextfree</code>.
+</p>
+<p><code>start</code> indicates which register position to start at. Leave
+this to be 0 if there is no preference.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_regnext(sk_core *core, int start, int *pos);
+int sk_register_nextfree(sk_regtbl *rt, int start);</pre></code>
+<p></p>
+<p><code>sk_register_nextfree</code> will iterate through
 the registers until it finds one that is free. it will
 return the id of this register.
 </p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_register_nextfree(sk_regtbl *rt, int start)
+{
+    int pos;
+    int i;
+    sk_register_entry *reg;
+
+    reg = rt-&gt;r;
+
+    if (start &lt; 0 || start &gt;= SK_REGSIZE) start = 0;
+
+    pos = start;
+
+    for (i = 0; i &lt; SK_REGSIZE; i++) {
+        if (!(reg[pos].flags & 1)) return pos;
+        pos = (pos + 1) % SK_REGSIZE;
+    }
+
+    return -1;
+}</pre></code>
+<p></p>
+<p><code>sk_core_regnxt</code> returns a non-zero error code if there are
+no available registers. This is done to make it play better
+with the <code>SK_ERROR_CHECK</code> paradigm.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_regnext(sk_core *core, int start, int *pos)
+{
+    *pos = sk_register_nextfree(&core-&gt;regtbl, start);
+
+    if (*pos &lt; 0) return 1;
+
+    return 0;
+}</pre></code>
 
 <h2>Buffer Operations</h2>
 
@@ -545,36 +817,74 @@ of samples known as buffers. Buffers are manipulated using
 a <code>stack</code>, and are managed/queried from a <code>pool</code>.
 </p>
 
-<h3>TODO bdup</h3>
+<h3>hold/unholding buffers</h3>
 
-<p>The function <code>sk_core_bdup</code> duplicates a buffer that is on
-the stack. This will perform the dup operation on both the
-patchwerk stack and the sndkit stack.
+<p>After being used by a node, buffers are usually immediately
+returned to the buffer pool to be re-used. But, sometimes
+signals stored in those buffers need to be saved for later
+on in the patch. In order to do this, one must explicitely
+<code>hold</code> the buffer and then <code>unhold</code> it when it is done being
+used. If buffers are not unheld, it creates a sort of
+resource leak which will dry up the buffer pool and cause
+patchwerk to lock up.
 </p>
-
-<h3>TODO bdrop</h3>
-
-<p>The function <code>sk_core_bdrop</code> drops a buffer that is on the
-stack. This will before the drop operation on both the
-patchwerk stack and the sndkit stack.
+<p>Holding and unholding buffers can be done with
+<code>sk_core_hold</code> and <code>sk_core_unhold</code>. These will peak at
+the last item on the stack, presumably a cable, and it will
+hold the buffer contained inside of it. In the case of
+<code>sk_core_unhold</code>, the item will be popped from the stack.
 </p>
-
-<h3>TODO bhold/bunhold</h3>
-
-<p>The functions <code>sk_core_bhold</code> and <code>sk_core_bunhold</code> pop the
-last item off the stack (which expects to be a cable), and
-marks the internal buffer in the cable to be held or unheld,
-respectively.
+<p>If something goes wrong, a non-zero value is returned.
 </p>
-<p>Holding a buffer tells patchwerk not to re-use it
-in the buffer pool, allowing the signal inside of it to be
-used as many times as needed until the buffer is explicitely
-unheld. If you don't unhold buffers, it makes them
-inaccessible later, thereby causing a sort of resource leak.
-Left unchecked, this eventually causes patchwerk to lock up.
-</p>
-<p>The <code>sk_core_bhold</code> operation pushes the item back onto the
-stack, which allows it to be stored in a register.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_hold(sk_core *core);
+int sk_core_unhold(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_hold(sk_core *core)
+{
+    int rc;
+    sk_stacklet *s;
+    rc = sk_stack_peak(&core-&gt;stack, &s);
+    SK_ERROR_CHECK(rc);
+
+    if (s-&gt;type != SK_TYPE_CABLE) {
+        /* Wrong type, kiddo */
+        return 2;
+    }
+
+    rc = pw_patch_bhold(core-&gt;patch, NULL);
+    SK_PW_ERROR_CHECK(rc);
+
+    return 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_unhold(sk_core *core)
+{
+    sk_param cable;
+    pw_buffer *buf;
+    pw_cable *c;
+    int rc;
+
+    rc = sk_param_get(core, &cable);
+    SK_ERROR_CHECK(rc);
+
+    if (cable.type != 1) {
+        /* Your princess is is another castle. */
+        return 2;
+    }
+
+    c = cable.data.c;
+    buf = pw_cable_get_buffer(c);
+    rc = pw_patch_bunhold(core-&gt;patch, buf);
+    SK_PW_ERROR_CHECK(rc);
+
+    return 0;
+}</pre></code>
+
+<h3>TODO swap</h3>
+
+<p><code>swap</code> swaps the positions of the last two items on the
+stack. If both items are cables, then a swap operation
+on the buffer stack happens as well.
 </p>
 
 <h2>Tables</h2>
@@ -582,6 +892,118 @@ stack, which allows it to be stored in a register.
 <p>A small abstraction for dealing with tables that are managed
 by patchwerk.
 </p>
+
+<h3>Table Struct</h3>
+
+<p>a struct called <code>sk_table</code>. Contains a <code>SKFLT</code> array and
+it's size.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_table sk_table;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_table {
+    SKFLT *tab;
+    unsigned long sz;
+};</pre></code>
+
+<h3>Creating a New Table</h3>
+
+<p>Called <code>sk_core_table_new</code>. Allocates a new table and wraps
+it around a patchwerk pointer. This table will be
+automatically freed when the patch is freed.
+</p>
+<p>The table itself is then pushed to the stack.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_table_new(sk_core *core, unsigned long sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void free_table(pw_pointer *p)
+{
+    sk_table *tab;
+
+    tab = pw_pointer_data(p);
+
+    free(tab-&gt;tab);
+    free(tab);
+}
+
+int sk_core_table_new(sk_core *core, unsigned long sz)
+{
+    sk_table *tab;
+    int rc;
+
+    tab = malloc(sizeof(sk_table));
+
+    if (tab == NULL) return 1;
+
+    tab-&gt;tab = malloc(sz * sizeof(SKFLT));
+    memset(tab-&gt;tab, 0, sz * sizeof(SKFLT));
+    tab-&gt;sz = sz;
+
+    pw_patch_append_userdata(core-&gt;patch, free_table, tab);
+
+    rc = sk_core_table_push(core, tab);
+    SK_ERROR_CHECK(rc);
+
+    return 0;
+}</pre></code>
+
+<h3>Getting Table Data and Size</h3>
+
+<p>Getter functions <code>sk_table_size</code> and <code>sk_table_data</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>size_t sk_table_size(sk_table *t);
+SKFLT* sk_table_data(sk_table *t);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>size_t sk_table_size(sk_table *t)
+{
+    return t-&gt;sz;
+}
+
+SKFLT* sk_table_data(sk_table *t)
+{
+    return t-&gt;tab;
+}</pre></code>
+
+<h3>Pushing/Popping Table</h3>
+
+<p><code>sk_core_pop_table</code> and <code>sk_core_push_table</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_table_push(sk_core *core, sk_table *tab);
+int sk_core_table_pop(sk_core *core, sk_table **tab);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_table_push(sk_core *core, sk_table *tab)
+{
+    int rc;
+    sk_stacklet *s;
+
+    rc = sk_stack_push(&core-&gt;stack, &s);
+
+    SK_ERROR_CHECK(rc);
+
+    s-&gt;type = SK_TYPE_TABLE;
+    s-&gt;ptr = tab;
+
+    return rc;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_table_pop(sk_core *core, sk_table **tab)
+{
+    int rc;
+    sk_stacklet *s;
+
+    rc = sk_stack_pop(&core-&gt;stack, &s);
+
+    SK_ERROR_CHECK(rc);
+
+    if (s-&gt;type != SK_TYPE_TABLE) {
+        printf("uh oh type is %d, %g\n", s-&gt;type, s-&gt;f);
+        printf("%d items on stack\n", core-&gt;stack.pos);
+        return 1;
+    }
+
+    *tab = (sk_table *)s-&gt;ptr;
+
+    return rc;
+}</pre></code>
 
 <h2>Error Checking</h2>
 

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>GEN routines</title>
+<h1>GEN routines</h1>
+
+<h2>Overview</h2>
+
+<p>This document outlines a set of useful GEN routines.
+</p>
+
+<h2>What exactly is a GEN routine?</h2>
+
+<p>A GEN routine is used to describe a function that works
+on table (a <code>SKFLT</code> array in C). These are usually used to
+generate wavetables.
+</p>
+<p>The term "GEN routine" (yes, all caps), is borrowed from
+Csound and MUSIC-N languages as
+<a href="http://www.csounds.com/manual/html/ScoreGenRef.html">GENerators for function tables</a>,
+affectionately referred to as "f-tables", which are
+essentially just "tables" in the sndkit world.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>gen.c</code> and <code>gen.h</code>.
+</p>
+<div><b><i>&lt;&lt;gen.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_GEN_SINE
+#define SK_GEN_SINE
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;gen.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include &lt;stddef.h&gt;
+#include "gen.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>sine wave table</h2>
+
+<p>The function <code>sk_gen_sine</code> generates a sampled period
+of a sine wave.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_gen_sine(SKFLT *tab, unsigned long sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_gen_sine(SKFLT *tab, unsigned long sz)
+{
+    int i;
+    SKFLT step;
+
+    if (sz &lt;= 0) return;
+
+    step = 2 * M_PI / sz;
+
+    for (i = 0; i &lt; sz; i++) {
+        tab[i] = sin(i * step);
+    }
+}</pre></code>
+</div>
+</body>
+</html>
