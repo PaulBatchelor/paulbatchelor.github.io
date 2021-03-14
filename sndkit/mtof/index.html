@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>mtof</title>
+<h1>mtof</h1>
+
+<h2>Overview</h2>
+
+<p><code>mtof</code> stands for MIDI-to-frequency. It converts
+something that's a MIDI note number to frequency.
+</p>
+<p>For now, this page will be limited to just 12-tone
+equal temperament. But, with some easy adjustments,
+the equation could be changed to produce a wide range
+of equal temperament scales.
+</p>
+
+<h2>Equation</h2>
+
+<p>Here's the mathematical equation that will be used for
+<code>mtof</code>, and it's inevitably going to make some people upset:
+</p>
+<p><img src="/sndkit/_fig/mtof_eqn.png" alt="f = 2^{(d - 69)/12} \cdot 440"srcset="/sndkit/_fig/mtof_eqn.png 1x,/sndkit/_fig/mtof_eqn2x.png 2x,">
+</p>
+<p>Despite this being taken from <a href="https://en.wikipedia.org/wiki/MIDI_tuning_standard">wikipedia</a>,
+there is still controversy in the music industry about
+if this is the <b>right</b> way.
+</p>
+<p>Let's first ignore the woes of equal temperament. That's a
+whole other thing.
+</p>
+<p>This equation is calibrated so that MIDI note number 69 is
+concert A. If you're from Roland, they'll be the ones
+who insist it should be 57. Pay no attention to them.
+</p>
+<p>This equation is tuned to concert A440. This is
+standard, and it's a fine standard. In contemporary
+orchestras, concert A is sometimes tuned sharp to A441,
+A442, or - dare I say it? - A443! Orchestras that specialize
+in period music and/or instruments tend to tune lower. I
+believe it's around A435 or so?
+</p>
+<p>Suffice it so say that pitch and tonality have a beautiful
+elasticity to it that shouldn't be forgotten in the digital
+domain. However, for most practical purpose, this equation
+gets the job done.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>Two files as usual: <code>mtof.c</code> and <code>mtof.h</code>.
+</p>
+<div><b><i>&lt;&lt;mtof.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_MTOF_H
+#define SK_MTOF_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+&lt;&lt;macros&gt;&gt;
+#ifdef SK_MTOF_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;mtof.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_MTOF_PRIV
+#include "mtof.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Function</h2>
+
+<p>The macro <code>SK_MTOF</code> performs the MIDI-to-frequency equation
+above.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_MTOF(f) (pow(2, (nn - 69.0) / 12.0) * 440.0);</pre></code>
+
+<h2>mtof with caching</h2>
+
+<p>To save on some CPU cycles, a cached version of <code>SK_MTOF</code>
+has been created.
+</p>
+<p>State is stored in <code>sk_mtof</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_mtof sk_mtof;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_mtof {
+   SKFLT freq;
+   SKFLT nn;
+};</pre></code>
+<p></p>
+<p>Initialize with <code>sk_mtof_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_mtof_init(sk_mtof *mf);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_mtof_init(sk_mtof *mf)
+{
+    mf-&gt;freq = -1;
+    mf-&gt;nn = -1;
+}</pre></code>
+<p></p>
+<p>Compute with <code>sk_mtof_tick</code>:
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_mtof_tick(sk_mtof *mf, SKFLT nn);</pre></code>
+<p></p>
+<p>The function will only call <code>SK_MTOF</code> when the note number
+has changed.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_mtof_tick(sk_mtof *mf, SKFLT nn)
+{
+    if (nn != mf-&gt;nn) {
+        mf-&gt;nn = nn;
+        mf-&gt;freq = SK_MTOF(nn);
+    }
+    return mf-&gt;freq;
+}</pre></code>
+</div>
+</body>
+</html>

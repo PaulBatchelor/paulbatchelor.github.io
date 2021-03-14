@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Metro</title>
+<h1>Metro</h1>
+
+<h2>Overview</h2>
+
+<p>The <code>metro</code> (short for <code>metronome</code>) algorithm implements a
+pretty common kind of signal generator that you see in all
+the computer music environments.
+</p>
+<p><code>Metro</code> will produce a series of single-sample impulses at
+a specified rate. I personally like to call these impulses
+<code>ticks</code>, and the signal they produce a <code>clock</code>. A clock
+signal such as the one produced by metro can be used to
+drive things like sequencers and envelope generators
+(at the time of writing, these don't exist in <code>sndkit</code> yet,
+but it might be worth checking out Soundpipe modules like
+<code>tenv</code>, <code>tseq</code>, <code>tenvx</code>, <code>tgate</code>, and <code>trand</code>.).
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>As per usual, this tangles out to header/C combo
+<code>metro.c</code> and <code>metro.h</code>. <code>SK_METRO_PRIV</code> exposes the
+<code>sk_metro</code> struct.
+</p>
+<div><b><i>&lt;&lt;metro.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_METRO_H
+#define SK_METRO_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_METRO_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;metro.c&gt;&gt;=</i></b></div><pre><code>#define SK_METRO_PRIV
+#include "metro.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+</p>
+
+<h2>Struct Initialization</h2>
+
+<p>Struct is called <code>sk_metro</code>. Initialized with
+<code>sk_metro_init</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_metro sk_metro;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_metro_init(sk_metro *m, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_metro_init(sk_metro *m, int sr)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h2>Struct Contents</h2>
+
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_metro {
+    SKFLT freq;
+    SKFLT phs;
+    int init;
+    SKFLT onedsr;
+};</pre></code>
+<p></p>
+<p><code>freq</code> is the metronome frequency.
+</p>
+<p>An arbitrary default value of 2 is used.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_metro_freq(m, 2.0);</pre></code>
+<p></p>
+<p><code>phs</code> is an internal <a href="/sndkit/phasor">phasor</a> signal keeping track
+of time.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;phs = 0;</pre></code>
+<p></p>
+<p><code>init</code> is a flag set at startup to guarantee an initial tick
+on the first sample.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;init = 1;</pre></code>
+<p></p>
+<p><code>onedsr</code> is a constant that is <code>1 / sr</code>, or one divided by
+the sample rate.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;onedsr = 1.0 / sr;</pre></code>
+
+<h2>Setting The Frequency</h2>
+
+<p>Set the frequency of metro with <code>sk_metro_freq</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_metro_freq(sk_metro *m, SKFLT freq);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_metro_freq(sk_metro *m, SKFLT freq)
+{
+    m-&gt;freq = freq;
+}</pre></code>
+
+<h2>Compute</h2>
+
+<p>Compute a sample of audio with <code>sk_metro_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_metro_tick(sk_metro *m);</pre></code>
+<p></p>
+<p><code>metro</code> requires so few lines of code it's almost not worth
+saying anything all about it.
+</p>
+<p>The <code>init</code> flag is used to guarantee an initial tick at the
+beginning.
+</p>
+<p>The <code>phs</code> value acts as a normalized incrementor. When it
+reaches 1, it wraps around back to zero. The increment
+amount is calculated from the frequency parameter.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_metro_tick(sk_metro *m)
+{
+    SKFLT out;
+    SKFLT phs;
+    SKFLT freq;
+
+    phs = m-&gt;phs;
+    freq = m-&gt;freq;
+
+    out = 0;
+
+    if (m-&gt;init) {
+        m-&gt;init = 0;
+        out = 1.0;
+    } else {
+        phs += freq * m-&gt;onedsr;
+
+        if (phs &gt;= 1) {
+            out = 1.0;
+            phs -= 1.0;
+        }
+    }
+
+    m-&gt;phs = phs;
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>
