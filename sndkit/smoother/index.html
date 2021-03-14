@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Smoother</title>
+<h1>Smoother</h1>
+
+<h2>Overview.</h2>
+
+<p><code>smoother</code> is a one-pole smoothing filter.
+</p>
+<p>The smoothing filter, sometimes called a portamento filter
+is an indispensible tool for a sound designer. Mostly
+used to smooth out steppy control signals, smoothing filters
+are a particular kind of one-pole recurisve IIR filter,
+usually with parametric smoothing control amount. Signals
+that go through smoothing filters get a distinct syruppy
+responsiveness added to it (especially if you set the
+smoothing amount way up!).
+</p>
+<p>While smoothing filters usually have an association with
+smoothing out control signals from things like MIDI CC
+knobs, there are a few other useful things you can do with
+them. If you put audio-rate signal with note values through
+it, you get a really lovely legato portamento effect. A gate
+signal put through a smoothing filter produces an envelope
+with the most beautiful exponential curves perfect for short
+percusive sounds.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>smoother.c</code> and <code>smoother.h</code>. <code>SK_SMOOTHER_PRIV</code> exposes the
+struct.
+</p>
+<div><b><i>&lt;&lt;smoother.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_SMOOTHER_H
+#define SK_SMOOTHER_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+
+#ifdef SK_SMOOTHER_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;smoother.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_SMOOTHER_PRIV
+#include "smoother.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>The Equation</h2>
+
+<p>The one pole smoothing filter employs the following
+difference equation:
+</p>
+<p><img src="/sndkit/_fig/smoother_eqn.png" alt="y(n) = b_0 x(n) - a_1 y(n - 1)"srcset="/sndkit/_fig/smoother_eqn.png 1x,/sndkit/_fig/smoother_eqn2x.png 2x,">
+</p>
+<p>Where <img src="/sndkit/_fig/smoother_a1.png" alt="a_1">
+ is <img src="/sndkit/_fig/smoother_a1_eqn.png" alt="0.5^{1/(tF_s)}">
+ and <img src="/sndkit/_fig/smoother_b0.png" alt="b_0">
+ is <img src="/sndkit/_fig/smoother_b0_eqn.png" alt="{1 - a_1}">
+. The
+variables <img src="/sndkit/_fig/smoother_t.png" alt="t">
+ and <img src="/sndkit/_fig/smoother_fs.png" alt="F_s">
+ are the smoothing half time and
+sampling rate, respectively. <img src="/sndkit/_fig/smoother_xn.png" alt="x(n)">
+ is the input signal.
+</p>
+
+<h2>Struct Initialized</h2>
+
+<p><code>sk_smoother</code> is the struct.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_smoother sk_smoother;</pre></code>
+<p></p>
+<p>It is initalized with <code>sk_smoother_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_smoother_init(sk_smoother *s, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_smoother_init(sk_smoother *s, int sr)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h2>Struct Contents</h2>
+
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_smoother {
+    SKFLT smooth;
+    SKFLT a1, b0, y0, psmooth;
+    SKFLT onedsr;
+};</pre></code>
+<p></p>
+<p><code>smooth</code> is the smoothing parameter, with <code>psmooth</code> being
+a cached variable that is used to check when the smooth
+parameter has changed.
+</p>
+<p><code>smooth</code> is set to a reasonable default value of 10ms.
+<code>psmooth</code> is set to a different (and also invalid) value of
+-1. This will caused the filter coefficients to be
+calculated when the compute function is called for
+the first time.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>s-&gt;smooth = 0.01;
+s-&gt;psmooth = -1;</pre></code>
+<p></p>
+<p><code>a1</code> and <code>b0</code> are filter coefficients computed from the
+<code>smooth</code> time parameter, with <code>y0</code> being the filter memory.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>s-&gt;a1 = 0;
+s-&gt;b0 = 0;
+s-&gt;y0 = 0;</pre></code>
+<p></p>
+<p><code>onedsr</code> is the constant <code>1.0/sr</code>. This might not actually
+be all that helpful since a divide operation is still
+happening. Hmm.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>s-&gt;onedsr = 1.0 / sr;</pre></code>
+
+<h2>Setting Smoothing Time</h2>
+
+<p>Set the smoothinb time parameter with <code>sk_smoother_time</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_smoother_time(sk_smoother *s, SKFLT t);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_smoother_time(sk_smoother *s, SKFLT t)
+{
+    s-&gt;smooth = t;
+}</pre></code>
+<p></p>
+<p>The smoothing time, also known as the half time, is the
+amount of time (in seconds) it takes to go to halfway to
+the trajectory value.
+</p>
+
+<h2>Resetting The Filter</h2>
+
+<p><code>sk_smoother_reset</code> will reset the smoothing filter, causing
+it to snap directly to the value <code>in</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_smoother_reset(sk_smoother *s, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_smoother_reset(sk_smoother *s, SKFLT in)
+{
+    s-&gt;y0 = in;
+}</pre></code>
+
+<h2>Compute</h2>
+
+<p>Compute a sample with <code>sk_smoother_tick</code>. This expects an
+input signal, and returns a single output signal.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_smoother_tick(sk_smoother *s, SKFLT in);</pre></code>
+<p></p>
+<p>This is implementing the equation displayed above.
+Parameter caching is used so that filter coefficients
+are only updated when the smoothing amount updates.
+Doing this shaves off a few redundant CPU instructions.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_smoother_tick(sk_smoother *s, SKFLT in)
+{
+    SKFLT out;
+
+    if (s-&gt;psmooth != s-&gt;smooth) {
+        s-&gt;a1 = pow(0.5, s-&gt;onedsr/s-&gt;smooth);
+        s-&gt;b0 = 1.0 - s-&gt;a1;
+        s-&gt;psmooth = s-&gt;smooth;
+    }
+
+    s-&gt;y0 = s-&gt;b0 * in + s-&gt;a1 * s-&gt;y0;
+    out = s-&gt;y0;
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>
