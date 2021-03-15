@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>expon</title>
+<h1>expon</h1>
+
+<h2>Overview</h2>
+
+<p>A (re)triggerable exponential line generator. Go from A
+to B in a exponential swell over some duration in seconds.
+When it reaches B, hold indefinitely until retriggered.
+</p>
+<p>Note that values <b>cannot</b> be exactly 0.
+</p>
+
+<h2>Tangled files.</h2>
+
+<p><code>expon.h</code> and <code>expon.c</code>. <code>SK_EXPON_PRIV</code> exposes the
+<code>sk_expon</code> struct.
+</p>
+<div><b><i>&lt;&lt;expon.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_EXPON_H
+#define SK_EXPON_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+#ifdef SK_EXPON_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;expon.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_EXPON_PRIV
+#include "expon.h"
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Initialization</h2>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_expon_init(sk_expon *e, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_expon_dur(sk_expon *e, SKFLT dur);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_expon sk_expon;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_expon {
+    SKFLT a, dur, b;
+    SKFLT val, incr;
+    unsigned long sdur, stime;
+    int init;
+    int sr;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_expon_init(sk_expon *e, int sr)
+{
+    sk_expon_a(e, 0.000001);
+    sk_expon_b(e, 1);
+    sk_expon_dur(e, 1);
+    expon_reinit(e);
+    e-&gt;init = 1;
+    e-&gt;sr = sr;
+}</pre></code>
+
+<h2>Setting Parameters</h2>
+
+
+<h3>A and B</h3>
+
+<p>Go from value A to value B.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_expon_a(sk_expon *e, SKFLT val);
+void sk_expon_b(sk_expon *e, SKFLT val);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_expon_a(sk_expon *e, SKFLT val)
+{
+    if (val != 0) e-&gt;a = val;
+}
+
+void sk_expon_b(sk_expon *e, SKFLT val)
+{
+    if (val != 0) e-&gt;b = val;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_expon_dur(sk_expon *e, SKFLT dur)
+{
+    e-&gt;dur = dur;
+}</pre></code>
+
+<h2>Calculating Multipler</h2>
+
+<p>The function <code>expon_reinit</code> will recalculate the multiplier
+used to compute the exponential line.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void expon_reinit(sk_expon *e);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void expon_reinit(sk_expon *e)
+{
+    SKFLT onedsr;
+    e-&gt;stime = 0;
+    e-&gt;sdur = e-&gt;dur * e-&gt;sr;
+    onedsr = 1.0 / e-&gt;sr;
+
+    if ((e-&gt;a * e-&gt;b) &gt; 0.0) {
+        e-&gt;incr = pow((SKFLT)(e-&gt;b / e-&gt;a), onedsr / e-&gt;dur);
+    } else {
+        e-&gt;incr = 1;
+        e-&gt;val = e-&gt;a;
+    }
+
+    e-&gt;val = e-&gt;a;
+}</pre></code>
+
+<h2>Computing a Sample</h2>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_expon_tick(sk_expon *e, SKFLT trig);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_expon_tick(sk_expon *e, SKFLT trig)
+{
+    SKFLT out;
+
+    out = 0;
+
+    if (trig != 0) {
+        expon_reinit(e);
+        e-&gt;init = 0;
+    }
+
+    if (e-&gt;init) {
+        out = 0;
+    }
+
+    if (e-&gt;stime &lt; e-&gt;sdur) {
+        SKFLT val = e-&gt;val;
+        e-&gt;val *= e-&gt;incr;
+        e-&gt;stime++;
+        out = val;
+    } else {
+        out = e-&gt;b;
+    }
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>

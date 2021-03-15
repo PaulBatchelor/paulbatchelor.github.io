@@ -581,6 +581,43 @@ process can be mostly automated or abstracted away.
 It will also push the cable's buffer onto the stack.
 </p>
 
+<h3>Pushing/Popping Generic Pointers</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_generic_push(sk_core *core, void *ptr);
+int sk_core_generic_pop(sk_core *core, void **ptr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_generic_push(sk_core *core, void *ptr)
+{
+    int rc;
+    sk_stacklet *s;
+
+    rc = sk_stack_push(&core-&gt;stack, &s);
+    SK_ERROR_CHECK(rc);
+
+    s-&gt;type = SK_TYPE_GENERIC;
+    s-&gt;ptr = ptr;
+
+    return rc;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_generic_pop(sk_core *core, void **ptr)
+{
+    int rc;
+    sk_stacklet *s;
+
+    rc = sk_stack_pop(&core-&gt;stack, &s);
+
+    SK_ERROR_CHECK(rc);
+
+    if (s-&gt;type != SK_TYPE_GENERIC) {
+        return 1;
+    }
+
+    if (ptr != NULL) *ptr = s-&gt;ptr;
+
+    return rc;
+}</pre></code>
+
 <h2>Registers</h2>
 
 <p>A register interface is used alongside the stack
