@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>10. Patchwerk Nodes</h2>
+
+<p><a id="wm_020_0360"></a></p>
+
+<h3>10.1. Funcdefs and Funcs</h3>
+
+<p><a id="wm_020_0361"></a>Worgle structure stuff mostly. If <code>SEQVM_NO_PATCHWERK</code>
+is defined, it will compile seqvm without these components.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>#ifndef SEQVM_NO_PATCHWERK
+&lt;&lt;pw_funcdefs&gt;&gt;
+#endif</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>#ifndef SEQVM_NO_PATCHWERK
+&lt;&lt;pw_funcs&gt;&gt;
+#endif</pre></code>
+
+<h3>10.2. seqvm mother node</h3>
+
+<p><a id="wm_020_0371"></a><div><b><i>&lt;&lt;pw_funcdefs&gt;&gt;=</i></b></div><pre><code>seqvm * node_seqvm(pw_node *node, int pool_size);</pre></code>
+<div><b><i>&lt;&lt;pw_funcs&gt;&gt;=</i></b></div><pre><code>static void n_seqvm_compute(pw_node *node)
+{
+    int blksize;
+    int n;
+    pw_cable *in;
+    seqvm *svm;
+
+    svm = pw_node_get_data(node);
+    blksize = pw_node_blksize(node);
+
+    pw_node_get_cable(node, 0, &in);
+
+    seqvm_reset(svm);
+    for (n = 0; n &lt; blksize; n++) {
+        PWFLT clk;
+        clk = pw_cable_get(in, n);
+
+        if (clk != 0) {
+            seqvm_tick(svm, n);
+        }
+    }
+}
+
+static void n_seqvm_destroy(pw_node *node)
+{
+    void *ud;
+    int rc;
+    seqvm_cell *pool;
+    seqvm *svm;
+    pw_patch *patch;
+
+    pw_node_cables_free(node);
+    rc = pw_node_get_patch(node, &patch);
+    if (rc != PW_OK) return;
+
+    svm = pw_node_get_data(node);
+
+    pool = seqvm_get_pool(svm);
+
+    ud = pool;
+    rc = pw_memory_free(patch, &ud);
+    if (rc != PW_OK) return;
+
+    ud = svm;
+    rc = pw_memory_free(patch, &ud);
+    if (rc != PW_OK) return;
+
+}
+
+seqvm * node_seqvm(pw_node *node, int pool_size)
+{
+    seqvm *svm;
+    seqvm_cell *pool;
+    int rc;
+    void *ud;
+    pw_patch *patch;
+
+    svm = NULL;
+
+    rc = pw_node_get_patch(node, &patch);
+
+    if (rc != PW_OK) return NULL;
+
+    rc = pw_memory_alloc(patch, sizeof(seqvm), &ud);
+    if (rc != PW_OK) return NULL;
+    svm = ud;
+
+    rc = pw_memory_alloc(patch, sizeof(seqvm_cell) * pool_size, &ud);
+    if (rc != PW_OK) return NULL;
+    pool = ud;
+
+    seqvm_init(svm, pool, pool_size);
+
+    pw_node_set_compute(node, n_seqvm_compute);
+    pw_node_set_destroy(node, n_seqvm_destroy);
+    pw_node_set_data(node, svm);
+
+    pw_node_cables_alloc(node, 1);
+
+    return svm;
+}</pre></code>
+
+<h3>10.3. val</h3>
+
+<p><a id="wm_020_0378"></a><div><b><i>&lt;&lt;pw_funcdefs&gt;&gt;=</i></b></div><pre><code>int node_seqvm_val(pw_node *node, seqvm *svm);</pre></code>
+<div><b><i>&lt;&lt;pw_funcs&gt;&gt;=</i></b></div><pre><code>static void n_chan_val(pw_node *node)
+{
+    int blksize;
+    int n;
+    pw_cable *chan;
+    seqvm *svm;
+    pw_cable *out;
+
+    blksize = pw_node_blksize(node);
+    svm = pw_node_get_data(node);
+    pw_node_get_cable(node, 0, &chan);
+    pw_node_get_cable(node, 1, &out);
+
+    for (n = 0; n &lt; blksize; n++) {
+        int c;
+        PWFLT o;
+        seqvm_chan *sc;
+
+        c = pw_cable_get(chan, n);
+        sc = seqvm_get_chan(svm, c, n);
+
+        if (sc != NULL) o = sc-&gt;val;
+        else o = 0;
+
+        pw_cable_set(out, n, o);
+    }
+}
+
+int node_seqvm_val(pw_node *node, seqvm *svm)
+{
+    pw_node_cables_alloc(node, 2);
+    pw_node_set_block(node, 1);
+    pw_node_set_compute(node, n_chan_val);
+    pw_node_set_data(node, svm);
+    return PW_OK;
+}</pre></code>
+
+<h3>10.4. tick</h3>
+
+<p><a id="wm_020_0383"></a><div><b><i>&lt;&lt;pw_funcdefs&gt;&gt;=</i></b></div><pre><code>int node_seqvm_tick(pw_node *node, seqvm *svm);</pre></code>
+<div><b><i>&lt;&lt;pw_funcs&gt;&gt;=</i></b></div><pre><code>static void n_chan_tick(pw_node *node)
+{
+    int blksize;
+    int n;
+    pw_cable *chan;
+    seqvm *svm;
+    pw_cable *out;
+
+    blksize = pw_node_blksize(node);
+    svm = pw_node_get_data(node);
+    pw_node_get_cable(node, 0, &chan);
+    pw_node_get_cable(node, 1, &out);
+
+    for (n = 0; n &lt; blksize; n++) {
+        int c;
+        PWFLT o;
+
+        c = pw_cable_get(chan, n);
+
+        o = 0;
+
+        if (n == svm-&gt;blkpos) {
+            seqvm_chan *sc;
+            sc = seqvm_get_chan(svm, c, n);
+            if (sc != NULL) {
+                o = sc-&gt;tick;
+            }
+        }
+
+        pw_cable_set(out, n, o);
+    }
+}
+
+int node_seqvm_tick(pw_node *node, seqvm *svm)
+{
+    pw_node_cables_alloc(node, 2);
+    pw_node_set_block(node, 1);
+    pw_node_set_compute(node, n_chan_tick);
+    pw_node_set_data(node, svm);
+    return PW_OK;
+}</pre></code>
+
+<h3>10.5. retick</h3>
+
+<p><a id="wm_020_0388"></a><div><b><i>&lt;&lt;pw_funcdefs&gt;&gt;=</i></b></div><pre><code>int node_seqvm_retick(pw_node *node, seqvm *svm, int start);</pre></code>
+<div><b><i>&lt;&lt;pw_funcs&gt;&gt;=</i></b></div><pre><code>struct retick_n {
+    seqvm *svm;
+    int pos;
+};
+
+static void retick_compute(pw_node *node)
+{
+    int blksize;
+    int n;
+    struct retick_n *rt;
+    seqvm *svm;
+
+    rt = pw_node_get_data(node);
+    svm = rt-&gt;svm;
+    blksize = pw_node_blksize(node);
+
+    for (n = 0; n &lt; blksize; n++) {
+        if (svm-&gt;blkpos == n) {
+            seqvm_retick(svm, &rt-&gt;pos);
+        }
+    }
+}
+
+static void retick_destroy(pw_node *node)
+{
+    void *ud;
+    pw_patch *patch;
+    int rc;
+
+    pw_node_cables_free(node);
+    rc = pw_node_get_patch(node, &patch);
+
+    if (rc != PW_OK) return;
+    ud = pw_node_get_data(node);
+    pw_memory_free(patch, &ud);
+}
+
+int node_seqvm_retick(pw_node *node, seqvm *svm, int start)
+{
+    struct retick_n *rt;
+    void *ud;
+    pw_patch *patch;
+    int rc;
+
+    rc = pw_node_get_patch(node, &patch);
+
+    if (rc != PW_OK) return rc;
+
+    rc = pw_memory_alloc(patch, sizeof(struct retick_n), &ud);
+    if (rc != PW_OK) return rc;
+
+    rt = ud;
+
+    rt-&gt;pos = start;
+    rt-&gt;svm = svm;
+    pw_node_set_compute(node, retick_compute);
+    pw_node_set_destroy(node, retick_destroy);
+    pw_node_set_data(node, rt);
+    return PW_OK;
+}</pre></code>
+
+<h3>10.6. gate</h3>
+
+<p><a id="wm_020_0393"></a><div><b><i>&lt;&lt;pw_funcdefs&gt;&gt;=</i></b></div><pre><code>int node_seqvm_gate(pw_node *node, seqvm *svm);</pre></code>
+<div><b><i>&lt;&lt;pw_funcs&gt;&gt;=</i></b></div><pre><code>static void n_chan_gate(pw_node *node)
+{
+    int blksize;
+    int n;
+    pw_cable *chan;
+    seqvm *svm;
+    pw_cable *out;
+
+    blksize = pw_node_blksize(node);
+    svm = pw_node_get_data(node);
+    pw_node_get_cable(node, 0, &chan);
+    pw_node_get_cable(node, 1, &out);
+
+    for (n = 0; n &lt; blksize; n++) {
+        int c;
+        PWFLT o;
+        seqvm_chan *sc;
+
+        c = pw_cable_get(chan, n);
+        sc = seqvm_get_chan(svm, c, n);
+
+        if (sc != NULL) o = sc-&gt;gate;
+        else o = 0;
+
+        pw_cable_set(out, n, o);
+    }
+}
+
+int node_seqvm_gate(pw_node *node, seqvm *svm)
+{
+    pw_node_cables_alloc(node, 2);
+    pw_node_set_block(node, 1);
+    pw_node_set_compute(node, n_chan_gate);
+    pw_node_set_data(node, svm);
+    return PW_OK;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_020_0355">prev</a> | <a href="#">home</a> | <a href="/loom/wm_020_0398">next</a></p>
+</div>
+</body>
+</html>

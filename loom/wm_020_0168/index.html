@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>7. Core commands</h2>
+
+<p><a id="wm_020_0168"></a></p>
+
+<h3>7.1. The Main Enum</h3>
+
+<p><a id="wm_020_0169"></a>This enum gets dynamically populated with commands
+via worgle.
+</p>
+<div><b><i>&lt;&lt;enums&gt;&gt;=</i></b></div><pre><code>enum {
+&lt;&lt;commands&gt;&gt;
+   SEQVM_NONE
+};</pre></code>
+
+<h3>7.2. HALT</h3>
+
+<p><a id="wm_020_0176"></a>HALT. halts computation. Must be called in order
+to continue.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_HALT,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_HALT:
+    svm-&gt;halt = 1;
+    pos++;
+    break;</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP0(SEQVM_HALT, "HALT")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("halt") {
+    *pos = seqvm_insert0(svm, *pos, SEQVM_HALT);
+}</pre></code>
+
+<h3>7.3. END</h3>
+
+<p><a id="wm_020_0190"></a>Ends the program. This will prevent the program from moving.
+</p>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_NONE:
+case SEQVM_END:
+    svm-&gt;halt = 1;
+    break;</pre></code>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_END,</pre></code>
+
+<h3>7.4. VAL/VALR</h3>
+
+<p><a id="wm_020_0196"></a>VAL. Sets the value flag. This should correspond to a
+position in a table.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_VAL,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_VAL: {
+    int chn;
+    int val;
+
+    chn = c-&gt;p[0];
+    val = c-&gt;p[1];
+
+    if (chn &gt;= 0 && chn &lt; 4) {
+        svm-&gt;next.chan[chn].val = val;
+    }
+
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_VAL, "VAL")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("val") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_VAL, a, b);
+}</pre></code>
+<p></p>
+<p>VALR. like VAL, but using a value from a register.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_VALR,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_VALR: {
+    int chn;
+    int val;
+    int r;
+
+    chn = c-&gt;p[0];
+    r = c-&gt;p[1];
+    val = 0;
+
+    pos++;
+
+    if (r &gt;= 0 && r &lt; 16) {
+        val = svm-&gt;r[r];
+    } else break;
+
+    if (chn &gt;= 0 && chn &lt; 4) {
+        svm-&gt;next.chan[chn].val = val;
+    }
+
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_VALR, "VALR")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("valr") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_VALR, a, b);
+}</pre></code>
+
+<h3>7.5. SET</h3>
+
+<p><a id="wm_020_0215"></a>SET. Sets register to value.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_SET,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_SET: {
+    int r, val;
+
+    r = c-&gt;p[0];
+    val = c-&gt;p[1];
+
+    if (r &gt;= 0 && r &lt; 16) {
+        svm-&gt;r[r] = val;
+    }
+
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_SET, "SET")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("set") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_SET, a, b);
+}</pre></code>
+
+<h3>7.6. ADD/SUB</h3>
+
+<p><a id="wm_020_0225"></a>SUB. Subtracts from value in register.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_SUB,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_SUB: {
+    int r;
+    int amt;
+
+    r = c-&gt;p[0];
+    amt = c-&gt;p[1];
+
+    if (r &gt;= 0 || r &lt; 16) {
+        svm-&gt;r[r] -= amt;
+    }
+
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_SUB, "SUB")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("sub") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_SET, a, b);
+}</pre></code>
+<p></p>
+<p>ADD. Adds to value in register.
+</p>
+
+<h3>7.7. RAND</h3>
+
+<p><a id="wm_020_0236"></a>Usage: RAND reg N
+</p>
+<p>Creates random number between 0 and <code>N - 1</code>, and stores
+it in a register <code>reg</code>.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_RAND,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_RAND: {
+    int r;
+    int n;
+
+    pos++;
+
+    r = c-&gt;p[0];
+    n = c-&gt;p[1];
+
+    if (r &gt;= 0 && r &lt; 16) {
+        if (n == 0) {
+            svm-&gt;r[r] = 0;
+        } else {
+            int div;
+            div = SEQVM_RANDMAX / n;
+            svm-&gt;r[r] = seqvm_rand(svm) / div;
+        }
+    }
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_RAND, "RAND")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("rand") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_RAND, a, b);
+}</pre></code>
+
+<h3>7.8. JUMP/JUMPR</h3>
+
+<p><a id="wm_020_0246"></a>JUMP. Jumps to address unconditionally.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_JUMP,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_JUMP: {
+    pos = c-&gt;p[0];
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP1(SEQVM_JUMP, "JUMP")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("jump") {
+    *pos = seqvm_insert1(svm, *pos, SEQVM_JUMP, a);
+}</pre></code>
+<p></p>
+<p>JUMPR. Same as JUMP, but reads from value in register.
+If out of range, defaults to next value.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_JUMPR,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_JUMPR: {
+    if (c-&gt;p[0] &lt; 0 || c-&gt;p[0] &gt;= 8) pos++;
+    else pos = svm-&gt;r[c-&gt;p[0]];
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP1(SEQVM_JUMPR, "JUMPR")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("jumpr") {
+    *pos = seqvm_insert1(svm, *pos, SEQVM_JUMPR, a);
+}</pre></code>
+
+<h3>7.9. CJUMP</h3>
+
+<p><a id="wm_020_0265"></a>CJUMP. Conditional jump.
+Jumps to address if value in register is nonzero.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_CJUMP,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_CJUMP: {
+    int r;
+    int addr;
+
+    r = c-&gt;p[0];
+    addr = c-&gt;p[1];
+
+    pos++;
+
+    if (r &gt;= 0 && r &lt; 16) {
+        int val;
+        val = svm-&gt;r[r];
+        if (val) pos = addr;
+    }
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_CJUMP, "CJUMP")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("cjump") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_CJUMP, a, b);
+}</pre></code>
+
+<h3>7.10. RJUMP/RJUMPR</h3>
+
+<p><a id="wm_020_0275"></a>Relative jump. Jumps <code>N + 1</code> place relative to the current
+instruction. Done to work well with the <code>RAND</code> command.
+A value of 0 is a regular jump to the next instruction.
+</p>
+<p>Usage: RJUMPR reg
+Usage: RJUMP jump
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_RJUMP,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_RJUMP: {
+    int val;
+    val = c-&gt;p[0];
+    pos += (val + 1);
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP1(SEQVM_RJUMP, "RJUMP")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("rjump") {
+    *pos = seqvm_insert1(svm, *pos, SEQVM_RJUMP, a);
+}</pre></code>
+<p></p>
+<p>And now RJUMPR:
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_RJUMPR,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_RJUMPR: {
+    int r;
+    r = c-&gt;p[0];
+
+    if (r &gt;= 0 && r &lt; 16) {
+        int val;
+        val = svm-&gt;r[r];
+        pos += (val + 1);
+    } else {
+        pos++; /* ignore */
+    }
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP1(SEQVM_RJUMPR, "RJUMPR")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("rjumpr") {
+    *pos = seqvm_insert1(svm, *pos, SEQVM_RJUMPR, a);
+}</pre></code>
+
+<h3>7.11. WAIT</h3>
+
+<p><a id="wm_020_0294"></a>Usage: WAIT reg
+</p>
+<p><code>WAIT</code> will act as a HALT while the value in <code>reg</code> is
+non-zero. Every time it executed, it subtracts 1 from the
+value stored in <code>reg</code>.
+</p>
+<p>Equivalent to the following pseudo-code
+</p>
+<pre><code>WAIT:
+  SUB REG 1
+  HALT
+  CJUMP REG $WAIT</pre></code>
+<p></p>
+<p>So it saves 3 instructions.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_WAIT,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_WAIT: {
+    int r;
+    r = c-&gt;p[0];
+
+    if (r &gt;= 0 || r &lt;= 16) {
+        int *val;
+        val = &svm-&gt;r[r];
+        (*val)--;
+        if (*val &lt;= 0) pos++;
+        svm-&gt;halt = 1;
+    } else {
+        pos++; /* invalid range, skip */
+    }
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP1(SEQVM_WAIT, "WAIT")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("wait") {
+    *pos = seqvm_insert1(svm, *pos, SEQVM_WAIT, a);
+}</pre></code>
+
+<h3>7.12. TICK</h3>
+
+<p><a id="wm_020_0304"></a>Usage: TICK chan
+</p>
+<p>Sets tick flag. This gets reset at the beginning
+of every compute cycle.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_TICK,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_TICK: {
+    int chan;
+
+    chan = c-&gt;p[0];
+
+    if (chan &gt;= 0 && chan &lt; 4) {
+        svm-&gt;next.chan[chan].tick = 1;
+    }
+
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP1(SEQVM_TICK, "TICK")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("tick") {
+    *pos = seqvm_insert1(svm, *pos, SEQVM_TICK, a);
+}</pre></code>
+
+<h3>7.13. GATE</h3>
+
+<p><a id="wm_020_0314"></a>Usage: GATE chan state
+</p>
+<p>Sets the gate flag to be ON or OFF.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_GATE,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_GATE: {
+    int state;
+    int chan;
+
+    chan = c-&gt;p[0];
+    state = c-&gt;p[1];
+
+
+    if (chan &gt;= 0 && chan &lt;= 4) {
+        svm-&gt;next.chan[chan].gate = state;
+    }
+
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_GATE, "GATE")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("gate") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_GATE, a, b);
+}</pre></code>
+
+<h3>7.14. RANDQ</h3>
+
+<p><a id="wm_020_0324"></a>Usage: RANDQ reg N
+</p>
+<p>Creates random number between 0 and <code>N - 1</code>, and stores
+it in a register <code>reg</code>. This is different than <code>RAND</code> in
+that it produces a value that is different from the value
+in the register. If <code>N</code> is zero, zero is returned.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_RANDQ,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_RANDQ: {
+    int r;
+    int n;
+
+    pos++;
+
+    r = c-&gt;p[0];
+    n = c-&gt;p[1];
+
+    if (r &gt;= 0 && r &lt; 16) {
+        if (n &lt;= 1) {
+            svm-&gt;r[r] = 0;
+        } else if (n == 2) {
+            if (svm-&gt;r[r] == 0) svm-&gt;r[r] = 1;
+            else svm-&gt;r[r] = 0;
+        } else {
+            int div;
+            int prev;
+            int next;
+            prev = svm-&gt;r[r];
+            next = prev;
+            div = SEQVM_RANDMAX / n;
+
+            while (prev == next) {
+                next = seqvm_rand(svm) / div;
+            }
+
+            svm-&gt;r[r] = next;
+        }
+    }
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_RANDQ, "RANDQ")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("randq") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_RANDQ, a, b);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_020_0163">prev</a> | <a href="#">home</a> | <a href="/loom/wm_020_0334">next</a></p>
+</div>
+</body>
+</html>
