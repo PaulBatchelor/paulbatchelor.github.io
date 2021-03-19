@@ -10,6 +10,9 @@
 <div id="main">
 <title>How to handle "Buffer Pool Full" error</title>
 <h1>How to handle "Buffer Pool Full" error</h1>
+
+<h2>What is this error?</h2>
+
 <p>Monolith will squawk a "Buffer Pool Full" error
 when all the pools in the buffer pool are used up
 in the current patch. This can happen with large
@@ -23,7 +26,10 @@ from.
 <p>Patchwerk (and therefore monolith) will not move until
 the global error flag has been reset.
 </p>
-<p>Here is how you do it.
+
+<h2>Recovering during a live coding session</h2>
+
+<p>Here is how you fix it.
 </p>
 <p>First, correct your patch but DO NOT RE-EVALUATE. The usual
 culprit is holding too many cables. The easiest thing to do
@@ -43,6 +49,17 @@ allocate a new buffer.
 </p>
 <p>This can also be done with the function <code>monolith:unbork</code>.
 </p>
+
+<h2>Option 2: rescaling the buffer pool</h2>
+
+<p>Another issue could be that the buffer pool is too small.
+By default, the buffer pool size is 8, and the stack size
+is 10.
+</p>
+<p>The following command will re-allocate the pool size
+to be 16, the stack size 18, and the block size to be 64
+(64 is the default, it's a good number).
+<pre><code>(monolith:realloc 16 18 64)</pre></code>
 </div>
 </body>
 </html>

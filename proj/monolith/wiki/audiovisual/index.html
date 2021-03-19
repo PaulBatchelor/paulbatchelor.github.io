@@ -18,7 +18,7 @@ An LFO signal is used to modulate both the frequency
 of the square wave and the scaling factor of the square.
 </p>
 
-<h3>Tangled Files</h3>
+<h2>Tangled Files</h2>
 
 <p><code>singing_square.scm</code> is main file. It's scheme code which
 controls the show and renders sound.
@@ -55,7 +55,7 @@ generates an mp4 file via <code>ffmpeg</code>.
 &lt;&lt;mp3-conversion&gt;&gt;
 &lt;&lt;ffmpeg&gt;&gt;</pre></code>
 
-<h3>How to run</h3>
+<h2>How to run</h2>
 
 <p>First, tangle up all the code using <code>worgle</code> from the
 top-level directory:
@@ -70,7 +70,7 @@ top-level directory:
 appear.
 </p>
 
-<h3>Main setup</h3>
+<h2>Main setup</h2>
 
 <p>AV stuff is limited to offline rendering only. This is
 because there no way to render video in realtime.
@@ -85,7 +85,7 @@ configuration, then rendered with the video later. Video
 design tends to be more guess-and-wait-and-check.
 </p>
 
-<h4>Offline Mode</h4>
+<h3>Offline Mode</h3>
 
 <p>In order to set up the renderer, monolith must be
 started in <code>offline</code> mode. This can be done with
@@ -93,7 +93,7 @@ started in <code>offline</code> mode. This can be done with
 </p>
 <div><b><i>&lt;&lt;enable-offline-mode&gt;&gt;=</i></b></div><pre><code>(monolith:start-offline)</pre></code>
 
-<h4>Block Reallocatoin</h4>
+<h3>Block Reallocatoin</h3>
 
 <p>The internal patchwerk configuration is reallocated to be
 a block size of 49 with <code>monolith:realloc</code>. This is
@@ -104,7 +104,7 @@ default size of 64 does not work.
 </p>
 <div><b><i>&lt;&lt;realloc-blocksize&gt;&gt;=</i></b></div><pre><code>(monolith:realloc 8 10 49)</pre></code>
 
-<h4>Janet Setup</h4>
+<h3>Janet Setup</h3>
 
 <p>Graphics are pretty much always done using <a href="/proj/monolith/wiki/janet">Janet</a>, which is embedded in Monolith, and controlled
 from inside of Scheme. Janet is initialized with
@@ -117,14 +117,14 @@ a top-level janet function to initialize stuff with.
 (monolith:janet-eval "(import singing_square)")
 (monolith:janet-eval "(singing_square/gfx-init)")</pre></code>
 
-<h4>h264 setup</h4>
+<h3>h264 setup</h3>
 
 <p>A h264 video file is opened using the <code>monolith:h264-begin</code>.
 I tend to prefer using framerate of 60 fps.
 </p>
 <div><b><i>&lt;&lt;setup-video&gt;&gt;=</i></b></div><pre><code>(monolith:h264-begin "singing_square.h264" fps)</pre></code>
 
-<h4>Patch Setup</h4>
+<h3>Patch Setup</h3>
 
 <p>Now a monolith patch is created and set up to render to a
 wavfile. More on this later.
@@ -133,7 +133,7 @@ wavfile. More on this later.
 (wavout zz "singing_square.wav")
 (out zz)</pre></code>
 
-<h4>Rendering</h4>
+<h3>Rendering</h3>
 
 <p>Finally, the actual rendering happens. This is done
 using the <code>monolith:repeat</code> function, which calls a
@@ -154,7 +154,7 @@ a Janet function with no arguments.
 <div><b><i>&lt;&lt;render-block&gt;&gt;=</i></b></div><pre><code>(define (render-block)
   (monolith:janet-eval "(singing_square/render-block)"))</pre></code>
 
-<h4>Finishing up</h4>
+<h3>Finishing up</h3>
 
 <p>After rendering, things are wrapped up with
 <code>monolith:h264-end</code>.
@@ -164,7 +164,7 @@ a Janet function with no arguments.
 <p>That's the overall structure of the program!
 </p>
 
-<h3>Janet Stuff</h3>
+<h2>Janet Stuff</h2>
 
 <p><code>gfx-init</code> is called from janet. at the very least, this
 initializes the framebuffer.
@@ -200,10 +200,10 @@ second (every 60 frames, in this case).
     (monolith/h264-append)
     (set framepos (+ framepos 1)))</pre></code>
 
-<h3>The Singing Square</h3>
+<h2>The Singing Square</h2>
 
 
-<h4>Visuals</h4>
+<h3>Visuals</h3>
 
 <p>What to draw? How 'bout a nice blue square. The scaling of
 the rectangle can be modulated
@@ -231,7 +231,7 @@ by some signal in the audio domain, stored in <a href="/proj/monolith/wiki/chann
   (allports 1)
   (allports 2)))</pre></code>
 
-<h4>Sound</h4>
+<h3>Sound</h3>
 
 <p>What to squawk? How 'bout a nice filtered square oscillator,
 whose frequency is modulated by a sinusoidal LFO? A copy of
@@ -262,7 +262,7 @@ square mentioned previously.
 (dcblock zz)
 (add zz zz)</pre></code>
 
-<h3>Running and Rendering</h3>
+<h2>Running and Rendering</h2>
 
 <p>So! That's all the basic parts. The scheme file can be
 rendered with <code>monolith</code> from inside the <code>doc</code> directory
