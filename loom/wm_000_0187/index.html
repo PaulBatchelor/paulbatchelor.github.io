@@ -127,9 +127,13 @@ wraparound drawing.
 <h3>6.2. Level 2: Drawing a character</h3>
 
 <p><a id="wm_000_0209"></a>To draw the right tile, we need to be be able to match
-an ASCII character to the position on the map. Right now,
-the layout for the map matches that of many of the C64
-tileset dumps found online. More details on that later.
+an ASCII character to the position on the map, staring
+with the 'space' character. Maps will
+assume the glyphs are in ascii order, and are fixed width
+and height.
+</p>
+<p>The number of glyph columns in the map (<code>ncols</code>) is obtained
+in order to calculate the glyph coordinates <code>gx</code> and <code>gy</code>.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_char(btprnt_region *reg,
                       btprnt_buf *map,
@@ -144,11 +148,14 @@ tileset dumps found online. More details on that later.
 {
     int gx, gy;
     char o;
+    int ncols;
 
     o = c - ' '; /* start at 0 */
 
-    gx = o % (map-&gt;stride);
-    gy = o / (map-&gt;stride);
+    ncols = map-&gt;w / w;
+
+    gx = o % ncols;
+    gy = o / ncols;
 
     btprnt_draw_tile(reg, map,
                      xpos, ypos,
@@ -173,11 +180,14 @@ wrapping.
 {
     int gx, gy;
     char o;
+    int ncols;
 
     o = c - ' '; /* start at 0 */
 
-    gx = o % (map-&gt;stride);
-    gy = o / (map-&gt;stride);
+    ncols = map-&gt;w / w;
+
+    gx = o % ncols;
+    gy = o / ncols;
 
     btprnt_draw_tile_wrap(reg, map,
                           xpos, ypos,

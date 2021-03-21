@@ -214,10 +214,14 @@ If out of range, defaults to next value.
     *pos = seqvm_insert1(svm, *pos, SEQVM_JUMPR, a);
 }</pre></code>
 
-<h3>7.9. CJUMP</h3>
+<h3>7.9. CJUMP/CRJUMP</h3>
 
-<p><a id="wm_020_0265"></a>CJUMP. Conditional jump.
-Jumps to address if value in register is nonzero.
+<p><a id="wm_020_0265"></a>CJUMP reg addr
+CRJUMP reg off
+</p>
+<p><code>CJUMP</code> jumps to address if value in register is nonzero.
+</p>
+<p><code>CJUMPR</code> jumps to a relative address.
 </p>
 <div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_CJUMP,</pre></code>
 <div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_CJUMP: {
@@ -240,10 +244,30 @@ Jumps to address if value in register is nonzero.
 <div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("cjump") {
     *pos = seqvm_insert2(svm, *pos, SEQVM_CJUMP, a, b);
 }</pre></code>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_CRJUMP,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_CRJUMP: {
+    int r;
+
+    r = c-&gt;p[0];
+
+    if (r &gt;= 0 && r &lt; 16) {
+        int val;
+        val = svm-&gt;r[r];
+        if (val) pos += (val + 1);
+        else pos++;
+    } else {
+        pos++;
+    }
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP2(SEQVM_CRJUMP, "CRJUMP")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("crjump") {
+    *pos = seqvm_insert2(svm, *pos, SEQVM_CRJUMP, a, b);
+}</pre></code>
 
 <h3>7.10. RJUMP/RJUMPR</h3>
 
-<p><a id="wm_020_0275"></a>Relative jump. Jumps <code>N + 1</code> place relative to the current
+<p><a id="wm_020_0283"></a>Relative jump. Jumps <code>N + 1</code> place relative to the current
 instruction. Done to work well with the <code>RAND</code> command.
 A value of 0 is a regular jump to the next instruction.
 </p>
@@ -285,7 +309,7 @@ Usage: RJUMP jump
 
 <h3>7.11. WAIT</h3>
 
-<p><a id="wm_020_0294"></a>Usage: WAIT reg
+<p><a id="wm_020_0302"></a>Usage: WAIT reg
 </p>
 <p><code>WAIT</code> will act as a HALT while the value in <code>reg</code> is
 non-zero. Every time it executed, it subtracts 1 from the
@@ -323,7 +347,7 @@ value stored in <code>reg</code>.
 
 <h3>7.12. TICK</h3>
 
-<p><a id="wm_020_0304"></a>Usage: TICK chan
+<p><a id="wm_020_0312"></a>Usage: TICK chan
 </p>
 <p>Sets tick flag. This gets reset at the beginning
 of every compute cycle.
@@ -348,7 +372,7 @@ of every compute cycle.
 
 <h3>7.13. GATE</h3>
 
-<p><a id="wm_020_0314"></a>Usage: GATE chan state
+<p><a id="wm_020_0322"></a>Usage: GATE chan state
 </p>
 <p>Sets the gate flag to be ON or OFF.
 </p>
@@ -375,7 +399,7 @@ of every compute cycle.
 
 <h3>7.14. RANDQ</h3>
 
-<p><a id="wm_020_0324"></a>Usage: RANDQ reg N
+<p><a id="wm_020_0332"></a>Usage: RANDQ reg N
 </p>
 <p>Creates random number between 0 and <code>N - 1</code>, and stores
 it in a register <code>reg</code>. This is different than <code>RAND</code> in
@@ -419,11 +443,44 @@ in the register. If <code>N</code> is zero, zero is returned.
 <div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("randq") {
     *pos = seqvm_insert2(svm, *pos, SEQVM_RANDQ, a, b);
 }</pre></code>
+
+<h3>7.15. LT</h3>
+
+<p><a id="wm_020_0342"></a>LT r val out
+</p>
+<p>Checks if value in register is less than value, then writes
+boolean to another register.
+</p>
+<div><b><i>&lt;&lt;commands&gt;&gt;=</i></b></div><pre><code>SEQVM_LT,</pre></code>
+<div><b><i>&lt;&lt;compute&gt;&gt;=</i></b></div><pre><code>case SEQVM_LT: {
+    int r;
+    int val;
+    int out;
+
+    r = c-&gt;p[0];
+    val = c-&gt;p[1];
+    out = c-&gt;p[2];
+
+    if (r &gt;= 0 && r &lt; 16 && out &gt;= 0 && out &lt; 16) {
+        int x;
+
+        x = svm-&gt;r[r];
+        svm-&gt;r[out] = x &lt; val;
+    }
+
+    pos++;
+
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;dump&gt;&gt;=</i></b></div><pre><code>DUMP3(SEQVM_LT, "LT")</pre></code>
+<div><b><i>&lt;&lt;seqvm_cmd&gt;&gt;=</i></b></div><pre><code>ISCMD("lt") {
+    *pos = seqvm_insert3(svm, *pos, SEQVM_LT, a, b, c);
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_020_0163">prev</a> | <a href="/loom/seqvm">home</a> | <a href="/loom/wm_020_0334">next</a></p>
+<a href="/loom/wm_020_0163">prev</a> | <a href="/loom/seqvm">home</a> | <a href="/loom/wm_020_0352">next</a></p>
 </div>
 </body>
 </html>
