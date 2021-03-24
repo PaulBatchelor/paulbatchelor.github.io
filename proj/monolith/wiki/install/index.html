@@ -10,7 +10,94 @@
 <div id="main">
 <title>Installing Monolith</title>
 <h1>Installing Monolith</h1>
-<p>Work in progress.
+
+<h2>A Friendly Warning</h2>
+
+<p>Monolith is mostly a project I built for myself for my
+needs. Installation is a little bit quirky. Some parts
+(such as the monome hardware integration, literally
+hard-coded to my details).
+</p>
+<p>I've ensured that Monolith compiles on both Linux
+and OSX. It's not exactly streamlined, but the process
+does work pretty consistently. You will have to compile
+a few small projects of mine from source. Those who
+do not have the patience for this may want to consider
+<a href="/sndkit">sndkit</a>, which is a one-stop-shop
+sort of deal.
+</p>
+
+<h2>Prerequisites</h2>
+
+
+<h3>Mandatory</h3>
+
+<p>A C development environment (gcc/clang, Make, etc)
+</p>
+<p>The <a href="/proj/worgle">Worgle</a> tangler, found on <a href="https://git.sr.ht/~pbatch/worgle">sourcehut</a>.
+</p>
+<p>SQLite (libsqlite-dev or equivalent).
+</p>
+<p>The <a href="/proj/soundpipe.html">soundpipe</a> DSP library, found on
+<a href="https://git.sr.ht/~pbatch/sourcehut">sourcehut</a>.
+</p>
+<p>The <a href="/proj/runt">runt</a> scripting language, found on
+<a href="https://git.sr.ht/~pbatch/runt">sourcehut</a>.
+</p>
+<p>The <a href="/proj/patchwerk">runt-patchwerk</a> audio graph library. Note
+that this will need ctangle, which is part of cweb.
+This should be installed on most computers that have TeX
+installed. If not, a self-contained version can be found on
+<a href="https://git.sr.ht/~pbatch/cweb">sourcehut</a>. The runt-patchwerk
+stuff can be found in the 'runt' project.
+</p>
+
+<h3>Optional</h3>
+
+<p>These are optional dependencies:
+</p>
+<p>JACK, for realtime audio.
+</p>
+<p>libx264, for video encoding.
+</p>
+<p>libmonome, for monome use.
+</p>
+
+<h2>"Simple Mode" Install</h2>
+
+<p>Simple mode is a version of monolith that tries
+to minimize dependencies and is offline rendering only.
+It does away with libmonome, JACK, and libx264.
+</p>
+<p>You'll still need core libraries and tools made by
+the author (worgle, soundpipe, runt, patchwerk), and
+SQLite as well.
+</p>
+<p>To enable simple mode, add
+</p>
+<pre><code>MONOLITH_SIMPLE=1</pre></code>
+<p></p>
+<p>To the end of <code>config.mk</code>.
+</p>
+<p>Make sure monolith is fully cleaned with <code>make clean</code>,
+then run <code>make</code>.
+</p>
+<p>When it is done compiling, make a file in the same directory
+called <code>test.scm</code>, and put this in it:
+</p>
+<pre><code>(monolith:start-offline)
+(monolith:load "ugens.scm")
+(randh 200 500 10)
+(sine zz 0.3)
+(wavout zz "test.wav")
+(out zz)
+(monolith:compute (* 44100 10))</pre></code>
+<p></p>
+<p>Then run:
+</p>
+<pre><code>./monolith -l p/monolith.scm test.scm</pre></code>
+<p></p>
+<p>With any luck, a file called <code>test.wav</code> should appear.
 </p>
 </div>
 </body>
