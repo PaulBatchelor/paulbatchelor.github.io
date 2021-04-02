@@ -394,6 +394,60 @@ will also perform a drop on the patchwerk buffer stack.
     return 0;
 }</pre></code>
 
+<h3>Swap</h3>
+
+<p><code>swap</code> will swap the positions of the last two items on
+the stack.
+</p>
+<p>The basic operation is done with <code>sk_stack_swap</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_stack_swap(sk_stack *stack,
+                  sk_stacklet **s1,
+                  sk_stacklet **s2);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_stack_swap(sk_stack *stack,
+                  sk_stacklet **out1,
+                  sk_stacklet **out2)
+{
+    sk_stacklet tmp;
+    int pos;
+
+    pos = stack-&gt;pos;
+    if (pos &lt; 2) return 1;
+
+    tmp = stack-&gt;stack[pos];
+
+    stack-&gt;stack[pos] = stack-&gt;stack[pos - 1];
+    stack-&gt;stack[pos - 1] = tmp;
+
+    if (out1 != NULL) *out1 = &stack-&gt;stack[pos - 1];
+    if (out2 != NULL) *out2 = &stack-&gt;stack[pos];
+
+    return 0;
+}</pre></code>
+<p></p>
+<p>The function <code>sk_core_swap</code> does a swap, and will also swap
+on the patchwerk buffer stack if both items are cables.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_swap(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_swap(sk_core *core)
+{
+    int rc;
+    sk_stacklet *s[2];
+    rc = sk_stack_swap(&core-&gt;stack, &s[0], &s[1]);
+
+    SK_ERROR_CHECK(rc);
+
+    if (s[0]-&gt;type == SK_TYPE_CABLE && s[1]-&gt;type == SK_TYPE_CABLE) {
+        pw_stack *stack;
+        stack = pw_patch_stack(core-&gt;patch);
+        pw_stack_swap(stack);
+    }
+
+    return 0;
+}</pre></code>
+
 <h2>Parameters and Cables</h2>
 
 <p><code>sndkit_param</code> is an abstraction used to deal with
