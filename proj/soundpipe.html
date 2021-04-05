@@ -41,27 +41,32 @@ is written to disk:</p>
 <pre><code> #include &lt;stdlib.h&gt;
  #include &lt;stdio.h&gt;
  #include &lt;time.h&gt;
- #include &quot;soundpipe.h&quot;</code></pre>
-<pre><code> typedef struct {
+ #include &quot;soundpipe.h&quot;
+ 
+ typedef struct {
      sp_osc *osc;
      sp_ftbl *ft;
- } UserData;</code></pre>
-<pre><code> void write_osc(sp_data *sp, void *udata) {
+ } UserData;
+ 
+ void write_osc(sp_data *sp, void *udata) {
      UserData *ud = udata;
      sp_osc_compute(data, udp-&gt;osc, NULL, &amp;sp-&gt;out[0]);
- }</code></pre>
-<pre><code> int main() {
+ }
+ 
+ int main() {
      UserData ud;
      sp_data *sp;
      sp_create(&amp;sp);
      sp_ftbl_create(sp, &amp;ud.ft, 2048);
-     sp_osc_create(&amp;ud.osc);</code></pre>
-<pre><code>     sp_gen_sine(sp, ud.ft);
+     sp_osc_create(&amp;ud.osc);
+ 
+     sp_gen_sine(sp, ud.ft);
      sp_osc_init(sp, ud.osc, ud.ft);
      ud.osc-&gt;freq = 500;
      sp-&gt;len = 44100 * 5;
-     sp_process(sp, &amp;ud, write_osc);</code></pre>
-<pre><code>     sp_ftbl_destroy(&amp;ud.ft);
+     sp_process(sp, &amp;ud, write_osc);
+ 
+     sp_ftbl_destroy(&amp;ud.ft);
      sp_osc_destroy(&amp;ud.osc);
      sp_destroy(&amp;sp);
      return 0;
