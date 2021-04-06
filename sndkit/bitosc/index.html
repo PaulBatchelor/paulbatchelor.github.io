@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>bitosc</title>
+<h1>bitosc</h1>
+<p><code>Bitosc</code> is a stateless 1-bit table-lookup oscillator.
+</p>
+<p>The oscillator takes in 3 parameters as inputs:
+</p>
+<p>position, a normalized value between 0-1. This is
+assumed to be a phasor signal.
+</p>
+<p>table, a polypulse "wavetable" stored as an integer.
+</p>
+<p>The table size. Something between 1 and 32.
+</p>
+<p>The output of bitosc will either be -1 or 1. This allows it
+to be muted at DC.
+</p>
+<div><b><i>&lt;&lt;bitosc.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_BITOSC_H
+#define SK_BITOSC_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;bitosc.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include "bitosc.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_bitosc_tick(SKFLT phs, unsigned long wt, int sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_bitosc_tick(SKFLT phs, unsigned long wt, int sz)
+{
+    SKFLT out;
+    int pos;
+
+    if (phs == 1) pos = sz - 1;
+    else pos = floor(phs * sz);
+
+    out = (wt & (1 &lt;&lt; pos)) &gt;&gt; pos;
+    out = (out * 2) - 1;
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>
