@@ -168,21 +168,31 @@ directly, rather than through the scheme interface.
 
 <h4>3.5.4. mkimg</h4>
 
-<p><a id="wm_000_0117"></a>Used to generated a monolith image.
+<p><a id="wm_000_0117"></a>Used to generated a monolith image <code>monolith.image</code>.
+</p>
+<p>This will also need to write a version of <code>s9.scm</code>,
+which is embedded in this program.
+</p>
+<div><b><i>&lt;&lt;aux_includes&gt;&gt;=</i></b></div><pre><code>#include "s9.scm.h"</pre></code>
 <div><b><i>&lt;&lt;start_mkimg&gt;&gt;=</i></b></div><pre><code>if (!strncmp(argv[1], "mkimg", 5)) {
-    int img_argc = 5;
+    int img_argc;
+    FILE *fp;
     char *img_argv[] = {
         "monolith",
         "-i", "-",
         "-d", "monolith.image"
     };
+    img_argc = 5;
+    fp = fopen("s9.scm", "w");
+    fwrite(s9_scm, 1, s9_scm_len, fp);
+    fclose(fp);
     printf("Attempting to generate monolith.image\n");
     return s9_main_with_loader(img_argc, img_argv, loader);
 }</pre></code>
 
 <h4>3.5.5. Stretcher</h4>
 
-<p><a id="wm_000_0122"></a>Stretcher is a small command line utility used to apply the
+<p><a id="wm_000_0125"></a>Stretcher is a small command line utility used to apply the
 paulstretch algorithm to audio files. This is only enabled
 if <code>MONOLITH_STRETCHER</code> is defined.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_STRETCHER
@@ -196,7 +206,7 @@ if (!strcmp(argv[1], "stretcher")) {
 
 <h4>3.5.6. JPM (Janet Plugin Manager)</h4>
 
-<p><a id="wm_000_0129"></a>The Janet Plugin Manager is used to build janet plugins.
+<p><a id="wm_000_0132"></a>The Janet Plugin Manager is used to build janet plugins.
 This version of JPM is built to run internally inside
 of monolith.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_STRETCHER
@@ -208,7 +218,7 @@ int monolith_jpm(int argc, char *argv[]);
 
 <h4>3.5.7. cfloop</h4>
 
-<p><a id="wm_000_0136"></a>cfloop is a tiny crossfade looper generator for wav files.
+<p><a id="wm_000_0139"></a>cfloop is a tiny crossfade looper generator for wav files.
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_CFLOOP
 int run_cfloop(int argc, char *argv[]);
 #endif</pre></code>
@@ -220,7 +230,7 @@ if (!strcmp(argv[1], "cfloop")) {
 
 <h4>3.5.8. scrambler</h4>
 
-<p><a id="wm_000_0143"></a>scrambler is an offline FFT scrambler.
+<p><a id="wm_000_0146"></a>scrambler is an offline FFT scrambler.
 </p>
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_SCRAMBLER
 int scrambler_main(int argc, char *argv[]);
@@ -233,7 +243,7 @@ if (!strcmp(argv[1], "scrambler")) {
 
 <h4>3.5.9. wavdraw</h4>
 
-<p><a id="wm_000_0150"></a>wavdraw draws a waveform.
+<p><a id="wm_000_0153"></a>wavdraw draws a waveform.
 </p>
 <div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_SCRAMBLER
 int wavdraw_main(int argc, char *argv[]);
@@ -247,7 +257,7 @@ if (!strcmp(argv[1], "wavdraw")) {
 <br>
 <p><hr>
 
-<a href="/proj/monolith/program/wm_000_0014">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_0157">next</a></p>
+<a href="/proj/monolith/program/wm_000_0014">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_0160">next</a></p>
 </div>
 </body>
 </html>

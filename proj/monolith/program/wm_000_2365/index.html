@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>18. Graphics</h2>
+
+<p><a id="wm_000_2365"></a></p>
+
+<h3>18.1. The Graphics Framebuffer</h3>
+
+<p><a id="wm_000_2366"></a></p>
+
+<h4>18.1.1. GFX Framebuffer Top-Level</h4>
+
+<p><a id="wm_000_2367"></a></p>
+
+<h5>18.1.1.1. GFX Framebuffer Struct Declaration</h5>
+
+<p><a id="wm_000_2368"></a><div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>monolith_framebuffer *fb;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;fb = NULL;</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>monolith_framebuffer *monolith_fb_get(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>monolith_framebuffer *monolith_fb_get(monolith_d *m)
+{
+    return m-&gt;fb;
+}</pre></code>
+
+<h5>18.1.1.2. GFX Framebuffer Top-level initialization/cleanup</h5>
+
+<p><a id="wm_000_2377"></a>The framebuffer must be explicitely allocated and
+initialized before it can be used. This is done with the
+function <code>monolith_gfx_fb_init</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_fb_init(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_fb_init(monolith_d *m)
+{
+    if(m-&gt;fb != NULL) return 0;
+    m-&gt;fb = calloc(1, sizeof(monolith_framebuffer));
+    monolith_framebuffer_init(m-&gt;fb);
+    return 0;
+}</pre></code>
+<p>It is freed with <code>monolith_gfx_fb_clean</code>
+#+NAME: function_declarations
+<pre><code>void monolith_gfx_fb_clean(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_fb_clean(monolith_d *m)
+{
+    if(m-&gt;fb != NULL) {
+        monolith_framebuffer_clean(m-&gt;fb);
+        free(m-&gt;fb);
+    }
+}</pre></code>
+<p>It is called automatically at cleanup.
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>monolith_gfx_fb_clean(m);</pre></code>
+
+<h4>18.1.2. The Framebuffer Struct</h4>
+
+<p><a id="wm_000_2391"></a>All data for a framebuffer is contained in a struct called a
+<code>monolith_framebuffer</code>.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_framebuffer monolith_framebuffer;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct monolith_framebuffer {
+&lt;&lt;monolith_framebuffer_contents&gt;&gt;
+};</pre></code>
+<p>A framebuffer is initialized with the funciton
+<code>monolith_framebuffer_init</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_init(monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_init(monolith_framebuffer *fb)
+{
+    unsigned int i;
+    for(i = 0; i &lt; WIDTHxHEIGHT; i++) {
+        fb-&gt;pix[i] = monolith_pixel_make(0, 0, 0, 255);
+    }
+&lt;&lt;monolith_framebuffer_init&gt;&gt;
+}</pre></code>
+<p>Allocated data is freed with <code>monolith_framebuffer_clean</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_clean(monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_clean(monolith_framebuffer *fb)
+{
+&lt;&lt;monolith_framebuffer_clean&gt;&gt;
+}</pre></code>
+
+<h4>18.1.3. A Single Pixel</h4>
+
+<p><a id="wm_000_2413"></a>A single pixel in represented as a RGBA value, called a
+<code>monolith_pixel</code>. Each component is an 8 bit value.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_pixel monolith_pixel;
+&lt;&lt;monolith_pixel&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;monolith_pixel&gt;&gt;=</i></b></div><pre><code>struct monolith_pixel {
+    unsigned char r, g, b, a;
+};</pre></code>
+<p>A new pixel can be made using the function
+<code>monolith_pixel_make</code>
+#+NAME: function_declarations
+<pre><code>monolith_pixel monolith_pixel_make(unsigned int r,
+                                   unsigned int g,
+                                   unsigned int b,
+                                   unsigned int a);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>monolith_pixel monolith_pixel_make(unsigned int r,
+                                   unsigned int g,
+                                   unsigned int b,
+                                   unsigned int a)
+{
+    monolith_pixel p;
+    p.r = r;
+    p.g = g;
+    p.b = b;
+    p.a = a;
+    return p;
+}</pre></code>
+
+<h4>18.1.4. The Pixel Array</h4>
+
+<p><a id="wm_000_2427"></a>Stores the actual pixel information.
+</p>
+<div><b><i>&lt;&lt;monolith_framebuffer_contents&gt;&gt;=</i></b></div><pre><code>monolith_pixel pix[WIDTHxHEIGHT];</pre></code>
+<p></p>
+<p>Can be retrieved with <code>monolith_framebuffer_pix</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>monolith_pixel * monolith_framebuffer_pix(monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>monolith_pixel * monolith_framebuffer_pix(monolith_framebuffer *fb)
+{
+    return fb-&gt;pix;
+}</pre></code>
+
+<h4>18.1.5. Framebuffer Dimensions</h4>
+
+<p><a id="wm_000_2437"></a>The maximum width and height for the screen is 320x200 pixels, corresponding to
+screen dimmensions of the commodore 64. This can be adjusted later.
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define MAXWIDTH 320
+#define MAXHEIGHT 200
+#define WIDTHxHEIGHT 64000 /* 320 x 200 */</pre></code>
+<p>The dimmensions are stored as integers and can be changed at runtime. By default
+they are initialized to be the maximum width and heigh.
+<div><b><i>&lt;&lt;monolith_framebuffer_contents&gt;&gt;=</i></b></div><pre><code>int w;
+int h;</pre></code>
+<div><b><i>&lt;&lt;monolith_framebuffer_init&gt;&gt;=</i></b></div><pre><code>fb-&gt;w = MAXWIDTH;
+fb-&gt;h = MAXHEIGHT;</pre></code>
+<p></p>
+<p>The width can be obtained using the function <code>monolith_gfx_width</code>.
+and <code>monolith_gfx_height</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_width(monolith_framebuffer *fb);
+int monolith_gfx_height(monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_width(monolith_framebuffer *fb)
+{
+    return fb-&gt;w;
+}
+
+int monolith_gfx_height(monolith_framebuffer *fb)
+{
+    return fb-&gt;h;
+}</pre></code>
+<p></p>
+<p>Dimensions can be set using the function <code>monolith_gfx_setsize</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_setsize(monolith_framebuffer *fb, int w, int h);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_setsize(monolith_framebuffer *fb, int w, int h)
+{
+    if(fb == NULL) return;
+    if(fb-&gt;w &gt; 0 && fb-&gt;w &lt;= MAXWIDTH) fb-&gt;w = w;
+    if(fb-&gt;h &gt; 0 && fb-&gt;h &lt;= MAXHEIGHT) fb-&gt;h = h;
+    alloc_zoom_buffer(fb);
+}</pre></code>
+
+<h4>18.1.6. Zoom Factor</h4>
+
+<p><a id="wm_000_2457"></a>The zoom factor indicates the zoom amount for the framebuffer, as a whole
+integer multiple. A value of 1 is the original, a value of 2 is twice the size,
+3 is three times, etc..
+</p>
+<p>By default, the zoom level is set to 1.
+<div><b><i>&lt;&lt;monolith_framebuffer_contents&gt;&gt;=</i></b></div><pre><code>unsigned int zoom;</pre></code>
+<div><b><i>&lt;&lt;monolith_framebuffer_init&gt;&gt;=</i></b></div><pre><code>fb-&gt;zoom = 1;</pre></code>
+<p></p>
+<p>The framebuffer can be set using the function
+<code>monolith_framebuffer_zoom</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_zoom(monolith_framebuffer *fb, unsigned int zoom);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_framebuffer_zoom(monolith_framebuffer *fb, unsigned int zoom)
+{
+    fb-&gt;zoom = zoom;
+    alloc_zoom_buffer(fb);
+}</pre></code>
+<p></p>
+<p>It can be retrieved with <code>monolith_framebuffer_zoom_get</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>unsigned int monolith_framebuffer_zoom_get(monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>unsigned int monolith_framebuffer_zoom_get(monolith_framebuffer *fb)
+{
+    return fb-&gt;zoom;
+}</pre></code>
+
+<h3>18.2. The Zoom Buffer</h3>
+
+<p><a id="wm_000_2473"></a>The zoom buffer is a special buffer allocated any time the
+main graphics frame buffer has a zoom factor greater than
+1. Anytime a zoomed framebuffer encounters a write
+operation, it will render a scaled version of itself to the
+zoom buffer to then be written.
+</p>
+<div><b><i>&lt;&lt;monolith_framebuffer_contents&gt;&gt;=</i></b></div><pre><code>monolith_pixel *zoom_buf;</pre></code>
+<p></p>
+<p>The zoom buffer is only allocated when the zoom facter is
+set to be greater than 1. It is otherwise initialized to be
+NULL.
+</p>
+<div><b><i>&lt;&lt;monolith_framebuffer_init&gt;&gt;=</i></b></div><pre><code>fb-&gt;zoom_buf = NULL;</pre></code>
+<p></p>
+<p>The size of the zoom buffer is stored in a <code>size_t</code> variable
+called <code>zoom_buf_size</code>. This can is used to prevent
+unncessary mallocs.
+</p>
+<div><b><i>&lt;&lt;monolith_framebuffer_contents&gt;&gt;=</i></b></div><pre><code>size_t zoom_buf_size;</pre></code>
+<div><b><i>&lt;&lt;monolith_framebuffer_init&gt;&gt;=</i></b></div><pre><code>fb-&gt;zoom_buf_size = 0;</pre></code>
+<div><b><i>&lt;&lt;monolith_framebuffer_clean&gt;&gt;=</i></b></div><pre><code>free(fb-&gt;zoom_buf);
+fb-&gt;zoom_buf = NULL;</pre></code>
+<p></p>
+<p>Anytime a zoom buffer potentially needs to be allocated, the
+function <code>alloc_zoom_buffer</code> is called. This is expected to
+be called after dimensions are set, or the zoom amount is
+set.
+</p>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void alloc_zoom_buffer(monolith_framebuffer *fb);</pre></code>
+<p></p>
+<p>The zoom buffer will only be used if the zoom setting is
+set to be greater than 1. If it is 1, than nothing will
+happen.
+</p>
+<p>The needed size of the zoom buffer is calculated. If the
+current size is less than the needed size, or the zoom
+buffer is NULL, then an allocation happens.
+</p>
+<p>Finally, the previous zoom buffer is freed (no need to
+check for NULL, standard free shouldn't care), and then
+malloc is called to allocate the buffer.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void alloc_zoom_buffer(monolith_framebuffer *fb)
+{
+    size_t needed;
+    if(fb-&gt;zoom &lt;= 1) return;
+
+    needed = fb-&gt;w * fb-&gt;zoom * fb-&gt;h * fb-&gt;zoom;
+
+    if(needed &gt; fb-&gt;zoom_buf_size || fb-&gt;zoom_buf == NULL) {
+        free(fb-&gt;zoom_buf);
+        fb-&gt;zoom_buf = calloc(1, needed * sizeof(monolith_pixel));
+        fb-&gt;zoom_buf_size = needed;
+    }
+}</pre></code>
+<p></p>
+<p>A framebuffer will copy and rescale itself to the zoom
+buffer in a single operation. This is done with the function
+<code>zbuf_rescale</code>. This will not do any checks, so sanitize
+before calling this guy.
+</p>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+static void zbuf_rescale(monolith_pixel *pix,
+                         monolith_pixel *zbuf,
+                         unsigned int w,
+                         unsigned int h,
+                         int zoom);
+#endif</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+static void zbuf_rescale(monolith_pixel *pix,
+                         monolith_pixel *zbuf,
+                         unsigned int w,
+                         unsigned int h,
+                         int zoom)
+{
+    unsigned int x, y, xi, yi;
+    unsigned int pos;
+    unsigned int pos_zoom;
+
+    pos = 0;
+    pos_zoom = 0;
+
+    for(y = 0; y &lt; h; y++) {
+        for(x = 0; x &lt; w; x++) {
+            pos = y * w + x;
+            for(yi = 0; yi &lt; zoom; yi++) {
+                for(xi = 0; xi &lt; zoom; xi++) {
+                    pos_zoom =
+                        y * zoom * w * zoom +
+                        x * zoom +
+                        yi * w * zoom +
+                        xi;
+                    zbuf[pos_zoom] = pix[pos];
+                }
+            }
+        }
+    }
+}
+#endif</pre></code>
+
+<h3>18.3. Channels Interface</h3>
+
+<p><a id="wm_000_2499"></a>Channels are used to share information between monolith and
+patchwerk. What these are are an array of floating
+point values, which can be addressed by index position. The
+number of values is specified by the macro
+<code>MONOLITH_MAXCHAN</code>.
+</p>
+
+<h4>18.3.1. Channel Worgle Constructs</h4>
+
+<p><a id="wm_000_2501"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_function_declarations&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_static_function_declarations&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_functions&gt;&gt;</pre></code>
+<div><b><i>&lt;&lt;monolith_runt_loader&gt;&gt;=</i></b></div><pre><code>&lt;&lt;chan_runt_entries&gt;&gt;</pre></code>
+
+<h4>18.3.2. Channels Top Level Declaration</h4>
+
+<p><a id="wm_000_2518"></a>Really, the only thing needed here is an array of floats. In
+this case, <code>PWFLTS</code> will be used to match the resolution of
+patchwerk.
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#ifndef MONOLITH_MAXCHAN
+#define MONOLITH_MAXCHAN 16
+#endif</pre></code>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>PWFLT chan[MONOLITH_MAXCHAN];</pre></code>
+
+<h4>18.3.3. Channel Initialization</h4>
+
+<p><a id="wm_000_2524"></a>Channels are initialized at runtime by being zeroed out,
+via the function <code>monolith_chan_init</code>.
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>monolith_chan_init(m);</pre></code>
+<div><b><i>&lt;&lt;chan_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_chan_init(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>void monolith_chan_init(monolith_d *m)
+{
+    int i;
+    for(i = 0; i &lt; MONOLITH_MAXCHAN; i++) {
+        m-&gt;chan[i] = 0;
+    }
+}</pre></code>
+
+<h4>18.3.4. Channel Get</h4>
+
+<p><a id="wm_000_2534"></a>The function <code>monolith_chan_get</code> will retrieve a
+channel value at position N. If the value is out of range,
+0 will be returned.
+<div><b><i>&lt;&lt;chan_function_declarations&gt;&gt;=</i></b></div><pre><code>PWFLT monolith_chan_get(monolith_d *m, int chan);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>PWFLT monolith_chan_get(monolith_d *m, int chan)
+{
+    if(chan &lt; 0 || chan &gt;= MONOLITH_MAXCHAN) {
+        return 0;
+    }
+    return m-&gt;chan[chan];
+}</pre></code>
+
+<h4>18.3.5. Channel Set</h4>
+
+<p><a id="wm_000_2540"></a>The function <code>monolith_gfx_chan_set</code> will set a particular
+channel value. If the channel is out of range, no action
+will happen.
+<div><b><i>&lt;&lt;chan_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_chan_set(monolith_d *m, int chan, PWFLT val);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>void monolith_chan_set(monolith_d *m, int chan, PWFLT val)
+{
+    if(chan &lt; 0 || chan &gt;= MONOLITH_MAXCHAN) {
+        return;
+    }
+    m-&gt;chan[chan] = val;
+}</pre></code>
+
+<h4>18.3.6. Channel Nodes + Words</h4>
+
+<p><a id="wm_000_2546"></a></p>
+
+<h5>18.3.6.1. monget</h5>
+
+<p><a id="wm_000_2547"></a>The <code>monget</code> node will get a particular channel. The
+channel taken in is init-time.
+</p>
+
+<h6>18.3.6.1.1. DONE monget node</h6>
+
+<p><a id="wm_000_2549"></a>CLOSED: [2019-05-31 Fri 22:15]
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_monget(pw_node *n, monolith_d *m, int chan);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static int node_monget(pw_node *n, monolith_d *m, int chan)
+{
+    PWFLT *val;
+    pw_node_cables_alloc(n, 1);
+    pw_node_set_block(n, 0);
+
+    if(chan &lt; 0 || chan &gt;= MONOLITH_MAXCHAN) {
+        return PW_NOT_OK;
+    }
+
+    val = &m-&gt;chan[chan];
+
+    pw_node_set_compute(n, monget_compute);
+    pw_node_set_destroy(n, monget_destroy);
+    pw_node_set_data(n, val);
+    return PW_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void monget_compute(pw_node *n);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static void monget_compute(pw_node *n)
+{
+    int s;
+    int blksize;
+    PWFLT *val;
+    pw_cable *out;
+
+    blksize = pw_node_blksize(n);
+    pw_node_get_cable(n, 0, &out);
+    val = pw_node_get_data(n);
+
+    for(s = 0; s &lt; blksize; s++) {
+        pw_cable_set(out, s, *val);
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void monget_destroy(pw_node *n);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static void monget_destroy(pw_node *n)
+{
+    pw_node_cables_free(n);
+}</pre></code>
+
+<h6>18.3.6.1.2. DONE monget runt word</h6>
+
+<p><a id="wm_000_2564"></a>CLOSED: [2019-05-31 Fri 22:15]
+<div><b><i>&lt;&lt;chan_runt_entries&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "monget", 6, rproc_monget, m);</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monget(runt_vm *vm, runt_ptr p);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monget(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_stacklet *out;
+    runt_int rc;
+    rpw_param chan;
+    pw_patch *patch;
+    pw_node *n;
+
+    rc = rpw_get_param(vm, &chan);
+    RUNT_ERROR_CHECK(rc);
+
+    if(!rpw_param_is_constant(&chan)) {
+        runt_print(vm,
+                   "monget: channel must be a constant\n");
+        return RUNT_NOT_OK;
+    }
+
+    rc = runt_ppush(vm, &out);
+    RUNT_ERROR_CHECK(rc);
+
+    m = runt_to_cptr(p);
+
+    patch = monolith_patchwerk_get(m);
+
+    rc = pw_patch_new_node(patch, &n);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rc = node_monget(n, m, rpw_param_get_constant(&chan));
+
+    if(rc != PW_OK) {
+        runt_print(vm, "monget: invalid channel\n");
+        return RUNT_NOT_OK;
+    }
+
+    rpw_push_output(vm, n, out, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h5>18.3.6.2. monset</h5>
+
+<p><a id="wm_000_2573"></a>The <code>monset</code> node will set a particular channel with
+a signal from patchwerk. Note that this value will
+automatically be downsampled to block-rate, as that is
+what is only readable from monolith.
+</p>
+
+<h6>18.3.6.2.1. monset node</h6>
+
+<p><a id="wm_000_2575"></a><div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_monset(pw_node *n, monolith_d *m, int chan);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static int node_monset(pw_node *n, monolith_d *m, int chan)
+{
+    PWFLT *val;
+    pw_node_cables_alloc(n, 1);
+
+    if(chan &lt; 0 || chan &gt;= MONOLITH_MAXCHAN) {
+        return PW_NOT_OK;
+    }
+
+    val = &m-&gt;chan[chan];
+
+    pw_node_set_compute(n, monset_compute);
+    pw_node_set_data(n, val);
+    return PW_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void monset_compute(pw_node *n);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static void monset_compute(pw_node *n)
+{
+    PWFLT *val;
+    pw_cable *in;
+
+    pw_node_get_cable(n, 0, &in);
+    val = pw_node_get_data(n);
+
+    *val = pw_cable_get(in, 0);
+}</pre></code>
+
+<h6>18.3.6.2.2. monset runt word</h6>
+
+<p><a id="wm_000_2584"></a><div><b><i>&lt;&lt;chan_runt_entries&gt;&gt;=</i></b></div><pre><code>monolith_runt_keyword(m, "monset", 6, rproc_monset, m);</pre></code>
+<div><b><i>&lt;&lt;chan_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monset(runt_vm *vm, runt_ptr p);</pre></code>
+<div><b><i>&lt;&lt;chan_functions&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monset(runt_vm *vm, runt_ptr p)
+{
+    monolith_d *m;
+    runt_int rc;
+    rpw_param in;
+    rpw_param chan;
+    pw_patch *patch;
+    pw_node *n;
+
+    rc = rpw_get_param(vm, &chan);
+    RUNT_ERROR_CHECK(rc);
+
+    if(!rpw_param_is_constant(&chan)) {
+        runt_print(vm,
+                   "monset: channel must be a constant\n");
+        return RUNT_NOT_OK;
+    }
+
+    rc = rpw_get_param(vm, &in);
+    RUNT_ERROR_CHECK(rc);
+
+    m = runt_to_cptr(p);
+
+    patch = monolith_patchwerk_get(m);
+
+    rc = pw_patch_new_node(patch, &n);
+    PW_RUNT_ERROR_CHECK(rc);
+
+    rc = node_monset(n, m, rpw_param_get_constant(&chan));
+
+    if(rc != PW_OK) {
+        runt_print(vm, "monget: invalid channel\n");
+        return RUNT_NOT_OK;
+    }
+
+    rpw_set_param(vm, n, &in, 0);
+    return RUNT_OK;
+}</pre></code>
+
+<h3>18.4. H264 Video Support</h3>
+
+<p><a id="wm_000_2591"></a>The H264 is a remarkable video codec used to create
+high-quality videos with in a very small amount of disk
+space. Using the x264 library, one can easily encode video
+directly instead of writing a sequence of PNG files.
+</p>
+
+<h4>18.4.1. x264 system include</h4>
+
+<p><a id="wm_000_2593"></a>This will only be included if the <code>MONOLITH_H264</code> macro is
+defined.
+<div><b><i>&lt;&lt;system_includes&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+#include &lt;x264.h&gt;
+#endif</pre></code>
+
+<h4>18.4.2. h264 top level constructs</h4>
+
+<p><a id="wm_000_2597"></a>Because all video encoder functions are all congregated
+inside of an org-mode block called
+<code>h264_function_declarations</code>, where they are enclosed inside
+of a macro ifdef.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+&lt;&lt;h264_function_declarations&gt;&gt;
+#endif</pre></code>
+<div><b><i>&lt;&lt;static_function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+&lt;&lt;h264_static_function_declarations&gt;&gt;
+#endif</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+&lt;&lt;h264_functions&gt;&gt;
+#endif</pre></code>
+
+<h4>18.4.3. h264 top-level struct declaration</h4>
+
+<p><a id="wm_000_2611"></a></p>
+
+<h5>18.4.3.1. h264 struct entry</h5>
+
+<p><a id="wm_000_2612"></a><div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+monolith_h264 vid;
+#endif</pre></code>
+
+<h5>18.4.3.2. h264 struct init/cleanup</h5>
+
+<p><a id="wm_000_2615"></a><div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+monolith_h264_init(&m-&gt;vid);
+#endif</pre></code>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+monolith_h264_clean(&m-&gt;vid);
+#endif</pre></code>
+
+<h5>18.4.3.3. h264 struct retrieval</h5>
+
+<p><a id="wm_000_2620"></a><div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>monolith_h264 *monolith_h264_get(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>monolith_h264 *monolith_h264_get(monolith_d *m)
+{
+    return &m-&gt;vid;
+}</pre></code>
+
+<h4>18.4.4. h264 video struct</h4>
+
+<p><a id="wm_000_2627"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+typedef struct monolith_h264 monolith_h264;
+#endif</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>#ifdef MONOLITH_H264
+struct monolith_h264 {
+    x264_param_t param;
+    x264_picture_t pic;
+    x264_picture_t pic_out;
+    x264_t *h;
+    int i_frame;
+    x264_nal_t *nal;
+    int i_nal;
+    FILE *fp;
+};
+#endif</pre></code>
+
+<h4>18.4.5. h264 video initialization</h4>
+
+<p><a id="wm_000_2632"></a><div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_h264_init(monolith_h264 *vid);</pre></code>
+<div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>void monolith_h264_init(monolith_h264 *vid)
+{
+    memset(vid, 0, sizeof(monolith_h264));
+}</pre></code>
+
+<h4>18.4.6. h264 video cleanup</h4>
+
+<p><a id="wm_000_2637"></a><div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_h264_clean(monolith_h264 *vid);</pre></code>
+<div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>void monolith_h264_clean(monolith_h264 *vid)
+{
+    monolith_h264_end(vid);
+}</pre></code>
+
+<h4>18.4.7. h264 video interface</h4>
+
+<p><a id="wm_000_2642"></a></p>
+
+<h5>18.4.7.1. begin</h5>
+
+<p><a id="wm_000_2643"></a>Begins a video. Opens the file. Gets FPS. Will return 0
+on failure.
+<div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_h264_begin(monolith_h264 *vid,
+                        monolith_framebuffer *fb,
+                        const char *filename,
+                        int fps);</pre></code>
+<div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>int monolith_h264_begin(monolith_h264 *vid,
+                        monolith_framebuffer *fb,
+                        const char *filename,
+                        int fps)
+{
+    x264_param_t *p;
+
+    p = &vid-&gt;param;
+    vid-&gt;fp = fopen(filename, "w");
+
+    if (vid-&gt;fp == NULL) return 0;
+
+    vid-&gt;i_frame = 0;
+
+    if(x264_param_default_preset(p, "slow", NULL) &lt; 0)
+        return 0;
+
+    p-&gt;i_csp = X264_CSP_I444;
+    p-&gt;i_width  = fb-&gt;w * fb-&gt;zoom;
+    p-&gt;i_height = fb-&gt;h * fb-&gt;zoom;
+    p-&gt;b_vfr_input = 0;
+    p-&gt;b_repeat_headers = 1;
+    p-&gt;b_annexb = 1;
+    p-&gt;i_fps_num = fps;
+    /* p-&gt;rc.f_aq_strength = 1.0; */
+    p-&gt;rc.f_aq_strength = 0.1;
+    p-&gt;rc.i_aq_mode= 1;
+    p-&gt;i_log_level = X264_LOG_NONE;
+
+    p-&gt;vui.i_colmatrix = 1;
+    p-&gt;vui.i_transfer = 1;
+    p-&gt;vui.i_colorprim = 1;
+
+    /* yuv444p is 16-235, yuvj444p doesn't work with mplayer */
+    p-&gt;vui.b_fullrange = 0;
+
+    if (x264_param_apply_profile(p, "high444") &lt; 0 ) {
+        return 0;
+    }
+
+    if (x264_picture_alloc(&vid-&gt;pic,
+                          p-&gt;i_csp,
+                          p-&gt;i_width,
+                          p-&gt;i_height) &lt; 0 ) {
+        return 0;
+    }
+
+    vid-&gt;h = x264_encoder_open(p);
+    if (!vid-&gt;h) return 0;
+
+    return 1;
+}</pre></code>
+
+<h5>18.4.7.2. append</h5>
+
+<p><a id="wm_000_2649"></a>Appends current gfx framebuffer as new frame. This one
+requires the most code on our end because RGB buffer needs
+to be converted to a YUV frame. The components are laid out
+below.
+</p>
+
+<h6>18.4.7.2.1. rgb2yuv</h6>
+
+<p><a id="wm_000_2651"></a>The static function <code>rgb2yuv</code> will take in a single RGB
+triplet and return a YUV triplet
+</p>
+<p>(original) source: <a href="https://www.fourcc.org/fccyvrgb.php">https://www.fourcc.org/fccyvrgb.php</a></p>
+<br>
+<br>
+<p>The new rgb2yuv conversions are from:
+</p>
+<p>http://avisynth.nl/index.php/Color_conversions
+</p>
+<p>These coefficients seem to better match the
+colorspace that bt709 wants.
+</p>
+<div><b><i>&lt;&lt;h264_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void rgb2yuv(uint8_t r, uint8_t g, uint8_t b,
+                    uint8_t *y, uint8_t *u, uint8_t *v);</pre></code>
+<p></p>
+<p>full-range (yuvj444) is between 0 and 255, while yuv444 is
+between 16 and 235:
+</p>
+<p>https://www.eoshd.com/comments/topic/20799-what-is-the-difference-between-yuvj420p-and-yuv420p/
+</p>
+<p>raw h264 yuvj444 doesn't render yellows properly with
+mplayer, but yuv444 does.
+</p>
+<div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>static void rgb2yuv(uint8_t r, uint8_t g, uint8_t b,
+                    uint8_t *y, uint8_t *u, uint8_t *v)
+{
+    double Ey;
+    double Ecr;
+    double Ecb;
+    double norm;
+
+    norm = 1.0/255;
+
+    /* Ey = (0.299*r + 0.587*g + 0.114*b)*norm; */
+    Ey = (0.2126*r + 0.7152*g + 0.0722*b)*norm;
+    /* Ecr = 0.713 * (r*norm - Ey); */
+    /* Ecb = 0.564 * (b*norm - Ey); */
+    Ecr = (r*norm - Ey) / (1 - 0.2126);
+    Ecb = (b*norm - Ey) / (1 - 0.0722);
+
+
+    /* (*y) = Ey * 255; */
+    /* (*u) = Ecb * 127.5 + 128; */
+    /* (*v) = Ecr * 127.5 + 128; */
+
+    /* scale between 16 and 235 */
+    (*y) = Ey * 219 + 16;
+
+    /* clamp between 16 and 239 */
+    (*u) = Ecb * 111.5 + 112 + 16;
+    (*v) = Ecr * 111.5 + 112 + 16;
+}</pre></code>
+
+<h6>18.4.7.2.2. mkyuv</h6>
+
+<p><a id="wm_000_2659"></a>The <code>mkyuv</code> static function will create a YUV frame from
+a GFX framebuffer, and store it in separate YUV buffers.
+The encoding used for the video is IC420, which means the
+Y buffer is full resolution, while the U and V components
+subsamped to be at quarter resolution.
+<div><b><i>&lt;&lt;h264_static_function_declarations&gt;&gt;=</i></b></div><pre><code>static void mkyuv(monolith_framebuffer *fb,
+                  uint8_t *ybuf,
+                  uint8_t *ubuf,
+                  uint8_t *vbuf);</pre></code>
+<div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>static void mkyuv(monolith_framebuffer *fb,
+                  uint8_t *ybuf,
+                  uint8_t *ubuf,
+                  uint8_t *vbuf)
+{
+    unsigned int x, y;
+    unsigned int pos;
+    monolith_pixel *p;
+    uint8_t yv, uv, vv;
+    monolith_pixel *pix;
+    unsigned int w, h;
+
+    pix = fb-&gt;pix;
+    w = fb-&gt;w;
+    h = fb-&gt;h;
+
+    if (fb-&gt;zoom &gt; 1 && fb-&gt;zoom_buf != NULL) {
+        zbuf_rescale(fb-&gt;pix, fb-&gt;zoom_buf,
+                     fb-&gt;w, fb-&gt;h,
+                     fb-&gt;zoom);
+        pix = fb-&gt;zoom_buf;
+        w *= fb-&gt;zoom;
+        h *= fb-&gt;zoom;
+    }
+
+    pos = 0;
+
+    for (y = 0; y &lt; h; y++) {
+        for (x = 0; x &lt; w; x++) {
+            p = &pix[y * w + x];
+            rgb2yuv(p-&gt;r, p-&gt;g, p-&gt;b, &yv, &uv, &vv);
+            ybuf[pos] = yv;
+            ubuf[pos] = uv;
+            vbuf[pos] = vv;
+            pos++;
+        }
+    }
+}</pre></code>
+
+<h6>18.4.7.2.3. append C function</h6>
+
+<p><a id="wm_000_2665"></a><div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_h264_append(monolith_h264 *vid,
+                         monolith_framebuffer *fb);</pre></code>
+<div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>int monolith_h264_append(monolith_h264 *vid,
+                         monolith_framebuffer *fb)
+{
+    int i_frame_size;
+
+    if(vid-&gt;fp == NULL) return 0;
+    if(vid-&gt;h == NULL) return 0;
+
+    mkyuv(fb,
+          vid-&gt;pic.img.plane[0],
+          vid-&gt;pic.img.plane[1],
+          vid-&gt;pic.img.plane[2]);
+
+    vid-&gt;pic.i_pts = vid-&gt;i_frame;
+
+    vid-&gt;i_frame++;
+
+    i_frame_size = x264_encoder_encode(vid-&gt;h,
+                                       &vid-&gt;nal,
+                                       &vid-&gt;i_nal,
+                                       &vid-&gt;pic,
+                                       &vid-&gt;pic_out);
+
+    if(i_frame_size &lt; 0) return 0;
+    else if(i_frame_size) {
+        fwrite(vid-&gt;nal-&gt;p_payload,
+               i_frame_size,
+               1,
+               vid-&gt;fp);
+    }
+
+    return 1;
+}</pre></code>
+
+<h5>18.4.7.3. end</h5>
+
+<p><a id="wm_000_2670"></a>Writes remaining frames. Closes file. Cleans up x264.
+This is also called at cleanup in case some things
+are not fully cleaned up.
+<div><b><i>&lt;&lt;h264_function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_h264_end(monolith_h264 *vid);</pre></code>
+<div><b><i>&lt;&lt;h264_functions&gt;&gt;=</i></b></div><pre><code>int monolith_h264_end(monolith_h264 *vid)
+{
+    int i_frame_size;
+    if(vid-&gt;h == NULL) return 0;
+    while( x264_encoder_delayed_frames(vid-&gt;h))
+    {
+        i_frame_size = x264_encoder_encode(vid-&gt;h,
+                                           &vid-&gt;nal,
+                                           &vid-&gt;i_nal,
+                                           NULL,
+                                           &vid-&gt;pic_out );
+        if( i_frame_size ) {
+            fwrite(vid-&gt;nal-&gt;p_payload,
+                   i_frame_size,
+                   1,
+                   vid-&gt;fp);
+        }
+    }
+
+    x264_encoder_close(vid-&gt;h);
+    x264_picture_clean(&vid-&gt;pic);
+    fclose(vid-&gt;fp);
+    vid-&gt;fp = NULL;
+    vid-&gt;h = NULL;
+    return 1;
+}</pre></code>
+
+<h3>18.5. Image Loading and Storing</h3>
+
+<p><a id="wm_000_2676"></a><div><b><i>&lt;&lt;aux_includes&gt;&gt;=</i></b></div><pre><code>#include "lodepng/lodepng.h"</pre></code>
+
+<h4>18.5.1. Image Struct</h4>
+
+<p><a id="wm_000_2679"></a>The monolith image struct stores loaded image information.
+It is called <code>monolith_gfx_image</code>.
+</p>
+
+<h5>18.5.1.1. Typedef</h5>
+
+<p><a id="wm_000_2681"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_gfx_img monolith_gfx_img;</pre></code>
+
+<h5>18.5.1.2. Struct Contents</h5>
+
+<p><a id="wm_000_2684"></a>Included in this struct is the width, height, as well
+as raw RGBA data.
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct monolith_gfx_img {
+    unsigned int w;
+    unsigned int h;
+    unsigned char *data;
+};</pre></code>
+<p>Here are the getters:
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_dim(monolith_gfx_img *img,
+                          unsigned int *w,
+                          unsigned int *h);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_dim(monolith_gfx_img *img,
+                          unsigned int *w,
+                          unsigned int *h)
+{
+    if (w != NULL) *w = img-&gt;w;
+    if (h != NULL) *h = img-&gt;h;
+}</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_data(monolith_gfx_img *img,
+                           unsigned char **data,
+                           unsigned int *sz);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_data(monolith_gfx_img *img,
+                           unsigned char **data,
+                           unsigned int *sz)
+{
+    *data = img-&gt;data;
+    if (sz != NULL) {
+        *sz = img-&gt;w * img-&gt;h * 4;
+    }
+}</pre></code>
+
+<h4>18.5.2. Loading Image Data</h4>
+
+<p><a id="wm_000_2697"></a>An image struct can be allocated and loaded in a
+<code>monolith_gfx_image</code> struct using the function
+<code>monlith_gfx_img_load</code>.
+</p>
+<p>This will allocate the image data AND the struct itself. For
+image loading, monolith uses the internal <code>lodepng</code> library.
+This means that only valid PNG files will be used.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_load(const char *filename,
+                           monolith_gfx_img **img);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_load(const char *filename,
+                           monolith_gfx_img **img)
+{
+    int error;
+    monolith_gfx_img *pimg;
+
+    pimg = calloc(1, sizeof(monolith_gfx_img));
+    error = lodepng_decode32_file(&pimg-&gt;data,
+                                  &pimg-&gt;w,
+                                  &pimg-&gt;h,
+                                  filename);
+
+    if (error) {
+        fprintf(stderr,
+                "lodepng error %u: %s\n",
+                error,
+                lodepng_error_text(error));
+        *img = NULL;
+        return;
+    }
+
+    *img = pimg;
+}</pre></code>
+
+<h4>18.5.3. Freeing Image Data</h4>
+
+<p><a id="wm_000_2703"></a>Image struct + data can be freed simultaneously with the
+function <code>monolith_gfx_image_free</code>. This should be called
+inside of something like <code>monolith_dict_entry_list_free</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_free(monolith_gfx_img **img);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_gfx_img_free(monolith_gfx_img **img)
+{
+    monolith_gfx_img *pimg;
+    pimg = *img;
+
+    free(pimg-&gt;data);
+    free(pimg);
+    pimg = NULL;
+}</pre></code>
+
+<h4>18.5.4. Loading an image to a dictionary</h4>
+
+<p><a id="wm_000_2709"></a>The function <code>monolith_img_load</code> will load an image and
+store it inside of the monolith dictionary to a unique
+keyword.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_img_load(monolith_d *m,
+                      const char *key,
+                      size_t len,
+                      const char *filename,
+                      monolith_gfx_img **img);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_img_load(monolith_d *m,
+                      const char *key,
+                      size_t len,
+                      const char *filename,
+                      monolith_gfx_img **img)
+{
+    monolith_gfx_img *pimg;
+    monolith_dict_entry *ent;
+    int rc;
+
+    ent = NULL;
+
+    rc = monolith_dict_newentry(&m-&gt;dict, &ent, key, len);
+    if (img != NULL) *img = NULL;
+
+    if (rc != MONOLITH_OK) {
+        fprintf(stderr, "Unable to create entry ");
+        fwrite(key, 1, len, stderr);
+        fprintf(stderr, "\n");
+        return MONOLITH_NOTOK;
+    }
+
+    pimg = NULL;
+    monolith_gfx_img_load(filename, &pimg);
+
+    if (pimg == NULL) {
+        fprintf(stderr,
+                "Could not load file %s\n",
+                filename);
+        return MONOLITH_NOTOK;
+    }
+
+    ent-&gt;type = MONOLITH_ENTRY_IMAGE;
+    ent-&gt;ud = pimg;
+
+    if (img != NULL) *img = pimg;
+    return MONOLITH_OK;
+}</pre></code>
+
+<h4>18.5.5. Finding an entry</h4>
+
+<p><a id="wm_000_2715"></a>The function <code>monolith_img_lookup</code> will attempt to look up
+an image given a key.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_img_find(monolith_d *m,
+                      const char *key,
+                      size_t len,
+                      monolith_gfx_img **img);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_img_find(monolith_d *m,
+                      const char *key,
+                      size_t len,
+                      monolith_gfx_img **img)
+{
+    monolith_dict_entry *ent;
+    int rc;
+
+    ent = NULL;
+
+    rc = monolith_dict_find(&m-&gt;dict, &ent, key, len);
+
+    if (rc != MONOLITH_OK) {
+        return rc;
+    }
+
+    if (ent-&gt;type != MONOLITH_ENTRY_IMAGE) {
+        return MONOLITH_NOTOK;
+    }
+
+    if (img != NULL) *img = ent-&gt;ud;
+
+    return MONOLITH_OK;
+}</pre></code>
+
+<h3>18.6. Setting/Getting Pixels</h3>
+
+<p><a id="wm_000_2721"></a></p>
+
+<h4>18.6.1. Get Pixel</h4>
+
+<p><a id="wm_000_2722"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_get(monolith_framebuffer *f,
+                           int x, int y,
+                           monolith_pixel *p);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_get(monolith_framebuffer *f,
+                           int x, int y,
+                           monolith_pixel *p)
+{
+    monolith_pixel *pix;
+
+    pix = monolith_framebuffer_pix(f);
+
+    if (p == NULL) return 0;
+    if(x &lt; 0 || x &gt;= monolith_gfx_width(f)) return 0;
+    if(y &lt; 0 || y &gt;= monolith_gfx_height(f)) return 0;
+
+    *p = pix[y * monolith_gfx_width(f) + x];
+    return 1;
+}</pre></code>
+
+<h4>18.6.2. Set Pixel in C</h4>
+
+<p><a id="wm_000_2727"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_set(monolith_framebuffer *f,
+                          int x, int y,
+                          monolith_pixel p);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_gfx_pixel_set(monolith_framebuffer *f,
+                          int x, int y,
+                          monolith_pixel p)
+{
+    monolith_pixel *pix;
+
+    pix = monolith_framebuffer_pix(f);
+
+    if(x &lt; 0 || x &gt;= monolith_gfx_width(f)) return 0;
+    if(y &lt; 0 || y &gt;= monolith_gfx_height(f)) return 0;
+    pix[y * monolith_gfx_width(f) + x] = p;
+    return 1;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_000_2199">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_2732">next</a></p>
+</div>
+</body>
+</html>
