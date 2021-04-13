@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Hotswapping</title>
+<h1>Hotswapping</h1>
+
+<h2>Overview</h2>
+
+<p>The process of <code>hotswapping</code> in this context refers to
+method used to update patches on-the-fly.
+</p>
+<p>The way it works: there are two subpatches. One subpatch is
+the one that is running, the other is the one that can be
+appended to and built up. When that patch is finished, it
+sends a signal to the audio rendering thread that it is
+ready to be swapped. The audio rendering thread gets the
+message, and swaps the subpatches. The subpatch previously
+running gets reset and becomes the subpatch to write to,
+and the other patch now becomes the running patch.
+</p>
+
+<h2>Crossfading</h2>
+
+<p>With this approach, crossfading is also possible.
+Crossfading is ideal for hotswapping because to some extent
+it can prevent audible clicks from occuring. The trick here
+is to use a counter and defer resetting the old subpatch
+for the duration of the counter. During this time, both the
+old and new subpatches are computed, and mixed together
+based on the counter position and crossfade time.
+</p>
+<p>The hotswapping technique forms the basis for what we would
+consider as a livecoding environment for music.
+</p>
+
+<h2>Implementation</h2>
+
+<p>The working implementation for hotswapping can be found in
+Monolith <a href="/proj/monolith/program/wm_000_0205#wm_000_0254">5.2. Hot Swapping</a>. This implementation
+has a few small constructs on top of patchwerk, and should
+be relatively portable.
+</p>
+<p>Monolith uses the <code>monolith_cable</code> type for hotswapping, one
+for reading a patch (the one you hear), and the other for
+writing (the one "on deck"). Each monolith has a subpatch
+containing the audio graph, it's own allocated audio buffer
+for an audio signal. The output cable takes in an input
+signal and copies it to the local buffer.
+</p>
+</div>
+</body>
+</html>
