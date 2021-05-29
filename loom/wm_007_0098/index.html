@@ -695,8 +695,7 @@ text: 'Text.
 PARAGRAPH END
 PARAGRAPH END</pre></code>
 <p></p>
-<p>I am guessing this has to do with the <code>orgparse_wrapup</code>
-logic.
+<p>I am guessing this has to do with the <code>orgparse_wrapup</code>logic.
 </p>
 <div><b><i>&lt;&lt;test_entries&gt;&gt;=</i></b></div><pre><code>{"Rogue Paragraph End", test_rp},</pre></code>
 <div><b><i>&lt;&lt;tests&gt;&gt;=</i></b></div><pre><code>typedef struct {
@@ -785,7 +784,7 @@ static int test_nlformpe(void)
     return rc;
 }</pre></code>
 
-<h4>4.2.14. TODO Paragraphs ending with link causes newline</h4>
+<h4>4.2.14. Paragraphs ending with link causes newline</h4>
 
 <p><a id="wm_007_0189"></a>This text:
 <pre><code>[[link]]
@@ -1000,11 +999,79 @@ static int test_onat(void)
 
     return rc;
 }</pre></code>
+
+<h4>4.2.17. Bold text before newline does not end paragraph</h4>
+
+<p><a id="wm_007_0208"></a>The following text correctly produces two paragraphs.
+</p>
+<pre><code>*a*.
+
+b</pre></code>
+<p></p>
+<pre><code>PARAGRAPH BEGIN
+bold: 'a'
+text: '.
+'
+PARAGRAPH END
+PARAGRAPH BEGIN
+text: 'b
+'
+PARAGRAPH END</pre></code>
+<p></p>
+<p>Remove the '.', and only one paragraph is created.
+</p>
+<pre><code>*a*
+
+b</pre></code>
+<p></p>
+<pre><code>PARAGRAPH BEGIN
+bold: 'a'
+text: '
+
+'
+text: 'b
+'
+PARAGRAPH END</pre></code>
+<p></p>
+<p>The line break is incorrectly interpretted as just text, not
+a paragraph end.
+</p>
+<div><b><i>&lt;&lt;test_entries&gt;&gt;=</i></b></div><pre><code>{"bold text right before newline", test_boldtextnl},</pre></code>
+<div><b><i>&lt;&lt;tests&gt;&gt;=</i></b></div><pre><code>static void boldtext_pbegin(void *ud, int mode)
+{
+    int *count;
+    count = ud;
+    if (!mode) *count = *count + 1;
+}
+
+static int test_boldtextnl(void)
+{
+    orgparse op;
+    int count;
+    int rc;
+    const char *txt = "*a*\n\nb\n";
+
+    rc = OK;
+    orgparse_init(&op);
+
+    orgparse_set_pgrph(&op, boldtext_pbegin);
+
+    count = 0;
+
+    orgparse_run(&op, txt, strlen(txt), &count);
+
+    if (count != 2) {
+        printf("Expected 2 paragraphs, got %d\n", count);
+        rc = FAIL;
+    }
+
+    return rc;
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_007_0022">prev</a> | <a href="/loom/orgparse">home</a> | <a href="/loom/wm_007_0208">next</a></p>
+<a href="/loom/wm_007_0022">prev</a> | <a href="/loom/orgparse">home</a> | <a href="/loom/wm_007_0214">next</a></p>
 </div>
 </body>
 </html>
