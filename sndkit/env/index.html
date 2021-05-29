@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Env</title>
+<h1>Env</h1>
+
+<h2>Overview</h2>
+
+<p>This document describes <code>env</code>, a trigger based envelope
+generator with adjustable attack, hold, and release times.
+This envelope is produced by feeding a gate signal into
+a smoothing filter. The output returns an exponetial
+envelope with very nice-sounding curves: a convex rise,
+and a concave fall.
+</p>
+<p>This sort of envelope is very ideal for percussive sounds
+and for mimicking analogue synthesizers. The drawbacks
+mainly have to do with precision. Attack and release
+times are specified as time constants, which are a little
+bit less intuitive than using seconds. The signal
+generated is in range 0 to 1, but it will never reach 1
+exactly.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>env.c</code> and <code>env.h</code>, respectively.
+</p>
+<div><b><i>&lt;&lt;env.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_ENV_H
+#define SK_ENV_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_ENV_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;env.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_ENV_PRIV
+#include "env.h"
+&lt;&lt;macros&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Initialization</h2>
+
+<p>Initialize the envelope with <code>sk_env_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_env_init(sk_env *env, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_env_init(sk_env *env, int sr)
+{
+    env-&gt;sr = sr;
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h2>Struct Components</h2>
+
+
+<h3>Struct</h3>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_env sk_env;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_env {
+    int sr;
+    &lt;&lt;sk_env&gt;&gt;
+};</pre></code>
+
+<h3>Timer</h3>
+
+<p>A timer is used to produce a gate signal of a particular
+duration. This kicks on during the hold portion of
+the signal.
+</p>
+<p>This timer is stored in a <a href="/sndkit/normalized_range">normalized range</a>, and is updated by a normalized
+floating-point incrementor value.
+</p>
+<div><b><i>&lt;&lt;sk_env&gt;&gt;=</i></b></div><pre><code>float timer;
+float inc;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>env-&gt;timer = 0;
+env-&gt;inc = 0;</pre></code>
+
+<h3>Filter</h3>
+
+<p>The filter used is a pretty typical
+<a href="/sndkit/smoother">one-pole lowpass filter</a>, but with
+two parameters for the release and attack portions of
+the envelope.
+</p>
+<div><b><i>&lt;&lt;sk_env&gt;&gt;=</i></b></div><pre><code>SKFLT atk_env;
+SKFLT rel_env;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>env-&gt;atk_env = 0;
+env-&gt;rel_env = 0;</pre></code>
+
+<h3>State Management</h3>
+
+<p>The envelope has three main states: attack, hold, and
+release. There is also a zero state to inidicate that
+envelope is not playing anything.
+</p>
+<div><b><i>&lt;&lt;sk_env&gt;&gt;=</i></b></div><pre><code>int mode;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>enum {
+    MODE_ZERO,
+    MODE_ATTACK,
+    MODE_HOLD,
+    MODE_RELEASE
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>env-&gt;mode = MODE_ZERO;</pre></code>
+<p></p>
+</p>
+
+<h3>Previous Output</h3>
+
+<p>The output from the previous sample is stored.
+</p>
+<div><b><i>&lt;&lt;sk_env&gt;&gt;=</i></b></div><pre><code>SKFLT prev;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>env-&gt;prev = 0;</pre></code>
+
+<h2>Parameters</h2>
+
+<p>Attack, release, and hold time utilize <a href="#">parameter caching</a> in order to
+reduce needless computations.
+</p>
+
+<h3>Attack Time (in tau units)</h3>
+
+<p>Set the attack time with <code>sk_env_attack</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_env_attack(sk_env *env, SKFLT atk);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_env_attack(sk_env *env, SKFLT atk)
+{
+    env-&gt;atk = atk;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_env&gt;&gt;=</i></b></div><pre><code>SKFLT atk;
+SKFLT patk;</pre></code>
+<p></p>
+<p>Set to arbitrary default value.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_env_attack(env, 0.1);
+env-&gt;patk = -1;</pre></code>
+
+<h3>Release Time (in tau units)</h3>
+
+<p>Set the release time with <code>sk_env_release</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_env_release(sk_env *env, SKFLT rel);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_env_release(sk_env *env, SKFLT rel)
+{
+    env-&gt;rel= rel;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_env&gt;&gt;=</i></b></div><pre><code>SKFLT rel;
+SKFLT prel;</pre></code>
+<p></p>
+<p>Set to arbitrary default value.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_env_release(env, 0.1);
+env-&gt;prel= -1;</pre></code>
+
+<h3>Hold Time (in seconds)</h3>
+
+<p>The hold time is set with <code>sk_env_hold</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_env_hold(sk_env *env, SKFLT hold);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_env_hold(sk_env *env, SKFLT hold)
+{
+    env-&gt;hold = hold;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sk_env&gt;&gt;=</i></b></div><pre><code>SKFLT hold;
+SKFLT phold;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_env_hold(env, 0.1);
+env-&gt;phold = -1;</pre></code>
+
+<h2>A Decent Epsilon Value</h2>
+
+<p>To break out of attack mode, and to have a clean silence
+after release mode, a very small value known as an <code>epsilon</code>will be used. This value should be small enough to be
+perceptually perfect, and large enough to be numerically
+stable.
+</p>
+<p>The ideal epsilon value is around
+<code>5e-8</code>. High-quality tends to be 24-bit, so anything less
+than <code>1/2^24</code> can be ignored, which is roughly <code>5e-8</code>(rounded down), which
+I <b>think</b> should be reasonable enough for 32-bit
+floating-point numbers.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define EPS 5e-8</pre></code>
+
+<h2>Computation</h2>
+
+<p>Computation is done with <code>sk_env_tick</code>. It takes in one
+input value, which expects to be a trigger.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_env_tick(sk_env *env, SKFLT trig);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_env_tick(sk_env *env, SKFLT trig)
+{
+    SKFLT out;
+    out = 0;
+
+    &lt;&lt;check_for_trigger&gt;&gt;
+
+    switch (env-&gt;mode) {
+        &lt;&lt;zero_mode&gt;&gt;
+        &lt;&lt;attack_mode&gt;&gt;
+        &lt;&lt;hold_mode&gt;&gt;
+        &lt;&lt;release_mode&gt;&gt;
+        default:
+            break;
+    }
+    return out;
+}</pre></code>
+<p></p>
+<p>The envelope will wait for a trigger. A trigger at any
+point will cause a retrigger. Some work will be done to
+write in behavior that will prevent clicks from happening.
+</p>
+<p>When the trigger occurs, the state is set to attack,
+and the gate signal is turned on. The attack time parameters
+are updated at this point, and the filter is configured
+to use the attack time parameters.
+</p>
+<div><b><i>&lt;&lt;check_for_trigger&gt;&gt;=</i></b></div><pre><code>if (trig != 0) {
+    env-&gt;mode = MODE_ATTACK;
+
+    if (env-&gt;patk != env-&gt;atk) {
+        env-&gt;patk = env-&gt;atk;
+        env-&gt;atk_env = exp(-1.0 / (env-&gt;atk * env-&gt;sr));
+    }
+}</pre></code>
+<p></p>
+<p>In attack mode, the on-gate signal is put through the
+filter. The difference between the current and previous
+samples is measured.
+If it falls under an epsilon value, the current value is
+held and it set to be hold mode.
+</p>
+<p>Figuring out when the attack is done is tricky.
+Using threshold detection has proven to be unreliable with
+different attack times, so the delta technique used below
+was used instead.
+</p>
+<div><b><i>&lt;&lt;attack_mode&gt;&gt;=</i></b></div><pre><code>case MODE_ATTACK: {
+    out = env-&gt;atk_env*env-&gt;prev + (1.0 - env-&gt;atk_env);
+
+    if ((out - env-&gt;prev) &lt;= EPS) {
+        env-&gt;mode = MODE_HOLD;
+        env-&gt;timer = 0;
+
+        if (env-&gt;phold != env-&gt;hold) {
+            if (env-&gt;hold &lt;= 0) {
+                env-&gt;inc = 1.0;
+            } else {
+                env-&gt;phold = env-&gt;hold;
+                env-&gt;inc = 1.0 / (env-&gt;hold * env-&gt;sr);
+            }
+        }
+    }
+
+    env-&gt;prev = out;
+    break;
+}</pre></code>
+<p></p>
+<p>The timer is stored in a <a href="/sndkit/normalized_range">normalized range</a>, which allows the hold time to be
+adjustable while it is in hold mode. During the period
+in hold mode, the output signal will be the last returned
+value of the attack envelope.
+</p>
+<p>When timer reaches the end, the envelope goes into release
+mode.
+</p>
+<div><b><i>&lt;&lt;hold_mode&gt;&gt;=</i></b></div><pre><code>case MODE_HOLD: {
+    out = env-&gt;prev;
+    env-&gt;timer += env-&gt;inc;
+
+    if (env-&gt;timer &gt;= 1.0) {
+        env-&gt;mode = MODE_RELEASE;
+
+        if (env-&gt;prel != env-&gt;rel) {
+            env-&gt;prel = env-&gt;rel;
+            env-&gt;rel_env = exp(-1 / (env-&gt;rel * env-&gt;sr));
+        }
+    }
+    break;
+}</pre></code>
+<p></p>
+<p>Release mode is very similar to to attack mode, except that
+it uses release time coefficients and the input
+signal is a off-gate.
+</p>
+<div><b><i>&lt;&lt;release_mode&gt;&gt;=</i></b></div><pre><code>case MODE_RELEASE: {
+    out = env-&gt;rel_env*env-&gt;prev;
+    env-&gt;prev = out;
+
+    if (out &lt;= EPS) {
+       env-&gt;mode = MODE_ZERO;
+    }
+    break;
+}</pre></code>
+<p></p>
+<p>The envelope will remain in release mode until the output
+signal goes below the epsilon threshold. At this point,
+the envelope will go into zero mode, where no computation
+happens and zero is returned.
+</p>
+<div><b><i>&lt;&lt;zero_mode&gt;&gt;=</i></b></div><pre><code>case MODE_ZERO:
+    break;</pre></code>
+</div>
+</body>
+</html>

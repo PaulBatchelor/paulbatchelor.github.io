@@ -43,6 +43,13 @@ Registers are for more persitently used values.
 #endif
 &lt;&lt;macros&gt;&gt;
 &lt;&lt;funcdefs&gt;&gt;
+
+#ifdef __plan9__
+#pragma incomplete sk_core
+#pragma incomplete sk_stack
+#pragma incomplete sk_regtbl
+#pragma incomplete sk_table
+#endif
 #endif</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;core.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
@@ -79,6 +86,8 @@ void sk_core_del(sk_core *core);</pre></code>
 
     sk_stack_init(&core-&gt;stack);
     sk_regtbl_init(&core-&gt;regtbl);
+
+    sk_core_srand(core, 0);
     return core;
 }</pre></code>
 <p></p>
@@ -100,6 +109,7 @@ void sk_core_del(sk_core *core);</pre></code>
     pw_patch *patch;
     sk_stack stack;
     sk_regtbl regtbl;
+    unsigned long rng;
 };</pre></code>
 <p></p>
 <p>A internal block of audio can be computed with
@@ -1106,6 +1116,35 @@ check an error code and exit if it is non-zero.
 <div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_PW_ERROR_CHECK(rc) if(rc != PW_OK) {\
     fprintf(stderr, "Error: %s\n", pw_error(rc));\
     return 1;\
+}</pre></code>
+
+<h2>Random Number Generator</h2>
+
+<p>A simple random number generator (RNG)
+is included with the core API, based
+on the LCG found in Soundpipe.
+</p>
+<p>Seed the RNG with <code>sk_core_srand</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_core_srand(sk_core *core, unsigned long val);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_core_srand(sk_core *core, unsigned long val)
+{
+    core-&gt;rng = val;
+}</pre></code>
+<p></p>
+<p>A random number is generated with <code>sk_core_rand</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>unsigned long sk_core_rand(sk_core *core);</pre></code>
+<p></p>
+<p>This will return a value between 0 and <code>SK_CORE_RANDMAX</code>.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_CORE_RANDMAX 2147483648</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>unsigned long sk_core_rand(sk_core *core)
+{
+    core-&gt;rng = (1103515245 * core-&gt;rng + 12345) % SK_CORE_RANDMAX;
+    return core-&gt;rng;
 }</pre></code>
 </div>
 </body>
