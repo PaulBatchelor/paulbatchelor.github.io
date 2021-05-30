@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>A Recipe For Learning Audio Programming</title>
+<h1>A Recipe For Learning Audio Programming</h1>
+
+<h2>Overview</h2>
+
+<p>This document aims to provide a loose guide for
+those interested in learning about audio programming,
+specificially low-level audio DSP development.
+It is particular geared for musically inclined
+individuals. At one point, I was a kid in music
+school trying to figure this stuff out for myself.
+This is the guide I wish I had starting out.
+</p>
+
+<h2>Code is a terrible way to learn DSP</h2>
+
+<p>Looking at code is a terrible way to learn about DSP.
+Trust me, I tried it with <a href="/wiki/soundpipe">soundpipe</a>.
+Didn't work.
+</p>
+<p>By the time an algorithm finds its way into a C/C++
+implementation, most of the bits that would have helped
+you learn about it have stripped away. Many components are
+usually pre-derived or optimized away. Programming syntaxes
+like C/C++ also notate DSP in a very obfuscated way. Even
+audio DSLs like FAUST or SOUL are like this to an extent.
+</p>
+<p>This isn't to say avoid looking at code. In fact, quite the
+opposite. Find as much existing code as possible, use it to
+explore and interact. But don't expect things to suddenly
+make sense with just code alone.
+</p>
+<p>The best way to learn this kind of stuff is to learn the
+theory, and how to study the mathematical notation behind
+it. I hate to say it because I'm terrible at math, but
+I've found this to the true. Concepts didn't start making
+sense until I was enrolled in a DSP class during my masters
+program, surrounded by engineers instead of musicians.
+</p>
+<p>Learning theory is beyond the scope of this document,
+and I'm not comfortable giving advice about that.
+All I'll say is find a good mentor, and DO THE PROBLEM SETS.
+Also, a little goes a very long way. If you're anything like
+me, you're interested in musical applications, and not
+theory for the sake of theory. Make sure your mentor
+understands this.
+</p>
+
+<h2>Audio programming is mostly math</h2>
+
+<p>There's very little programming in an audio program. It
+mostly comes down to a glob of arithmetic operations in a
+loop. "It's all just multiplies and adds", as a friend of
+mine says. There's very little for newbies to grab on to.
+If you have a background in CS or software engineering,
+it can be challenging because there's structures or
+algorithms to cling on to.
+</p>
+<p>Most of the audio programming skill comes from taking
+mathematical models and representations of algorithms, and
+carefully implementing them to efficiently work in code.
+You'll want to be mindful of the constraints involved with
+developing software in realtime.
+</p>
+
+<h2>Most programming languages aren't suitable for audio DSP</h2>
+
+<p>Most programming languages are
+<a href="http://www.rossbencina.com/code/real-time-audio-programming-101-time-waits-for-nothing">not suitable for realtime audio</a>.
+Usually this comes down to how memory is managed, but other
+things can come into play too.
+</p>
+<p>So, if you're gonna seriously commit to learning this stuff,
+you might commit to something that won't burn you in the
+end.
+</p>
+<p>Here are some highly opinionated choices that are all
+suitable for realtime audio:
+</p>
+<p><code>C</code> is a classic. I <a href="/wiki/whyc">personally use C</a>.
+I know, it's a
+footgun. But it's also extremly portable,
+and there's a lot of existing code and tooling available.
+</p>
+<p><code>Rust</code> is also a suitable choice, and it seems to be gaining
+momentum. I can't say much more on that, as I don't use it.
+But I'll probably be paid to write Rust code someday.
+</p>
+<p><code>Zig</code> could also be a good choice for audio programming, too.
+I am interested in project, and may even try to learn it
+some day for free someday.
+</p>
+<p>Lots of people in the "audio programming community" will
+tell you that you need to learn <code>C++</code>. You don't <b>need</b>to learn C++, but learning it will help you land
+employment in the industry, if you're into that
+sort of stuff.
+Personally, I don't know or use much C++ in my work, and
+this me cut off from the audio programming community at
+large. I consider this a feature, not a bug.
+</p>
+
+<h2>Offline First, then Realtime</h2>
+
+<p>One of the (few) things I did right was to avoid trying to
+make realtime audio apps, and instead
+focus on writing offline programs
+that generate audio files. You get started so much faster,
+it's less boilerplate, easier to configure, easier to debug,
+etc. Stick to command line apps, no GUI stuff.
+</p>
+<p>libsndfile is a great starting point. The first program
+I studied was
+<a href="https://github.com/libsndfile/libsndfile/blob/master/examples/make_sine.c">this sine wave</a>.
+The real game changer though was
+<a href="https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c">sfprocess.c</a>.
+Learning how this example worked was the catalyst that
+would eventually bring <a href="/wiki/soundpipe">soundpipe</a> into
+existence.
+</p>
+<p>Write stupid programs that generate audio files, then
+bring those audio files into your existing workflow
+samplers and DAWs! Always do things in the direction of
+music. Always.
+</p>
+<p>I should also mention that going from offline to realtime
+is much easier than going from realtime to offline. Both
+my Soundpipe and <a href="/wiki/sporth">sporth</a> projects were originally
+offline only and I wasn't even interested in making either
+work in realtime. But, the transition to realtime was mostly
+a smooth one, mostly because I wasn't doing anything fancy.
+Meanwhile, LMMS, a DAW built with realtime at it's
+inception, and over a decade later, there are still issues
+related to offline rendering. Mark my words, it's because
+they tried to do fancy things like use a multi-threaded
+engine (yikes) and utilize oversampling.
+</p>
+
+<h2>Avoid Plugins for a while</h2>
+
+<p>This is pretty much the same point as above. Plugins
+are massive balls of complexity, and they just add weight
+to the learning process. It makes most things harder than
+they should be.
+</p>
+<p>The only thing that newbies should be thinking about is
+that core inner DSP loop. Sliders, knobs, GUIS, live input,
+etc can wait.
+</p>
+<p>I should mention: while it makes plugin development
+exceptionally easier, JUCE is not for newbies. It's built
+for experienced C++ developers who write audio plugins
+professionally. It's also a ball of complexity masking
+many other balls of complexity.
+</p>
+<p>Seriously, just stick
+to writing tiny command line programs that make WAV files
+for a bit. It's a lot of fun!
+</p>
+
+<h2>Avoid FAUST for a while</h2>
+
+<p>Learn FAUST at some point. It's great. But it can be learned
+later. To me, FAUST is best appreciated after you've done
+some work in a lower level language like C/C++. Usually
+you'll need to be using glue C++ code with FAUST anyways.
+For the simpler DSP algorithms, sometimes FAUST can be
+overkill.
+</p>
+<hr>
+<a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
