@@ -60,8 +60,7 @@ proprietary DSP library.
 </p>
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_runt_loader(monolith_d *m);</pre></code>
 <p></p>
-<p>When runt is already loaded (indicated by the <code>runt_loaded</code>
-flag), Runt will be reloaded. Since there is no automatic
+<p>When runt is already loaded (indicated by the <code>runt_loaded</code>flag), Runt will be reloaded. Since there is no automatic
 <code>runt_reinit</code> function in the Runt API, one will be created
 here, called <code>tmp_runt_reinit</code>. Someday, this might find
 it's way into the real runt codebase.
@@ -338,9 +337,13 @@ monolith. It is loaded at runtime.
 
 <p><a id="wm_000_1022"></a></p>
 
-<h4>9.8.1. Push Data from Janet</h4>
+<h4>9.8.1. Push/Pop Data from Janet</h4>
 
-<p><a id="wm_000_1023"></a>In certain situations (like working with TDelay in scheme),
+<p><a id="wm_000_1023"></a></p>
+
+<h5>9.8.1.1. Pushing</h5>
+
+<p><a id="wm_000_1024"></a>In certain situations (like working with TDelay in scheme),
 it is useful to push user data from Janet to the runt stack.
 </p>
 <p><code>monolith/runt-push-cptr</code> will take a generic void pointer,
@@ -377,10 +380,11 @@ j_runt_push_cptr,
     return janet_wrap_nil();
 }</pre></code>
 
-<h4>9.8.2. Pop Data To Janet</h4>
+<h5>9.8.1.2. Popping</h5>
 
-<p><a id="wm_000_1029"></a>Used to retrieve data from Runt. Saves it to Janet as
+<p><a id="wm_000_1030"></a>Used to retrieve data from Runt. Saves it to Janet as
 an abstract value. We'll call it <code>monolith/runt-pop-cptr</code>!
+</p>
 <div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
 "monolith/runt-pop-cptr",
 j_runt_pop_cptr,
@@ -410,9 +414,42 @@ j_runt_pop_cptr,
     return janet_wrap_abstract(ud);
 }</pre></code>
 
+<h4>9.8.2. TODO Push/Pop Data from Scheme</h4>
+
+<p><a id="wm_000_1036"></a></p>
+
+<h5>9.8.2.1. TODO Pushing</h5>
+
+<p><a id="wm_000_1037"></a>Data from runt can be popped using <code>monolith:runt-pop-cptr</code>.
+This will save it as the recently-added pointer type in s9
+scheme.
+</p>
+
+<h5>9.8.2.2. TODO Popping</h5>
+
+<p><a id="wm_000_1039"></a>A pointer type stored in scheme can be pushed to the runt
+stack with <code>monolith:runt-push-cptr</code>.
+</p>
+
+<h4>9.8.3. TODO Set/Get Registers From Scheme</h4>
+
+<p><a id="wm_000_1041"></a></p>
+
+<h5>9.8.3.1. Getting</h5>
+
+<p><a id="wm_000_1042"></a>The function <code>monolith:runt-regset</code> will set a value from
+Scheme. Value should be a C pointer.
+</p>
+
+<h5>9.8.3.2. Setting</h5>
+
+<p><a id="wm_000_1044"></a>The function <code>monolith:runt-regget</code> will get a value from
+a register and store it as a generic C pointer in Scheme.
+</p>
+
 <h3>9.9. Next Free Register</h3>
 
-<p><a id="wm_000_1035"></a>The function <code>monolith_nextfree</code> will return the
+<p><a id="wm_000_1046"></a>The function <code>monolith_nextfree</code> will return the
 next apparently free register id number. This should
 hopefully abstract away some of the tedious register
 management required anytime a signal needs to be duplicated.
@@ -425,7 +462,7 @@ in certain cases.
 
 <h4>9.9.1. Nextfree in C</h4>
 
-<p><a id="wm_000_1037"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_nextfree(monolith_d *m, int start);</pre></code>
+<p><a id="wm_000_1048"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_nextfree(monolith_d *m, int start);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int monolith_nextfree(monolith_d *m, int start)
 {
     if (!m-&gt;runt_loaded) {
@@ -438,7 +475,7 @@ in certain cases.
 
 <h4>9.9.2. Nextfree in Scheme</h4>
 
-<p><a id="wm_000_1042"></a><div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:nextfree", pp_nextfree, 1, 1, {INT,___,___}},</pre></code>
+<p><a id="wm_000_1053"></a><div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:nextfree", pp_nextfree, 1, 1, {INT,___,___}},</pre></code>
 <div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_nextfree(cell x) {
     int start;
     int nextfree;
@@ -452,7 +489,7 @@ in certain cases.
 
 <h3>9.10. Loading More Runt Words</h3>
 
-<p><a id="wm_000_1047"></a>While it's not recommended, it is technically possible to
+<p><a id="wm_000_1058"></a>While it's not recommended, it is technically possible to
 define more keywords at any point in time. This can be
 done with <code>monolith_runt_more_words</code>. The function itself
 takes a <code>loader</code> callback. The loader need only take in
@@ -486,7 +523,7 @@ to store the current size.
 
 <h3>9.11. Retrieving Runt Patchwerk Pointer</h3>
 
-<p><a id="wm_000_1054"></a>Patchwerk is accessed from runt via a runt pointer.
+<p><a id="wm_000_1065"></a>Patchwerk is accessed from runt via a runt pointer.
 This can be retrieved using the function
 <code>monolith_runt_patchwerk</code>.
 </p>
@@ -506,7 +543,7 @@ This can be retrieved using the function
 <br>
 <p><hr>
 
-<a href="/proj/monolith/program/wm_000_0593">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_1060">next</a></p>
+<a href="/proj/monolith/program/wm_000_0593">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_1071">next</a></p>
 </div>
 </body>
 </html>

@@ -177,8 +177,6 @@ between swaps.
 has an input signal which it saves to a <code>pw_cable</code> pointer <code>in</code>. This input
 signal then gets copied to the internal buffer.
 </p>
-<p>I forget why I needed the <code>pw_buffer</code> pointer, but I'm leaving it in for now.
-</p>
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct monolith_cable {
     pw_cable *in;
     pw_subpatch subpatch;
@@ -227,14 +225,8 @@ before attempting to access data from <code>in</code>.
 which will be arbitrarily be called <code>monout</code> to distinguish itself from the
 default patchwerk <code>out</code> keyword.
 </p>
-<br>
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int node_monout(pw_node *node, monolith_d *d);</pre></code>
-<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>/* typedef struct { */
-/*     monolith_d *m; */
-/*     monolith_cable *out; */
-/* } monout_d; */
-
-static void monout_compute(pw_node *node)
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void monout_compute(pw_node *node)
 {
     monolith_cable *out;
     int s;
@@ -306,10 +298,11 @@ int node_monout(pw_node *node, monolith_d *m)
     return RUNT_OK;
 }</pre></code>
 
-<h4>5.2.3. TODO Cable Input Node (monin)</h4>
+<h4>5.2.3. Cable Input Node (monin)</h4>
 
 <p><a id="wm_000_0290"></a>Lets in a mono input signal. For now, this input is a
 wrapper around a JACK audio cable.
+</p>
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int node_monin(pw_node *node, monolith_d *d);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void monin_compute(pw_node *node)
 {
@@ -557,8 +550,7 @@ static cell pp_crossfade_disable(cell x)
 <h5>5.4.2.2. Setting the Crossfade Size in Scheme</h5>
 
 <p><a id="wm_000_0372"></a>The crossfade size can be set from scheme using the function
-<code>monolith:crossfade-size-set</code>
-#+NAME: primitive_entries
+<code>monolith:crossfade-size-set</code>#+NAME: primitive_entries
 <pre><code>{"monolith:crossfade-size-set", pp_crossfade_size_set, 1, 1, {INT,___,___}},</pre></code>
 <div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_crossfade_size_set(cell x)
 {
@@ -619,8 +611,7 @@ crossfading (<code>CROSSFADE_COMPUTE</code>), and the crossfade counter is set t
 <h4>5.4.6. Computing both blocks</h4>
 
 <p><a id="wm_000_0399"></a>When <code>CROSSFADE_COMPUTE</code> mode is set, both old (<code>write</code>) and new (<code>read</code>) cable
-blocks are computed. This is operation is handled in the <code>compute_block</code>
-function.
+blocks are computed. This is operation is handled in the <code>compute_block</code>function.
 </p>
 <div><b><i>&lt;&lt;cf_compute_write_block&gt;&gt;=</i></b></div><pre><code>if(m-&gt;cf_state == CROSSFADE_COMPUTE) {
     pw_subpatch_compute(&m-&gt;cab_write-&gt;subpatch);
