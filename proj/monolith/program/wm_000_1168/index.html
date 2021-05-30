@@ -199,7 +199,7 @@ the opaque monolith pointer.
     return monolith_dict_lookup(&m-&gt;dict, pg, key, len);
 }</pre></code>
 
-<h4>11.3.2. Entry Find (generalized page lookup)</h4>
+<h4>11.3.2. Entry Find</h4>
 
 <p><a id="wm_000_1219"></a>This is a more generalized version of
 <code>monolith_dict_lookup</code>. Instead of looking for a page, it
@@ -235,9 +235,9 @@ stored in the dictionary.
     return MONOLITH_NOTFOUND;
 }</pre></code>
 
-<h4>11.3.3. Page Entry</h4>
+<h4>11.3.3. Entry Struct</h4>
 
-<p><a id="wm_000_1225"></a>The atomic element of a dictionary is a page entry. A page
+<p><a id="wm_000_1225"></a>The atomic element of a dictionary is an entry. A page
 entry is a wrapper around a monolith page, which makes it
 ready for a linked list.
 </p>
@@ -246,6 +246,7 @@ length, which is stored in a char pointer.
 </p>
 <p>Page entries are managed inside of a list known as an
 entry list, known as the <code>monolith_dict_entry_list</code>.
+</p>
 <div><b><i>&lt;&lt;monolith_dict_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_dict_entry monolith_dict_entry;</pre></code>
 <div><b><i>&lt;&lt;monolith_dict_entry_struct&gt;&gt;=</i></b></div><pre><code>struct monolith_dict_entry {
     void *ud;
@@ -358,7 +359,7 @@ monolith structure. This is known as a
     el-&gt;size++;
 }</pre></code>
 
-<h4>11.3.5. Dictionary Struct Declaration and Initialization</h4>
+<h4>11.3.5. Dictionary Struct Initialization and Cleanup</h4>
 
 <p><a id="wm_000_1269"></a>A page dictionary is declared as the C struct <code>monolith_dict</code>.
 <div><b><i>&lt;&lt;monolith_dict_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct monolith_dict monolith_dict;</pre></code>
@@ -488,7 +489,7 @@ of their type ID and get assigned a type ID at runtime.
     return d-&gt;ntypes;
 }</pre></code>
 
-<h4>11.3.10. (Page) Entry Creation</h4>
+<h4>11.3.10. Page Entry Creation</h4>
 
 <p><a id="wm_000_1355"></a>The function <code>monolith_dict_newpage</code> is
 used to create a page with a particular key. This page can
@@ -513,39 +514,56 @@ itself, and another for key inside the entry.
                           const char *name,
                           unsigned int len)
 {
-    monolith_dict_entry *ent;
-    unsigned int i;
-    unsigned int listpos;
-    monolith_dict_entrylist *el;
+    /* monolith_dict_entry *ent; */
+    /* unsigned int i; */
+    /* unsigned int listpos; */
+    /* monolith_dict_entrylist *el; */
+    /* monolith_page *pg; */
+
+    /* if (monolith_dict_lookup(d, NULL, name, len)) return 0; */
+
+    /* ent = calloc(1, sizeof(monolith_dict_entry)); */
+    /* if(ent == NULL) return 0; */
+    /* ent-&gt;key = calloc(1, len + 1); */
+    /* ent-&gt;len = len; */
+    /* ent-&gt;type = MONOLITH_ENTRY_PAGE; */
+
+    /* for(i = 0; i &lt; len; i++) { */
+    /*     ent-&gt;key[i] = name[i]; */
+    /* } */
+
+    /* pg = calloc(1, sizeof(monolith_page)); */
+    /* monolith_page_init(d-&gt;m, pg); */
+    /* *ppg = pg; */
+
+    /* ent-&gt;ud = pg; */
+    /* ent-&gt;nxt = NULL; */
+    /* ent-&gt;prv = NULL; */
+    /* listpos = dict_hash(name, len, MONOLITH_DICT_SIZE); */
+    /* el = &d-&gt;lists[listpos]; */
+    /* monolith_dict_entrylist_append(el, ent); */
+
+    int rc;
     monolith_page *pg;
+    monolith_entry *ent;
 
-    if(monolith_dict_lookup(d, NULL, name, len)) return 0;
+    rc = monolith_dict_newentry(d, &ent, name, len);
 
-    ent = calloc(1, sizeof(monolith_dict_entry));
-    if(ent == NULL) return 0;
-    ent-&gt;key = calloc(1, len + 1);
-    ent-&gt;len = len;
-    ent-&gt;type = MONOLITH_ENTRY_PAGE;
-    for(i = 0; i &lt; len; i++) {
-        ent-&gt;key[i] = name[i];
-    }
+    if (rc != MONOLITH_OK) return rc;
+
     pg = calloc(1, sizeof(monolith_page));
     monolith_page_init(d-&gt;m, pg);
-    *ppg = pg;
-    ent-&gt;ud = pg;
-    ent-&gt;nxt = NULL;
-    ent-&gt;prv = NULL;
-    listpos = dict_hash(name, len, MONOLITH_DICT_SIZE);
-    el = &d-&gt;lists[listpos];
-    monolith_dict_entrylist_append(el, ent);
-    return 1;
+    (*ppg) = pg;
+
+    return MONOLITH_OK;
 }</pre></code>
 
-<h4>11.3.11. Entry Creation</h4>
+<h4>11.3.11. Generic Entry Creation</h4>
 
 <p><a id="wm_000_1362"></a>Like <code>monolith_dict_newpage</code>, only for generic entries.
 Eventually will be refactored into that function. For now,
 it is needed for creating an image entry.
+</p>
 <div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int monolith_dict_newentry(monolith_dict *d,
                            monolith_dict_entry **pent,
                            const char *name,
@@ -576,6 +594,7 @@ it is needed for creating an image entry.
     }
 
     *pent = ent;
+    ent-&gt;ud = NULL;
     ent-&gt;nxt = NULL;
     ent-&gt;prv = NULL;
     listpos = dict_hash(name, len, MONOLITH_DICT_SIZE);
