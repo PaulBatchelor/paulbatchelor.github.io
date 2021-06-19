@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Glottis</title>
+<h1>Glottis</h1>
+
+<h2>Overview</h2>
+
+<p><code>glottis</code> implements an analytical model that approximates
+a signal that the human glottis makes. It is based on the
+works of Liljencrants and Fant. Unlike the corresponding
+vocal tract that usually accompanies this vocla tract, the
+glottis is an anlytical model rather than physically based.
+This undelrying waveform is generated via a mathematical
+equation derived emprically rather than from physical
+principles.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>This tangles to two files: <code>glottis.c</code> and <code>glottis.h</code>.
+Defining <code>SK_GLOTTIS</code> will expose the contents in the
+struct.
+</p>
+<div><b><i>&lt;&lt;glottis.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include &lt;stdlib.h&gt;
+#define SK_GLOTTIS_PRIV
+#include "glottis.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;glottis.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_GLOTTIS_H
+#define SK_GLOTTIS_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_GLOTTIS_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+
+<h2>Struct and Initialization</h2>
+
+<p>The glottis is initialized with <code>sk_glottis_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_glottis_init(sk_glottis *glot, SKFLT sr);</pre></code>
+<p></p>
+<p>The struct is defined in a struct called <code>sk_glottis</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_glottis sk_glottis;</pre></code>
+<p></p>
+<br>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_glottis_init(sk_glottis *glot, SKFLT sr)
+{
+    glot-&gt;freq = 140; /* 140Hz frequency by default */
+    glot-&gt;tenseness = 0.6; /* value between 0 and 1 */
+    glot-&gt;T = 1.0/sr; /* big T */
+    glot-&gt;time_in_waveform = 0;
+    setup_waveform(glot);
+}</pre></code>
+<p></p>
+<p>Contents of <code>sk_glottis</code> displayed below. This will
+eventually be elaborated more:
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_glottis {
+    SKFLT freq;
+    SKFLT tenseness;
+    SKFLT Rd;
+    SKFLT waveform_length;
+    SKFLT time_in_waveform;
+
+    SKFLT alpha;
+    SKFLT E0;
+    SKFLT epsilon;
+    SKFLT shift;
+    SKFLT delta;
+    SKFLT Te;
+    SKFLT omega;
+
+    SKFLT T;
+};</pre></code>
+
+<h2>Parameters</h2>
+
+
+<h3>Frequency</h3>
+
+<p>Set with <code>sk_glottis_freq</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_glottis_freq(sk_glottis *glot, SKFLT freq);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_glottis_freq(sk_glottis *glot, SKFLT freq)
+{
+    glot-&gt;freq = freq;
+}</pre></code>
+
+<h3>Tenseness</h3>
+
+<p>Set with <code>sk_glottis_tenseness</code></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_glottis_tenseness(sk_glottis *glot, SKFLT tenseness);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_glottis_tenseness(sk_glottis *glot, SKFLT tenseness)
+{
+    glot-&gt;tenseness = tenseness;
+}</pre></code>
+
+<h2>Calculating the waveform</h2>
+
+<p>The glottis model works by mathematically generating a
+new waveform every time a new period begins. The period
+length is determined by the given frequency.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void setup_waveform(sk_glottis *glot);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void setup_waveform(sk_glottis *glot)
+{
+    SKFLT Rd;
+    SKFLT Ra;
+    SKFLT Rk;
+    SKFLT Rg;
+
+    SKFLT Ta;
+    SKFLT Tp;
+    SKFLT Te;
+
+    SKFLT epsilon;
+    SKFLT shift;
+    SKFLT delta;
+    SKFLT rhs_integral;
+
+    SKFLT lower_integral;
+    SKFLT upper_integral;
+
+    SKFLT omega;
+    SKFLT s;
+    SKFLT y;
+    SKFLT z;
+
+    SKFLT alpha;
+    SKFLT E0;
+
+    &lt;&lt;calculate_waveform_length&gt;&gt;
+    &lt;&lt;calculate_rd&gt;&gt;
+    &lt;&lt;calculate_ra_rk&gt;&gt;
+    &lt;&lt;calculate_rg&gt;&gt;
+    &lt;&lt;calculate_timing_parameters&gt;&gt;
+    &lt;&lt;calculate_epsilon_shift_delta&gt;&gt;
+    &lt;&lt;calculate_integrals&gt;&gt;
+
+    omega = M_PI / Tp;
+    s = sin(omega * Te);
+
+    y = -M_PI * s * upper_integral / (Tp*2);
+    z = log(y);
+    alpha = z / (Tp/2 - Te);
+    E0 = -1 / (s * exp(alpha*Te));
+
+    &lt;&lt;update_variables_in_struct&gt;&gt;
+}</pre></code>
+<p></p>
+<p>To begin, both <code>waveform_length</code> and
+<img src="/sndkit/_fig/glottis_rd.png">
+ (<code>Rd</code>) are calcuated.
+</p>
+<p>The variable <code>waveform_length</code> is the period of the waveform
+based on the current frequency.
+</p>
+<div><b><i>&lt;&lt;calculate_waveform_length&gt;&gt;=</i></b></div><pre><code>glot-&gt;waveform_length = 1.0 / glot-&gt;freq;</pre></code>
+<p></p>
+<p><img src="/sndkit/_fig/glottis_rd.png">
+ is part of a set of normalized
+timing parameters used
+to calculate the time coefficients described in the LF
+model, as described in a 1997 Fant paper.
+</p>
+<p><img src="/sndkit/_fig/glottis_rd.png">
+ is derived from the
+<code>tenseness</code> parameter, and then clamped to be in between
+0.5 and 2.7, as these
+are good approximations (as observed in a paper titled
+"Glottal Source Modelling for Singing Voice Synthesis" by
+Hui-Ling Lu and Julius O Smith in 2000).
+</p>
+<div><b><i>&lt;&lt;calculate_rd&gt;&gt;=</i></b></div><pre><code>glot-&gt;Rd = 3 * (1 - glot-&gt;tenseness);
+Rd = glot-&gt;Rd;
+if (Rd &lt; 0.5) Rd = 0.5;
+if (Rd &gt; 2.7) Rd = 2.7;</pre></code>
+<p></p>
+<p>The other timing parameters
+<img src="/sndkit/_fig/glottis_ra.png" alt="R_{ap}">
+ (<code>Ra</code>),
+<img src="/sndkit/_fig/glottis_rg.png" alt="R_{gp}">
+ (<code>Rg</code>),
+and <img src="/sndkit/_fig/glottis_rg.png" alt="R_{kp}">
+ (<code>Rk</code>)
+can be computed in terms of <img src="/sndkit/_fig/glottis_rd.png" alt="R_d">
+(<code>Rd</code>), which is why this gets
+computed first. The equations described below have been
+derived using linear regression:
+</p>
+<p><img src="/sndkit/_fig/glottis_ra_rk_eqn.png" alt="\eqalign{
+R_{ap} &= {(-1 + 4.8R_d) \over 100} \cr
+R_{kp} &= {(22.4 + 11.8R_d) \over 100} \cr
+}"srcset="/sndkit/_fig/glottis_ra_rk_eqn.png 1x,/sndkit/_fig/glottis_ra_rk_eqn2x.png 2x,">
+</p>
+<p>In code, these have been worked out to shave off a division
+operation.
+</p>
+<div><b><i>&lt;&lt;calculate_ra_rk&gt;&gt;=</i></b></div><pre><code>Ra = -0.01 + 0.048*Rd;
+Rk = 0.224 + 0.118*Rd;</pre></code>
+<p></p>
+<p><img src="/sndkit/_fig/glottis_rg.png">
+ (<code>Rg</code>) is derived using the
+results from <img src="/sndkit/_fig/glottis_ra.png">
+ and
+<img src="/sndkit/_fig/glottis_rk.png">
+ in the following equation
+described in the Fant 1997 paper:
+</p>
+<p><img src="/sndkit/_fig/glottis_rd_fant.png" alt="R_d = (1/0.11)(0.5 + 1.2R_{kp})(R_{kp} / 4R_{gp} + R_{ap})"srcset="/sndkit/_fig/glottis_rd_fant.png 1x,/sndkit/_fig/glottis_rd_fant2x.png 2x,">
+</p>
+<p>Which yields:
+</p>
+<p><img src="/sndkit/_fig/glottis_rg_derivation.png" alt="R_{gp} = {(R_{kp}/4)(0.5 + 1.2R_{kp})\over
+(0.11R_d - R_{ap}*(0.5+1.2R_{kp}))}"srcset="/sndkit/_fig/glottis_rg_derivation.png 1x,/sndkit/_fig/glottis_rg_derivation2x.png 2x,">
+</p>
+<div><b><i>&lt;&lt;calculate_rg&gt;&gt;=</i></b></div><pre><code>Rg = (Rk/4)*(0.5 + 1.2*Rk)/(0.11*Rd-Ra*(0.5+1.2*Rk));</pre></code>
+<p></p>
+<p>The parameters approximating <code>R_a</code>, <code>R_g</code>, and <code>R_k</code>can be used to calculate the timing parameters
+<code>T_a</code>, <code>T_p</code>, and <code>T_e</code> in the LF model:
+</p>
+<p><img src="/sndkit/_fig/glottis_timing_coefficients.png" alt="\eqalign {
+T_a &= R_{ap} \cr
+T_p &= 2R_{gp}^{-1} \cr
+T_e &= T_p + T_pR_{kp}
+}"srcset="/sndkit/_fig/glottis_timing_coefficients.png 1x,/sndkit/_fig/glottis_timing_coefficients2x.png 2x,">
+</p>
+<div><b><i>&lt;&lt;calculate_timing_parameters&gt;&gt;=</i></b></div><pre><code>Ta = Ra;
+Tp = (SKFLT)1.0 / (2*Rg);
+Te = Tp + Tp*Rk;</pre></code>
+<p></p>
+<p>At this point, the timing variables can be used
+to calculate three more variables needed: <code>epsilon</code>,
+<code>shift</code>, and <code>delta</code>.
+</p>
+<div><b><i>&lt;&lt;calculate_epsilon_shift_delta&gt;&gt;=</i></b></div><pre><code>epsilon = (SKFLT)1.0 / Ta;
+shift = exp(-epsilon * (1 - Te));
+delta = 1 - shift;</pre></code>
+<p></p>
+<p>These are then used to calculate the integrals (TODO:
+understand this a bit better).
+</p>
+<div><b><i>&lt;&lt;calculate_integrals&gt;&gt;=</i></b></div><pre><code>rhs_integral = (SKFLT)(1.0/epsilon) * (shift-1) + (1-Te)*shift;
+rhs_integral = rhs_integral / delta;
+lower_integral = - (Te - Tp) / 2 + rhs_integral;
+upper_integral = -lower_integral;</pre></code>
+<p></p>
+<p>More components here. The original Voc program didn't
+describe these in much detail, so...
+</p>
+<p>Finally, update the variables in the struct.
+</p>
+<div><b><i>&lt;&lt;update_variables_in_struct&gt;&gt;=</i></b></div><pre><code>glot-&gt;alpha = alpha;
+glot-&gt;E0 = E0;
+glot-&gt;epsilon = epsilon;
+glot-&gt;shift = shift;
+glot-&gt;delta = delta;
+glot-&gt;Te = Te;
+glot-&gt;omega = omega;</pre></code>
+
+<h2>Computation</h2>
+
+<p>A single sample of audio is computed with <code>sk_glottis_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_glottis_tick(sk_glottis *glot);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_glottis_tick(sk_glottis *glot)
+{
+    SKFLT out;
+    SKFLT aspiration;
+    SKFLT noise;
+    SKFLT t;
+
+    out = 0;
+
+    &lt;&lt;increment_waveform_timer&gt;&gt;
+    &lt;&lt;update_waveform_if_needed&gt;&gt;
+
+    &lt;&lt;compute_waveform&gt;&gt;
+    &lt;&lt;compute_aspiration_noise&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<p>The waveform timer is incremented. This measures the
+duration in the period.
+</p>
+<div><b><i>&lt;&lt;increment_waveform_timer&gt;&gt;=</i></b></div><pre><code>glot-&gt;time_in_waveform += glot-&gt;T;</pre></code>
+<p></p>
+<p>If the waveform reaches the end of the period,
+update the parameters for the next period.
+</p>
+<div><b><i>&lt;&lt;update_waveform_if_needed&gt;&gt;=</i></b></div><pre><code>if (glot-&gt;time_in_waveform &gt; glot-&gt;waveform_length) {
+    glot-&gt;time_in_waveform -= glot-&gt;waveform_length;
+    setup_waveform(glot);
+
+}</pre></code>
+<p></p>
+<p>Compute the glottal waveform component. This varies
+depending on where it is in the period. This presumably
+comes from the LF model, but I'll need to check the papers
+again because I forget.
+</p>
+<div><b><i>&lt;&lt;compute_waveform&gt;&gt;=</i></b></div><pre><code>t = (glot-&gt;time_in_waveform / glot-&gt;waveform_length);
+
+if (t &gt; glot-&gt;Te) {
+    out = (-exp(-glot-&gt;epsilon * (t-glot-&gt;Te)) + glot-&gt;shift) / glot-&gt;delta;
+} else {
+    out = glot-&gt;E0 * exp(glot-&gt;alpha * t) * sin(glot-&gt;omega * t);
+}</pre></code>
+<p></p>
+<p>Aspiration noise is approximated using white noise, and
+mixed into the glottal signal. How much is mixed in is
+inversely proportionally to the tenseness amount.
+</p>
+<p>At the time of writing, the built-in <code>rand</code> function is used
+to produce the noise. It works well enough, but varies from
+platform to platform slightly. The hope is to later build an
+internal random number generator that is more consistent
+and portable.
+</p>
+<div><b><i>&lt;&lt;compute_aspiration_noise&gt;&gt;=</i></b></div><pre><code>/* TODO: build more portable RNG */
+noise = 2.0 * ((SKFLT) rand() / RAND_MAX) - 1;
+aspiration = (1 - sqrt(glot-&gt;tenseness)) * 0.3 * noise;
+aspiration *= 0.2;
+out += aspiration;</pre></code>
+</div>
+</body>
+</html>
