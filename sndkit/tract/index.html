@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Tract</title>
+<h1>Tract</h1>
+
+<h2>Overview</h2>
+
+<p><code>Tract</code> implements a rudimentary physical model of vocal
+tract for use in articulatory synthesis. It is based
+on the classic kelly-lochbaum model developed at Bell Labs
+in the early 60s. In recent years, such a model has gotten
+new breath (so to speak) in programs like
+<a href="https://dood.al/pinktrombone/">Pink Trombone</a>, from which
+this particular was derived from.
+</p>
+<p>In order to be both "physically based" and practically
+computable, the model crudely pretends that our vocal tract
+is a series of cylindrical tubes with varying diameters.
+Changing the diameters in various ways will result in
+different phonemes to come out the other side.
+Almost by magic.
+</p>
+<p>What combinations of diameters produce what kind of
+phonemes? It's not a straightforward answer, and new
+methods for finding ideal shapes are still an ongoing area
+of research. In the early days, measurements were
+originally obtained from real vocal tracts!
+</p>
+<p>The tract is a filter that expects some kind of external
+input.
+The closer that input resembles the kind of sound
+our glottis makes, the more vocal-like the output sounds
+will turn out. In programs like Pink Trombone, an
+<a href="/sndkit/glottis">analytical model of the glottis</a> was
+used as the source signal for it's vocal tract filter.
+</p>
+<p>Compared to Pink Trombone, this model is greatly simplified.
+Both implement the digital waveguide as a ladder filter
+consisting of 44
+<a href="https://ccrma.stanford.edu/~jos/pasp/Kelly_Lochbaum_Scattering_Junctions.html">Kelly-Lochbaum scattering junctions</a>.
+In
+this model, the nasal component (known as <code>velum</code> control)
+has been removed. Also removed is the transient generator,
+used whenever there were blocking interferences in the vocal
+tract. These can still be found in <a href="/proj/voc">Voc</a>.
+</p>
+
+<h2>Tangled files</h2>
+
+<p><code>Tract</code> tangles into two main files: <code>tract.c</code> and
+<code>tract.h</code>. Defining <code>SK_TRACT_PRIV</code> will expose the struct.
+</p>
+<div><b><i>&lt;&lt;tract.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include &lt;math.h&gt;
+#include &lt;string.h&gt;
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define SK_TRACT_PRIV
+#include "tract.h"
+
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;tract.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_TRACT_H
+#define SK_TRACT_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+#ifdef SK_TRACT_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+#endif</pre></code>
+
+<h2>Struct and Initialization</h2>
+
+<p>The core struct is defined as <code>sk_tract</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_tract sk_tract;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_tract {
+    &lt;&lt;sk_tract&gt;&gt;
+};</pre></code>
+<p></p>
+<p>The struct is initialized with <code>sk_tract_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tract_init(sk_tract *tr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tract_init(sk_tract *tr)
+{
+    &lt;&lt;init&gt;&gt;
+    calculate_reflections(tr);
+}</pre></code>
+
+<h2>Components and Variables</h2>
+
+
+<h3>Glottal and Lip Reflection constants</h3>
+
+<p>Glottal and lip reflection constants. These are set to be
+<code>0.75</code> and <code>-0.85</code>, respectively.
+</p>
+<div><b><i>&lt;&lt;sk_tract&gt;&gt;=</i></b></div><pre><code>SKFLT glottal_reflection;
+SKFLT lip_reflection;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>tr-&gt;glottal_reflection = 0.75;
+tr-&gt;lip_reflection = -0.85;</pre></code>
+
+<h3>Tract Size</h3>
+
+<p>The active size of the vocal tract is determined by
+a variable <code>n</code>. It can have a maximum value of 44.
+</p>
+<div><b><i>&lt;&lt;sk_tract&gt;&gt;=</i></b></div><pre><code>int n;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>tr-&gt;n = 44;</pre></code>
+
+<h3>Diameters</h3>
+
+<p>The <code>diameters</code> array are inputs available
+to manipulate the vocal tract.
+</p>
+<div><b><i>&lt;&lt;sk_tract&gt;&gt;=</i></b></div><pre><code>SKFLT diameter[44];</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>memset(tr-&gt;diameter, 0, 44 * sizeof(SKFLT));
+&lt;&lt;initial_shape&gt;&gt;</pre></code>
+<p></p>
+<p>The diameters get set to an initial shape. This is
+the one Neil Thapen uses in Pink Trombone:
+</p>
+<div><b><i>&lt;&lt;initial_shape&gt;&gt;=</i></b></div><pre><code>{
+    int i;
+
+    for(i = 0; i &lt; tr-&gt;n; i++) {
+        SKFLT diameter = 0;
+        if(i &lt; 7 - 0.5) {
+            diameter = 0.6;
+        } else if( i &lt; 12) {
+            diameter = 1.1;
+        } else {
+            diameter = 1.5;
+        }
+
+        tr-&gt;diameter[i] = diameter;
+    }
+}</pre></code>
+
+<h3>Areas</h3>
+
+<p>Diameters get converted into areas and stored in
+the array <code>A</code>, and areas get
+converted into reflection coefficients stored in the
+array <code>reflection</code>.
+</p>
+<div><b><i>&lt;&lt;sk_tract&gt;&gt;=</i></b></div><pre><code>SKFLT A[44];
+SKFLT reflection[44];</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>memset(tr-&gt;A, 0, 44 * sizeof(SKFLT));
+memset(tr-&gt;reflection, 0, 44 * sizeof(SKFLT));</pre></code>
+
+<h3>Scattering Junction Outputs and Bidirectional Delay Line</h3>
+
+<p>Each scattering junction has an left and right output
+corresponding to the direction of pressure, as well
+as filter memory. The junction output arrays are known
+as <code>junction_outL</code> and <code>junction_outR</code>, respectively.
+Additional Left/Right arrays are used to implement the
+bidirectional delay line for the underlying waveguide.
+</p>
+<div><b><i>&lt;&lt;sk_tract&gt;&gt;=</i></b></div><pre><code>SKFLT junction_outL[44];
+SKFLT L[44];
+SKFLT junction_outR[44];
+SKFLT R[44];</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>memset(tr-&gt;junction_outL, 0, 44 * sizeof(SKFLT));
+memset(tr-&gt;L, 0, 44 * sizeof(SKFLT));
+memset(tr-&gt;junction_outR, 0, 44 * sizeof(SKFLT));
+memset(tr-&gt;R, 0, 44 * sizeof(SKFLT));</pre></code>
+
+<h3>User-Supplied Shape Callback</h3>
+
+<p>A user-supplied <code>shape</code> callback can be used to shape
+the diameters at audio-rate, allowing for things like
+<a href="/sndkit/smoother">smoothing filters</a>. A user-data void
+struct is also included here.
+</p>
+<div><b><i>&lt;&lt;sk_tract&gt;&gt;=</i></b></div><pre><code>void *ud;
+void (*shape)(sk_tract *, SKFLT *, void *);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>tr-&gt;shape = NULL;
+tr-&gt;ud = NULL;</pre></code>
+
+<h2>Diameter Manipulation</h2>
+
+<p>The vocal tract is controlled by mainpulating the
+underlying diameter sizes. These can be directly accessed
+via <code>sk_tract_diameters</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT* sk_tract_diameters(sk_tract *tr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT* sk_tract_diameters(sk_tract *tr)
+{
+    return tr-&gt;diameter;
+}</pre></code>
+<p></p>
+<p>The number of diameters can be retrieved with
+<code>sk_tract_size</code>. Usually, this is 44.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_tract_size(sk_tract *tr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_tract_size(sk_tract *tr)
+{
+    return tr-&gt;n;
+}</pre></code>
+<p></p>
+<p>More often than not, one wants to apply sample-accurate
+smoothing to the diameters rather than work them directly.
+This is done using a callback interface, known as a
+<code>shaper</code>.
+</p>
+<p>The function <code>sk_tract_shaper</code> sets up a shaper callback.
+It takes in the shaper callback as well as any external
+user data needed to manage state in that callback.
+</p>
+<p>This function gets called at every sample, and takes in
+three arguments: the <code>sk_tract</code> struct, the output array to
+write to, and the externally managed user data.
+</p>
+<p>In practice, one potential approach is to use a filterbank
+of 44 <a href="/sndkit/smoother">smoothing filters</a> to control
+the diameter shapes. This allows diameters to be controlled
+without producing any artificats caused by large
+discontinuities.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tract_shaper(sk_tract *tract,
+                     void (*shape)(sk_tract *, SKFLT *, void *),
+                     void *ud);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tract_shaper(sk_tract *tract,
+                     void (*shape)(sk_tract *, SKFLT *, void *),
+                     void *ud)
+{
+    tract-&gt;shape = shape;
+    tract-&gt;ud = ud;
+}</pre></code>
+<p></p>
+<p>Neil Thapen's Pink Trombone employs a curious
+"tongue control" functionality, which allows one use 2
+dimensions of control to shape the entire tract. This is
+also the underlying control mechanism for Voc.
+</p>
+<p>This behavior
+is ported in the function <code>sk_tract_tongue_shape</code>, where
+<code>position</code> and <code>diameter</code> are both
+<a href="/sndkit/normalized_range">normalized floating point values</a>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tract_tongue_shape(sk_tract *tract,
+                           SKFLT position,
+                           SKFLT diameter);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void set_diameters(sk_tract *tract,
+                          int blade_start,
+                          int lip_start,
+                          int tip_start,
+                          SKFLT tongue_index,
+                          SKFLT tongue_diameter,
+                          SKFLT *diameters)
+{
+    int i;
+    SKFLT t;
+    SKFLT fixed_tongue_diameter;
+    SKFLT curve;
+    int grid_offset = 0;
+
+    for(i = blade_start; i &lt; lip_start; i++) {
+        t = 1.1 * M_PI *
+            (SKFLT)(tongue_index - i)/(tip_start - blade_start);
+        fixed_tongue_diameter = 2+(tongue_diameter-2)/1.5;
+        curve = (1.5 - fixed_tongue_diameter + grid_offset) * cos(t);
+        if(i == blade_start - 2 || i == lip_start - 1) curve *= 0.8;
+        if(i == blade_start || i == lip_start - 2) curve *= 0.94;
+        diameters[i] = 1.5 - curve;
+    }
+}
+
+void sk_tract_tongue_shape(sk_tract *tract,
+                           SKFLT position,
+                           SKFLT diameter)
+{
+    position = 12 + 16.0 * position;
+    diameter = 3.5 * diameter;
+    set_diameters(tract, 10, 39, 32,
+                  position, diameter, tract-&gt;diameter);
+}</pre></code>
+
+<h2>Computing Audio</h2>
+
+
+<h3>Tick Function</h3>
+
+<p>A single sample of audio is computed with <code>sk_tract_tick</code>.
+It expects an input signal <code>in</code>, and returns a single
+sample.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tract_tick(sk_tract *tract, SKFLT in);</pre></code>
+<p></p>
+<p>There are two main things that happen here. First, the
+reflection coefficients for the ladder filter are
+calculated. Then, the input is computed. The output is then
+scaled and returned.
+</p>
+<p>Note that <code>tract_compute</code> is called twice, an artifact from
+Pink Trombone. Most likely this is done to simulate
+forward and backward propogation.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tract_tick(sk_tract *tr, SKFLT in)
+{
+    SKFLT tmp;
+    SKFLT out;
+
+    out = 0;
+
+    calculate_reflections(tr);
+    tmp = 0;
+
+    /* compute twice for forwards/backwards propogation */
+    tmp += tract_compute(tr, in);
+    tmp += tract_compute(tr, in);
+
+    out = tmp * 0.125;
+
+    return out;
+}</pre></code>
+
+<h3>Calculate Reflections</h3>
+
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void calculate_reflections(sk_tract *tr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void calculate_reflections(sk_tract *tr)
+{
+    int i;
+    SKFLT *diam;
+
+    diam = tr-&gt;diameter;
+
+    &lt;&lt;shapeit&gt;&gt;
+    &lt;&lt;calculate_areas&gt;&gt;
+    &lt;&lt;calculate_reflection_coefficients&gt;&gt;
+}</pre></code>
+<p></p>
+<p>If the <code>shape</code> function exists, call it.
+</p>
+<div><b><i>&lt;&lt;shapeit&gt;&gt;=</i></b></div><pre><code>if (tr-&gt;shape != NULL) {
+    tr-&gt;shape(tr, tr-&gt;diameter, tr-&gt;ud);
+}</pre></code>
+<p></p>
+<p>The cross-sectional areas are calculated by squaring
+the input diameters.
+</p>
+<div><b><i>&lt;&lt;calculate_areas&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; tr-&gt;n; i++) {
+    tr-&gt;A[i] = diam[i] * diam[i];
+}</pre></code>
+<p></p>
+<p>The reflection coefficients are calculated from the computed
+areas. This is the difference between neighboring areas over
+their sum:
+</p>
+<p><img src="/sndkit/_fig/tract_reflection_coefficient.png" alt="k_n = {{A_n - A_{n - 1}} \over {A_{n} + A_{n - 1}}}"srcset="/sndkit/_fig/tract_reflection_coefficient.png 1x,/sndkit/_fig/tract_reflection_coefficient2x.png 2x,">
+</p>
+<p>Where <img src="/sndkit/_fig/tract_kn.png" alt="k_n">
+ is known as the
+<code>scattering coefficient</code> or <code>reflection coefficient</code>, and
+<img src="/sndkit/_fig/tract_A.png" alt="A">
+ are the areas.
+</p>
+<p>(Adapted from Perry Cook's
+<b></b>Real Sound Synthesis for interactive Applications<b></b>, found
+on pg. 230)
+</p>
+<p>To prevent numerical issues, reflections are sent
+to a close-to-1 value if the area is exactly 0.
+</p>
+<div><b><i>&lt;&lt;calculate_reflection_coefficients&gt;&gt;=</i></b></div><pre><code>for(i = 1; i &lt; tr-&gt;n; i++) {
+    if(tr-&gt;A[i] == 0) {
+        tr-&gt;reflection[i] = 0.999; /* to prevent bad behavior if 0 */
+    } else {
+        tr-&gt;reflection[i] =
+            (tr-&gt;A[i - 1] - tr-&gt;A[i]) / (tr-&gt;A[i - 1] + tr-&gt;A[i]);
+    }
+}</pre></code>
+
+<h3>Tract Compute</h3>
+
+<p>A single pass of tract computation is done with
+<code>tract_compute</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT tract_compute(sk_tract *tr, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT tract_compute(sk_tract *tr, SKFLT in)
+{
+    SKFLT  r, w;
+    int i;
+    SKFLT out;
+
+    out = 0;
+
+    &lt;&lt;initial_junction_outputs&gt;&gt;
+    &lt;&lt;compute_scattering_junctions&gt;&gt;
+    &lt;&lt;update_delay_lines&gt;&gt;
+    &lt;&lt;get_output&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<p>The tract has air flow moving in two directions. The right
+direction is glottis. The left direction are the lips.
+</p>
+<div><b><i>&lt;&lt;initial_junction_outputs&gt;&gt;=</i></b></div><pre><code>tr-&gt;junction_outR[0] = tr-&gt;L[0] * tr-&gt;glottal_reflection + in;
+tr-&gt;junction_outL[tr-&gt;n - 1] = tr-&gt;R[tr-&gt;n - 1] * tr-&gt;lip_reflection;</pre></code>
+<p></p>
+<p>First, the left/right junction outputs are computed.
+</p>
+<p>The variable names used here are adapted from Jack Mullen's
+PhD dissertation, on the section on BiDirectional Waveguide
+Composition, in section 2.5.2, figure 2.77:
+</p>
+<p><img src="/sndkit/_fig/tract_mullen_KL_eqn.png" alt="\eqalign{
+w &= r[p^{+}_i - p^{+}_{i + 1}] \cr
+p^{-}_{i} &= p^{+}_{i + 1} + w \cr
+p^{-}_{i + 1} &= p^{+}_{i} + w \cr
+}"srcset="/sndkit/_fig/tract_mullen_KL_eqn.png 1x,/sndkit/_fig/tract_mullen_KL_eqn2x.png 2x,">
+</p>
+<div><b><i>&lt;&lt;compute_scattering_junctions&gt;&gt;=</i></b></div><pre><code>for(i = 1; i &lt; tr-&gt;n; i++) {
+    r = tr-&gt;reflection[i];
+    w = r * (tr-&gt;R[i - 1] + tr-&gt;L[i]);
+    tr-&gt;junction_outR[i] = tr-&gt;R[i - 1] - w;
+    tr-&gt;junction_outL[i - 1] = tr-&gt;L[i] + w;
+}</pre></code>
+<p></p>
+<p>The left and right delay lines are updated as
+attenuated versions of the junction ouputs.
+</p>
+<div><b><i>&lt;&lt;update_delay_lines&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; tr-&gt;n; i++) {
+    tr-&gt;R[i] = tr-&gt;junction_outR[i]*0.999;
+    tr-&gt;L[i] = tr-&gt;junction_outL[i]*0.999;
+}</pre></code>
+<p></p>
+<p>The output signal is the last sample in the right-moving
+delay line.
+</p>
+<div><b><i>&lt;&lt;get_output&gt;&gt;=</i></b></div><pre><code>out = tr-&gt;R[tr-&gt;n - 1];</pre></code>
+</div>
+</body>
+</html>
