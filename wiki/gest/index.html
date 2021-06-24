@@ -14,16 +14,60 @@
 
 <h2>Overview</h2>
 
-<p>Gest may someday be a tool for creating musical sound
-gestures that can be synchronized with
-an external clock source. It aims to be part sequencer,
-part line generator.
+<p>Gest (pronounced "jest") aims to someday be a sequencer for
+gestures. Conceptually, lies somewhere in between a classic
+step sequencer and an automation curve editor.
+</p>
+<p>Timing in Gest is controlled via an external clock signal,
+referred to as the <code>conductor</code> signal. The conductor signal
+is expected to be a <code>phasor</code>: a periodic rising ramp signal
+in range 0 and 1. Each period is considered as a musical
+beat in time.
+</p>
+<p>Once instantiated with a conductor signal, Gest can then
+be configured to produce <code>gestures</code>: audio-rate continuous
+control signals intended to modulate synthesis parameters
+(such as the frequency of an oscillator, or the cutoff of a
+filter). Gestures are chunked into groups known as
+<code>phrases</code>, which are blocked out to be a fixed duration
+in units of beats.
+</p>
+<p>A phrase, once created, will analyze the conductor signal
+and resynthesize a new slower signal by a factor of N beats,
+where N is the duration of the phrase. This will produce a
+single ramp from 0 to 1 that extends the duration of the
+phrase. This particular operation is known as a <code>monoramp</code>.
+This monoramp acts as a blank canvas for the phrase, and
+can be equally divided up into an arbitrary number of
+smaller ramps. This operation produces a <code>polyramp</code>.
+Contiguous ramp segments in a polyramp can be merged
+together into monoramps, and then divided into new
+polyramps. This process produces a tree of ramps, known
+as a <code>ramptree</code>.
+</p>
+<p>Every leaf node of a ramptree gets appended with a discrete
+scalar value known as a <code>target</code>. Using the normalized
+continuous values from the ramp tree, targets can be
+interpolated together to produce line segments. The way
+which a target gets to the next target is known as a
+<code>behavior</code>.
+</p>
+<p>A behavior can be any function that takes in an alpha value,
+and produce an output that involves two values A and B. It
+is typically assumed that behaviors try to be contiguous:
+when alpha is 0, the output should A. When alpha is 1, the
+output should be B.
+</p>
+<p>Some examples of behaviors can include: linear, exponential,
+step, and smoothstep.
 </p>
 
 <h2>Updates</h2>
 
 <p><blockquote>
-<b>2021-05-29 11:46:12</b>: I haven't figured out a convenient way to notate these gestures. Some sort of DSL probably. That's going to require some thought.
+<b>2021-06-24 09:25:31</b>: gave the (<a href="/wiki/gest">gest</a>) page an initial overview. it's a pretty good distillation of the concepts I have so far.
+</p>
+<p><b>2021-05-29 11:46:12</b>: I haven't figured out a convenient way to notate these gestures. Some sort of DSL probably. That's going to require some thought.
 </p>
 <p><b>2021-05-29 11:44:51</b>: these ramps would then be used as variables in sequencing generators for various interpolation methods to get from point A to point B.
 </p>
