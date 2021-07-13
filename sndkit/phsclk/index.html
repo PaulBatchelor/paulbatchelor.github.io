@@ -113,27 +113,45 @@ audio from an input signal <code>in</code>.
 the previous and current input phasor signals, and if
 there is a difference, make a tick.
 </p>
+<div><b><i>&lt;&lt;the_usual_way&gt;&gt;=</i></b></div><pre><code>int i, pi;
+SKFLT s, ps;
+s = in * pc-&gt;nticks;
+ps = pc-&gt;prev * pc-&gt;nticks;
+
+i = floor(s);
+pi = floor(ps);
+
+if (i != pi) out = 1;</pre></code>
+<p></p>
 <p><code>floor</code> will almost always truncate the decimal, and will
 almost always ensure that the value is between 0 and
 <code>nticks - 1</code>. The exception to this is when <code>in</code> is exactly
 1. This can somes cause extra ticks to happen, so a
 conditional is added to avoid this.
 </p>
+<p>The one edge case for this is when <code>nticks</code> is 1, which
+will cause a tick only to happen at the start of the phase.
+To handle this, phsclk will look for phase resets instead,
+which happens when the previous value is greater than
+the current value.
+</p>
+<p>This also will assume the phasor starts off at 0
+at the beginning, so an initial tick also gets
+generated.
+</p>
+<div><b><i>&lt;&lt;onetick_edgecase&gt;&gt;=</i></b></div><pre><code>if (pc-&gt;prev &gt; in || pc-&gt;prev == -1) out = 1;</pre></code>
+<p></p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_phsclk_tick(sk_phsclk *pc, SKFLT in)
 {
     SKFLT out;
     out = 0;
 
     if (in &lt; 1) {
-        int i, pi;
-        SKFLT s, ps;
-        s = in * pc-&gt;nticks;
-        ps = pc-&gt;prev * pc-&gt;nticks;
-
-        i = floor(s);
-        pi = floor(ps);
-
-        if (i != pi) out = 1;
+        if (pc-&gt;nticks == 1) {
+           &lt;&lt;onetick_edgecase&gt;&gt;
+        } else {
+            &lt;&lt;the_usual_way&gt;&gt;
+        }
     }
 
     pc-&gt;prev = in;

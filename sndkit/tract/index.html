@@ -202,6 +202,26 @@ void (*shape)(sk_tract *, SKFLT *, void *);</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>tr-&gt;shape = NULL;
 tr-&gt;ud = NULL;</pre></code>
 
+<h3>Use Diameters Flag</h3>
+
+<p>The <code>use_diameters</code> flag can be used to enable/disable
+the diameter control. If disabled, areas can be
+directly manipulated.
+</p>
+<div><b><i>&lt;&lt;sk_tract&gt;&gt;=</i></b></div><pre><code>int use_diameters;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_tract_use_diameters(tr, 1);</pre></code>
+<p></p>
+<p>It is set with the function <code>sk_tract_use_diameters</code>,
+where <code>mode</code> is true (1) or false (0).
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tract_use_diameters(sk_tract *tr, int mode);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tract_use_diameters(sk_tract *tr, int mode)
+{
+    tr-&gt;use_diameters = mode;
+}</pre></code>
+
 <h2>Diameter Manipulation</h2>
 
 <p>The vocal tract is controlled by mainpulating the
@@ -305,6 +325,42 @@ void sk_tract_tongue_shape(sk_tract *tract,
                   position, diameter, tract-&gt;diameter);
 }</pre></code>
 
+<h2>Area Manipulation</h2>
+
+<p>Sometimes it might be more adventageous to set the
+areas directly, rather than using the diameters (which
+are then squared and set as the area).
+</p>
+<p>To use areas directly, diameter control must be turned off.
+This done by setting the <code>use_diameters</code> flag to be false via
+<code>sk_tract_use_diameters</code>.
+</p>
+<p>Area shapes can be set using the function
+<code>sk_tract_set_area_shape</code>. This will set the shape of the area
+to be an array of size <code>sz</code>. If the array is larger than
+the current tract size, it will be truncated. If it is
+smaller, the last values will be padded with the last tract
+sample in the array.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tract_set_area_shape(sk_tract *tr, SKFLT *areas, int sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tract_set_area_shape(sk_tract *tr, SKFLT *areas, int sz)
+{
+    int n;
+    SKFLT last;
+
+    last = 0;
+
+    for (n = 0; n &lt; tr-&gt;n; n++) {
+        if (n &gt;= sz) {
+            tr-&gt;A[n] = last;
+        } else {
+            tr-&gt;A[n] = areas[n];
+            last = areas[n];
+        }
+    }
+}</pre></code>
+
 <h2>Computing Audio</h2>
 
 
@@ -361,16 +417,25 @@ forward and backward propogation.
 }</pre></code>
 <p></p>
 <p>If the <code>shape</code> function exists, call it.
+If <code>use_diameters</code> is enabled (by default it is),
+it will pass in the diameters as an output. Otherwise,
+it will pass in the areas <code>A</code> directly.
 </p>
 <div><b><i>&lt;&lt;shapeit&gt;&gt;=</i></b></div><pre><code>if (tr-&gt;shape != NULL) {
-    tr-&gt;shape(tr, tr-&gt;diameter, tr-&gt;ud);
+    if (tr-&gt;use_diameters)
+        tr-&gt;shape(tr, tr-&gt;diameter, tr-&gt;ud);
+    else
+        tr-&gt;shape(tr, tr-&gt;A, tr-&gt;ud);
 }</pre></code>
 <p></p>
 <p>The cross-sectional areas are calculated by squaring
-the input diameters.
+the input diameters. This will only happen if
+<code>use_diameters</code> is enabled.
 </p>
-<div><b><i>&lt;&lt;calculate_areas&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; tr-&gt;n; i++) {
-    tr-&gt;A[i] = diam[i] * diam[i];
+<div><b><i>&lt;&lt;calculate_areas&gt;&gt;=</i></b></div><pre><code>if (tr-&gt;use_diameters) {
+    for(i = 0; i &lt; tr-&gt;n; i++) {
+        tr-&gt;A[i] = diam[i] * diam[i];
+    }
 }</pre></code>
 <p></p>
 <p>The reflection coefficients are calculated from the computed
