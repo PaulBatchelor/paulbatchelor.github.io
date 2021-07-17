@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>4. Components</h2>
+
+<p><a id="wm_021_0068"></a></p>
+
+<h3>4.1. Conductor Analysis Components</h3>
+
+<p><a id="wm_021_0069"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT last;
+SKFLT last_inc;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;last = 0;
+g-&gt;last_inc = 0;</pre></code>
+<p></p>
+<p>When the previous sample is larger
+than the current sample, it is registered as a reset, and
+the reset flag is set.
+</p>
+
+<h3>4.2. Phase</h3>
+
+<p><a id="wm_021_0077"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT phs;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;phs = -1;</pre></code>
+
+<h3>4.3. Top/Selected Target and Cached Values</h3>
+
+<p><a id="wm_021_0082"></a>This is called <code>curtarget</code>.
+</p>
+<p>The top target from the first phrase is stored
+in a variable called <code>toptarget</code>. This is used
+so the last target of the last phrase can smoothly
+loop back to the top.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_target *curtarget;
+gest_target *toptarget;
+gest_target *nxttarget;
+int targetondeck;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;curtarget = NULL;
+g-&gt;toptarget = NULL;
+g-&gt;nxttarget = NULL;
+g-&gt;targetondeck = 0;</pre></code>
+<p></p>
+<p>Value for the current and next targets are cached
+for faster accessibility.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT curval;
+SKFLT nxtval;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;curval = 0;
+g-&gt;nxtval = 0;</pre></code>
+<p></p>
+<p>Update the current target with <code>set_curtarget</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void set_curtarget(gest_d *g, gest_target *target);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void set_curtarget(gest_d *g, gest_target *target)
+{
+    g-&gt;curtarget = target;
+    g-&gt;curval = target-&gt;value;
+
+    if (target-&gt;next != NULL) {
+        g-&gt;nxtval = target-&gt;next-&gt;value;
+    } else {
+        g-&gt;nxtval = g-&gt;curval;
+    }
+
+    apply_weight(g, target);
+}</pre></code>
+<p></p>
+<p>A next target is needed because during computation, the
+previous state is always used, and therefore
+the previous targets are needed.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void set_nxttarget(gest_d *g, gest_target *target);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void set_nxttarget(gest_d *g, gest_target *target)
+{
+    g-&gt;nxttarget = target;
+    g-&gt;targetondeck = 1;
+}</pre></code>
+
+<h3>4.4. Stack</h3>
+
+<p><a id="wm_021_0104"></a>Tree nodes create a new layer every time it descends into
+children nodes. This is managed with a stack containing the
+parent node and current state. When a node begins, it
+pushes itself onto the stack, and pops itself off when it
+ends.
+</p>
+
+<h3>4.5. Modifier</h3>
+
+<p><a id="wm_021_0106"></a>The modifier is a value which mainpulates the increment
+value calculated from the analyzing the conductor signal.
+</p>
+<p>It is represented as a rational value with a numerator and
+denominator, represented as integers.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int num;
+int den;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;num = 1;
+g-&gt;den = 1;</pre></code>
+<p></p>
+<p>Monoramps manipulate
+the numerator, increasing the increment value by a factor
+and slowing it down. Polyramps manpulate the denominator,
+decreasing the increment amount and speeding it up.
+</p>
+
+<h3>4.6. Top/Selected Phrases</h3>
+
+<p><a id="wm_021_0113"></a>Gestures are created in units of phrases, so a few
+variable references are stored here.
+</p>
+<p>For starters, the starting phrase is stored in a variable
+called <code>phrase_top</code>. It is expected that the gesture will
+iterate in a (mostly) linear fashion as a linked list.
+</p>
+<p>When populating and computing gest, the currently
+selected phrase is stored in a variable called
+<code>phrase_selected</code>.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_phrase *phrase_top;
+gest_phrase *phrase_selected;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;phrase_top = NULL;
+g-&gt;phrase_selected = NULL;</pre></code>
+
+<h3>4.7. Collection</h3>
+
+<p><a id="wm_021_0119"></a>A local instance of a <code>gest_collection</code>, used to allocate
+components needed to make gestures.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_collection col;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>collection_init(&g-&gt;col);</pre></code>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>collection_cleanup(&g-&gt;col);</pre></code>
+
+<h3>4.8. Selected Ramp Tree Node</h3>
+
+<p><a id="wm_021_0128"></a>A copy of the currently selected ramp tree node
+is stored in a variable called <code>curnode</code>.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_node *curnode;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;curnode = NULL;</pre></code>
+<p></p>
+<p>select it with <code>set_curnode</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void set_curnode(gest_d *g, gest_node *node);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void set_curnode(gest_d *g, gest_node *node)
+{
+    g-&gt;curnode = node;
+}</pre></code>
+
+<h3>4.9. Phasor Error</h3>
+
+<p><a id="wm_021_0139"></a>Any time the ramp/phasor wraps around, the carry over
+gets saved to an error variable, which is factored
+into the next ramp.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT error;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;error = 0;</pre></code>
+
+<h3>4.10. Node Position</h3>
+
+<p><a id="wm_021_0145"></a>Needed for debugging.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int nodepos;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;nodepos = 0;</pre></code>
+
+<h3>4.11. Global Temporal Inertia and Mass</h3>
+
+<p><a id="wm_021_0151"></a>The global inertia and mass amounts used for
+temporal weight.
+</p>
+<p>Targets in Gest can manipulate the external conductor
+signal, causing temporal fluctuations. Tempo can be
+slowed down or sped up by changing the mass. The
+rate at which the changes happen is measured with
+inertia.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT inertia;
+SKFLT mass;</pre></code>
+<p></p>
+<p>By default, the mass is set to be regular (0) with
+instantaneous inertia (0).
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;inertia = 0;
+g-&gt;mass = 0;</pre></code>
+<p></p>
+<p>Getters are <code>gest_mass_get</code> and <code>gest_inertia_get</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_mass_get(gest_d *g);
+SKFLT gest_inertia_get(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_mass_get(gest_d *g)
+{
+    return g-&gt;mass;
+}
+
+SKFLT gest_inertia_get(gest_d *g)
+{
+    return g-&gt;inertia;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0026">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0163">next</a></p>
+</div>
+</body>
+</html>

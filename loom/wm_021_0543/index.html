@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>13. Computation</h2>
+
+<p><a id="wm_021_0543"></a>Gest is synthesized with <code>gest_tick</code>. It expects
+a conductor phasor signal <code>conductor</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_tick(gest_d *g, SKFLT conductor);</pre></code>
+<p></p>
+<p>Analysis. The conductor signal is analyzed, and used to
+drive the timing in the Ramp Tree. The previous conductor
+signal is subtracted from the current one to produce
+the phasor increment amount <code>inc</code>.
+</p>
+<p>A phase reset is detected if the current conductor value
+is less than the previous. A reset flag is set, and
+the sign of the increment value is flipped to be positive.
+</p>
+<div><b><i>&lt;&lt;analysis&gt;&gt;=</i></b></div><pre><code>inc = conductor - g-&gt;last;
+reset = 0;
+
+if (conductor &lt; g-&gt;last) {
+    inc = g-&gt;last_inc;
+    reset = 1;
+}
+
+g-&gt;last_inc = inc;
+
+if (g-&gt;phs == -1) {
+    g-&gt;phs = 0;
+    reset = 1;
+}
+
+g-&gt;last = conductor;</pre></code>
+<p></p>
+<p>Conductor analysis components, the ramp tree can then be
+computed with <code>ramptree_step</code>, which updates the state of
+the tree and returns the tramptree value.
+</p>
+<div><b><i>&lt;&lt;compute_ramptree&gt;&gt;=</i></b></div><pre><code>out = ramptree_step(g, inc, reset);</pre></code>
+<p></p>
+<p>With the computed ramp tree value in hand, the current
+target's tick function can be called. This function returns
+the output gesture.
+</p>
+<div><b><i>&lt;&lt;apply_targets&gt;&gt;=</i></b></div><pre><code>if (g-&gt;curtarget != NULL) {
+    out = g-&gt;curtarget-&gt;tick(g,
+                             g-&gt;curval, g-&gt;nxtval,
+                             out,
+                             g-&gt;curtarget-&gt;ud);
+}</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_tick(gest_d *g, SKFLT conductor)
+{
+    SKFLT out;
+    SKFLT inc;
+    int reset;
+
+    out = 0;
+
+&lt;&lt;analysis&gt;&gt;
+&lt;&lt;compute_ramptree&gt;&gt;
+&lt;&lt;apply_targets&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0472">prev</a> | <a href="#">home</a> | next</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>10. Stepping Through The Ramp Tree</h2>
+
+<p><a id="wm_021_0375"></a>A big part of gest involves stepping through a ramp tree.
+A ramp tree produces a set of normalized ramp values
+from 0 to 1, whose period lengths are proportional
+to the external conductor signal. These values
+can then be used to interpolate between targets.
+</p>
+<p>The ramp tree value is computed with <code>ramptree_step</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT ramptree_step(gest_d *g, SKFLT inc, int reset);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT ramptree_step(gest_d *g, SKFLT inc, int reset)
+{
+    SKFLT out;
+    SKFLT phs;
+
+    out = 0;
+
+    phs = g-&gt;phs;
+
+    if (g-&gt;phrase_selected == NULL) return phs;
+
+&lt;&lt;set_the_output&gt;&gt;
+&lt;&lt;update_targets&gt;&gt;
+&lt;&lt;update_phase&gt;&gt;
+&lt;&lt;check_and_update&gt;&gt;
+
+    g-&gt;phs = phs;
+
+    return out;
+}</pre></code>
+
+<h3>10.1. Setting the Output</h3>
+
+<p><a id="wm_021_0389"></a>The point of this function is to update the overall state of
+the ramp trees in gest and return a corresponding ramp
+value.
+</p>
+<p>The returned value is the computation done on the previous
+call to <code>ramptree_step</code>.
+</p>
+<div><b><i>&lt;&lt;set_the_output&gt;&gt;=</i></b></div><pre><code>out = g-&gt;phs;</pre></code>
+
+<h3>10.2. Updating Targets</h3>
+
+<p><a id="wm_021_0394"></a>If any targets were slotted to be updated in the previous
+call, update them now, then clear the flag.
+</p>
+<div><b><i>&lt;&lt;update_targets&gt;&gt;=</i></b></div><pre><code>if (g-&gt;targetondeck) {
+    g-&gt;targetondeck = 0;
+    set_curtarget(g, g-&gt;nxttarget);
+    g-&gt;nxttarget = NULL;
+}</pre></code>
+
+<h3>10.3. Updating the phase using modifier and friends</h3>
+
+<p><a id="wm_021_0399"></a>To begin, the modifier amount is calculated.
+</p>
+<p>The modifier and increment amount are used together to
+update the existing phase.
+</p>
+<div><b><i>&lt;&lt;update_phase&gt;&gt;=</i></b></div><pre><code>phs += inc * ((SKFLT)g-&gt;num / g-&gt;den) * g-&gt;phrase_selected-&gt;mod;
+g-&gt;error = 0;</pre></code>
+<p></p>
+<p>The phase is then checked to see if it has exceeded 1.
+If it has, a change in nodes is required.
+</p>
+<div><b><i>&lt;&lt;check_and_update&gt;&gt;=</i></b></div><pre><code>if (phs &gt; 1.0) {
+&lt;&lt;find_next_node&gt;&gt;
+&lt;&lt;wraparound&gt;&gt;
+}</pre></code>
+
+<h3>10.4. Finding the Next Node</h3>
+
+<p><a id="wm_021_0412"></a>When the ramp reaches the end, it is time to find the next
+node with a target. It does this by traversing the Ramp
+Tree based on the position the current node is in.
+</p>
+<p>Traversal starts large and gets smaller.
+</p>
+<p>To begin, check and see if the next node happens to be in
+the next phrase. That would mean the currently selected
+node is the right-most node (no nodes after it)
+in the top of the tree. If this is true, the next phrase is
+found (assuming there is one), and configured to point to
+the first one.
+</p>
+<p>If it's not the top of the tree, there is a general check
+to see if the current node is the right-most node relative
+to the position in the tree. If so, the node reverts the
+global modification it did, and goes up one level to the
+parent node to check the next node there.
+</p>
+<p>Finally, the next node is found, and the program recursively
+dives into it to find the next target, applying modifiers
+along the way. Before that happens, the current node <b>may</b>need to revert the global modifier if it is a monoramp
+with a modifier greater than 1.
+</p>
+<p>If the next node happens to be a monoramp with a modifier
+greater than 1, it will also apply modifications. But should
+be handled inside of <code>dive_to_target</code>.
+</p>
+<div><b><i>&lt;&lt;find_next_node&gt;&gt;=</i></b></div><pre><code>gest_node *next;
+gest_node *top;
+gest_node *last_reverted;
+
+next = NULL;
+last_reverted = NULL;
+
+/* maybe there needs to be a curchild? */
+/* or, maybe the top gets derived from the parent node */
+top = g-&gt;curnode;
+while (next == NULL) {
+    if (top == g-&gt;phrase_selected-&gt;top) {
+        /* are we at the end */
+        /* if so, go to next phrase */
+        if (top-&gt;next == NULL) {
+            g-&gt;phrase_selected = g-&gt;phrase_selected-&gt;next;
+            /* children points to first child node */
+
+            if (g-&gt;phrase_selected == NULL) {
+                break;
+            }
+
+            next = g-&gt;phrase_selected-&gt;top;
+            /* reset modifier */
+            g-&gt;num = 1;
+            g-&gt;den = 1;
+            next = dive_to_target(g, next);
+            set_nxttarget(g, next-&gt;target);
+        } else {
+            /* go to next child in top polyramp node */
+            next = top-&gt;next;
+
+            if (next-&gt;target == NULL) {
+                next = dive_to_target(g, next);
+            }
+
+            set_nxttarget(g, next-&gt;target);
+        }
+    } else if (top-&gt;next == NULL) {
+        revert_modifier(g, top-&gt;parent);
+        last_reverted = top-&gt;parent;
+        top = top-&gt;parent;
+    } else {
+        next = top-&gt;next;
+
+        /* if top is a monoramp &gt;1, revert it */
+
+        if (top != last_reverted) {
+            if (top-&gt;type == NODE_MONORAMP && top-&gt;modifier &gt; 1) {
+                /* revert the monoramp */
+                revert_modifier(g, top);
+            }
+        }
+
+        /* dive_to_target applies modifiers */
+        /* continguous nodes on the same level don't have these */
+        if (next-&gt;target == NULL) {
+            next = dive_to_target(g, next);
+        }
+
+        set_nxttarget(g, next-&gt;target);
+    }
+}
+
+set_curnode(g, next);</pre></code>
+<p></p>
+<p>A phrase is considered over when it reaches the end of the
+top-level polyramp. At this point, the next phrase is found
+and set to be the beginning of that node.
+</p>
+<p>All ramps begin exactly at 0. When wraparound happens,
+the roundoff error is stored in the error variable.
+</p>
+<div><b><i>&lt;&lt;wraparound&gt;&gt;=</i></b></div><pre><code>while (phs &gt; 1) phs--;
+g-&gt;error = phs;
+phs = 0;</pre></code>
+
+<h3>10.5. Handling Roundoff Error in Phrases</h3>
+
+<p><a id="wm_021_0421"></a>Roundoff error is a natural part of working with floating
+point, and difficult to avoid entirely. Roundoff error
+in this context leads to temporal drift in the timing
+signal. Unchecked, this will eventually lead to phrases
+being completly out of step with the rest of the music
+surrounding it.
+</p>
+<p>Chunking gestures into phrases helps thwart some of the
+major drift buildup that can occur over time. Phrases
+ensure that any drift is localized, which, if the phrases
+are small enough, should be quite negligible for most
+musical purposes.
+</p>
+<p>The Ramp Tree in a phrase applies many manipulations to a
+phasor signal, and this can cause phrases to either finish
+too quickly or too slowly. If choosing one or the other,
+finishing too quickly is always the preference.
+</p>
+<p>If a phrase ends before the conductor does, it is told to
+wait. While waiting, it will only return 1 without updating
+any state. When the conductor finally does catch up, the
+phrase will be granted permission to move on to the next
+phrase.
+</p>
+<p>Every time the phasor in a conductor signal resets (wraps
+back), it registered as a new beat. This beat gives gest
+an opportunity to "check in" with itself. Is it going ahead
+of schedule? Behind? And then, try to make the appropriate
+corrections.
+</p>
+<p>The progress of a phrase is kept inside of a monoramp that
+spans the duration of the phrase, and the beat position is
+kept track of as a sort of counter. A new beat indicates the
+ideal time position, which can be compared against the the
+actual position in the progress monoramp.
+</p>
+<p>Dividing the ideal position and actual position gives us
+a correction factor that slightly speeds up or slows down
+the phasor within the beat. If the ideal is a bit farther
+along, the correction factor will be a value greater than 1
+that runs to catch up. If the ideal is a bit behind, the
+factor will be less than 1, and will hold things back until
+the next beat.
+</p>
+<p>With any luck, the phrase will end just slightly before
+the conductor, allowing it to wait for the next signal.
+This happens when the monoramp exceeds 1 and/or the ramp
+tree hits the end of the phrase. At any rate, a flag is set.
+</p>
+<p>There can also be cases where the phrase is too slow.
+Hopefully, it is fast enough to be wrapping up the last
+target in the ramp tree. This is detected when a beat
+happens that is past the duration of the phrase. When
+this happens, the phrase is reset early, and caution
+is scattered to the wind. It's not an ideal situation, as
+this has the potential to create an audible glitch in the
+gesture.
+</p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0260">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0423">next</a></p>
+</div>
+</body>
+</html>

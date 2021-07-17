@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>5. Core Commands</h2>
+
+<p><a id="wm_021_0163"></a>Some core commands for programming.
+</p>
+
+<h3>5.1. Begin</h3>
+
+<p><a id="wm_021_0165"></a>Begin: begins a phrase. Takes in duration (in beats) as an
+argument.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_begin(gest_d *g, int beats, int div);</pre></code>
+<p></p>
+<p>The begin command creates and initializes a new phrase,
+which then gets appended to the last phrase.
+</p>
+<p>The first phrase to get created becomes the beginning
+phrase in gest.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_begin(gest_d *g, int beats, int div)
+{
+    gest_phrase *phrase;
+
+    phrase = gest_alloc(g, sizeof(gest_phrase));
+
+    phrase_init(g, phrase, beats, div);
+
+    if (g-&gt;phrase_top == NULL) {
+        g-&gt;phrase_top = phrase;
+    }
+
+    if (g-&gt;phrase_selected != NULL) {
+        g-&gt;phrase_selected-&gt;next = phrase;
+    }
+
+    g-&gt;phrase_selected = phrase;
+    set_curnode(g, g-&gt;phrase_selected-&gt;top);
+}</pre></code>
+
+<h3>5.2. End</h3>
+
+<p><a id="wm_021_0172"></a>End: closes out the phrase. If the phrase isn't fully
+completed a non-zero value is returned.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_end(gest_d *g);</pre></code>
+<p></p>
+<p>Error checking is done by examining the top-level polyramp
+in the currently selected phrase. A completed phrase will
+have every child node capped with a target.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_end(gest_d *g)
+{
+    return 0;
+}</pre></code>
+
+<h3>5.3. Polyramp</h3>
+
+<p><a id="wm_021_0179"></a>Polyramp: Takes the current ramp, and divides it up into N
+beats.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_polyramp(gest_d *g, int div);</pre></code>
+<p></p>
+<p>When a new polyramp node is made, it's node becomes
+the actively selected node to be populated. If something
+goes wrong, an non-zero error value is returned/
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_polyramp(gest_d *g, int div)
+{
+    gest_node *n;
+
+    n = mkpolyramp(g, g-&gt;curnode, div);
+
+    if (n == NULL) {
+        return 1;
+    }
+
+    set_curnode(g, n);
+
+    return 0;
+}</pre></code>
+
+<h3>5.4. Monoramp</h3>
+
+<p><a id="wm_021_0186"></a>Monoramp: Produces a monoramp that takes up N beats.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_monoramp(gest_d *g, int nbeats);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_monoramp(gest_d *g, int nbeats)
+{
+    gest_node *n;
+
+    n = mkmonoramp(g, g-&gt;curnode, nbeats);
+
+    if (n == NULL) {
+        return 1;
+    }
+
+    set_curnode(g, n);
+
+    return 0;
+}</pre></code>
+
+<h3>5.5. Addtarget (maybe call this cap?)</h3>
+
+<p><a id="wm_021_0192"></a>Target: Caps the current ramp with a scalar target, as a
+floating point value. uses linear behavior by default.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addtarget(gest_d *g, SKFLT val);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_addtarget(gest_d *g, SKFLT val)
+{
+    gest_target *t;
+
+    t = mktarget(g);
+
+    if (g-&gt;toptarget == NULL) {
+        g-&gt;toptarget = t;
+    }
+
+
+    if (t == NULL) {
+        return 1;
+    }
+
+    if (g-&gt;curtarget != NULL) {
+        g-&gt;curtarget-&gt;next = t;
+    }
+    g-&gt;curtarget = t;
+    t-&gt;value = val;
+    gest_behavior_linear(g);
+
+    return 0;
+}</pre></code>
+
+<h3>5.6. Finish</h3>
+
+<p><a id="wm_021_0198"></a>The finish command <code>gest_finish</code> completes population
+and initializes gest to start at the top.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_finish(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_finish(gest_d *g)
+{
+    gest_node *top;
+
+    g-&gt;den = 1;
+    g-&gt;num = 1;
+
+    g-&gt;phrase_selected = g-&gt;phrase_top;
+
+    top = dive_to_target(g, g-&gt;phrase_top-&gt;top);
+
+    set_curnode(g, top);
+    set_curtarget(g, top-&gt;target);
+}</pre></code>
+
+<h3>5.7. Loopit</h3>
+
+<p><a id="wm_021_0204"></a>The command <code>gest_loopit</code> will loop the current phrase back
+to the beginning phrase.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_loopit(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_loopit(gest_d *g)
+{
+    g-&gt;curtarget-&gt;next = g-&gt;toptarget;
+    g-&gt;phrase_selected-&gt;next = g-&gt;phrase_top;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0068">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0210">next</a></p>
+</div>
+</body>
+</html>
