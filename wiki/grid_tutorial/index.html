@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Controlling the Grid with libmonome and C</title>
+<h1>Controlling the Grid with libmonome and C</h1>
+
+<h2>Introduction</h2>
+
+<p>This guide aims to show how someone can use libmonome
+to control the grid from C.
+</p>
+<p>Why do this? The big advantage that libmonome provides is
+that it doesn't require serialosc or OSC at all. The OSC
+communications layer, usually built on top of the UDP
+networking protocol, introduces a non-trivial amount of
+overhead. Using libmonome to directly control the grid will
+will make the grid consistently more responsive, and also
+much easier to debug.
+</p>
+<p>The assumption here is that readers are already familiar
+with the C programming language and building programs from
+the commandline. The presented code has been tested to work
+on both Linux and OSX.
+</p>
+<p>Writing a program using the Grid can boiled down to three
+things: A. handling button presses (down and up), B.
+controlling the LED lights (on and off), and C. making other
+things happen while managing the grid (making sound, video,
+etc). This guide/tutorial will address (A) and (B) directly,
+while paving the way for (C).
+</p>
+
+<h2>Hello Grid</h2>
+
+<p>To begin, here's very simple "hello grid" program:
+</p>
+<div><b><i>&lt;&lt;00_hello.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include &lt;monome.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+
+unsigned int grid[16][16];
+
+void handle_press(const monome_event_t *e, void *data) {
+    unsigned int x, y;
+
+    x = e-&gt;grid.x;
+    y = e-&gt;grid.y;
+
+    /* toggle the button */
+    grid[x][y] = !grid[x][y];
+    monome_led_set(e-&gt;monome, x, y, grid[x][y]);
+}
+
+int main(int argc, char *argv[]) {
+    monome_t *monome;
+
+    if (argc &lt; 2) {
+        printf("Usage %s device_path\n", argv[0]);
+        return 1;
+    }
+
+    int x, y;
+
+    for(x = 0; x &lt; 16; x++)
+        for(y = 0; y &lt; 16; y++) grid[x][y] = 0;
+
+    if( !(monome = monome_open(argv[1], "8000")) )
+        return -1;
+
+    monome_led_all(monome, 0);
+
+    monome_register_handler(monome, MONOME_BUTTON_DOWN, handle_press, NULL);
+
+    monome_event_loop(monome);
+
+    monome_close(monome);
+    return 0;
+}</pre></code>
+<p></p>
+<p>The monome interface manages state in a struct
+called <code>monome_t</code>.
+</p>
+<p><code>monome_open</code> opens the monome device. Automatically will use
+OSC or serial directly based on filename. (This is
+important!)
+</p>
+<p><code>monome_led_all</code> will efficiently toggle all LEDs to be
+in and on or off state. It's being used to turn everything
+off (far more useful than turning everything on).
+</p>
+<p><code>monome_register_handler</code> will register a callback to
+the event loop. In this case, it's the <code>MONOME_BUTTON_DOWN</code>callback, which is the function created called
+<code>handle_press</code>. This will get called every time a button
+is pushed.
+</p>
+<p><code>monome_event_loop</code> begins the event loop and starts
+listening to events.
+</p>
+<p><code>monome_close</code> will cleanly close the monome listener.
+However, in this current setup, it will never get here.
+More on that later.
+</p>
+<p><code>monome_led_set</code> is used to light a single led at a
+particular XY coordinate.
+</p>
+
+<h2>Breaking out the event loop</h2>
+
+<p>A more practical version of the previous example is shown
+below. Here, a signal interrupt is added so that it is
+possible to break out of the loop and cleanly exit
+with `monomeevent_loop` is replaced with
+a small while loop, with a small delay added so as to not
+eat up CPU cycles.
+</p>
+<p>The new monome function here is used,
+<code>monome_event_handle_next</code>, which is what
+<code>monome_event_loop</code> was calling to process events.
+</p>
+<p>Not only is this approach allow for a more graceful exit,
+but it also a more practical way to use it in larger
+pieces of software.
+</p>
+<div><b><i>&lt;&lt;01_eventloop.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include &lt;monome.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+
+unsigned int grid[16][16];
+
+static volatile int is_running = 1;
+
+void handle_press(const monome_event_t *e, void *data) {
+    unsigned int x, y;
+
+    x = e-&gt;grid.x;
+    y = e-&gt;grid.y;
+
+    /* toggle the button */
+    grid[x][y] = !grid[x][y];
+    monome_led_set(e-&gt;monome, x, y, grid[x][y]);
+}
+
+static void please_close(int sig)
+{
+    is_running = 0;
+}
+
+int main(int argc, char *argv[]) {
+    monome_t *monome;
+    int x, y;
+
+    if (argc &lt; 2) {
+        printf("Usage %s device_path\n", argv[0]);
+        return 1;
+    }
+
+    signal(SIGINT, please_close);
+
+    for(x = 0; x &lt; 16; x++)
+        for(y = 0; y &lt; 16; y++) grid[x][y] = 0;
+
+    if( !(monome = monome_open(argv[1], "8000")) )
+        return -1;
+
+    monome_led_all(monome, 0);
+
+    monome_register_handler(monome, MONOME_BUTTON_DOWN, handle_press, NULL);
+
+    while(is_running) {
+        while(monome_event_handle_next(monome));
+        usleep(800);
+    }
+
+    printf("Closing!\n");
+    monome_led_all(monome, 0);
+    monome_close(monome);
+    return 0;
+}</pre></code>
+
+<h2>More Efficient Drawing</h2>
+
+<p>As monome applications get more complex, independently
+setting LEDs with `monomeset` becomes noticeably slow.
+A more efficient route would involve setting LEDs one
+row at a time <code>monome_led_row</code> (8 calls on a
+regular Grid) or one quad at a time using
+<code>monome_led_map</code> (2 calls on a regular Grid).
+</p>
+<p>This toggle LED example will be reworked to use quads
+with <code>monome_led_map</code>, as it is the most efficient way
+to draw a bunch of LEDs.
+</p>
+<div><b><i>&lt;&lt;02_more_efficient.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include &lt;monome.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdint.h&gt;
+
+uint16_t grid[8];
+static int please_draw = 0;
+
+static uint8_t quadL[8];
+static uint8_t quadR[8];
+
+static volatile int is_running = 1;
+
+void handle_press(const monome_event_t *e, void *data) {
+    unsigned int x, y;
+    int s;
+    uint8_t *q;
+
+    x = e-&gt;grid.x;
+    y = e-&gt;grid.y;
+
+    if (x &gt;= 8) {
+        q = quadR;
+        x -= 8;
+    } else {
+        q = quadL;
+    }
+
+    s = (q[y] & (1 &lt;&lt; x)) ? 0 : 1;
+
+    if (s) {
+        q[y] |= 1 &lt;&lt; x;
+    } else {
+        q[y] &= ~(1 &lt;&lt; x);
+    }
+
+    please_draw = 1;
+}
+
+static void redraw(monome_t *m, uint16_t *g)
+{
+    if (please_draw) {
+        please_draw = 0;
+        monome_led_map(m, 0, 0, quadL);
+        monome_led_map(m, 255, 0, quadR);
+    }
+}
+
+static void please_close(int sig)
+{
+    is_running = 0;
+}
+
+int main(int argc, char *argv[]) {
+    monome_t *monome;
+
+    int y;
+
+    if (argc &lt; 2) {
+        printf("Usage %s device_path\n", argv[0]);
+        return 1;
+    }
+
+    signal(SIGINT, please_close);
+
+    for (y = 0; y &lt; 8; y++) {
+        quadL[y] = 0;
+        quadR[y] = 0;
+    }
+
+    if( !(monome = monome_open(argv[1], "8000")) )
+        return -1;
+
+    monome_led_all(monome, 0);
+
+    monome_register_handler(monome, MONOME_BUTTON_DOWN, handle_press, NULL);
+
+    while(is_running) {
+        while(monome_event_handle_next(monome));
+        redraw(monome, grid);
+        usleep(800);
+    }
+
+    printf("Closing!\n");
+
+    monome_led_all(monome, 0);
+    monome_close(monome);
+    return 0;
+}</pre></code>
+
+<h2>A more interesting example</h2>
+
+<p>Using <code>monome_led_map</code> to redraw the entire screen every
+time a single LED button is toggled feels a bit overkill.
+This drawing approach really shines when many parts
+of the grid need to be redrawn, quickly.
+</p>
+<p>So, our simple toggle app will be modified a bit to
+add some flair: every time a part of the grid is toggled,
+it will produce a virtual ripple.
+</p>
+<p>To accomplish this, LEDs on the grid will be treated more
+like pixels on a very low resolution framebuffer. State
+will be maintained for the toggled states and ripple
+animations separately, and then drawn on the Grid at the
+last minute.
+</p>
+<div><b><i>&lt;&lt;03_ripples.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include &lt;monome.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;sys/time.h&gt;
+
+uint16_t grid[8];
+static int please_draw = 0;
+static int please_update = 0;
+
+static uint8_t quadL[8];
+static uint8_t quadR[8];
+
+static volatile int is_running = 1;
+
+struct ripple {
+    int cx;
+    int cy;
+    int size;
+    int count;
+    struct ripple *next;
+};
+
+#define MAXRIPPLES 8
+
+struct ripple_stack {
+    struct ripple stack[MAXRIPPLES];
+    struct ripple *head, *tail;
+    int size;
+};
+
+struct ripple_stack rstack;
+
+void set_led(int x, int y, int s)
+{
+    uint8_t *q;
+
+    if (x &gt;= 8) {
+        q = quadR;
+        x -= 8;
+    } else {
+        q = quadL;
+    }
+
+    if (s) {
+        q[y] |= 1 &lt;&lt; x;
+    } else {
+        q[y] &= ~(1 &lt;&lt; x);
+    }
+}
+
+void clear_screen(void)
+{
+    int i;
+    for (i = 0; i &lt; 8; i++) {
+        quadL[i] = 0;
+        quadR[i] = 0;
+    }
+}
+
+void ripple_stack_init(struct ripple_stack *rs)
+{
+    int i;
+    struct ripple *rip, *last;
+
+    last = NULL;
+    for (i = 0; i &lt; MAXRIPPLES; i++) {
+        rip = &rs-&gt;stack[i];
+        rip-&gt;cx = 0;
+        rip-&gt;cy = 0;
+        rip-&gt;size = 0;
+        rip-&gt;count = 1;
+
+        if (last != NULL) last-&gt;next = rip;
+        last = rip;
+    }
+
+    last-&gt;next = &rs-&gt;stack[0];
+
+    rs-&gt;size = 0;
+    rs-&gt;head = NULL;
+    rs-&gt;tail = NULL;
+}
+
+void ripple_stack_add(struct ripple_stack *rs, int x, int y)
+{
+    struct ripple *rip;
+    if (rs-&gt;size &gt;= MAXRIPPLES) return;
+
+    rip = NULL;
+
+    if (rs-&gt;size == 0) {
+        rip = &rs-&gt;stack[0];
+        rs-&gt;head = rip;
+    } else {
+        rip = rs-&gt;tail-&gt;next;
+    }
+
+    rip-&gt;cx = x;
+    rip-&gt;cy = y;
+    rip-&gt;size = 0;
+    rip-&gt;count = 3;
+
+    rs-&gt;tail = rip;
+    rs-&gt;size++;
+}
+
+void draw_rect(int xpos, int ypos, int w, int h)
+{
+    int i;
+
+    /* top horizontal */
+
+    if (ypos &gt;= 0 && ypos &lt; 8) {
+        for (i = 0; i &lt; w; i++) {
+            int pos;
+            pos = xpos + i;
+            if (pos &gt;= 16) break;
+            set_led(pos, ypos, 1);
+        }
+    }
+
+    /* left vertical */
+
+    if (xpos &gt;= 0 && xpos &lt; 16 ) {
+        for (i = 0; i &lt; h; i++) {
+            int pos;
+            pos = ypos + i;
+            if (pos &lt; 8 && pos &gt;= 0) {
+                set_led(xpos, pos, 1);
+            }
+        }
+    }
+
+    /* bottom horizontal */
+
+    ypos += h - 1;
+
+    if (ypos &gt;= 0 && ypos &lt; 8) {
+        for (i = 0; i &lt; w; i++) {
+            int pos;
+            pos = xpos + i;
+            if (pos &gt;= 16) break;
+            set_led(pos, ypos, 1);
+        }
+    }
+
+    /* right vertical */
+
+    xpos += w - 1;
+    ypos -= h - 1;
+
+    if (xpos &gt;= 0 && xpos &lt; 16) {
+        for (i = 0; i &lt; h; i++) {
+            int pos;
+            pos = ypos + i;
+            if (pos &lt; 8 && pos &gt;= 0) {
+                set_led(xpos, pos, 1);
+            }
+        }
+    }
+}
+
+void ripple_stack_draw(struct ripple_stack *rs)
+{
+    int r;
+    struct ripple *head , *cur;
+    int size;
+    clear_screen();
+
+    head = rs-&gt;head;
+    cur = head;
+    size = rs-&gt;size;
+
+    for (r = 0; r &lt; size; r++) {
+        int x, y, w, h;
+        x = cur-&gt;cx - cur-&gt;size;
+        y = cur-&gt;cy - cur-&gt;size;
+        w = ((cur-&gt;size + 1) * 2) - 1;
+        h = w;
+        draw_rect(x, y, w, h);
+        cur = cur-&gt;next;
+    }
+}
+
+void ripple_stack_update(struct ripple_stack *rs)
+{
+    int r;
+    struct ripple *head , *cur;
+    int size;
+
+    head = rs-&gt;head;
+    cur = head;
+    size = rs-&gt;size;
+
+    for (r = 0; r &lt; size; r++) {
+        cur-&gt;size++;
+        if (cur-&gt;size &gt; 8) {
+            cur-&gt;count--;
+            cur-&gt;size = 0;
+            if (cur-&gt;count &lt;= 0) {
+                head = cur-&gt;next;
+                rs-&gt;size--;
+            }
+        }
+        cur = cur-&gt;next;
+    }
+
+    rs-&gt;head = head;
+}
+
+void handle_press(const monome_event_t *e, void *data) {
+    unsigned int x, y;
+    int s;
+
+    x = e-&gt;grid.x;
+    y = e-&gt;grid.y;
+
+    ripple_stack_add(&rstack, x, y);
+
+    please_draw = 1;
+}
+
+static void redraw(monome_t *m, uint16_t *g)
+{
+    if (please_draw) {
+        please_draw = 0;
+
+        ripple_stack_draw(&rstack);
+
+        if (please_update) {
+            ripple_stack_update(&rstack);
+        }
+
+        monome_led_map(m, 0, 0, quadL);
+        monome_led_map(m, 255, 0, quadR);
+    }
+
+}
+
+static void please_close(int sig)
+{
+    is_running = 0;
+}
+
+static double now_sec(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec + tv.tv_usec*1e-6;
+}
+
+int main(int argc, char *argv[]) {
+    monome_t *monome;
+    double now, then;
+
+    int y;
+
+    if (argc &lt; 2) {
+        printf("Usage %s device_path\n", argv[0]);
+        return 1;
+    }
+
+    signal(SIGINT, please_close);
+
+    for (y = 0; y &lt; 8; y++) {
+        quadL[y] = 0;
+        quadR[y] = 0;
+    }
+
+    ripple_stack_init(&rstack);
+
+    if( !(monome = monome_open(argv[1], "8000")) )
+        return -1;
+
+    monome_led_all(monome, 0);
+
+    monome_register_handler(monome, MONOME_BUTTON_DOWN, handle_press, NULL);
+
+    now = then = now_sec();
+
+    while(is_running) {
+        while(monome_event_handle_next(monome));
+        now = now_sec();
+
+        if ((now - then) &gt; 0.08) {
+            please_update = 1;
+            please_draw = 1;
+            then = now;
+        }
+
+        redraw(monome, grid);
+
+        usleep(800);
+    }
+
+    printf("Closing!\n");
+
+    monome_led_all(monome, 0);
+    monome_close(monome);
+    return 0;
+}</pre></code>
+
+<h2>Further Reading</h2>
+
+<p>TODO: link to monome.h, OSC reference, etc.
+</p>
+<hr>
+<a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
