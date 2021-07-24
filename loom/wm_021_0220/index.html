@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>6. Behavior Commands</h2>
+
+<p><a id="wm_021_0220"></a>Behaviors are the means by which one target gets to thep
+next target.
+</p>
+
+<h3>6.1. Linear</h3>
+
+<p><a id="wm_021_0222"></a>Linear: converts the last target to use linear behavior.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_linear(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT linear(gest_d *g, SKFLT x, SKFLT y, SKFLT a, void *ud)
+{
+    return (1 - a)*x + a*y;
+}
+
+void gest_behavior_linear(gest_d *g)
+{
+    g-&gt;curtarget-&gt;tick = linear;
+}</pre></code>
+
+<h3>6.2. Step</h3>
+
+<p><a id="wm_021_0228"></a>Step: converts the last target to be a step (no line, just
+the value).
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_step(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT step(gest_d *g, SKFLT x, SKFLT y, SKFLT a, void *ud)
+{
+    return x;
+}
+
+void gest_behavior_step(gest_d *g)
+{
+    g-&gt;curtarget-&gt;tick = step;
+}</pre></code>
+
+<h3>6.3. Gliss</h3>
+
+<p><a id="wm_021_0234"></a><code>Gliss</code> is a behavior intended
+gestures that are pitches mimicking glissando.
+It works by cutting the incoming ramp in half. The
+first half is 0, and the second half gets
+normalized to be 0-1 with a cubic slope. This
+then gets interpolated between the x and y target
+values.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_gliss(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT gliss(gest_d *g, SKFLT x, SKFLT y, SKFLT a, void *ud)
+{
+    if (a &lt; 0.5) {
+        a = 0;
+    } else {
+        a -= 0.5;
+        if (a &lt; 0) a = 0;
+        a *= 2;
+        a = a * a * a;
+    }
+    return (1 - a)*x + a*y;
+}
+
+void gest_behavior_gliss(gest_d *g)
+{
+    g-&gt;curtarget-&gt;tick = gliss;
+}</pre></code>
+<p></p>
+<p><code>smallgliss</code> does this, but smaller scale.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_smallgliss(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT smallgliss(gest_d *g, SKFLT x, SKFLT y, SKFLT a, void *ud)
+{
+    if (a &lt; 0.97) {
+        a = 0;
+    } else {
+        a -= 0.97;
+        if (a &lt; 0) a = 0;
+        a /= 0.03;
+        a = a * a * a;
+    }
+    return (1 - a)*x + a*y;
+}
+
+void gest_behavior_smallgliss(gest_d *g)
+{
+    g-&gt;curtarget-&gt;tick = smallgliss;
+}</pre></code>
+
+<h3>6.4. Exponential</h3>
+
+<p><a id="wm_021_0245"></a>Exponential: converts the last target to use exponential
+behavior with slope <code>slope</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_exponential(gest_d *g, SKFLT slope);</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_step(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT exponential(gest_d *g, SKFLT x, SKFLT y, SKFLT a, void *ud)
+{
+    SKFLT *s;
+
+    s = ud;
+
+    a = (1.0 - exp(a * (*s))) / (1 - exp(*s));
+    return (1 - a)*x + a*y;
+}
+
+void gest_behavior_exponential(gest_d *g, SKFLT slope)
+{
+    SKFLT *s;
+    g-&gt;curtarget-&gt;tick = exponential;
+    g-&gt;curtarget-&gt;ud = gest_alloc(g, sizeof(SKFLT));
+    s = (SKFLT *)g-&gt;curtarget-&gt;ud;
+    *s = slope;
+}</pre></code>
+
+<h3>6.5. Bezier</h3>
+
+<p><a id="wm_021_0253"></a>Applies a quadratic Bezier line segment between to two
+targets. Bezier takes in two control values that are
+control targets.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_bezier(gest_d *g, SKFLT cx, SKFLT cy);</pre></code>
+<p></p>
+<p>Explanation for how this works is already done in
+the sndkit Bezier algorithm where this is
+code is based, so it's worth checking
+that out for the mathematical derivation.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>struct bezier_data {
+    SKFLT cx;
+    SKFLT cy;
+};
+
+/* https://pbat.ch/sndkit/bezier/ */
+
+static SKFLT quadratic_equation(SKFLT a, SKFLT b, SKFLT c)
+{
+    SKFLT det; /* determinant */
+
+    det = b*b - 4*a*c;
+
+    if (det &gt;= 0) {
+        return ((-b + sqrt(det))/(2.0*a));
+    } else {
+        return 0;
+    }
+}
+
+static SKFLT find_t(SKFLT x0, SKFLT x1, SKFLT x2, SKFLT x)
+{
+    SKFLT a, b, c;
+
+    a = (x0 - 2.0 * x1 + x2);
+    b = 2.0 * (-x0 + x1);
+    c = x0 - x;
+
+    if (a) {
+        return quadratic_equation(a, b, c);
+    } else {
+        return (x - x0) / b;
+    }
+}
+
+static SKFLT bezier_curve(SKFLT xpos, SKFLT cx, SKFLT cy)
+{
+    SKFLT x[3];
+    SKFLT y[3];
+    SKFLT t;
+    SKFLT val;
+
+    x[0] = 0;
+    x[1] = cx;
+    x[2] = 1;
+
+    y[0] = 0;
+    y[1] = cy;
+    y[2] = 1;
+
+    t = find_t(x[0], x[1], x[2], xpos);
+
+    val = (1.0-t)*(1.0-t)*y[0] + 2.0*(1 - t)*t*y[1] + t*t*y[2];
+    return val;
+}
+
+static SKFLT bezier(gest_d *g, SKFLT x, SKFLT y, SKFLT a, void *ud)
+{
+
+    struct bezier_data *bd;
+    bd = ud;
+    a = bezier_curve(a, bd-&gt;cx, bd-&gt;cy);
+    return (1 - a)*x + a*y;
+}
+
+void gest_behavior_bezier(gest_d *g, SKFLT cx, SKFLT cy)
+{
+    struct bezier_data *bd;
+    g-&gt;curtarget-&gt;tick = bezier;
+    g-&gt;curtarget-&gt;ud = gest_alloc(g, sizeof(struct bezier_data));
+    bd = (struct bezier_data *)g-&gt;curtarget-&gt;ud;
+    bd-&gt;cx = cx;
+    bd-&gt;cy = cy;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0173">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0260">next</a></p>
+</div>
+</body>
+</html>

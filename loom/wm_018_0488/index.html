@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>9. Correction Filters (WIP)</h2>
+
+<p><a id="wm_018_0488"></a>The function <code>kuf_correct</code> is used apply a kufic
+correction filter on an existing pattern of squares
+configured in an NxM configuration.
+</p>
+<p>The input expects to be a sequence of square, represented
+as 16-bit integers, lined up one row at a time.
+</p>
+<p>The correction filter will write to the squares in-place.
+</p>
+<p>The size of the array should be <code>n*m</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_correct(int n, int m, uint16_t *squares);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void kuf_correct(int n, int m, uint16_t *squares)
+{
+    /* TODO */
+}</pre></code>
+<p></p>
+<p>Some words on correction filters now. The idea is to take
+some existing pattern (presumably hand created) and then
+add modifications to make it comply with the technically
+correct kufic rules.
+</p>
+<p>At the base level, is a correction to a quad. If it is
+not a correct quad, it will pick a random tile to flip.
+If the quad is still not correct, it will go set it back and
+try all the tiles until a correct one occurs. A correct quad
+will be ignored.
+</p>
+<p>Square correction happens next. This moves identical to a
+generated square, correcting quads instead of generating
+entirely new ones.
+</p>
+<p>The square correction works as a moving window, shifting
+forward one quad (half a square) at a time. When it reaches
+the end of the row, it shifts downwards one quad and goes
+back to the start of the new row, repeating the process
+again.
+</p>
+<p>For an NxM set of squares, there are (N<b>2-1)x(M</b>2-1) quad
+moves to be made.
+</p>
+<p>Movement works left to right, starting at the top left most
+square. This square is used to create the initial quad
+components A, B, C, and D.
+</p>
+<p>The current quad components come together to form a square,
+and this is error corrected. If it is the first row, the
+eastern wall (B and D) are corrected. Otherwise, it is only
+the D quad that gets corrected.
+</p>
+<p>The appropriate squares are updated, and then the quads
+are updated: B and D become A and C, and the new values
+become B and D.
+</p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_018_0482">prev</a> | <a href="/loom/kuf">home</a> | next</p>
+</div>
+</body>
+</html>

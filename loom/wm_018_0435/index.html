@@ -51,7 +51,6 @@ void kuf_write_block_pbm(const char *filename,
     s_b[2] = kuf_square_quad_get(x, KUF_QUAD_C);
     s_b[3] = kuf_square_quad_get(x, KUF_QUAD_D);
 
-
     /* row 1: W(A,N), W(B, N), X(A, N), X(B, N) */
     print_side(fp, kuf_quad_side_get(s_a[0], KUF_NORTH));
     print_side(fp, kuf_quad_side_get(s_a[1], KUF_NORTH));
@@ -123,24 +122,107 @@ void kuf_write_block_pbm(const char *filename,
     fclose(fp);
 }</pre></code>
 
-<h3>6.2. Write PBM (WIP)</h3>
+<h3>6.2. Write PBM</h3>
 
 <p><a id="wm_018_0442"></a><code>kuf_write_pbm</code> an NxM array of kufic squares to a PBM file.
 This is the more generic pbm writer. <code>n</code> and <code>m</code> are the
 width and height of the tessellation in units of kufic
-squares. <code>data</code> expects to be an array of <code>n*m</code> squares.
+squares. <code>squares</code> expects to be an array of <code>n*m</code> squares.
 </p>
-<p>The resulting pbm file will have a width of <code>n*8</code> pixels
-and a height of <code>m*8</code> pixels.
+<p>The resulting pbm file will have a width of <code>n*4</code> pixels
+and a height of <code>m*4</code> pixels.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_write_pbm(const char *filename,
                    int n, int m,
-                   uint16_t *data);</pre></code>
+                   uint16_t *squares);</pre></code>
+<p></p>
+<p>The PBM file is written one square row at a time. The square
+row consists of two pixel rows, so the north row is written
+followed by the southern row.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void write_row(FILE *fp, uint8_t w)
+{
+    int i;
+
+    for (i = 0; i &lt; 4; i++) {
+        if (i &gt; 0) fprintf(fp, " ");
+        fprintf(fp, "%d", (w &gt;&gt; i) & 1);
+    }
+}
+
+void kuf_write_pbm(const char *filename,
+                   int n, int m,
+                   uint16_t *squares)
+{
+    int x, y, r;
+    FILE *fp;
+
+    fp = fopen(filename, "w");
+
+    fprintf(fp, "P1\n# kuf block\n%d %d\n", n*4, m*4);
+
+    for (y = 0; y &lt; m; y++) {
+        for (r = 0; r &lt; 4; r++) {
+            for (x = 0; x &lt; n; x++) {
+                uint8_t w;
+                uint16_t s;
+
+                w = 0;
+                s = squares[y * n + x];
+
+                if (r &lt; 2) {
+                    /* upper quads A + B */
+                    uint8_t a, b;
+
+                    a = kuf_square_quad_get(s, KUF_QUAD_A);
+                    b = kuf_square_quad_get(s, KUF_QUAD_B);
+
+                    if (r &lt; 1) {
+                        /* North side A + B */
+                        w = kuf_quad_side_get(b, KUF_NORTH);
+                        w &lt;&lt;= 2;
+                        w |= kuf_quad_side_get(a, KUF_NORTH);
+                    } else {
+                        /* South side A + B */
+                        w = kuf_quad_side_get(b, KUF_SOUTH);
+                        w &lt;&lt;= 2;
+                        w |= kuf_quad_side_get(a, KUF_SOUTH);
+                    }
+                } else {
+                    /* lower quads C + D */
+                    uint8_t c, d;
+
+                    c = kuf_square_quad_get(s, KUF_QUAD_C);
+                    d = kuf_square_quad_get(s, KUF_QUAD_D);
+
+                    if (r &lt;= 2) {
+                        /* North side C + D */
+                        w = kuf_quad_side_get(d, KUF_NORTH);
+                        w &lt;&lt;= 2;
+                        w |= kuf_quad_side_get(c, KUF_NORTH);
+                    } else {
+                        /* South side C + D */
+                        w = kuf_quad_side_get(d, KUF_SOUTH);
+                        w &lt;&lt;= 2;
+                        w |= kuf_quad_side_get(c, KUF_SOUTH);
+                    }
+                }
+
+                write_row(fp, w);
+
+                if (x &lt; (n - 1)) fprintf(fp, " ");
+            }
+            fprintf(fp, "\n");
+        }
+    }
+
+    fclose(fp);
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_018_0407">prev</a> | <a href="/loom/kuf">home</a> | <a href="/loom/wm_018_0446">next</a></p>
+<a href="/loom/wm_018_0407">prev</a> | <a href="/loom/kuf">home</a> | <a href="/loom/wm_018_0449">next</a></p>
 </div>
 </body>
 </html>

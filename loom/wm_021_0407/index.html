@@ -12,7 +12,7 @@
 
 <h2>10. Stepping Through The Ramp Tree</h2>
 
-<p><a id="wm_021_0375"></a>A big part of gest involves stepping through a ramp tree.
+<p><a id="wm_021_0407"></a>A big part of gest involves stepping through a ramp tree.
 A ramp tree produces a set of normalized ramp values
 from 0 to 1, whose period lengths are proportional
 to the external conductor signal. These values
@@ -32,19 +32,100 @@ can then be used to interpolate between targets.
 
     if (g-&gt;phrase_selected == NULL) return phs;
 
+&lt;&lt;beat_checkin&gt;&gt;
+
+    inc *= g-&gt;phrase_selected-&gt;mod * g-&gt;correction;
+
 &lt;&lt;set_the_output&gt;&gt;
 &lt;&lt;update_targets&gt;&gt;
 &lt;&lt;update_phase&gt;&gt;
 &lt;&lt;check_and_update&gt;&gt;
 
     g-&gt;phs = phs;
+    g-&gt;t += inc;
 
     return out;
 }</pre></code>
 
-<h3>10.1. Setting the Output</h3>
+<h3>10.1. Beat Check-in</h3>
 
-<p><a id="wm_021_0389"></a>The point of this function is to update the overall state of
+<p><a id="wm_021_0423"></a>In order to combat clock drift, a phrase "checks in" every
+time conductor signal resets, which is an indicator of the
+new beat. Every time a new beat occurs, the status of the
+phrase is figured out, and handled accordingly.
+</p>
+<p>Clock drift naturally occurs within Gest because it
+resynthesizes a new timing signal based on the external
+conductor signal. Left unchecked, Gestures will eventually
+fall out of time with the conductor due to the fact that
+they are marching to the beat of their own drum.
+</p>
+<p>The coarse way that clock drift is managed is by keeping
+drift localized within the phrase. A phrase is allocated
+to be a fixed number of beats. When the conductor goes
+on to the next beat, the current phrase, wherever it may
+be in its performance, is discarded, and the clock drift
+debt is reset.
+</p>
+<p>Gestures are a game of constant imprecision. Their timing
+can either be late or early, but never quite on time.
+Early gestures occur when a
+phrase finishes before the conductor. When this happens, it
+is told to wait, returning 1 until the first downbeat of the
+next phrase. Late
+phrases don't quite make it to the end of their gesture.
+When this happens, the phrase bails and jumps to the next
+one. The hope is that they are close enough to prevent an
+audible glitch.
+</p>
+<p>During the check-in, the ideal position, obtained from
+the beat counter and known as the <code>goal</code>,
+can be compared with the actual position <code>t</code>. These two
+values can be used to create a course correction factor,
+which allows the gesture to slow down or speed up to more
+closely match the conductor signal.
+</p>
+<div><b><i>&lt;&lt;beat_checkin&gt;&gt;=</i></b></div><pre><code>if (reset) {
+    int limit;
+    SKFLT goal;
+
+    limit = g-&gt;phrase_selected-&gt;top-&gt;modifier;
+    g-&gt;beat++;
+    goal = (SKFLT) g-&gt;beat / limit;
+
+    if (g-&gt;t &gt; 0) g-&gt;correction = goal / g-&gt;t;
+
+    if (g-&gt;beat &gt;= limit) {
+        gest_node *next;
+
+        g-&gt;phrase_selected = g-&gt;phrase_selected-&gt;next;
+
+        g-&gt;beat = 0;
+        g-&gt;t = 0;
+        g-&gt;phs = 0;
+        g-&gt;please_wait = 0;
+        g-&gt;correction = 1.0;
+
+        if (g-&gt;phrase_selected == NULL) {
+            return phs;
+        }
+
+        next = g-&gt;phrase_selected-&gt;top;
+        /* reset modifier */
+        g-&gt;num = 1;
+        g-&gt;den = 1;
+        next = dive_to_target(g, next);
+        set_nxttarget(g, next-&gt;target);
+        set_curnode(g, next);
+        return phs;
+    }
+} else if (g-&gt;please_wait) {
+    return 1.0;
+}</pre></code>
+
+<h3>10.2. Setting the Output</h3>
+
+<p><a id="wm_021_0428"></a>The point of this function is to update the overall state of
 the ramp trees in gest and return a corresponding ramp
 value.
 </p>
@@ -53,9 +134,9 @@ call to <code>ramptree_step</code>.
 </p>
 <div><b><i>&lt;&lt;set_the_output&gt;&gt;=</i></b></div><pre><code>out = g-&gt;phs;</pre></code>
 
-<h3>10.2. Updating Targets</h3>
+<h3>10.3. Updating Targets</h3>
 
-<p><a id="wm_021_0394"></a>If any targets were slotted to be updated in the previous
+<p><a id="wm_021_0433"></a>If any targets were slotted to be updated in the previous
 call, update them now, then clear the flag.
 </p>
 <div><b><i>&lt;&lt;update_targets&gt;&gt;=</i></b></div><pre><code>if (g-&gt;targetondeck) {
@@ -64,15 +145,18 @@ call, update them now, then clear the flag.
     g-&gt;nxttarget = NULL;
 }</pre></code>
 
-<h3>10.3. Updating the phase using modifier and friends</h3>
+<h3>10.4. Updating the phase using modifier and friends</h3>
 
-<p><a id="wm_021_0399"></a>To begin, the modifier amount is calculated.
+<p><a id="wm_021_0438"></a>To begin, the modifier amount is calculated.
 </p>
 <p>The modifier and increment amount are used together to
 update the existing phase.
 </p>
-<div><b><i>&lt;&lt;update_phase&gt;&gt;=</i></b></div><pre><code>phs += inc * ((SKFLT)g-&gt;num / g-&gt;den) * g-&gt;phrase_selected-&gt;mod;
-g-&gt;error = 0;</pre></code>
+<div><b><i>&lt;&lt;update_phase&gt;&gt;=</i></b></div><pre><code>{
+SKFLT i;
+i = inc * ((SKFLT)g-&gt;num / g-&gt;den);
+phs += i;
+}</pre></code>
 <p></p>
 <p>The phase is then checked to see if it has exceeded 1.
 If it has, a change in nodes is required.
@@ -82,9 +166,9 @@ If it has, a change in nodes is required.
 &lt;&lt;wraparound&gt;&gt;
 }</pre></code>
 
-<h3>10.4. Finding the Next Node</h3>
+<h3>10.5. Finding the Next Node</h3>
 
-<p><a id="wm_021_0412"></a>When the ramp reaches the end, it is time to find the next
+<p><a id="wm_021_0451"></a>When the ramp reaches the end, it is time to find the next
 node with a target. It does this by traversing the Ramp
 Tree based on the position the current node is in.
 </p>
@@ -93,9 +177,11 @@ Tree based on the position the current node is in.
 <p>To begin, check and see if the next node happens to be in
 the next phrase. That would mean the currently selected
 node is the right-most node (no nodes after it)
-in the top of the tree. If this is true, the next phrase is
-found (assuming there is one), and configured to point to
-the first one.
+in the top of the tree. If this is true, it is time to
+<b>wait</b> for the next phrase on the next down beat. If the
+next phrase is being found here, it has arrived a tad too
+early (which is actually better than being a
+tad too late, as it turns out. It's one or the other here).
 </p>
 <p>If it's not the top of the tree, there is a general check
 to see if the current node is the right-most node relative
@@ -110,7 +196,9 @@ with a modifier greater than 1.
 </p>
 <p>If the next node happens to be a monoramp with a modifier
 greater than 1, it will also apply modifications. But should
-be handled inside of <code>dive_to_target</code>.
+be handled inside of <code>dive_to_target</code>. If the node is already
+a target with a monoramp >1, this gets applied here as a
+special exception.
 </p>
 <div><b><i>&lt;&lt;find_next_node&gt;&gt;=</i></b></div><pre><code>gest_node *next;
 gest_node *top;
@@ -127,19 +215,9 @@ while (next == NULL) {
         /* are we at the end */
         /* if so, go to next phrase */
         if (top-&gt;next == NULL) {
-            g-&gt;phrase_selected = g-&gt;phrase_selected-&gt;next;
-            /* children points to first child node */
-
-            if (g-&gt;phrase_selected == NULL) {
-                break;
-            }
-
-            next = g-&gt;phrase_selected-&gt;top;
-            /* reset modifier */
-            g-&gt;num = 1;
-            g-&gt;den = 1;
-            next = dive_to_target(g, next);
-            set_nxttarget(g, next-&gt;target);
+            /* wait for the downbeat of the next phrase */
+            g-&gt;please_wait = 1;
+            break;
         } else {
             /* go to next child in top polyramp node */
             next = top-&gt;next;
@@ -170,6 +248,9 @@ while (next == NULL) {
         /* continguous nodes on the same level don't have these */
         if (next-&gt;target == NULL) {
             next = dive_to_target(g, next);
+        } else if (next-&gt;type == NODE_MONORAMP && next-&gt;modifier &gt; 1) {
+            /* next node is on same level but is monoramp */
+            apply_modifier(g, next);
         }
 
         set_nxttarget(g, next-&gt;target);
@@ -186,12 +267,11 @@ and set to be the beginning of that node.
 the roundoff error is stored in the error variable.
 </p>
 <div><b><i>&lt;&lt;wraparound&gt;&gt;=</i></b></div><pre><code>while (phs &gt; 1) phs--;
-g-&gt;error = phs;
 phs = 0;</pre></code>
 
-<h3>10.5. Handling Roundoff Error in Phrases</h3>
+<h3>10.6. Handling Roundoff Error in Phrases</h3>
 
-<p><a id="wm_021_0421"></a>Roundoff error is a natural part of working with floating
+<p><a id="wm_021_0460"></a>Roundoff error is a natural part of working with floating
 point, and difficult to avoid entirely. Roundoff error
 in this context leads to temporal drift in the timing
 signal. Unchecked, this will eventually lead to phrases
@@ -252,7 +332,7 @@ gesture.
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0260">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0423">next</a></p>
+<a href="/loom/wm_021_0292">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0462">next</a></p>
 </div>
 </body>
 </html>
