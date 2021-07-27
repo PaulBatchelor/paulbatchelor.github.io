@@ -311,6 +311,15 @@ will be maintained for the toggled states and ripple
 animations separately, and then drawn on the Grid at the
 last minute.
 </p>
+<p>In addition, a few other structs and abstractions have been
+made. In particular, all program data that was once global
+data has now been consolidated into one struct created
+inside of the <code>main</code> function using <code>malloc</code>. This is a
+better practice. Not only does it make programs easier to
+manage this way, but removing global variables also
+eases off dependency on stack memory allocation,
+which is finite and can be very small on some systems.
+</p>
 <div><b><i>&lt;&lt;03_ripples.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
 #include &lt;monome.h&gt;
 #include &lt;stdio.h&gt;
@@ -319,12 +328,10 @@ last minute.
 #include &lt;stdint.h&gt;
 #include &lt;sys/time.h&gt;
 
-uint16_t grid[8];
-static int please_draw = 0;
-static int please_update = 0;
-
-static uint8_t quadL[8];
-static uint8_t quadR[8];
+struct canvas {
+    uint8_t quadL[8];
+    uint8_t quadR[8];
+};
 
 static volatile int is_running = 1;
 
@@ -344,17 +351,24 @@ struct ripple_stack {
     int size;
 };
 
-struct ripple_stack rstack;
+struct app_data {
+    struct ripple_stack rstack;
+    monome_t *m;
+    struct canvas c;
+    int please_draw;
+    int please_update;
 
-void set_led(int x, int y, int s)
+};
+
+void set_led(struct canvas *c, int x, int y, int s)
 {
     uint8_t *q;
 
     if (x &gt;= 8) {
-        q = quadR;
+        q = c-&gt;quadR;
         x -= 8;
     } else {
-        q = quadL;
+        q = c-&gt;quadL;
     }
 
     if (s) {
@@ -364,12 +378,12 @@ void set_led(int x, int y, int s)
     }
 }
 
-void clear_screen(void)
+void clear_screen(struct canvas *c)
 {
     int i;
     for (i = 0; i &lt; 8; i++) {
-        quadL[i] = 0;
-        quadR[i] = 0;
+        c-&gt;quadL[i] = 0;
+        c-&gt;quadR[i] = 0;
     }
 }
 
@@ -420,7 +434,8 @@ void ripple_stack_add(struct ripple_stack *rs, int x, int y)
     rs-&gt;size++;
 }
 
-void draw_rect(int xpos, int ypos, int w, int h)
+void draw_rect(struct canvas *c,
+               int xpos, int ypos, int w, int h)
 {
     int i;
 
@@ -431,7 +446,7 @@ void draw_rect(int xpos, int ypos, int w, int h)
             int pos;
             pos = xpos + i;
             if (pos &gt;= 16) break;
-            set_led(pos, ypos, 1);
+            set_led(c, pos, ypos, 1);
         }
     }
 
@@ -442,7 +457,7 @@ void draw_rect(int xpos, int ypos, int w, int h)
             int pos;
             pos = ypos + i;
             if (pos &lt; 8 && pos &gt;= 0) {
-                set_led(xpos, pos, 1);
+                set_led(c, xpos, pos, 1);
             }
         }
     }
@@ -456,7 +471,7 @@ void draw_rect(int xpos, int ypos, int w, int h)
             int pos;
             pos = xpos + i;
             if (pos &gt;= 16) break;
-            set_led(pos, ypos, 1);
+            set_led(c, pos, ypos, 1);
         }
     }
 
@@ -470,18 +485,19 @@ void draw_rect(int xpos, int ypos, int w, int h)
             int pos;
             pos = ypos + i;
             if (pos &lt; 8 && pos &gt;= 0) {
-                set_led(xpos, pos, 1);
+                set_led(c, xpos, pos, 1);
             }
         }
     }
 }
 
-void ripple_stack_draw(struct ripple_stack *rs)
+void ripple_stack_draw(struct ripple_stack *rs,
+                       struct canvas *c)
 {
     int r;
     struct ripple *head , *cur;
     int size;
-    clear_screen();
+    clear_screen(c);
 
     head = rs-&gt;head;
     cur = head;
@@ -493,7 +509,7 @@ void ripple_stack_draw(struct ripple_stack *rs)
         y = cur-&gt;cy - cur-&gt;size;
         w = ((cur-&gt;size + 1) * 2) - 1;
         h = w;
-        draw_rect(x, y, w, h);
+        draw_rect(c, x, y, w, h);
         cur = cur-&gt;next;
     }
 }
@@ -526,29 +542,31 @@ void ripple_stack_update(struct ripple_stack *rs)
 
 void handle_press(const monome_event_t *e, void *data) {
     unsigned int x, y;
-    int s;
+    struct app_data *ad;
+
+    ad = (struct app_data *)data;
 
     x = e-&gt;grid.x;
     y = e-&gt;grid.y;
 
-    ripple_stack_add(&rstack, x, y);
+    ripple_stack_add(&ad-&gt;rstack, x, y);
 
-    please_draw = 1;
+    ad-&gt;please_draw = 1;
 }
 
-static void redraw(monome_t *m, uint16_t *g)
+static void redraw(struct app_data *ad)
 {
-    if (please_draw) {
-        please_draw = 0;
+    if (ad-&gt;please_draw) {
+        ad-&gt;please_draw = 0;
 
-        ripple_stack_draw(&rstack);
+        ripple_stack_draw(&ad-&gt;rstack, &ad-&gt;c);
 
-        if (please_update) {
-            ripple_stack_update(&rstack);
+        if (ad-&gt;please_update) {
+            ripple_stack_update(&ad-&gt;rstack);
         }
 
-        monome_led_map(m, 0, 0, quadL);
-        monome_led_map(m, 255, 0, quadR);
+        monome_led_map(ad-&gt;m, 0, 0, ad-&gt;c.quadL);
+        monome_led_map(ad-&gt;m, 255, 0, ad-&gt;c.quadR);
     }
 
 }
@@ -568,6 +586,7 @@ static double now_sec(void)
 int main(int argc, char *argv[]) {
     monome_t *monome;
     double now, then;
+    struct app_data *data;
 
     int y;
 
@@ -578,19 +597,27 @@ int main(int argc, char *argv[]) {
 
     signal(SIGINT, please_close);
 
+    data = malloc(sizeof(struct app_data));
+
     for (y = 0; y &lt; 8; y++) {
-        quadL[y] = 0;
-        quadR[y] = 0;
+        data-&gt;c.quadL[y] = 0;
+        data-&gt;c.quadR[y] = 0;
     }
 
-    ripple_stack_init(&rstack);
+    ripple_stack_init(&data-&gt;rstack);
 
-    if( !(monome = monome_open(argv[1], "8000")) )
+    if (!(monome = monome_open(argv[1], "8000")))
         return -1;
 
+    data-&gt;m = monome;
+    data-&gt;please_draw = 0;
+    data-&gt;please_update = 0;
     monome_led_all(monome, 0);
 
-    monome_register_handler(monome, MONOME_BUTTON_DOWN, handle_press, NULL);
+    monome_register_handler(monome,
+                            MONOME_BUTTON_DOWN,
+                            handle_press,
+                            data);
 
     now = then = now_sec();
 
@@ -599,12 +626,12 @@ int main(int argc, char *argv[]) {
         now = now_sec();
 
         if ((now - then) &gt; 0.08) {
-            please_update = 1;
-            please_draw = 1;
+            data-&gt;please_update = 1;
+            data-&gt;please_draw = 1;
             then = now;
         }
 
-        redraw(monome, grid);
+        redraw(data);
 
         usleep(800);
     }
@@ -613,6 +640,8 @@ int main(int argc, char *argv[]) {
 
     monome_led_all(monome, 0);
     monome_close(monome);
+
+    free(data);
     return 0;
 }</pre></code>
 
