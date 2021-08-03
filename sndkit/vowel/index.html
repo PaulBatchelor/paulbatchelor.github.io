@@ -617,7 +617,9 @@ static const sk_vowel_formant *vowel_soprano[] = {
 
 <p>Used for interpolation
 </p>
-<div><b><i>&lt;&lt;vowel_parts_table&gt;&gt;=</i></b></div><pre><code>static const sk_vowel_formant **vowel_parts[] = {
+<div><b><i>&lt;&lt;vowel_externs&gt;&gt;=</i></b></div><pre><code>extern const sk_vowel_formant **sk_vowel_parts[];</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;vowel_parts_table&gt;&gt;=</i></b></div><pre><code>const sk_vowel_formant **sk_vowel_parts[] = {
     vowel_bass,
     vowel_tenor,
     vowel_countertenor,
@@ -698,11 +700,11 @@ coutner-tenor, alto, and soprano.
     ipart = floor(part);
 
     if (ipart &gt;= 4) {
-        voice[0] = vowel_parts[4];
+        voice[0] = sk_vowel_parts[4];
         voice[1] = voice[0];
     } else {
-        voice[0] = vowel_parts[ipart];
-        voice[1] = vowel_parts[ipart + 1];
+        voice[0] = sk_vowel_parts[ipart];
+        voice[1] = sk_vowel_parts[ipart + 1];
     }
 
     if (ipos &gt;= 4) {
@@ -761,6 +763,28 @@ void sk_vowel_set_phoneme(sk_vowel *v,
                             ph[n].freq,
                             ph[n].amp, ph[n].freq/ph[n].bw);
     }
+}</pre></code>
+
+<h2>Gest Struct with Phoneme Output</h2>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_vowel_withphoneme sk_vowel_withphoneme;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_vowel_withphoneme {
+    sk_vowel vowel;
+    sk_vowel_formant phoneme[5];
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>sk_vowel * sk_vowel_vowel(sk_vowel_withphoneme * vowph);
+sk_vowel_formant * sk_vowel_phoneme(sk_vowel_withphoneme *vowph);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>sk_vowel * sk_vowel_vowel(sk_vowel_withphoneme *vowph)
+{
+    return &vowph-&gt;vowel;
+}
+
+sk_vowel_formant * sk_vowel_phoneme(sk_vowel_withphoneme *vowph)
+{
+    return vowph-&gt;phoneme;
 }</pre></code>
 </div>
 </body>

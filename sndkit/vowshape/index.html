@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Vowshape</title>
+<h1>Vowshape</h1>
+
+<h2>Overview</h2>
+
+<p>A set of functions intended for empirically shaping
+vocal tract shapes for <a href="/sndkit/tract">tract</a>. The aim of
+these function is to make it easier to programatically
+target vowel sounds.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>vowshape.h</code> and <code>vowshape.c</code>.
+</p>
+<div><b><i>&lt;&lt;vowshape.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include "vowshape.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;vowshape.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_VOWSHAPE_H
+#define SK_VOWSHAPE_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+
+<h2>Constant</h2>
+
+<p>Sets a region to be a constant value <code>val</code>, at the starting
+point <code>start</code> with a length <code>len</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_constant(SKFLT *a,
+                          int start, int len, SKFLT val);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_constant(SKFLT *a,
+                          int start, int len, SKFLT val)
+{
+    int i;
+
+    for (i = 0; i &lt; len; i++) {
+        a[start + i] = val;
+    }
+}</pre></code>
+
+<h2>Pyramid</h2>
+
+<p>Creates a triangle shape around the center point <code>center</code>,
+with values that go within range <code>beg</code> and <code>end</code>. The
+number of steps a side has is determined with <code>nsteps</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_pyramid(SKFLT *a,
+                         int center, int nsteps,
+                         SKFLT beg, SKFLT end);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_pyramid(SKFLT *a,
+                         int center, int nsteps,
+                         SKFLT beg, SKFLT end)
+{
+    int i;
+
+    for (i = 0; i &lt; nsteps; i++) {
+        SKFLT y;
+        y = (1.0 - ((SKFLT)i / nsteps));
+        a[center + i] = (1 - y)*beg + y*end;
+    }
+
+    for (i = 0; i &lt; nsteps; i++) {
+        SKFLT y;
+        y = (1.0 - ((SKFLT)i / nsteps));
+        a[center - i] = (1 - y)*beg + y*end;
+    }
+}</pre></code>
+
+<h2>Parabola</h2>
+
+<p>Draws a parabola around a center position <code>center</code> with
+a width at each side being <code>nsteps</code>. The value is
+scaled to between <code>beg</code> and <code>end</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_parabola(SKFLT *a,
+                          int center, int nsteps,
+                          SKFLT beg, SKFLT end);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_parabola(SKFLT *a,
+                          int center, int nsteps,
+                          SKFLT beg, SKFLT end)
+{
+    int i;
+    double dt;
+
+    dt = 1.0/nsteps;
+
+    for (i = 0; i &lt; nsteps; i++) {
+        SKFLT y;
+        y = (-((i * dt)*(i * dt)) + 1.0);
+        a[center + i] = (1 - y)*beg + y * end;
+    }
+
+    for (i = 0; i &lt; nsteps; i++) {
+        SKFLT y;
+        y = (-((-i * dt)*(-i * dt)) + 1.0);
+        a[center - i] = (1 - y)*beg + y * end;
+    }
+}</pre></code>
+
+<h2>Exponential</h2>
+
+<p>Draws an exponential curve with a slope <code>slope</code>, starting
+at position <code>start</code> and being <code>nsteps</code> long.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_exponential(SKFLT *a,
+                             SKFLT slope,
+                             int start,
+                             int nsteps,
+                             SKFLT beg, SKFLT end);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_exponential(SKFLT *a,
+                             SKFLT slope,
+                             int start,
+                             int nsteps,
+                             SKFLT beg, SKFLT end)
+{
+    double dt;
+    int i;
+
+    if (nsteps == 1) dt = 0;
+    else dt = 1.0/(nsteps - 1);
+
+    for (i = 0; i &lt; nsteps; i++) {
+        SKFLT x, y;
+        x = i * dt;
+        y = (1.0 - exp(x*slope)) / (1 - exp(slope));
+        a[start + i] = (1 - y)*beg + y * end;
+    }
+}</pre></code>
+</div>
+</body>
+</html>

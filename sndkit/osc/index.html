@@ -57,6 +57,7 @@ being able to take in tables with sizes that are a power of
 #include &lt;math.h&gt;
 #define SK_OSC_PRIV
 #include "osc.h"
+&lt;&lt;static_funcdefs&gt;&gt;
 &lt;&lt;constants&gt;&gt;
 &lt;&lt;funcs&gt;&gt;</pre></code>
 
@@ -286,7 +287,47 @@ cycles-per-second (cycles / seconds) gets multiplied by
 a value in seconds, the seconds cancel. What you are left
 with is a unit called <b>cycles</b>.
 </p>
-<div><b><i>&lt;&lt;update_increment_amount&gt;&gt;=</i></b></div><pre><code>osc-&gt;inc = floor(lrintf(osc-&gt;freq * osc-&gt;maxlens));</pre></code>
+<div><b><i>&lt;&lt;update_increment_amount&gt;&gt;=</i></b></div><pre><code>osc-&gt;inc = musl_rintf(osc-&gt;freq * osc-&gt;maxlens);</pre></code>
+<p></p>
+<p>It turns out the <code>lrintf</code> is not an ANSI C function, which
+causes some compilers to complain and silently break things.
+So, here is a version of it, ported from the musl library.
+</p>
+<p>This snippet the MIT license, which should be permissive
+enough for most uses. The above may work well enough using
+something like <code>floor</code>. So if you replace it, this code
+becomes entirely public domain. However, because this code
+is the backbone of so many tests in Soundpipe, it's not
+worth it to me to break the bit-accuracy.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static float musl_rintf(float x);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>/* ported from MUSL library. License: MIT */
+#define MUSL_FLT_EPSILON 1.1920928955078125e-07F
+#define MUSL_EPS MUSL_FLT_EPSILON
+static const float toint = 1/MUSL_EPS;
+static float musl_rintf(float x)
+{
+	int e;
+	int s;
+	float y;
+	union {float f; uint32_t i;} u;
+
+    u.f = x;
+
+	e = u.i&gt;&gt;23 & 0xff;
+	s = u.i&gt;&gt;31;
+
+	if (e &gt;= 0x7f+23)
+		return x;
+	if (s)
+		y = x - toint + toint;
+	else
+		y = x + toint - toint;
+	if (y == 0)
+		return s ? -0.0f : 0.0f;
+	return y;
+}</pre></code>
 <p></p>
 <p>Look up values A <code>n</code> and B <code>n + 1</code> samples from wavetable.
 Perform table lookup. Both the current position, and it's
