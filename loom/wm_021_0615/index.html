@@ -12,7 +12,7 @@
 
 <h2>13. Computation</h2>
 
-<p><a id="wm_021_0582"></a>Gest is synthesized with <code>gest_tick</code>. It expects
+<p><a id="wm_021_0615"></a>Gest is synthesized with <code>gest_tick</code>. It expects
 a conductor phasor signal <code>conductor</code>.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_tick(gest_d *g, SKFLT conductor);</pre></code>
@@ -26,6 +26,10 @@ the phasor increment amount <code>inc</code>.
 is less than the previous. A reset flag is set, and
 the sign of the increment value is flipped to be positive.
 </p>
+<p>For reasons I don't understand at the moment, it seems
+that the first reset found at initialization needs to be
+discounted, so there is logic built in here to handle that.
+</p>
 <div><b><i>&lt;&lt;analysis&gt;&gt;=</i></b></div><pre><code>inc = conductor - g-&gt;last;
 reset = 0;
 
@@ -36,7 +40,7 @@ if (conductor &lt; g-&gt;last) {
 
 g-&gt;last_inc = inc;
 
-/* TODO: needed? */
+/* discount reset found at initial sample */
 if (g-&gt;phs == -1) {
     g-&gt;phs = 0;
     reset = 0;
@@ -55,10 +59,8 @@ target's tick function can be called. This function returns
 the output gesture.
 </p>
 <div><b><i>&lt;&lt;apply_targets&gt;&gt;=</i></b></div><pre><code>if (g-&gt;curtarget != NULL) {
-    out = g-&gt;curtarget-&gt;tick(g,
-                             g-&gt;curval, g-&gt;nxtval,
-                             out,
-                             g-&gt;curtarget-&gt;ud);
+    out = g-&gt;curtarget-&gt;tick(g, out, g-&gt;curtarget-&gt;aux);
+    out = g-&gt;curtarget-&gt;mix(g, g-&gt;curval, g-&gt;nxtval, out);
 }</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_tick(gest_d *g, SKFLT conductor)
 {
@@ -78,7 +80,7 @@ the output gesture.
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0511">prev</a> | <a href="#">home</a> | next</p>
+<a href="/loom/wm_021_0525">prev</a> | <a href="#">home</a> | next</p>
 </div>
 </body>
 </html>

@@ -752,15 +752,37 @@ from quads A, B, C, D.
     return s;
 }</pre></code>
 
-<h3>4.5. Block Generation</h3>
+<h3>4.5. TODO Breaking Up Squares into Quads</h3>
 
-<p><a id="wm_018_0194"></a>Next up is generating a technically correct block. A block
+<p><a id="wm_018_0194"></a>The function <code>kuf_break_square</code> will break up a square
+into core quads A, B, C, D.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_break_square(uint16_t s,
+                      uint8_t *a,
+                      uint8_t *b,
+                      uint8_t *c,
+                      uint8_t *d);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void kuf_break_square(uint16_t s,
+                      uint8_t *a,
+                      uint8_t *b,
+                      uint8_t *c,
+                      uint8_t *d)
+{
+    *a = kuf_square_quad_get(s, KUF_QUAD_A);
+    *b = kuf_square_quad_get(s, KUF_QUAD_B);
+    *c = kuf_square_quad_get(s, KUF_QUAD_C);
+    *d = kuf_square_quad_get(s, KUF_QUAD_D);
+}</pre></code>
+
+<h3>4.6. Block Generation</h3>
+
+<p><a id="wm_018_0200"></a>Next up is generating a technically correct block. A block
 is a 2x2 arrangment of squares.
 </p>
 
-<h4>4.5.1. Top Level Function</h4>
+<h4>4.6.1. Top Level Function</h4>
 
-<p><a id="wm_018_0196"></a>A block is generated with the function <code>kuf_gen_block</code>.
+<p><a id="wm_018_0202"></a>A block is generated with the function <code>kuf_gen_block</code>.
 The output returns to 4 squares W, X, Y, and Z, which
 are meant to be arranged left-right, top-bottom in a 2x2
 formation.
@@ -799,9 +821,9 @@ formation.
     *pz = z;
 }</pre></code>
 
-<h4>4.5.2. Overview</h4>
+<h4>4.6.2. Overview</h4>
 
-<p><a id="wm_018_0220"></a>Making a block is
+<p><a id="wm_018_0226"></a>Making a block is
 similar to making a square, only one level higher. It begins
 with a technically correct square, then generating correct
 squares moving one quad at a time.
@@ -832,13 +854,13 @@ South and east are the only walls required.
 North east and south east are the only quads required.
 </p>
 
-<h4>4.5.3. Solvers</h4>
+<h4>4.6.3. Solvers</h4>
 
-<p><a id="wm_018_0222"></a></p>
+<p><a id="wm_018_0228"></a></p>
 
-<h5>4.5.3.1. Wall Solver</h5>
+<h5>4.6.3.1. Wall Solver</h5>
 
-<p><a id="wm_018_0223"></a>Generating a wall in a square is known as a "wall solver".
+<p><a id="wm_018_0229"></a>Generating a wall in a square is known as a "wall solver".
 For this block algorithm, only an east east and south
 wall solver required. It works like this: given
 two quads, generate two new quads that will complete
@@ -850,9 +872,9 @@ the square.
 quads.
 </p>
 
-<h6>4.5.3.1.1. Eastern Wall</h6>
+<h6>4.6.3.1.1. Eastern Wall</h6>
 
-<p><a id="wm_018_0225"></a>An eastern solver has knowns A and C, and creates
+<p><a id="wm_018_0231"></a>An eastern solver has knowns A and C, and creates
 a solution for b and d.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_east(uint8_t a, uint8_t c,
@@ -1034,9 +1056,9 @@ Southeast of BD becomes Northeast.
     }
 }</pre></code>
 
-<h6>4.5.3.1.2. Southern Wall</h6>
+<h6>4.6.3.1.2. Southern Wall</h6>
 
-<p><a id="wm_018_0267"></a>A southern wall solver has knowns A and B, and
+<p><a id="wm_018_0273"></a>A southern wall solver has knowns A and B, and
 creates a solution C and D.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_south(uint8_t a, uint8_t b,
@@ -1218,17 +1240,17 @@ and Southeast of CD becomes Southwest.
     }
 }</pre></code>
 
-<h5>4.5.3.2. Quad Solver</h5>
+<h5>4.6.3.2. Quad Solver</h5>
 
-<p><a id="wm_018_0310"></a>Generating a quad in a square is known as a "quad solver".
+<p><a id="wm_018_0316"></a>Generating a quad in a square is known as a "quad solver".
 Only southeast and northeast quads need to be implemented.
 The quad solver works in the following way: given 3 known
 quads in the square, generate the remaining quad.
 </p>
 
-<h6>4.5.3.2.1. Northeast Quad (B)</h6>
+<h6>4.6.3.2.1. Northeast Quad (B)</h6>
 
-<p><a id="wm_018_0312"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_northeast(uint8_t a, uint8_t c, uint8_t d);</pre></code>
+<p><a id="wm_018_0318"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_northeast(uint8_t a, uint8_t c, uint8_t d);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_northeast(uint8_t a, uint8_t c, uint8_t d)
 {
     uint8_t b;
@@ -1351,9 +1373,9 @@ Northeast of AB to Northwest.
     }
 }</pre></code>
 
-<h6>4.5.3.2.2. Southeast Quad (D)</h6>
+<h6>4.6.3.2.2. Southeast Quad (D)</h6>
 
-<p><a id="wm_018_0341"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_southeast(uint8_t a, uint8_t b, uint8_t c);</pre></code>
+<p><a id="wm_018_0347"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_southeast(uint8_t a, uint8_t b, uint8_t c);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_southeast(uint8_t a, uint8_t b, uint8_t c)
 {
     uint8_t d;
@@ -1474,9 +1496,9 @@ the southeast of CD to southwest.
     }
 }</pre></code>
 
-<h4>4.5.4. The Algorithm</h4>
+<h4>4.6.4. The Algorithm</h4>
 
-<p><a id="wm_018_0370"></a>To begin, generate square W. This can be generated entirely
+<p><a id="wm_018_0376"></a>To begin, generate square W. This can be generated entirely
 with <code>kuf_gen_square</code>.
 </p>
 <div><b><i>&lt;&lt;generate_w&gt;&gt;=</i></b></div><pre><code>w = kuf_gen_square();</pre></code>
@@ -1620,7 +1642,7 @@ and the Southeast of XZ (D) becomes Northeast (B).
 <br>
 <p><hr>
 
-<a href="/loom/wm_018_0021">prev</a> | <a href="/loom/kuf">home</a> | <a href="/loom/wm_018_0407">next</a></p>
+<a href="/loom/wm_018_0021">prev</a> | <a href="/loom/kuf">home</a> | <a href="/loom/wm_018_0413">next</a></p>
 </div>
 </body>
 </html>

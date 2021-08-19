@@ -74,6 +74,15 @@ g-&gt;nxtval = 0;</pre></code>
     apply_weight(g, target);
 }</pre></code>
 <p></p>
+<br>
+<p>TODO: words.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>gest_target * gest_curtarget(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>gest_target * gest_curtarget(gest_d *g)
+{
+    return g-&gt;curtarget;
+}</pre></code>
+<p></p>
 <p>A next target is needed because during computation, the
 previous state is always used, and therefore
 the previous targets are needed.
@@ -87,7 +96,7 @@ the previous targets are needed.
 
 <h3>4.4. Stack</h3>
 
-<p><a id="wm_021_0104"></a>Tree nodes create a new layer every time it descends into
+<p><a id="wm_021_0109"></a>Tree nodes create a new layer every time it descends into
 children nodes. This is managed with a stack containing the
 parent node and current state. When a node begins, it
 pushes itself onto the stack, and pops itself off when it
@@ -96,7 +105,7 @@ ends.
 
 <h3>4.5. Modifier</h3>
 
-<p><a id="wm_021_0106"></a>The modifier is a value which mainpulates the increment
+<p><a id="wm_021_0111"></a>The modifier is a value which mainpulates the increment
 value calculated from the analyzing the conductor signal.
 </p>
 <p>It is represented as a rational value with a numerator and
@@ -115,7 +124,7 @@ decreasing the increment amount and speeding it up.
 
 <h3>4.6. Top/Selected Phrases</h3>
 
-<p><a id="wm_021_0113"></a>Gestures are created in units of phrases, so a few
+<p><a id="wm_021_0118"></a>Gestures are created in units of phrases, so a few
 variable references are stored here.
 </p>
 <p>For starters, the starting phrase is stored in a variable
@@ -133,7 +142,7 @@ g-&gt;phrase_selected = NULL;</pre></code>
 
 <h3>4.7. Collection</h3>
 
-<p><a id="wm_021_0119"></a>A local instance of a <code>gest_collection</code>, used to allocate
+<p><a id="wm_021_0124"></a>A local instance of a <code>gest_collection</code>, used to allocate
 components needed to make gestures.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_collection col;</pre></code>
@@ -142,7 +151,7 @@ components needed to make gestures.
 
 <h3>4.8. Selected Ramp Tree Node</h3>
 
-<p><a id="wm_021_0128"></a>A copy of the currently selected ramp tree node
+<p><a id="wm_021_0133"></a>A copy of the currently selected ramp tree node
 is stored in a variable called <code>curnode</code>.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_node *curnode;</pre></code>
@@ -158,14 +167,14 @@ is stored in a variable called <code>curnode</code>.
 
 <h3>4.9. Node Position</h3>
 
-<p><a id="wm_021_0139"></a>Needed for debugging.
+<p><a id="wm_021_0144"></a>Needed for debugging.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int nodepos;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;nodepos = 0;</pre></code>
 
 <h3>4.10. Global Temporal Inertia and Mass</h3>
 
-<p><a id="wm_021_0145"></a>The global inertia and mass amounts used for
+<p><a id="wm_021_0150"></a>The global inertia and mass amounts used for
 temporal weight.
 </p>
 <p>Targets in Gest can manipulate the external conductor
@@ -199,7 +208,7 @@ SKFLT gest_inertia_get(gest_d *g)
 
 <h3>4.11. Position In Time</h3>
 
-<p><a id="wm_021_0157"></a>Used for clock drift compensation.
+<p><a id="wm_021_0162"></a>Used for clock drift compensation.
 Measured in beats, and with an accumulator.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int beat;
@@ -209,18 +218,34 @@ g-&gt;t = 0;</pre></code>
 
 <h3>4.12. Please Wait Flag</h3>
 
-<p><a id="wm_021_0163"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int please_wait;</pre></code>
+<p><a id="wm_021_0168"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int please_wait;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;please_wait = 0;</pre></code>
 
 <h3>4.13. Correction</h3>
 
-<p><a id="wm_021_0168"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT correction;</pre></code>
+<p><a id="wm_021_0173"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT correction;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;correction = 1.0;</pre></code>
+
+<h3>4.14. User Data</h3>
+
+<p><a id="wm_021_0178"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>void *ud;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;ud = NULL;</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_data_set(gest_d *g, void *ud);
+void * gest_data_get(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_data_set(gest_d *g, void *ud)
+{
+    g-&gt;ud = ud;
+}
+
+void * gest_data_get(gest_d *g)
+{
+    return g-&gt;ud;
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0026">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0173">next</a></p>
+<a href="/loom/wm_021_0026">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0187">next</a></p>
 </div>
 </body>
 </html>

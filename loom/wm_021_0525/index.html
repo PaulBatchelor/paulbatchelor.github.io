@@ -12,14 +12,14 @@
 
 <h2>12. Targets</h2>
 
-<p><a id="wm_021_0511"></a>Targets can be contained inside of a node. If the tree
+<p><a id="wm_021_0525"></a>Targets can be contained inside of a node. If the tree
 reaches a node with a target, it sets it to be that target
 when the node starts.
 </p>
 
 <h3>12.1. Struct Declaration</h3>
 
-<p><a id="wm_021_0513"></a>A target in gest is known as a <code>gest_target</code></p>
+<p><a id="wm_021_0527"></a>A target in gest is known as a <code>gest_target</code></p>
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_target gest_target;</pre></code>
 <p></p>
 <p>A target stores 3 main things: a scalar value, a callback, and
@@ -35,27 +35,36 @@ is one coming next).
 </p>
 <div><b><i>&lt;&lt;gest_target&gt;&gt;=</i></b></div><pre><code>struct gest_target {
     SKFLT value;
-    SKFLT (*tick)(gest_d *, SKFLT, SKFLT, SKFLT, void *);
-    void *ud;
+    SKFLT (*tick)(gest_d *, SKFLT, void *);
+    void *aux; /* aux data for behavior function */
+    SKFLT (*mix)(gest_d *, SKFLT, SKFLT, SKFLT);
+    void *ud; /* user data attached to this target */
     gest_target *next;
 &lt;&lt;temporal_weight&gt;&gt;
 };</pre></code>
 
 <h3>12.2. Initialization</h3>
 
-<p><a id="wm_021_0523"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_init(gest_target *t);</pre></code>
+<p><a id="wm_021_0537"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_init(gest_target *t);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_target_init(gest_target *t)
 {
     t-&gt;value = 0;
     t-&gt;tick = NULL;
     t-&gt;ud = NULL;
+    t-&gt;aux = NULL;
     t-&gt;next = NULL;
+    t-&gt;mix = default_mix;
 &lt;&lt;init_temporal_weight&gt;&gt;
+}</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT default_mix(gest_d *g, SKFLT x, SKFLT y, SKFLT a);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT default_mix(gest_d *g, SKFLT x, SKFLT y, SKFLT a)
+{
+    return (1 - a)*x + a*y;
 }</pre></code>
 
 <h3>12.3. Binding Targets to Ramp Tree Nodes</h3>
 
-<p><a id="wm_021_0530"></a>Every target created is bound to exactly one node in a ramp
+<p><a id="wm_021_0548"></a>Every target created is bound to exactly one node in a ramp
 tree. Such a binding indicates a terminal leaf node in the
 tree.
 </p>
@@ -196,7 +205,7 @@ reaches the end of the phrase.
 
 <h3>12.4. Temporal Weight</h3>
 
-<p><a id="wm_021_0560"></a>Targets have temporal mass and inertia. These values
+<p><a id="wm_021_0578"></a>Targets have temporal mass and inertia. These values
 can be used to slow down or speed up the global tempo in
 the conductor signal generator. Mass is the amount used to
 speed up or slowdown the tempo. Inertia is the speed at
@@ -259,11 +268,43 @@ static void apply_weight(gest_d *g, gest_target *t)
     update_weightval(t-&gt;mass, t-&gt;mass_mode, &g-&gt;mass);
     update_weightval(t-&gt;inertia, t-&gt;inertia_mode, &g-&gt;inertia);
 }</pre></code>
+
+<h3>12.5. Set Mix Callback</h3>
+
+<p><a id="wm_021_0600"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_mix(gest_target *t,
+                     SKFLT (*mix)(gest_d *, SKFLT, SKFLT, SKFLT));</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_target_mix(gest_target *t,
+                     SKFLT (*mix)(gest_d *, SKFLT, SKFLT, SKFLT))
+{
+    t-&gt;mix = mix;
+}</pre></code>
+
+<h3>12.6. Set/get user data</h3>
+
+<p><a id="wm_021_0605"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_data_set(gest_target *t, void *ud);
+void* gest_target_data_get(gest_target *t);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_target_data_set(gest_target *t, void *ud)
+{
+    t-&gt;ud = ud;
+}
+
+void* gest_target_data_get(gest_target *t)
+{
+    return t-&gt;ud;
+}</pre></code>
+
+<h3>12.7. Get next target</h3>
+
+<p><a id="wm_021_0610"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>gest_target* gest_target_next(gest_target *t);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>gest_target* gest_target_next(gest_target *t)
+{
+    return t-&gt;next;
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0462">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0582">next</a></p>
+<a href="/loom/wm_021_0476">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0615">next</a></p>
 </div>
 </body>
 </html>
