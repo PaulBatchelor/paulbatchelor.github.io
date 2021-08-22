@@ -146,6 +146,132 @@ at position <code>start</code> and being <code>nsteps</code> long.
         a[start + i] = (1 - y)*beg + y * end;
     }
 }</pre></code>
+
+<h2>Distinctive Region Model</h2>
+
+<p>The Distinctive Region Model is a technique for articulatory
+synthesis models that subdivide the vocal tract into 8
+regions. Manipulating these regions in various ways will
+change the levels of the first 3 formants.
+</p>
+<p>The regions of the tract are of different sizes. It has been
+difficult to find what the precise sizes are. The core
+papers describing this technique in detail (Mrayati 1988,
+Carre and Mrayati 1992) are behind paywalls. So, the best
+I have write now are some loose instructions and a chart.
+</p>
+<p>Many thanks to "The Tube Resonance Model Speech
+Synthesizer" by Leonard Manzara for hints and charts on
+this, as well as providing a clear overview for the
+underlying techniques for tube models used in articulatory
+synthesis.
+</p>
+<p>So, hints and charts tell me the regions are roughly
+proportional to one another.
+</p>
+<p>R2 and R7 are the smallest regions, and seem to be equal in
+size.
+</p>
+<p>R4 and R5 are the largest regions, and seem to be equal in
+size.
+</p>
+<p>R1 seems to be about 2x the size of R2, maybe less. R8 is
+about the same size as R1.
+</p>
+<p>R2 + R3 lengths are about R4.
+</p>
+<p>So a decent enough ratio would be 2:1:2:4:4:2:1:2. According
+to the hints in the paper, this can be approximate (the paper
+distributes this using only 10 cylindrical areas. This
+model uses up to 44).
+</p>
+<p>To do this dynamically, divide the total array size
+into 18 parts. This size is the base unit size. Apply
+the ratios above, and then on the last one, fill
+the remaining samples.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_drm(SKFLT *a, int len, SKFLT *vals);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vowshape_drm(SKFLT *a, int len, SKFLT *vals)
+{
+    int pos;
+    int i;
+    SKFLT unit;
+    int nsmps;
+
+    unit = len / 18.0;
+
+    pos = 0;
+
+    /* R1: ~2 units */
+
+    nsmps = floor(unit * 2);
+
+    for (i = 0; i &lt; nsmps; i++) {
+        a[pos] = vals[0];
+        pos++;
+    }
+
+    /* R2: ~1 unit */
+
+    nsmps = floor(unit * 1);
+
+    for (i = 0; i &lt; nsmps; i++) {
+        a[pos] = vals[1];
+        pos++;
+    }
+
+    /* R3: ~2 units */
+
+    nsmps = floor(unit * 2);
+
+    for (i = 0; i &lt; nsmps; i++) {
+        a[pos] = vals[2];
+        pos++;
+    }
+
+    /* R4: ~4 units */
+
+    nsmps = floor(unit * 4);
+
+    for (i = 0; i &lt; nsmps; i++) {
+        a[pos] = vals[3];
+        pos++;
+    }
+
+    /* R5: ~4 units */
+
+    nsmps = floor(unit * 4);
+
+    for (i = 0; i &lt; nsmps; i++) {
+        a[pos] = vals[4];
+        pos++;
+    }
+
+    /* R6: ~2 units */
+
+    nsmps = floor(unit * 2);
+
+    for (i = 0; i &lt; nsmps; i++) {
+        a[pos] = vals[5];
+        pos++;
+    }
+
+    /* R7: ~1 units */
+
+    nsmps = floor(unit * 1);
+
+    for (i = 0; i &lt; nsmps; i++) {
+        a[pos] = vals[6];
+        pos++;
+    }
+
+    /* R8: ~2 units. Finish it off */
+
+    for (i = pos; i &lt; len; i++) {
+        a[i] = vals[7];
+    }
+}</pre></code>
 </div>
 </body>
 </html>

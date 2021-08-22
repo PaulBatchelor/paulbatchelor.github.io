@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>clkphs</title>
+<h1>clkphs</h1>
+
+<h2>Overview</h2>
+
+<p>The <code>clkphs</code> algorithm is a utility that takes in
+a clock signal (a periodic series of single-sample
+impulses), and produces a phasor (a period linear ramp
+signal).
+</p>
+<p>There are a few caveats to this particular algorithm
+that one should be aware of. The conversion works by
+measuring the distance between ticks in a clock signal,
+and uses that to estimate the phasor for the next
+signal. When clkphs first starts, it will need to wait
+a beat before starting up. In this initial period,
+the module will return -1. clkphs also works best on
+clock signals that are mostly steady in tempo.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>This document tangles to a header and C file combo
+<code>clkphs.c</code> and <code>clkphs.h</code>.
+</p>
+<p>Define <code>SK_CLKPHS_PRIV</code> will expose the header files.
+</p>
+<div><b><i>&lt;&lt;clkphs.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+#define SK_CLKPHS_PRIV
+#include "clkphs.h"
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;clkphs.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_CLKPHS_H
+#define SK_CLKPHS_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+
+#ifdef SK_CLKPHS_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+
+#endif</pre></code>
+
+<h2>Initialization</h2>
+
+<p>Clkphs is intialized with <code>sk_clkphs_init</code>. No samplerate
+is needed because it only needs to work in units of
+samples.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_clkphs_init(sk_clkphs *c);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_clkphs_init(sk_clkphs *c)
+{
+    &lt;&lt;init&gt;&gt;
+    c-&gt;correction = 1.0;
+}</pre></code>
+
+<h2>Struct Components</h2>
+
+
+<h3>Typedef And Struct Declaration</h3>
+
+<p>State is managed in a struct called <code>sk_clkphs</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_clkphs sk_clkphs;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_clkphs {
+    &lt;&lt;sk_clkphs&gt;&gt;
+};</pre></code>
+
+<h3>Counter</h3>
+
+<p>The <code>counter</code> variable is used to measure distances between
+ticks.
+</p>
+<div><b><i>&lt;&lt;sk_clkphs&gt;&gt;=</i></b></div><pre><code>unsigned long counter;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>c-&gt;counter = 0;</pre></code>
+
+<h3>Increment</h3>
+
+<p>The increment variable <code>inc</code> is the amount the phasor will
+increment by every sample. It is computed based on the
+previously measured period between two clock ticks.
+</p>
+<div><b><i>&lt;&lt;sk_clkphs&gt;&gt;=</i></b></div><pre><code>SKFLT inc;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>c-&gt;inc = 0;</pre></code>
+
+<h3>Internal Phase Position</h3>
+
+<p>The internal phase is kept track of as a floating point
+variable called <code>phs</code>.
+</p>
+<div><b><i>&lt;&lt;sk_clkphs&gt;&gt;=</i></b></div><pre><code>SKFLT phs;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>c-&gt;phs = 0;</pre></code>
+
+<h3>Start Flag</h3>
+
+<p>The <code>start</code> flag is used to indicate if clkphs has just
+started yet. A value of 1 means it has just started.
+</p>
+<p>A phasor can only be synthesized after the
+first distance between two ticks is measured. Before that
+point, it will have to wait return a negative value.
+</p>
+<div><b><i>&lt;&lt;sk_clkphs&gt;&gt;=</i></b></div><pre><code>int start;</pre></code>
+<p></p>
+<p>There can also be a state where the DSP has started and
+is waiting for the first tick. This is set with a value
+of -1, which is what it gets initialized to.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>c-&gt;start = -1;</pre></code>
+
+<h3>Wait Flag</h3>
+
+<p>If the clock is slowing down and the phasor doesn't yet
+know about it, it will need to wait for the next tick.
+This flag is set with the <code>wait</code> variable.
+</p>
+<div><b><i>&lt;&lt;sk_clkphs&gt;&gt;=</i></b></div><pre><code>int wait;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>c-&gt;wait = 0;</pre></code>
+
+<h3>Spillover Flag</h3>
+
+<p>If the clock is speeding up and the phasor doesn't
+yet know about it, it will try to spill out over into
+the next tick's space. When this happens, the <code>spillover</code>flag is set.
+</p>
+<div><b><i>&lt;&lt;sk_clkphs&gt;&gt;=</i></b></div><pre><code>int spillover;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>c-&gt;spillover = 0;</pre></code>
+
+<h3>Correction Amount</h3>
+
+<p>When spillage happens, some course correction is added to
+wrap and move things along. This factor is stored in a
+variable called <code>correction</code> and dynamically adjusted based
+on how close to finishing the phasor is (closer values will
+result in less correction).
+</p>
+<div><b><i>&lt;&lt;sk_clkphs&gt;&gt;=</i></b></div><pre><code>SKFLT correction;</pre></code>
+<p></p>
+<p>In normal circumstances, course correction has a factor of
+1x, or no effect.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>c-&gt;correction = 1.0;</pre></code>
+
+<h2>Computation</h2>
+
+<p>Computing a single sample of audio is done with
+<code>sk_clkphs_tick</code>. It expects an input clock signal
+<code>clk</code>, and returns a phasor.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_clkphs_tick(sk_clkphs *c, SKFLT clk);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_clkphs_tick(sk_clkphs *c, SKFLT clk)
+{
+    SKFLT out;
+    SKFLT phs;
+
+    out = 0;
+
+    &lt;&lt;check_for_tick&gt;&gt;
+    &lt;&lt;update_counter&gt;&gt;
+    &lt;&lt;check_flags&gt;&gt;
+    &lt;&lt;set_output&gt;&gt;
+    &lt;&lt;phasor_computation&gt;&gt;
+
+
+    return out;
+}</pre></code>
+
+<h3>Handling A Tick</h3>
+
+<p>At beginning, the algorithm will first check and respond
+to a tick that happens in the current sample. Depending
+on internal state, different things can occur.
+</p>
+<div><b><i>&lt;&lt;check_for_tick&gt;&gt;=</i></b></div><pre><code>if (clk != 0) {
+    &lt;&lt;if_just_started&gt;&gt;
+    &lt;&lt;if_first_period_completed&gt;&gt;
+    &lt;&lt;typical_tick_handling&gt;&gt;
+}</pre></code>
+<p></p>
+<p>When clkphs as <b>just</b> started (aka <code>start</code> is -1), it is
+waiting for the first tick. This will begin the initial
+count measurement, and change the <code>start</code> flag to be 1.
+</p>
+<div><b><i>&lt;&lt;if_just_started&gt;&gt;=</i></b></div><pre><code>if (c-&gt;start == -1) {
+    /* start initial count */
+    c-&gt;start = 1;
+    c-&gt;counter = 0;
+    return -1;
+}</pre></code>
+<p></p>
+<p>The second tick that happens (when <code>start</code> has been already
+set to be 1) completes the first counter. It is at
+this point that a phasor signal can be synthesized.
+The counter at this point will have measured the
+duration of two ticks in units of samples. The reciprocal
+of this will yield the phasor increment amount.
+</p>
+<div><b><i>&lt;&lt;if_first_period_completed&gt;&gt;=</i></b></div><pre><code>else if (c-&gt;start == 1) {
+    /* first counter finished */
+    c-&gt;start = 0;
+    c-&gt;phs = 0;
+    c-&gt;inc = 1.0 / c-&gt;counter;
+    c-&gt;counter = 0;
+}</pre></code>
+<p></p>
+<p>Typical handling of a tick signals the re-initialization
+of the phasor signal, as well as resetting of the
+<code>spillover</code> and <code>wait</code> flags.
+</p>
+<div><b><i>&lt;&lt;typical_tick_handling&gt;&gt;=</i></b></div><pre><code>else {
+    /* reset phasor and flags */
+    c-&gt;inc = 1.0 / c-&gt;counter;
+    c-&gt;counter = 0;
+    c-&gt;correction = 1.0;
+    c-&gt;wait = 0;
+
+    &lt;&lt;too_much_spillage&gt;&gt;
+
+    &lt;&lt;phasor_wraparound&gt;&gt;
+}</pre></code>
+<p></p>
+<p>It should be noted that if the <code>spillover</code> flag is still
+set by the time it reaches this point, it indicates
+that spillage couldn't fully recover in the previous
+period. When this happens, the algorithm will cut its
+losses, and reset the phasor entirely.
+</p>
+<p>A hard reset of the phasor caused by too much
+spillover will result in a missing period, which can
+cause off-by-one rhythms to occur from things
+using this as a timing signal. Fortunately, it should
+be very unlikely that this will ever happen. Only extremly
+sudden and vast tempo jumps could cause a scenario like
+this to happen. If this is avoided, it should be non-issue.
+</p>
+<div><b><i>&lt;&lt;too_much_spillage&gt;&gt;=</i></b></div><pre><code>if (c-&gt;spillover) {
+    /* too much spillage. abandon ship */
+    c-&gt;spillover = 0;
+    c-&gt;phs = 0;
+}</pre></code>
+<p></p>
+<p>Like a typical phasor algorithm, the internal phase is
+wrapped around itself. Both upper and lower bounds
+are checked, though it is typically assumed to just
+go above bounds.
+</p>
+<div><b><i>&lt;&lt;phasor_wraparound&gt;&gt;=</i></b></div><pre><code>if (c-&gt;phs &gt;= 1.0) {
+    c-&gt;phs -= 1.0;
+} else if (c-&gt;phs &lt; 0.0) {
+    c-&gt;phs += 1.0;
+} else {
+    &lt;&lt;engage_spillover&gt;&gt;
+}</pre></code>
+<p></p>
+<p>If the internal phasor value is still within bounds,
+it means it hasn't fully reached the end of the phasor,
+and will be given some additional time in the
+next period to complete itself. This is known as spill-over,
+and the <code>spillover</code> flag will be set to change
+the algorithm behavior accordingly.
+</p>
+<div><b><i>&lt;&lt;engage_spillover&gt;&gt;=</i></b></div><pre><code>/* too slow! spill-over mode */
+c-&gt;spillover = 1;
+
+if (c-&gt;phs != 0) {
+    &lt;&lt;compute_correction&gt;&gt;
+} else {
+    &lt;&lt;ignore_spillage&gt;&gt;
+}</pre></code>
+<p></p>
+<p>When spillover happens, some correction is factored into
+the increment signal. This factor is computed as the
+ideal place it is supposed to be (1.0), divided by the
+actual phase position. As the actual phase position
+approaches 1, the amount of correction gets smaller.
+</p>
+<div><b><i>&lt;&lt;compute_correction&gt;&gt;=</i></b></div><pre><code>c-&gt;correction = 1.0 / c-&gt;phs;</pre></code>
+<p></p>
+<p>Divisions by exactly zero will cause things to crash,
+so spillover is ignored entirely when this happens.
+Other than the phase being explictely reset to be 0
+when spillover happens, it is difficult to imagine
+a real-world scenario where this would happen.
+</p>
+<div><b><i>&lt;&lt;ignore_spillage&gt;&gt;=</i></b></div><pre><code>c-&gt;correction = 1.0;
+c-&gt;spillover = 0;</pre></code>
+
+<h3>Phasor Computation</h3>
+
+<p>After a tick is processed, actual phasor signal can be
+computed.
+</p>
+<p>First, the counter updates itself by incrementing by 1.
+</p>
+<div><b><i>&lt;&lt;update_counter&gt;&gt;=</i></b></div><pre><code>c-&gt;counter++;</pre></code>
+<p></p>
+<p>The wait and start flags are then checked. If either are
+enabled, the algorithm will return. Wait will return
+a value of 1. Start will return a value of -1.
+</p>
+<div><b><i>&lt;&lt;check_flags&gt;&gt;=</i></b></div><pre><code>if (c-&gt;start != 0) return -1;
+if (c-&gt;wait) return 1;</pre></code>
+<p></p>
+<p>The output of the phasor signal is the current state of
+the previous phasor.
+</p>
+<div><b><i>&lt;&lt;set_output&gt;&gt;=</i></b></div><pre><code>out = c-&gt;phs;</pre></code>
+<p></p>
+<p>Phasor computation has 3 steps. First is incrementation,
+second is threshold check, third is an update.
+</p>
+<div><b><i>&lt;&lt;phasor_computation&gt;&gt;=</i></b></div><pre><code>phs = c-&gt;phs;
+
+&lt;&lt;incrementation&gt;&gt;
+&lt;&lt;threshold_check&gt;&gt;
+&lt;&lt;update_phase&gt;&gt;</pre></code>
+<p></p>
+<p>The internal phasor value is incremented using the current
+increment amount, multiplied by the current correction
+amount.
+</p>
+<div><b><i>&lt;&lt;incrementation&gt;&gt;=</i></b></div><pre><code>phs += c-&gt;inc*c-&gt;correction;</pre></code>
+<p></p>
+<p>After it is updated, the phasor value will be checked to
+see if the phasor has exceeded 1.
+</p>
+<div><b><i>&lt;&lt;threshold_check&gt;&gt;=</i></b></div><pre><code>if (phs &gt;= 1.0) {
+    &lt;&lt;spillover_exception&gt;&gt;
+    &lt;&lt;tell_it_to_wait&gt;&gt;
+}</pre></code>
+<p></p>
+<p>In a typical phasor
+algorithm, this is where the wraparound would happen.
+However, since it being externally synchronized with
+a clock signal, it is told to wait at 1 until the next
+tick via setting the wait flag.
+</p>
+<div><b><i>&lt;&lt;tell_it_to_wait&gt;&gt;=</i></b></div><pre><code>else {
+    c-&gt;wait = 1;
+}</pre></code>
+<p></p>
+<p>The exception to this rule happens when the spillover
+flag is set, indicating that the phasor spilling over
+from the previous period has finally finished up, and it
+is time to work on synthesizing the phasor for the current
+period.
+</p>
+<div><b><i>&lt;&lt;spillover_exception&gt;&gt;=</i></b></div><pre><code>if (c-&gt;spillover) {
+    /* now back to our regularly scheduled program */
+    c-&gt;spillover = 0;
+    phs -= 1.0;
+}</pre></code>
+<p></p>
+<p>Finally, the phase is updated in the struct.
+</p>
+<div><b><i>&lt;&lt;update_phase&gt;&gt;=</i></b></div><pre><code>c-&gt;phs = phs;</pre></code>
+</div>
+</body>
+</html>
