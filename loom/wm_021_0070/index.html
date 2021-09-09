@@ -12,11 +12,11 @@
 
 <h2>4. Components</h2>
 
-<p><a id="wm_021_0068"></a></p>
+<p><a id="wm_021_0070"></a></p>
 
 <h3>4.1. Conductor Analysis Components</h3>
 
-<p><a id="wm_021_0069"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT last;
+<p><a id="wm_021_0071"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT last;
 SKFLT last_inc;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;last = 0;
 g-&gt;last_inc = 0;</pre></code>
@@ -28,12 +28,12 @@ the reset flag is set.
 
 <h3>4.2. Phase</h3>
 
-<p><a id="wm_021_0077"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT phs;</pre></code>
+<p><a id="wm_021_0079"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT phs;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;phs = -1;</pre></code>
 
 <h3>4.3. Top/Selected Target and Cached Values</h3>
 
-<p><a id="wm_021_0082"></a>This is called <code>curtarget</code>.
+<p><a id="wm_021_0084"></a>This is called <code>curtarget</code>.
 </p>
 <p>The top target from the first phrase is stored
 in a variable called <code>toptarget</code>. This is used
@@ -64,39 +64,24 @@ g-&gt;nxtval = 0;</pre></code>
 {
     g-&gt;curtarget = target;
     g-&gt;curval = target-&gt;value;
-
-    if (target-&gt;next != NULL) {
-        g-&gt;nxtval = target-&gt;next-&gt;value;
-    } else {
-        g-&gt;nxtval = g-&gt;curval;
-    }
-
     apply_weight(g, target);
 }</pre></code>
 <p></p>
 <br>
-<p>TODO: words.
-</p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>gest_target * gest_curtarget(gest_d *g);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>gest_target * gest_curtarget(gest_d *g)
 {
     return g-&gt;curtarget;
 }</pre></code>
-<p></p>
-<p>A next target is needed because during computation, the
-previous state is always used, and therefore
-the previous targets are needed.
-</p>
-<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void set_nxttarget(gest_d *g, gest_target *target);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void set_nxttarget(gest_d *g, gest_target *target)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>gest_target * gest_nxttarget(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>gest_target * gest_nxttarget(gest_d *g)
 {
-    g-&gt;nxttarget = target;
-    g-&gt;targetondeck = 1;
+    return g-&gt;nxttarget;
 }</pre></code>
 
 <h3>4.4. Stack</h3>
 
-<p><a id="wm_021_0109"></a>Tree nodes create a new layer every time it descends into
+<p><a id="wm_021_0110"></a>Tree nodes create a new layer every time it descends into
 children nodes. This is managed with a stack containing the
 parent node and current state. When a node begins, it
 pushes itself onto the stack, and pops itself off when it
@@ -105,7 +90,7 @@ ends.
 
 <h3>4.5. Modifier</h3>
 
-<p><a id="wm_021_0111"></a>The modifier is a value which mainpulates the increment
+<p><a id="wm_021_0112"></a>The modifier is a value which mainpulates the increment
 value calculated from the analyzing the conductor signal.
 </p>
 <p>It is represented as a rational value with a numerator and
@@ -124,7 +109,7 @@ decreasing the increment amount and speeding it up.
 
 <h3>4.6. Top/Selected Phrases</h3>
 
-<p><a id="wm_021_0118"></a>Gestures are created in units of phrases, so a few
+<p><a id="wm_021_0119"></a>Gestures are created in units of phrases, so a few
 variable references are stored here.
 </p>
 <p>For starters, the starting phrase is stored in a variable
@@ -142,7 +127,7 @@ g-&gt;phrase_selected = NULL;</pre></code>
 
 <h3>4.7. Collection</h3>
 
-<p><a id="wm_021_0124"></a>A local instance of a <code>gest_collection</code>, used to allocate
+<p><a id="wm_021_0125"></a>A local instance of a <code>gest_collection</code>, used to allocate
 components needed to make gestures.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_collection col;</pre></code>
@@ -151,7 +136,7 @@ components needed to make gestures.
 
 <h3>4.8. Selected Ramp Tree Node</h3>
 
-<p><a id="wm_021_0133"></a>A copy of the currently selected ramp tree node
+<p><a id="wm_021_0134"></a>A copy of the currently selected ramp tree node
 is stored in a variable called <code>curnode</code>.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_node *curnode;</pre></code>
@@ -164,17 +149,23 @@ is stored in a variable called <code>curnode</code>.
 {
     g-&gt;curnode = node;
 }</pre></code>
+<p></p>
+<p>The next node is also stored as well. Will be needed moving
+forward, in order for things like metatargets to work.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_node *nxtnode;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;nxtnode = NULL;</pre></code>
 
 <h3>4.9. Node Position</h3>
 
-<p><a id="wm_021_0144"></a>Needed for debugging.
+<p><a id="wm_021_0150"></a>Needed for debugging.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int nodepos;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;nodepos = 0;</pre></code>
 
 <h3>4.10. Global Temporal Inertia and Mass</h3>
 
-<p><a id="wm_021_0150"></a>The global inertia and mass amounts used for
+<p><a id="wm_021_0156"></a>The global inertia and mass amounts used for
 temporal weight.
 </p>
 <p>Targets in Gest can manipulate the external conductor
@@ -208,7 +199,7 @@ SKFLT gest_inertia_get(gest_d *g)
 
 <h3>4.11. Position In Time</h3>
 
-<p><a id="wm_021_0162"></a>Used for clock drift compensation.
+<p><a id="wm_021_0168"></a>Used for clock drift compensation.
 Measured in beats, and with an accumulator.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int beat;
@@ -218,17 +209,17 @@ g-&gt;t = 0;</pre></code>
 
 <h3>4.12. Please Wait Flag</h3>
 
-<p><a id="wm_021_0168"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int please_wait;</pre></code>
+<p><a id="wm_021_0174"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>int please_wait;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;please_wait = 0;</pre></code>
 
 <h3>4.13. Correction</h3>
 
-<p><a id="wm_021_0173"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT correction;</pre></code>
+<p><a id="wm_021_0179"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT correction;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;correction = 1.0;</pre></code>
 
 <h3>4.14. User Data</h3>
 
-<p><a id="wm_021_0178"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>void *ud;</pre></code>
+<p><a id="wm_021_0184"></a><div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>void *ud;</pre></code>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;ud = NULL;</pre></code>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_data_set(gest_d *g, void *ud);
 void * gest_data_get(gest_d *g);</pre></code>
@@ -241,11 +232,68 @@ void * gest_data_get(gest_d *g)
 {
     return g-&gt;ud;
 }</pre></code>
+
+<h3>4.15. Previous Output Value</h3>
+
+<p><a id="wm_021_0193"></a>The <code>prevout</code> variable caches the output of the
+previously computed sample. This is useful for
+situations when gest gets paused mid-gesture.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>SKFLT prevout;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>g-&gt;prevout = 0;</pre></code>
+
+<h3>4.16. next target state</h3>
+
+<p><a id="wm_021_0199"></a>The variable <code>nxtstate</code> stores the state information
+needed for the next node.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>gest_state nxtstate;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>init_state(&g-&gt;nxtstate);</pre></code>
+<p></p>
+<p>Metatargets change things up. Before metatargets,
+it used to be that targets were things that wouldn't
+change, and this made logic and flow very simpler.
+Metatargets can change their targets. Because of this,
+there is a need to introduce cached states.
+</p>
+<p>Basically, when the next target is acquired, it takes
+a snapshot of that state, which can then be applied
+without any traversal or searching.
+</p>
+<p>State is represetned by the struct <code>gest_state</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_state gest_state;</pre></code>
+<p></p>
+<p>State includes the target, the node belonging to
+that target, the modifier (representation as rational
+value with numerator/denominator integers), and the phrase.
+</p>
+<div><b><i>&lt;&lt;gest_state&gt;&gt;=</i></b></div><pre><code>struct gest_state {
+    gest_target *target;
+    gest_node *node;
+    gest_phrase *phrase;
+    gest_behavior *behavior;
+    int num;
+    int den;
+};</pre></code>
+<p></p>
+<p>Initialize state with <code>init_state</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void init_state(gest_state *s);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void init_state(gest_state *s)
+{
+    s-&gt;num = 1;
+    s-&gt;den = 1;
+    s-&gt;phrase = NULL;
+    s-&gt;target = NULL;
+    s-&gt;node = NULL;
+    s-&gt;behavior = NULL;
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0026">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0187">next</a></p>
+<a href="/loom/wm_021_0026">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0217">next</a></p>
 </div>
 </body>
 </html>

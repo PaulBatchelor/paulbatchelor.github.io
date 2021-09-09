@@ -12,7 +12,7 @@
 
 <h2>10. Stepping Through The Ramp Tree</h2>
 
-<p><a id="wm_021_0421"></a>A big part of gest involves stepping through a ramp tree.
+<p><a id="wm_021_0503"></a>A big part of gest involves stepping through a ramp tree.
 A ramp tree produces a set of normalized ramp values
 from 0 to 1, whose period lengths are proportional
 to the external conductor signal. These values
@@ -49,7 +49,7 @@ can then be used to interpolate between targets.
 
 <h3>10.1. Beat Check-in</h3>
 
-<p><a id="wm_021_0437"></a>In order to combat clock drift, a phrase "checks in" every
+<p><a id="wm_021_0519"></a>In order to combat clock drift, a phrase "checks in" every
 time conductor signal resets, which is an indicator of the
 new beat. Every time a new beat occurs, the status of the
 phrase is figured out, and handled accordingly.
@@ -89,34 +89,20 @@ closely match the conductor signal.
     int limit;
     SKFLT goal;
 
-    limit = g-&gt;phrase_selected-&gt;top-&gt;modifier;
+    limit = g-&gt;phrase_selected-&gt;beats;
     g-&gt;beat++;
     goal = (SKFLT) g-&gt;beat / limit;
 
     if (g-&gt;t &gt; 0) g-&gt;correction = goal / g-&gt;t;
 
     if (g-&gt;beat &gt;= limit) {
-        gest_node *next;
-
-        g-&gt;phrase_selected = g-&gt;phrase_selected-&gt;next;
-
         g-&gt;beat = 0;
         g-&gt;t = 0;
         g-&gt;phs = 0;
         g-&gt;please_wait = 0;
         g-&gt;correction = 1.0;
-
-        if (g-&gt;phrase_selected == NULL) {
-            return phs;
-        }
-
-        next = g-&gt;phrase_selected-&gt;top;
-        /* reset modifier */
-        g-&gt;num = 1;
-        g-&gt;den = 1;
-        next = dive_to_target(g, next);
-        set_nxttarget(g, next-&gt;target);
-        set_curnode(g, next);
+        g-&gt;targetondeck = 1;
+        g-&gt;phrase_selected = g-&gt;nxtstate.phrase;
         return phs;
     }
 } else if (g-&gt;please_wait) {
@@ -125,7 +111,7 @@ closely match the conductor signal.
 
 <h3>10.2. Setting the Output</h3>
 
-<p><a id="wm_021_0442"></a>The point of this function is to update the overall state of
+<p><a id="wm_021_0524"></a>The point of this function is to update the overall state of
 the ramp trees in gest and return a corresponding ramp
 value.
 </p>
@@ -136,18 +122,74 @@ call to <code>ramptree_step</code>.
 
 <h3>10.3. Updating Targets</h3>
 
-<p><a id="wm_021_0447"></a>If any targets were slotted to be updated in the previous
-call, update them now, then clear the flag.
+<p><a id="wm_021_0529"></a>A set <code>targetondeck</code> flag will not only be
+used to change the target, but also the state information
+that comes with the target, such as the node, the phrase,
+and the conductor modifier associated with the target.
+</p>
+<p>It is also here that the next node is found. Information
+for the next node needs to be immediately available, as
+certain tools using and extending gest (such as the vocal
+tract interpolation work) rely on knowing about
+the next target for it to work properly.
+</p>
+<p>It is assumed that by the time <code>targetondeck</code> is found,
+the next node is already in place (presumably
+from the last time targetondeck was set, or initialization),
+and just needs to be swapped in.
 </p>
 <div><b><i>&lt;&lt;update_targets&gt;&gt;=</i></b></div><pre><code>if (g-&gt;targetondeck) {
+    gest_state *s;
+    int shouldiwait;
+
+    s = &g-&gt;nxtstate;
+
     g-&gt;targetondeck = 0;
-    set_curtarget(g, g-&gt;nxttarget);
-    g-&gt;nxttarget = NULL;
+
+    /* non-matching non-NULL phrases indicate
+     * a new phrase */
+    shouldiwait =
+        s-&gt;phrase != NULL &&
+        s-&gt;phrase != g-&gt;phrase_selected;
+
+    if (shouldiwait) {
+        g-&gt;please_wait = 1;
+        return 1.0;
+    }
+
+    g-&gt;num = s-&gt;num;
+    g-&gt;den = s-&gt;den;
+    s-&gt;target-&gt;curbehavior = s-&gt;behavior;
+    set_curtarget(g, s-&gt;target);
+
+    set_curnode(g, s-&gt;node);
+    g-&gt;phrase_selected = s-&gt;phrase;
+
+    init_state(&g-&gt;nxtstate);
+
+    if (g-&gt;curnode != NULL) {
+        find_next_node(g, g-&gt;curnode, &g-&gt;nxtstate);
+    }
+
+    g-&gt;nxttarget = g-&gt;nxtstate.target;
+
+    if (g-&gt;nxttarget != NULL) {
+        g-&gt;nxtval = g-&gt;nxttarget-&gt;value;
+    } else {
+        g-&gt;nxtval = g-&gt;curval;
+    }
 }</pre></code>
+<p></p>
+<p>What triggers <code>targetondeck</code>? Usually this happens when the
+internal ramp reaches the end. This can also be triggered
+during the beat check-in, when a conductor signal demands
+to jump to the next phrase before fully finishing the
+current one.
+</p>
 
 <h3>10.4. Updating the phase using modifier and friends</h3>
 
-<p><a id="wm_021_0452"></a>To begin, the modifier amount is calculated.
+<p><a id="wm_021_0535"></a>To begin, the modifier amount is calculated.
 </p>
 <p>The modifier and increment amount are used together to
 update the existing phase.
@@ -162,16 +204,38 @@ phs += i;
 If it has, a change in nodes is required.
 </p>
 <div><b><i>&lt;&lt;check_and_update&gt;&gt;=</i></b></div><pre><code>if (phs &gt; 1.0) {
-&lt;&lt;find_next_node&gt;&gt;
+&lt;&lt;goto_next_node&gt;&gt;
 &lt;&lt;wraparound&gt;&gt;
 }</pre></code>
 
-<h3>10.5. Finding the Next Node</h3>
+<h3>10.5. Signalling to go to the next target</h3>
 
-<p><a id="wm_021_0465"></a>When the ramp reaches the end, it is time to find the next
-node with a target. It does this by traversing the Ramp
+<p><a id="wm_021_0548"></a>When the ramp reaches the end, it is time to go on to the
+next node with a target. By the time it reaches this point,
+this node has already been found, and just needs to be
+signalled to switch with the variable <code>targetondeck</code>.
+</p>
+<div><b><i>&lt;&lt;goto_next_node&gt;&gt;=</i></b></div><pre><code>g-&gt;targetondeck = 1;</pre></code>
+
+<h3>10.6. Finding the next node in the Ramp Tree</h3>
+
+<p><a id="wm_021_0553"></a>When a new node begins, the next with a target
+in the ramp tree must be found immediately after.
+Many programs using Gest require knowing the next target.
+</p>
+<p>The next node is found by traversing the Ramp
 Tree based on the position the current node is in.
 </p>
+<p>The process of finding the next node is done in a function
+called <code>find_next_node</code>. It will find the next node, and
+store the results in an instance of <code>gest_state</code>. The
+<code>top</code> node is expected to be the currently selected node
+<code>curnode</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void find_next_node(gest_d *g,
+                           gest_node *top,
+                           gest_state *state);</pre></code>
+<p></p>
 <p>Traversal starts large and gets smaller.
 </p>
 <p>To begin, check and see if the next node happens to be in
@@ -200,66 +264,90 @@ be handled inside of <code>dive_to_target</code>. If the node is already
 a target with a monoramp >1, this gets applied here as a
 special exception.
 </p>
-<div><b><i>&lt;&lt;find_next_node&gt;&gt;=</i></b></div><pre><code>gest_node *next;
-gest_node *top;
-gest_node *last_reverted;
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void find_next_node(gest_d *g,
+                           gest_node *top,
+                           gest_state *state)
+{
+    gest_node *next;
+    gest_node *last_reverted;
+    gest_phrase *phrase;
+    int num, den;
 
-next = NULL;
-last_reverted = NULL;
+    next = NULL;
+    last_reverted = NULL;
 
-/* maybe there needs to be a curchild? */
-/* or, maybe the top gets derived from the parent node */
-top = g-&gt;curnode;
-while (next == NULL) {
-    if (top == g-&gt;phrase_selected-&gt;top) {
-        /* are we at the end */
-        /* if so, go to next phrase */
-        if (top-&gt;next == NULL) {
-            /* wait for the downbeat of the next phrase */
-            g-&gt;please_wait = 1;
-            break;
+    num = g-&gt;num;
+    den = g-&gt;den;
+    phrase = g-&gt;phrase_selected;
+
+    while (next == NULL) {
+        if (top == g-&gt;phrase_selected-&gt;top) {
+            /* are we at the end */
+            /* if so, go to next phrase */
+            if (top-&gt;next == NULL) {
+                /* next node is in next phrase */
+                phrase = phrase-&gt;next;
+                if (phrase != NULL) next = phrase-&gt;top;
+                else next = NULL;
+                g-&gt;num = 1;
+                g-&gt;den = 1;
+                if (next != NULL) {
+                   next = dive_to_target(g, next);
+                }
+                break;
+            } else {
+                /* go to next child in top polyramp node */
+                next = top-&gt;next;
+
+                if (next-&gt;target == NULL) {
+                    next = dive_to_target(g, next);
+                }
+            }
+        } else if (top-&gt;next == NULL) {
+            revert_modifier(g, top-&gt;parent);
+            last_reverted = top-&gt;parent;
+            top = top-&gt;parent;
         } else {
-            /* go to next child in top polyramp node */
             next = top-&gt;next;
 
+            /* if top is a monoramp &gt;1, revert it */
+
+            if (top != last_reverted) {
+                if (top-&gt;type == NODE_MONORAMP && top-&gt;modifier &gt; 1) {
+                    /* revert the monoramp */
+                    revert_modifier(g, top);
+                }
+            }
+
+            /* dive_to_target applies modifiers */
+            /* continguous nodes on the same level don't have these */
             if (next-&gt;target == NULL) {
                 next = dive_to_target(g, next);
+            } else if (next-&gt;type == NODE_MONORAMP && next-&gt;modifier &gt; 1) {
+                /* next node is on same level but is monoramp */
+                apply_modifier(g, next);
             }
 
-            set_nxttarget(g, next-&gt;target);
         }
-    } else if (top-&gt;next == NULL) {
-        revert_modifier(g, top-&gt;parent);
-        last_reverted = top-&gt;parent;
-        top = top-&gt;parent;
-    } else {
-        next = top-&gt;next;
-
-        /* if top is a monoramp &gt;1, revert it */
-
-        if (top != last_reverted) {
-            if (top-&gt;type == NODE_MONORAMP && top-&gt;modifier &gt; 1) {
-                /* revert the monoramp */
-                revert_modifier(g, top);
-            }
-        }
-
-        /* dive_to_target applies modifiers */
-        /* continguous nodes on the same level don't have these */
-        if (next-&gt;target == NULL) {
-            next = dive_to_target(g, next);
-        } else if (next-&gt;type == NODE_MONORAMP && next-&gt;modifier &gt; 1) {
-            /* next node is on same level but is monoramp */
-            apply_modifier(g, next);
-        }
-
-        set_nxttarget(g, next-&gt;target);
     }
-}
 
-set_curnode(g, next);</pre></code>
-<p></p>
-<p>A phrase is considered over when it reaches the end of the
+
+    state-&gt;num = g-&gt;num;
+    state-&gt;den = g-&gt;den;
+    state-&gt;node = next;
+    state-&gt;target = node_target(next);
+    state-&gt;behavior = target_behavior(state-&gt;target);
+    state-&gt;phrase = phrase;
+
+    /* restore old numerator and denominator */
+
+    g-&gt;num = num;
+    g-&gt;den = den;
+}</pre></code>
+
+<h3>10.7. When a phrase is over, wraparound</h3>
+
+<p><a id="wm_021_0560"></a>A phrase is considered over when it reaches the end of the
 top-level polyramp. At this point, the next phrase is found
 and set to be the beginning of that node.
 </p>
@@ -269,9 +357,9 @@ the roundoff error is stored in the error variable.
 <div><b><i>&lt;&lt;wraparound&gt;&gt;=</i></b></div><pre><code>while (phs &gt; 1) phs--;
 phs = 0;</pre></code>
 
-<h3>10.6. Handling Roundoff Error in Phrases</h3>
+<h3>10.8. Handling Roundoff Error in Phrases</h3>
 
-<p><a id="wm_021_0474"></a>Roundoff error is a natural part of working with floating
+<p><a id="wm_021_0565"></a>Roundoff error is a natural part of working with floating
 point, and difficult to avoid entirely. Roundoff error
 in this context leads to temporal drift in the timing
 signal. Unchecked, this will eventually lead to phrases
@@ -332,7 +420,7 @@ gesture.
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0306">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0476">next</a></p>
+<a href="/loom/wm_021_0364">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0567">next</a></p>
 </div>
 </body>
 </html>

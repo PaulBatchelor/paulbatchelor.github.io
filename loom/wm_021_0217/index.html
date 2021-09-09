@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>5. Core Commands</h2>
+
+<p><a id="wm_021_0217"></a>Some core commands for programming.
+</p>
+
+<h3>5.1. Begin</h3>
+
+<p><a id="wm_021_0219"></a>Begin: begins a phrase. Takes in duration (in beats) as an
+argument.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_begin(gest_d *g, int beats, int div);</pre></code>
+<p></p>
+<p>The begin command creates and initializes a new phrase,
+which then gets appended to the last phrase.
+</p>
+<p>The first phrase to get created becomes the beginning
+phrase in gest.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_begin(gest_d *g, int beats, int div)
+{
+    gest_phrase *phrase;
+
+    phrase = gest_alloc(g, sizeof(gest_phrase));
+
+    phrase_init(g, phrase, beats, div);
+
+    if (g-&gt;phrase_top == NULL) {
+        g-&gt;phrase_top = phrase;
+    }
+
+    if (g-&gt;phrase_selected != NULL) {
+        g-&gt;phrase_selected-&gt;next = phrase;
+    }
+
+    g-&gt;phrase_selected = phrase;
+
+    /* TODO make this a targetondeck flag */
+    set_curnode(g, g-&gt;phrase_selected-&gt;top);
+}</pre></code>
+
+<h3>5.2. End</h3>
+
+<p><a id="wm_021_0226"></a>End: closes out the phrase. If the phrase isn't fully
+completed a non-zero value is returned.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_end(gest_d *g);</pre></code>
+<p></p>
+<p>Error checking is done by examining the top-level polyramp
+in the currently selected phrase. A completed phrase will
+have every child node capped with a target.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_end(gest_d *g)
+{
+    int count;
+    gest_node *top;
+
+    top = g-&gt;phrase_selected-&gt;top;
+
+    count = node_count(top, NULL);
+
+    if (count != top-&gt;modifier) return 1;
+
+    return 0;
+}</pre></code>
+
+<h3>5.3. Polyramp</h3>
+
+<p><a id="wm_021_0233"></a>Polyramp: Takes the current ramp, and divides it up into N
+beats.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_polyramp(gest_d *g, int div);</pre></code>
+<p></p>
+<p>When a new polyramp node is made, it's node becomes
+the actively selected node to be populated. If something
+goes wrong, an non-zero error value is returned/
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_polyramp(gest_d *g, int div)
+{
+    gest_node *n;
+
+    n = mkpolyramp(g, g-&gt;curnode, div);
+
+    if (n == NULL) {
+        return 1;
+    }
+
+    set_curnode(g, n);
+
+    return 0;
+}</pre></code>
+
+<h3>5.4. Monoramp</h3>
+
+<p><a id="wm_021_0240"></a>Monoramp: Produces a monoramp that takes up N beats.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_monoramp(gest_d *g, int nbeats);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_monoramp(gest_d *g, int nbeats)
+{
+    gest_node *n;
+
+    n = mkmonoramp(g, g-&gt;curnode, nbeats);
+
+    if (n == NULL) {
+        return 1;
+    }
+
+    set_curnode(g, n);
+
+    return 0;
+}</pre></code>
+
+<h3>5.5. Addtarget</h3>
+
+<p><a id="wm_021_0246"></a>Target: Caps the current ramp with a scalar target, as a
+floating point value. uses linear behavior by default.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addtarget(gest_d *g, SKFLT val);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_addtarget(gest_d *g, SKFLT val)
+{
+    gest_target *t;
+
+    t = mktarget(g);
+
+    if (t == NULL) {
+        return 1;
+    }
+
+    if (g-&gt;toptarget == NULL) {
+        g-&gt;toptarget = t;
+    }
+
+    if (g-&gt;curtarget != NULL) {
+        g-&gt;curtarget-&gt;next = t;
+    }
+
+    g-&gt;curtarget = t;
+    t-&gt;value = val;
+    gest_behavior_linear(g);
+
+    return 0;
+}</pre></code>
+
+<h3>5.6. Finish</h3>
+
+<p><a id="wm_021_0252"></a>The finish command <code>gest_finish</code> completes population
+and initializes gest to start at the top.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_finish(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_finish(gest_d *g)
+{
+    gest_node *top;
+    gest_target *target;
+
+    g-&gt;den = 1;
+    g-&gt;num = 1;
+
+    g-&gt;phrase_selected = g-&gt;phrase_top;
+
+    top = dive_to_target(g, g-&gt;phrase_top-&gt;top);
+
+    set_curnode(g, top);
+    target = node_target(top);
+    target-&gt;curbehavior = target_behavior(target);
+    set_curtarget(g, target);
+
+    init_state(&g-&gt;nxtstate);
+    find_next_node(g, g-&gt;curnode, &g-&gt;nxtstate);
+    g-&gt;nxttarget = g-&gt;nxtstate.target;
+
+    if (g-&gt;nxttarget != NULL) {
+        g-&gt;nxtval = g-&gt;nxttarget-&gt;value;
+    } else {
+        g-&gt;nxtval = g-&gt;curval;
+    }
+}</pre></code>
+
+<h3>5.7. Loopit</h3>
+
+<p><a id="wm_021_0258"></a>The command <code>gest_loopit</code> will loop the current phrase back
+to the beginning phrase.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_loopit(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_loopit(gest_d *g)
+{
+    g-&gt;curtarget-&gt;next = g-&gt;toptarget;
+    g-&gt;phrase_selected-&gt;next = g-&gt;phrase_top;
+}</pre></code>
+
+<h3>5.8. Addmetatarget</h3>
+
+<p><a id="wm_021_0264"></a>The function <code>gest_addmetatarget</code> will create a new
+metatarget with a size of <code>sz</code> metatargets.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addmetatarget(gest_d *g, int sz);</pre></code>
+<p></p>
+<p>This function will implicitely create a new target
+using <code>gest_addtarget</code>, then configure this
+target to be a metatarget.
+</p>
+<p>After it is created, the metatarget gets pushed onto the
+metatarget stack contained in the gest data.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_addmetatarget(gest_d *g, int sz)
+{
+    int rc;
+    gest_target *t;
+    gest_metatarget *mt;
+
+    if (g-&gt;mtpos &gt;= GEST_MTSTACK_SIZE) return 2;
+
+    rc = gest_addtarget(g, -1);
+
+    if (rc) return rc;
+
+    t = g-&gt;curtarget;
+
+    mt = metatarget_alloc(g, sz);
+
+    t-&gt;get = get_seq;
+    t-&gt;meta = mt;
+
+    /* push to stack */
+    g-&gt;mtstack[g-&gt;mtpos++] = mt;
+    return 0;
+}</pre></code>
+
+<h3>5.9. Addmetabehavior</h3>
+
+<p><a id="wm_021_0271"></a>Adds a metabehavior of with <code>sz</code> behaviors.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addmetabehavior(gest_d *g, int sz);</pre></code>
+<p></p>
+<p>By default, adding a metabehavior means taking
+the behavior in the currently selected target and
+converting it into a metabehavior. A nested metabehavior
+will already have the root behavior converted
+into a metabehavior at this point. If a metabehavior
+has been found, it will create a metabehavior on
+the next available behavior in the parent metabehavior.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_addmetabehavior(gest_d *g, int sz)
+{
+    gest_target *t;
+    gest_metabehavior *mb;
+    gest_behavior *b;
+
+    if (g-&gt;mbpos &gt;= GEST_MBSTACK_SIZE) return 2;
+
+    t = g-&gt;curtarget;
+
+    b = &t-&gt;behavior;
+
+    if (b-&gt;meta != NULL) {
+        /* empty stack, shouldn't happen normally */
+        if (g-&gt;mbpos &lt;= 0) return 3;
+
+        mb = b-&gt;meta;
+        b = &mb-&gt;behaviors[mb-&gt;pos++];
+
+        if (mb-&gt;pos &gt;= mb-&gt;size) {
+            g-&gt;mbstack[g-&gt;mbpos - 1] = NULL;
+            g-&gt;mbpos--; /* don't be clever */
+        }
+    }
+
+    mb = metabehavior_alloc(g, sz);
+
+    b-&gt;get = behave_seq;
+    b-&gt;meta = mb;
+
+    /* push to stack */
+    g-&gt;mbstack[g-&gt;mbpos++] = mb;
+    return 0;
+}</pre></code>
+
+<h3>5.10. Addmetanode</h3>
+
+<p><a id="wm_021_0278"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addmetanode(gest_d *g, int nbeats, int sz);</pre></code>
+<p></p>
+<p>When a metanode is created, it creates the equivalent to
+a monoramp, then binds a metanode to it.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_addmetanode(gest_d *g, int nbeats, int sz)
+{
+    int rc;
+    gest_node *n;
+    gest_metanode *mn;
+
+    if (g-&gt;mnpos &gt;= GEST_MNSTACK_SIZE) return 1;
+
+    rc = gest_monoramp(g, nbeats);
+
+    if (rc) return rc;
+
+    n = g-&gt;curnode;
+
+    mn = metanode_alloc(g, n, sz);
+
+    n-&gt;meta = mn;
+    n-&gt;get = node_seq;
+    mn-&gt;parent = n;
+
+    set_curnode(g, mn-&gt;nodes[mn-&gt;pos++]);
+
+    g-&gt;mnstack[g-&gt;mnpos++] = mn;
+
+    return 0;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0070">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0284">next</a></p>
+</div>
+</body>
+</html>

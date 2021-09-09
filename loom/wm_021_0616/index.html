@@ -10,16 +10,16 @@
 <body>
 <div id="main">
 
-<h2>12. Targets</h2>
+<h2>12. Targets and Behaviors</h2>
 
-<p><a id="wm_021_0525"></a>Targets can be contained inside of a node. If the tree
+<p><a id="wm_021_0616"></a>Targets can be contained inside of a node. If the tree
 reaches a node with a target, it sets it to be that target
 when the node starts.
 </p>
 
 <h3>12.1. Struct Declaration</h3>
 
-<p><a id="wm_021_0527"></a>A target in gest is known as a <code>gest_target</code></p>
+<p><a id="wm_021_0618"></a>A target in gest is known as a <code>gest_target</code></p>
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_target gest_target;</pre></code>
 <p></p>
 <p>A target stores 3 main things: a scalar value, a callback, and
@@ -33,27 +33,32 @@ addition to being referenced in the node they belong to.
 Targets need to know what target is coming next (if there
 is one coming next).
 </p>
-<div><b><i>&lt;&lt;gest_target&gt;&gt;=</i></b></div><pre><code>struct gest_target {
+<div><b><i>&lt;&lt;gest_target&gt;&gt;=</i></b></div><pre><code>&lt;&lt;gest_behavior&gt;&gt;
+struct gest_target {
     SKFLT value;
-    SKFLT (*tick)(gest_d *, SKFLT, void *);
-    void *aux; /* aux data for behavior function */
+    gest_behavior behavior;
+    gest_behavior *curbehavior;
     SKFLT (*mix)(gest_d *, SKFLT, SKFLT, SKFLT);
     void *ud; /* user data attached to this target */
     gest_target *next;
+    gest_target* (*get)(gest_node *, gest_target *);
+    gest_metatarget *meta;
 &lt;&lt;temporal_weight&gt;&gt;
 };</pre></code>
 
 <h3>12.2. Initialization</h3>
 
-<p><a id="wm_021_0537"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_init(gest_target *t);</pre></code>
+<p><a id="wm_021_0630"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_init(gest_target *t);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_target_init(gest_target *t)
 {
     t-&gt;value = 0;
-    t-&gt;tick = NULL;
     t-&gt;ud = NULL;
-    t-&gt;aux = NULL;
     t-&gt;next = NULL;
     t-&gt;mix = default_mix;
+    t-&gt;get = NULL;
+    t-&gt;meta = NULL;
+    gest_behavior_init(&t-&gt;behavior);
+    t-&gt;curbehavior = &t-&gt;behavior;
 &lt;&lt;init_temporal_weight&gt;&gt;
 }</pre></code>
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT default_mix(gest_d *g, SKFLT x, SKFLT y, SKFLT a);</pre></code>
@@ -64,9 +69,13 @@ is one coming next).
 
 <h3>12.3. Binding Targets to Ramp Tree Nodes</h3>
 
-<p><a id="wm_021_0548"></a>Every target created is bound to exactly one node in a ramp
+<p><a id="wm_021_0641"></a>Every target created is bound to exactly one node in a ramp
 tree. Such a binding indicates a terminal leaf node in the
 tree.
+</p>
+<p>Creating targets are an important operation because
+it is the thing that moves the tree forward (from left
+to right) in population.
 </p>
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_target * mktarget(gest_d *g);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_target * mktarget(gest_d *g)
@@ -79,18 +88,31 @@ tree.
     last = NULL;
     curnode = g-&gt;curnode;
 
+&lt;&lt;create_target&gt;&gt;
+
+    if (g-&gt;mtpos &gt; 0) {
+&lt;&lt;tie_to_metatarget&gt;&gt;
+        return t;
+    }
+
     if (curnode == NULL) {
         return NULL;
     }
 
 &lt;&lt;check_current_node&gt;&gt;
-&lt;&lt;create_target&gt;&gt;
 &lt;&lt;tie_to_node&gt;&gt;
 &lt;&lt;move_forward&gt;&gt;
 
     return t;
 }</pre></code>
 <p></p>
+<p>Data for a new target is allocated and initialized. What
+to do with the target remains to be seen.
+</p>
+<div><b><i>&lt;&lt;create_target&gt;&gt;=</i></b></div><pre><code>t = gest_alloc(g, sizeof(gest_target));
+gest_target_init(t);</pre></code>
+<p></p>
+<br>
 <p>A check is done to see if the current node can have
 a target applied in the first place.
 </p>
@@ -103,13 +125,6 @@ a target applied in the first place.
         return NULL;
     }
 }</pre></code>
-<p></p>
-<p>Creating targets are an important operation because
-it is the thing that moves the tree forward (from left
-to right) in population.
-</p>
-<div><b><i>&lt;&lt;create_target&gt;&gt;=</i></b></div><pre><code>t = gest_alloc(g, sizeof(gest_target));
-gest_target_init(t);</pre></code>
 <p></p>
 <p>Technically, a target is bound to the last created node,
 which is always a monoramp.
@@ -133,6 +148,7 @@ the new target.
 
     rc = last != NULL &&
         last-&gt;type == NODE_MONORAMP &&
+        last-&gt;meta == NULL &&
         last-&gt;target == NULL &&
         last-&gt;nchildren == 0;
 
@@ -164,14 +180,22 @@ reaches the end of the phrase.
 <div><b><i>&lt;&lt;move_forward&gt;&gt;=</i></b></div><pre><code>{
     gest_node *next;
     gest_node *curr;
+    int metahunt;
+    gest_node *mnpar;
 
     next = NULL;
     curr = curnode;
+    metahunt = 0;
+    mnpar = NULL;
+
+&lt;&lt;check_metanode_stack&gt;&gt;
 
     while (next == NULL) {
         int size;
         gest_node *last;
         int limit;
+
+&lt;&lt;check_for_metanode_parent&gt;&gt;
 
         /* is there any room in the current node? */
 
@@ -202,10 +226,31 @@ reaches the end of the phrase.
 
     set_curnode(g, next);
 }</pre></code>
+<p></p>
+<p>If there is a metatarget being active populated, the target
+will be sent there instead of being tied to a node. The most
+recent metatarget in play is retrieved via the metatarget
+stack, and a target is appeneded. If it has reached the end,
+the metatarget itself is popped off the stack here.
+</p>
+<div><b><i>&lt;&lt;tie_to_metatarget&gt;&gt;=</i></b></div><pre><code>gest_metatarget *mt;
+
+/* get from top of stack */
+mt = g-&gt;mtstack[g-&gt;mtpos - 1];
+
+/* append to targets array */
+mt-&gt;targets[mt-&gt;pos++] = t;
+
+/* pop off stack if reached the end */
+if (mt-&gt;pos &gt;= mt-&gt;size) {
+    g-&gt;mtpos--;
+    g-&gt;mtstack[g-&gt;mtpos] = NULL;
+    mt-&gt;pos = 0;
+}</pre></code>
 
 <h3>12.4. Temporal Weight</h3>
 
-<p><a id="wm_021_0578"></a>Targets have temporal mass and inertia. These values
+<p><a id="wm_021_0681"></a>Targets have temporal mass and inertia. These values
 can be used to slow down or speed up the global tempo in
 the conductor signal generator. Mass is the amount used to
 speed up or slowdown the tempo. Inertia is the speed at
@@ -271,7 +316,7 @@ static void apply_weight(gest_d *g, gest_target *t)
 
 <h3>12.5. Set Mix Callback</h3>
 
-<p><a id="wm_021_0600"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_mix(gest_target *t,
+<p><a id="wm_021_0703"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_mix(gest_target *t,
                      SKFLT (*mix)(gest_d *, SKFLT, SKFLT, SKFLT));</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_target_mix(gest_target *t,
                      SKFLT (*mix)(gest_d *, SKFLT, SKFLT, SKFLT))
@@ -281,7 +326,7 @@ static void apply_weight(gest_d *g, gest_target *t)
 
 <h3>12.6. Set/get user data</h3>
 
-<p><a id="wm_021_0605"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_data_set(gest_target *t, void *ud);
+<p><a id="wm_021_0708"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_target_data_set(gest_target *t, void *ud);
 void* gest_target_data_get(gest_target *t);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_target_data_set(gest_target *t, void *ud)
 {
@@ -293,18 +338,77 @@ void* gest_target_data_get(gest_target *t)
     return t-&gt;ud;
 }</pre></code>
 
-<h3>12.7. Get next target</h3>
+<h3>12.7. Behaviors</h3>
 
-<p><a id="wm_021_0610"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>gest_target* gest_target_next(gest_target *t);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>gest_target* gest_target_next(gest_target *t)
+<p><a id="wm_021_0713"></a>Behaviors are the things that dictate how one target
+goes to the next target. A behavior is a callback
+function. It is a function that takes in a value from 0 to
+1, and then returns a new value assumed to also be in the
+same range. Behaviors can also have their own state to
+manage things like parameters and constants.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_behavior gest_behavior;
+typedef SKFLT (* gest_bfunc) (gest_d *, SKFLT, void *);</pre></code>
+<div><b><i>&lt;&lt;gest_behavior&gt;&gt;=</i></b></div><pre><code>struct gest_behavior {
+    gest_bfunc tick;
+    void *ud;
+    gest_behavior * (*get)(gest_target *, gest_behavior *b);
+    gest_metabehavior *meta;
+};</pre></code>
+<p></p>
+<p>Initialize the behavior with <code>gest_behavior_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_init(gest_behavior *b);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_init(gest_behavior *b)
 {
-    return t-&gt;next;
+    b-&gt;tick = NULL;
+    b-&gt;ud = NULL;
+    b-&gt;get = NULL;
+    b-&gt;meta = NULL;
+}</pre></code>
+<p></p>
+<p>Set the behavior with <code>gest_behavior_set</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_set(gest_behavior *b, gest_bfunc tick, void *ud);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_behavior_set(gest_behavior *b, gest_bfunc tick, void *ud)
+{
+    b-&gt;tick = tick;
+    b-&gt;ud = ud;
+}</pre></code>
+<p></p>
+<p>call the tick function with <code>gest_behavior_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_behavior_tick(gest_behavior *b, gest_d *g, SKFLT a);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_behavior_tick(gest_behavior *b, gest_d *g, SKFLT a)
+{
+    return b-&gt;tick(g, a, b-&gt;ud);
+}</pre></code>
+
+<h3>12.8. Behavior Getter From Target</h3>
+
+<p><a id="wm_021_0735"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_behavior * target_behavior(gest_target *t);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_behavior * target_behavior(gest_target *t)
+{
+    gest_behavior *b;
+
+    if (t == NULL) return NULL;
+
+    b = &t-&gt;behavior;
+
+    if (b != NULL && b-&gt;get != NULL) {
+        while (1) {
+            b = b-&gt;get(t, b);
+            if (b-&gt;meta == NULL || b-&gt;get == NULL) break;
+        }
+    }
+
+    return b;
 }</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0476">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0615">next</a></p>
+<a href="/loom/wm_021_0567">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0740">next</a></p>
 </div>
 </body>
 </html>
