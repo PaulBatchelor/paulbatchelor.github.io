@@ -12,21 +12,21 @@
 
 <h2>14. Metathings</h2>
 
-<p><a id="wm_021_0776"></a>All things meta. Generally speaking, anything in this
+<p><a id="wm_021_0816"></a>All things meta. Generally speaking, anything in this
 section refers to any component in Gest capable of changing
 itself after it has been created.
 </p>
 
 <h3>14.1. Metatargets</h3>
 
-<p><a id="wm_021_0778"></a>Metatargets will probably end up in
+<p><a id="wm_021_0818"></a>Metatargets will probably end up in
 a larger category of meta-things, including metaramps
 and metabehaviors. But metatargets come first.
 </p>
 
 <h4>14.1.1. Overview</h4>
 
-<p><a id="wm_021_0780"></a>A metatarget is a target containing one or more
+<p><a id="wm_021_0820"></a>A metatarget is a target containing one or more
 targets inside of itself. Whenever it gets selected
 it can choose one of these targets. In other words,
 this allows a particular target to dynamically
@@ -41,7 +41,7 @@ more room left.
 
 <h4>14.1.2. Struct Declaration</h4>
 
-<p><a id="wm_021_0782"></a>A metatarget is a special struct stored inside
+<p><a id="wm_021_0822"></a>A metatarget is a special struct stored inside
 of a target inside via user-data pointer provided.
 It contains an array of target pointers, the size,
 and variable storing the current position.
@@ -50,28 +50,13 @@ and variable storing the current position.
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct gest_metatarget {
     int pos;
     int size;
+    gest_target *parent;
     gest_target **targets;
 };</pre></code>
-<p></p>
-<p>By default, a metatarget will choose targets in sequence.
-This is done by overriding the default "get" callback
-in the target.
-</p>
-<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_target *get_seq(gest_node *n, gest_target *t);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_target *get_seq(gest_node *n, gest_target *t)
-{
-    gest_metatarget *mt;
-
-    mt = t-&gt;meta;
-
-    if (mt-&gt;pos &gt;= mt-&gt;size) mt-&gt;pos = 0;
-
-    return mt-&gt;targets[mt-&gt;pos++];
-}</pre></code>
 
 <h4>14.1.3. Metatarget Allocation</h4>
 
-<p><a id="wm_021_0793"></a>A metatarget is allocated with the function
+<p><a id="wm_021_0828"></a>A metatarget is allocated with the function
 <code>metatarget_alloc</code>.
 </p>
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_metatarget * metatarget_alloc(gest_d *g, int sz);</pre></code>
@@ -94,7 +79,7 @@ in the target.
 
 <h4>14.1.4. Metatarget Population</h4>
 
-<p><a id="wm_021_0799"></a>Metatarget population in Gest works by caching the
+<p><a id="wm_021_0834"></a>Metatarget population in Gest works by caching the
 metatarget inside of the Gest struct. When a metatarget
 is first created, it is set to be that value and
 the position is set to be 0. Every time a target is added,
@@ -127,13 +112,46 @@ int mtpos;</pre></code>
 on this stack.
 </p>
 
+<h4>14.1.5. Sequential Target Selector</h4>
+
+<p><a id="wm_021_0841"></a>By default, a metatarget will choose targets in sequence.
+This is done by overriding the default "get" callback
+in the target.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_target *get_seq(gest_d *g, gest_target *t);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_target *get_seq(gest_d *g, gest_target *t)
+{
+    gest_metatarget *mt;
+
+    mt = t-&gt;meta;
+
+    if (mt-&gt;pos &gt;= mt-&gt;size) mt-&gt;pos = 0;
+
+    return mt-&gt;targets[mt-&gt;pos++];
+}</pre></code>
+
+<h4>14.1.6. Random Target Selector</h4>
+
+<p><a id="wm_021_0847"></a>The random target chooser <code>target_random</code> will
+randomly choose a target from a metatarget.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_target *target_random(gest_d *g, gest_target *t);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_target *target_random(gest_d *g, gest_target *t)
+{
+    gest_metatarget *mt;
+
+    mt = t-&gt;meta;
+
+    return mt-&gt;targets[gest_randi(g, mt-&gt;size)];
+}</pre></code>
+
 <h3>14.2. Metabehaviors</h3>
 
-<p><a id="wm_021_0806"></a></p>
+<p><a id="wm_021_0853"></a></p>
 
 <h4>14.2.1. Overview</h4>
 
-<p><a id="wm_021_0807"></a>The metabehavior is a special kind of behavior that is a
+<p><a id="wm_021_0854"></a>The metabehavior is a special kind of behavior that is a
 collection of behaviors. Every time a target a metabehavior
 belongs to is selected, it has the ability to change
 which behavior is used.
@@ -141,7 +159,7 @@ which behavior is used.
 
 <h4>14.2.2. Struct Declaration</h4>
 
-<p><a id="wm_021_0809"></a>Data for the metabehavior is encapsulated in a struct called
+<p><a id="wm_021_0856"></a>Data for the metabehavior is encapsulated in a struct called
 <code>gest_metabehavior</code>. It contains an array of behaviors, the
 size, and a variable storing the current position.
 </p>
@@ -156,12 +174,13 @@ allocated here.
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct gest_metabehavior {
     int pos;
     int size;
+    gest_behavior *parent;
     gest_behavior *behaviors;
 };</pre></code>
 
 <h4>14.2.3. Metabehavior allocation</h4>
 
-<p><a id="wm_021_0816"></a>A metabehavior is allocated with the function
+<p><a id="wm_021_0863"></a>A metabehavior is allocated with the function
 <code>metabehavior_alloc</code>.
 </p>
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_metabehavior * metabehavior_alloc(gest_d *g, int sz);</pre></code>
@@ -185,7 +204,7 @@ allocated here.
 
 <h4>14.2.4. Population (via Stack)</h4>
 
-<p><a id="wm_021_0822"></a>Similar to the metatargets, population is done with a stack
+<p><a id="wm_021_0869"></a>Similar to the metatargets, population is done with a stack
 of metabehaviors.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>#define GEST_MBSTACK_SIZE 4
@@ -233,8 +252,8 @@ there. Otherwise it will set to the current target directly.
 
 <h4>14.2.5. Sequentional Behavior Selector</h4>
 
-<p><a id="wm_021_0833"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_behavior* behave_seq(gest_target *t, gest_behavior *b);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_behavior* behave_seq(gest_target *t, gest_behavior *b)
+<p><a id="wm_021_0880"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_behavior* behave_seq(gest_d *g, gest_behavior *b);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_behavior* behave_seq(gest_d *g, gest_behavior *b)
 {
     gest_metabehavior *mb;
 
@@ -245,9 +264,21 @@ there. Otherwise it will set to the current target directly.
     return &mb-&gt;behaviors[mb-&gt;pos++];
 }</pre></code>
 
+<h4>14.2.6. Random Behavior Selector</h4>
+
+<p><a id="wm_021_0885"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_behavior* behave_random(gest_d *g, gest_behavior *b);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_behavior* behave_random(gest_d *g, gest_behavior *b)
+{
+    gest_metabehavior *mb;
+
+    mb = b-&gt;meta;
+
+    return &mb-&gt;behaviors[gest_randi(g, mb-&gt;size)];
+}</pre></code>
+
 <h3>14.3. Metanodes</h3>
 
-<p><a id="wm_021_0838"></a>Metanodes are ramp tree nodes whose underlying children
+<p><a id="wm_021_0890"></a>Metanodes are ramp tree nodes whose underlying children
 can change. A metanode is essentially a monoramp that can
 have a fixed number of possibilities within the bounds
 of the ramp it takes up. Every time this node gets reached,
@@ -256,7 +287,7 @@ it has an opportunity to select one of these possibilities.
 
 <h4>14.3.1. Struct Declaration</h4>
 
-<p><a id="wm_021_0840"></a>Called <code>gest_metanode</code>. Basically an array of pointers to
+<p><a id="wm_021_0892"></a>Called <code>gest_metanode</code>. Basically an array of pointers to
 <code>gest_node</code> types.
 </p>
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_metanode gest_metanode;</pre></code>
@@ -269,7 +300,7 @@ it has an opportunity to select one of these possibilities.
 
 <h4>14.3.2. Allocation</h4>
 
-<p><a id="wm_021_0846"></a><code>metanode_alloc</code>.
+<p><a id="wm_021_0898"></a><code>metanode_alloc</code>.
 </p>
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_metanode* metanode_alloc(gest_d *g,
                                      gest_node *parent,
@@ -305,7 +336,7 @@ it has an opportunity to select one of these possibilities.
 
 <h4>14.3.3. Population and the Stack</h4>
 
-<p><a id="wm_021_0852"></a>When a metanode is created, the instance gets pushed onto
+<p><a id="wm_021_0904"></a>When a metanode is created, the instance gets pushed onto
 the stack.
 </p>
 <div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>#define GEST_MNSTACK_SIZE 4
@@ -392,7 +423,7 @@ it dives downwards to find a target in <code>dive_to_target</code>.
 
 <h4>14.3.4. Sequential Node Selector</h4>
 
-<p><a id="wm_021_0873"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_node* node_seq(gest_d *g, gest_node *n);</pre></code>
+<p><a id="wm_021_0925"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_node* node_seq(gest_d *g, gest_node *n);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_node* node_seq(gest_d *g, gest_node *n)
 {
     gest_metanode *mn;
@@ -403,11 +434,192 @@ it dives downwards to find a target in <code>dive_to_target</code>.
 
     return mn-&gt;nodes[mn-&gt;pos++];
 }</pre></code>
+
+<h4>14.3.5. Random Node Selector</h4>
+
+<p><a id="wm_021_0930"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_node* node_random(gest_d *g, gest_node *n);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_node* node_random(gest_d *g, gest_node *n)
+{
+    gest_metanode *mn;
+
+    mn = n-&gt;meta;
+
+    return mn-&gt;nodes[gest_randi(g, mn-&gt;size)];
+}</pre></code>
+
+<h3>14.4. Metaphrases</h3>
+
+<p><a id="wm_021_0935"></a>If you've been reading up to this point, you'll no
+doubt know what to expect here. A <code>metaphrase</code>is a special phrase containing phrases inside of it.
+Every time the phrase gets selected, the metaphrase
+gets an opportunity to select one of the phrases.
+</p>
+
+<h4>14.4.1. Struct Declaration</h4>
+
+<p><a id="wm_021_0937"></a>Similar to before, a <code>gest_metaphrase</code> has a position,
+size, and array of phrases. 
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_metaphrase gest_metaphrase;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct gest_metaphrase {
+    int pos;
+    int size;
+    gest_phrase *parent;
+    gest_phrase **phrases;
+};</pre></code>
+
+<h4>14.4.2. Allocation</h4>
+
+<p><a id="wm_021_0943"></a>Allocated with <code>metaphrase_alloc</code>. The number of phrases
+must be known, as well as the parent phrase.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_metaphrase * metaphrase_alloc(gest_d *g, int sz);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_metaphrase * metaphrase_alloc(gest_d *g, int sz)
+{
+    gest_metaphrase *mp;
+    int i;
+
+    mp = gest_alloc(g, sizeof(gest_metaphrase));
+    mp-&gt;size = sz;
+    mp-&gt;pos = 0;
+    mp-&gt;phrases = gest_alloc(g, sizeof(gest_phrase *) * sz);
+
+    for (i = 0; i &lt; sz; i++) {
+        mp-&gt;phrases[i] = NULL;
+    }
+
+    return mp;
+}</pre></code>
+
+<h4>14.4.3. Population and the Stack</h4>
+
+<p><a id="wm_021_0949"></a>Metaphrases are populated via a stack. They can be nested!
+This is similar to the constructs that have preceded it.
+</p>
+<p>Populating a metaphrase is similar to making a regular
+phrase, except it starts with a different beginning, but
+with the same ending.
+</p>
+<p>Phrases get selected during the process when the
+next node is found.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>#define GEST_MPSTACK_SIZE 4
+gest_metaphrase *mpstack[GEST_MPSTACK_SIZE];
+int mppos;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>{
+    int i;
+
+    for (i = 0; i &lt; GEST_MPSTACK_SIZE; i++) {
+        g-&gt;mpstack[i] = NULL;
+    }
+
+    g-&gt;mppos = 0;
+}</pre></code>
+<p></p>
+<p>append newly created phrase to last metaphrase on stack.
+</p>
+<p>some fancy footwork below, so pay attention.
+</p>
+<p>appending of the metaphrase happens when a new phrase
+is created, but before it is set to be the selected phrase.
+</p>
+<p>if a metaphrase is in play, it will be on the stack. The last
+item is peaked at. If the position is all filled up, it means
+the newly created phrase is actually the <b>next</b> phrase.
+Phrases use pointers to indicate the next phrase, so all
+the phrases managed by the metaphrase must have their
+next pointers explicitely set. The metaphrase is then
+popped from the stack. It is also assumed that the currently
+selected phrase at this moment is the last phrase of the
+metaphrase. This doesn't need to be selected anymore, so
+it is cleared.
+</p>
+<p>Most of the time, the metaphrase has phrases to fill. In
+this situation, it will append the newly created phrase to
+the next available slot in the metaphrase.
+</p>
+<div><b><i>&lt;&lt;append_metaphrase&gt;&gt;=</i></b></div><pre><code>if (g-&gt;mppos &gt; 0) {
+    gest_metaphrase *mp;
+    mp = g-&gt;mpstack[g-&gt;mppos - 1];
+
+    if (mp-&gt;pos &gt;= mp-&gt;size) {
+        int i;
+
+        /* pop from stack */
+        g-&gt;mppos--;
+        g-&gt;mpstack[g-&gt;mppos] = NULL;
+
+        /* current phrase last phrase in metaphrase, clear it */
+        g-&gt;phrase_selected = NULL;
+
+        /* all phrases should point to newly made phrase */
+        for (i = 0; i &lt; mp-&gt;size; i++) {
+            mp-&gt;phrases[i]-&gt;next = phrase;
+        }
+
+    } else {
+        /* append to next available slot */
+        mp-&gt;phrases[mp-&gt;pos] = phrase;
+    }
+
+}</pre></code>
+<div><b><i>&lt;&lt;metaphrase_next_position&gt;&gt;=</i></b></div><pre><code>if (g-&gt;mppos &gt; 0) {
+    gest_metaphrase *mp;
+    mp = g-&gt;mpstack[g-&gt;mppos - 1];
+    mp-&gt;pos++;
+}</pre></code>
+<div><b><i>&lt;&lt;metaphrase_loopit&gt;&gt;=</i></b></div><pre><code>if (g-&gt;mppos &gt; 0) {
+    gest_metaphrase *mp;
+    mp = g-&gt;mpstack[g-&gt;mppos - 1];
+
+    if (mp-&gt;pos &gt;= mp-&gt;size) {
+        int i;
+
+        /* pop from stack */
+        g-&gt;mppos--;
+        g-&gt;mpstack[g-&gt;mppos] = NULL;
+
+        /* current phrase last phrase in metaphrase, clear it */
+        g-&gt;phrase_selected = NULL;
+
+        /* all phrases should point to newly made phrase */
+        for (i = 0; i &lt; mp-&gt;size; i++) {
+            mp-&gt;phrases[i]-&gt;next = g-&gt;phrase_top;
+        }
+    }
+
+}</pre></code>
+
+<h4>14.4.4. Sequential Phrase Selector</h4>
+
+<p><a id="wm_021_0965"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_phrase* phrase_seq(gest_d *g, gest_phrase *ph);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_phrase* phrase_seq(gest_d *g, gest_phrase *ph)
+{
+    gest_metaphrase *mp;
+
+    mp = ph-&gt;meta;
+
+    if (mp-&gt;pos &gt;= mp-&gt;size) mp-&gt;pos = 0;
+
+    return mp-&gt;phrases[mp-&gt;pos++];
+}</pre></code>
+
+<h4>14.4.5. Random Phrase Selector</h4>
+
+<p><a id="wm_021_0970"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_phrase* phrase_random(gest_d *g, gest_phrase *ph);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_phrase* phrase_random(gest_d *g, gest_phrase *ph)
+{
+    gest_metaphrase *mp;
+
+    mp = ph-&gt;meta;
+
+    return mp-&gt;phrases[gest_randi(g, mp-&gt;size)];
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0740">prev</a> | <a href="#">home</a> | next</p>
+<a href="/loom/wm_021_0780">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0975">next</a></p>
 </div>
 </body>
 </html>

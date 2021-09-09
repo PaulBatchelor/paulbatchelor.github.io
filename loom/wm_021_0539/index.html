@@ -12,7 +12,7 @@
 
 <h2>10. Stepping Through The Ramp Tree</h2>
 
-<p><a id="wm_021_0503"></a>A big part of gest involves stepping through a ramp tree.
+<p><a id="wm_021_0539"></a>A big part of gest involves stepping through a ramp tree.
 A ramp tree produces a set of normalized ramp values
 from 0 to 1, whose period lengths are proportional
 to the external conductor signal. These values
@@ -49,7 +49,7 @@ can then be used to interpolate between targets.
 
 <h3>10.1. Beat Check-in</h3>
 
-<p><a id="wm_021_0519"></a>In order to combat clock drift, a phrase "checks in" every
+<p><a id="wm_021_0555"></a>In order to combat clock drift, a phrase "checks in" every
 time conductor signal resets, which is an indicator of the
 new beat. Every time a new beat occurs, the status of the
 phrase is figured out, and handled accordingly.
@@ -103,6 +103,9 @@ closely match the conductor signal.
         g-&gt;correction = 1.0;
         g-&gt;targetondeck = 1;
         g-&gt;phrase_selected = g-&gt;nxtstate.phrase;
+
+        /* reset if next state was told to wait */
+        g-&gt;nxtstate.please_wait = 0;
         return phs;
     }
 } else if (g-&gt;please_wait) {
@@ -111,7 +114,7 @@ closely match the conductor signal.
 
 <h3>10.2. Setting the Output</h3>
 
-<p><a id="wm_021_0524"></a>The point of this function is to update the overall state of
+<p><a id="wm_021_0560"></a>The point of this function is to update the overall state of
 the ramp trees in gest and return a corresponding ramp
 value.
 </p>
@@ -122,7 +125,7 @@ call to <code>ramptree_step</code>.
 
 <h3>10.3. Updating Targets</h3>
 
-<p><a id="wm_021_0529"></a>A set <code>targetondeck</code> flag will not only be
+<p><a id="wm_021_0565"></a>A set <code>targetondeck</code> flag will not only be
 used to change the target, but also the state information
 that comes with the target, such as the node, the phrase,
 and the conductor modifier associated with the target.
@@ -138,21 +141,16 @@ the next node is already in place (presumably
 from the last time targetondeck was set, or initialization),
 and just needs to be swapped in.
 </p>
+<p><code>please_wait</code> is cached as state, and gets turned on during
+<code>find_next_node</code>.
+</p>
 <div><b><i>&lt;&lt;update_targets&gt;&gt;=</i></b></div><pre><code>if (g-&gt;targetondeck) {
     gest_state *s;
-    int shouldiwait;
-
     s = &g-&gt;nxtstate;
 
     g-&gt;targetondeck = 0;
 
-    /* non-matching non-NULL phrases indicate
-     * a new phrase */
-    shouldiwait =
-        s-&gt;phrase != NULL &&
-        s-&gt;phrase != g-&gt;phrase_selected;
-
-    if (shouldiwait) {
+    if (s-&gt;please_wait) {
         g-&gt;please_wait = 1;
         return 1.0;
     }
@@ -189,7 +187,7 @@ current one.
 
 <h3>10.4. Updating the phase using modifier and friends</h3>
 
-<p><a id="wm_021_0535"></a>To begin, the modifier amount is calculated.
+<p><a id="wm_021_0571"></a>To begin, the modifier amount is calculated.
 </p>
 <p>The modifier and increment amount are used together to
 update the existing phase.
@@ -210,7 +208,7 @@ If it has, a change in nodes is required.
 
 <h3>10.5. Signalling to go to the next target</h3>
 
-<p><a id="wm_021_0548"></a>When the ramp reaches the end, it is time to go on to the
+<p><a id="wm_021_0584"></a>When the ramp reaches the end, it is time to go on to the
 next node with a target. By the time it reaches this point,
 this node has already been found, and just needs to be
 signalled to switch with the variable <code>targetondeck</code>.
@@ -219,7 +217,7 @@ signalled to switch with the variable <code>targetondeck</code>.
 
 <h3>10.6. Finding the next node in the Ramp Tree</h3>
 
-<p><a id="wm_021_0553"></a>When a new node begins, the next with a target
+<p><a id="wm_021_0589"></a>When a new node begins, the next with a target
 in the ramp tree must be found immediately after.
 Many programs using Gest require knowing the next target.
 </p>
@@ -272,6 +270,7 @@ special exception.
     gest_node *last_reverted;
     gest_phrase *phrase;
     int num, den;
+    int please_wait;
 
     next = NULL;
     last_reverted = NULL;
@@ -279,6 +278,7 @@ special exception.
     num = g-&gt;num;
     den = g-&gt;den;
     phrase = g-&gt;phrase_selected;
+    please_wait = 0;
 
     while (next == NULL) {
         if (top == g-&gt;phrase_selected-&gt;top) {
@@ -287,6 +287,7 @@ special exception.
             if (top-&gt;next == NULL) {
                 /* next node is in next phrase */
                 phrase = phrase-&gt;next;
+                phrase = get_phrase(g, phrase);
                 if (phrase != NULL) next = phrase-&gt;top;
                 else next = NULL;
                 g-&gt;num = 1;
@@ -294,6 +295,7 @@ special exception.
                 if (next != NULL) {
                    next = dive_to_target(g, next);
                 }
+                please_wait = 1;
                 break;
             } else {
                 /* go to next child in top polyramp node */
@@ -335,19 +337,27 @@ special exception.
     state-&gt;num = g-&gt;num;
     state-&gt;den = g-&gt;den;
     state-&gt;node = next;
-    state-&gt;target = node_target(next);
-    state-&gt;behavior = target_behavior(state-&gt;target);
+    state-&gt;target = node_target(g, next);
+    state-&gt;behavior = target_behavior(g, state-&gt;target);
     state-&gt;phrase = phrase;
+    state-&gt;please_wait = please_wait;
 
     /* restore old numerator and denominator */
 
     g-&gt;num = num;
     g-&gt;den = den;
 }</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gest_phrase* get_phrase(gest_d *g, gest_phrase *ph);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gest_phrase* get_phrase(gest_d *g, gest_phrase *ph)
+{
+    if (ph == NULL) return NULL;
+    while (ph-&gt;get != NULL) ph = ph-&gt;get(g, ph);
+    return ph;
+}</pre></code>
 
 <h3>10.7. When a phrase is over, wraparound</h3>
 
-<p><a id="wm_021_0560"></a>A phrase is considered over when it reaches the end of the
+<p><a id="wm_021_0600"></a>A phrase is considered over when it reaches the end of the
 top-level polyramp. At this point, the next phrase is found
 and set to be the beginning of that node.
 </p>
@@ -359,7 +369,7 @@ phs = 0;</pre></code>
 
 <h3>10.8. Handling Roundoff Error in Phrases</h3>
 
-<p><a id="wm_021_0565"></a>Roundoff error is a natural part of working with floating
+<p><a id="wm_021_0605"></a>Roundoff error is a natural part of working with floating
 point, and difficult to avoid entirely. Roundoff error
 in this context leads to temporal drift in the timing
 signal. Unchecked, this will eventually lead to phrases
@@ -420,7 +430,7 @@ gesture.
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0364">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0567">next</a></p>
+<a href="/loom/wm_021_0400">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0607">next</a></p>
 </div>
 </body>
 </html>

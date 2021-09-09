@@ -33,12 +33,13 @@ phrase in gest.
     gest_phrase *phrase;
 
     phrase = gest_alloc(g, sizeof(gest_phrase));
-
     phrase_init(g, phrase, beats, div);
 
     if (g-&gt;phrase_top == NULL) {
         g-&gt;phrase_top = phrase;
     }
+
+&lt;&lt;append_metaphrase&gt;&gt;
 
     if (g-&gt;phrase_selected != NULL) {
         g-&gt;phrase_selected-&gt;next = phrase;
@@ -48,11 +49,12 @@ phrase in gest.
 
     /* TODO make this a targetondeck flag */
     set_curnode(g, g-&gt;phrase_selected-&gt;top);
+
 }</pre></code>
 
 <h3>5.2. End</h3>
 
-<p><a id="wm_021_0226"></a>End: closes out the phrase. If the phrase isn't fully
+<p><a id="wm_021_0228"></a>End: closes out the phrase. If the phrase isn't fully
 completed a non-zero value is returned.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_end(gest_d *g);</pre></code>
@@ -72,12 +74,13 @@ have every child node capped with a target.
 
     if (count != top-&gt;modifier) return 1;
 
+&lt;&lt;metaphrase_next_position&gt;&gt;
     return 0;
 }</pre></code>
 
 <h3>5.3. Polyramp</h3>
 
-<p><a id="wm_021_0233"></a>Polyramp: Takes the current ramp, and divides it up into N
+<p><a id="wm_021_0237"></a>Polyramp: Takes the current ramp, and divides it up into N
 beats.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_polyramp(gest_d *g, int div);</pre></code>
@@ -103,7 +106,7 @@ goes wrong, an non-zero error value is returned/
 
 <h3>5.4. Monoramp</h3>
 
-<p><a id="wm_021_0240"></a>Monoramp: Produces a monoramp that takes up N beats.
+<p><a id="wm_021_0244"></a>Monoramp: Produces a monoramp that takes up N beats.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_monoramp(gest_d *g, int nbeats);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_monoramp(gest_d *g, int nbeats)
@@ -123,7 +126,7 @@ goes wrong, an non-zero error value is returned/
 
 <h3>5.5. Addtarget</h3>
 
-<p><a id="wm_021_0246"></a>Target: Caps the current ramp with a scalar target, as a
+<p><a id="wm_021_0250"></a>Target: Caps the current ramp with a scalar target, as a
 floating point value. uses linear behavior by default.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addtarget(gest_d *g, SKFLT val);</pre></code>
@@ -154,7 +157,7 @@ floating point value. uses linear behavior by default.
 
 <h3>5.6. Finish</h3>
 
-<p><a id="wm_021_0252"></a>The finish command <code>gest_finish</code> completes population
+<p><a id="wm_021_0256"></a>The finish command <code>gest_finish</code> completes population
 and initializes gest to start at the top.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_finish(gest_d *g);</pre></code>
@@ -171,8 +174,8 @@ and initializes gest to start at the top.
     top = dive_to_target(g, g-&gt;phrase_top-&gt;top);
 
     set_curnode(g, top);
-    target = node_target(top);
-    target-&gt;curbehavior = target_behavior(target);
+    target = node_target(g, top);
+    target-&gt;curbehavior = target_behavior(g, target);
     set_curtarget(g, target);
 
     init_state(&g-&gt;nxtstate);
@@ -188,7 +191,7 @@ and initializes gest to start at the top.
 
 <h3>5.7. Loopit</h3>
 
-<p><a id="wm_021_0258"></a>The command <code>gest_loopit</code> will loop the current phrase back
+<p><a id="wm_021_0262"></a>The command <code>gest_loopit</code> will loop the current phrase back
 to the beginning phrase.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_loopit(gest_d *g);</pre></code>
@@ -196,11 +199,12 @@ to the beginning phrase.
 {
     g-&gt;curtarget-&gt;next = g-&gt;toptarget;
     g-&gt;phrase_selected-&gt;next = g-&gt;phrase_top;
+&lt;&lt;metaphrase_loopit&gt;&gt;
 }</pre></code>
 
 <h3>5.8. Addmetatarget</h3>
 
-<p><a id="wm_021_0264"></a>The function <code>gest_addmetatarget</code> will create a new
+<p><a id="wm_021_0270"></a>The function <code>gest_addmetatarget</code> will create a new
 metatarget with a size of <code>sz</code> metatargets.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addmetatarget(gest_d *g, int sz);</pre></code>
@@ -230,6 +234,7 @@ metatarget stack contained in the gest data.
 
     t-&gt;get = get_seq;
     t-&gt;meta = mt;
+    mt-&gt;parent = t;
 
     /* push to stack */
     g-&gt;mtstack[g-&gt;mtpos++] = mt;
@@ -238,7 +243,7 @@ metatarget stack contained in the gest data.
 
 <h3>5.9. Addmetabehavior</h3>
 
-<p><a id="wm_021_0271"></a>Adds a metabehavior of with <code>sz</code> behaviors.
+<p><a id="wm_021_0277"></a>Adds a metabehavior of with <code>sz</code> behaviors.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addmetabehavior(gest_d *g, int sz);</pre></code>
 <p></p>
@@ -279,6 +284,7 @@ the next available behavior in the parent metabehavior.
 
     b-&gt;get = behave_seq;
     b-&gt;meta = mb;
+    mb-&gt;parent = b;
 
     /* push to stack */
     g-&gt;mbstack[g-&gt;mbpos++] = mb;
@@ -287,7 +293,7 @@ the next available behavior in the parent metabehavior.
 
 <h3>5.10. Addmetanode</h3>
 
-<p><a id="wm_021_0278"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addmetanode(gest_d *g, int nbeats, int sz);</pre></code>
+<p><a id="wm_021_0284"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addmetanode(gest_d *g, int nbeats, int sz);</pre></code>
 <p></p>
 <p>When a metanode is created, it creates the equivalent to
 a monoramp, then binds a metanode to it.
@@ -318,11 +324,113 @@ a monoramp, then binds a metanode to it.
 
     return 0;
 }</pre></code>
+
+<h3>5.11. Addmetaphrase</h3>
+
+<p><a id="wm_021_0290"></a>The function <code>gest_addmetaphrase</code> will allocate a new
+phrase of arbitrary size and division
+(will be unused anyways), and then allocate a new instance
+of a metaphrase with <code>sz</code> phrases.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_addmetaphrase(gest_d *g, int sz);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_addmetaphrase(gest_d *g, int sz)
+{
+    gest_metaphrase *mp;
+    gest_phrase *ph;
+
+    if (g-&gt;mppos &gt;= GEST_MPSTACK_SIZE) return 1;
+
+
+    gest_begin(g, 1, 1);
+
+    ph = g-&gt;phrase_selected;
+
+    mp = metaphrase_alloc(g, sz);
+
+    ph-&gt;get = phrase_seq;
+    ph-&gt;meta = mp;
+    mp-&gt;parent = ph;
+
+    g-&gt;mpstack[g-&gt;mppos++] = mp;
+
+    return 0;
+}</pre></code>
+
+<h3>5.12. Randtarget</h3>
+
+<p><a id="wm_021_0296"></a>The function <code>gest_randtarget</code> configures the last
+metatarget to choose targets randomly.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_randtarget(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_randtarget(gest_d *g)
+{
+    gest_metatarget *mt;
+    if (g-&gt;mtpos &lt;= 0) return 1;
+
+    mt = g-&gt;mtstack[g-&gt;mtpos - 1];
+
+    mt-&gt;parent-&gt;get = target_random;
+    return 0;
+}</pre></code>
+
+<h3>5.13. Randbehavior</h3>
+
+<p><a id="wm_021_0302"></a>The function <code>gest_randbehavior</code> configures the last
+metabehavior to choose behaviors randomly.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_randbehavior(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_randbehavior(gest_d *g)
+{
+    gest_metabehavior *mb;
+
+    if (g-&gt;mbpos &lt;= 0) return 1;
+
+    mb = g-&gt;mbstack[g-&gt;mbpos - 1];
+
+    mb-&gt;parent-&gt;get = behave_random;
+    return 0;
+}</pre></code>
+
+<h3>5.14. Randnode</h3>
+
+<p><a id="wm_021_0308"></a>The function <code>gest_randnode</code> configures the last
+metanode to choose nodes randomly.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_randnode(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_randnode(gest_d *g)
+{
+    gest_metanode *mn;
+
+    if (g-&gt;mnpos &lt;= 0) return 1;
+
+    mn = g-&gt;mnstack[g-&gt;mnpos - 1];
+
+    mn-&gt;parent-&gt;get = node_random;
+    return 0;
+}</pre></code>
+
+<h3>5.15. Randphrase</h3>
+
+<p><a id="wm_021_0314"></a>The function <code>gest_randphrase</code> configures the last
+metaphrase to choose phrases randomly.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_randphrase(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_randphrase(gest_d *g)
+{
+    gest_metaphrase *mp;
+
+    if (g-&gt;mppos &lt;= 0) return 1;
+
+    mp = g-&gt;mpstack[g-&gt;mppos - 1];
+
+    mp-&gt;parent-&gt;get = phrase_random;
+    return 0;
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_021_0070">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0284">next</a></p>
+<a href="/loom/wm_021_0070">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_0320">next</a></p>
 </div>
 </body>
 </html>
