@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Tiny Drums</title>
+<h1>Tiny Drums</h1>
+<p>A mini <code>drumkit</code>, written in <code>C</code>:
+</p>
+<div><b><i>&lt;&lt;tinydrums.c :tangle tinydrums.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;math.h&gt;
+#define SR 44100
+#define FLT float
+FLT ph(FLT p,FLT f){p+=f/SR;while (p &gt;= 1.0) p--;return
+p;}FLT sn(FLT p){return sin(p * 2 * M_PI);}FLT cb(FLT
+x){return x*x*x;}FLT sc(FLT x,FLT mn,FLT mx){return
+x*(mx-mn)+mn;}FLT dv(FLT x,FLT d){if(x &gt; d)return 1;else
+return x/d;}FLT ns(void){return rand() / (FLT)RAND_MAX;}FLT
+cd(FLT x, int d){return fmod(x*d,1.0);}FLT gt(FLT x, int
+s, int m){int p;p = floor(x * s);return((1&lt;&lt;p)&m)&gt;0;}FLT
+hp(FLT x,FLT *y,FLT c){FLT o;*y=o=c*((*y) +
+x);*y=o-x;return o;}int main(int argc, char
+*argv[]){unsigned long n;FLT i;FLT t;FLT m;FLT p;FLT f;FLT
+y;t=0;i=1.0/SR;n=0;p=0;m=0;f=2.0-cos(8000*2*M_PI*i);f=f-sqrt
+(f*f-1.0);y=0;while(t&lt;10){FLT o,c,d;t=n * i;m=ph(m,
+0.5);c=cd(m, 4);d=cd(m,16);p=ph(p,
+sc(cb(1-dv(c,0.1)),60,500));o=sn(p)*cb(1-c)*gt(m,4,0xF);o+=
+sc(ns(),-1,1)*cb(1-dv(c,0.9))*gt(m,4,0xa);o+=
+hp(sc(ns(),-1,1)*cb(1-dv(d,0.3)), &y, f);o*=
+0.3;n++;fwrite(&o,sizeof(FLT),1,stdout);}return 0;}</pre></code>
+<p></p>
+<p>Run with SoX:
+</p>
+<pre><code>./a.out | sox -t raw -r 44100 -c 1 -e floating-point -b 32 - out.wav</pre></code>
+<p></p>
+<p>It should sound something like this:
+</p>
+<p><audio controls>
+<source src="/res/wiki/tinydrums/tinydrums.ogg" type="audio/ogg">
+</audio>
+</p>
+<hr>
+<a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
