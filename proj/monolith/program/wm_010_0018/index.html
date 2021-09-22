@@ -58,24 +58,46 @@
 
 <h4>2.4.3. Sliders Values</h4>
 
-<p><a id="wm_010_0065"></a>Slider values are stored as uniform (0-1) floating point (PWFLT) values in an
-array. There are 8 slider values, each corresponding to a row on the monome.
-At runtime, they are all explicitely set to be 0.
+<p><a id="wm_010_0065"></a>Slider values are stored as uniform (0-1) floating point
+(PWFLT) values in an array.
+There are 8 slider values, each corresponding to a
+row on the monome. At runtime, they are all explicitely set
+to be 0.
+</p>
 <div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>PWFLT vals[8];</pre></code>
 <div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; 8; i++) {
     sl-&gt;vals[i] = 0;
 }</pre></code>
 
-<h4>2.4.4. Increment Amounts</h4>
+<h4>2.4.4. Soundpipe f-table</h4>
 
-<p><a id="wm_010_0071"></a>The increment value is how much to increase or decrease a
+<p><a id="wm_010_0071"></a>To make it easier to talk to other nodes, the slider
+values are wrapped inside of a soundpipe ftable.
+</p>
+<div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>sp_ftbl ft;</pre></code>
+<p></p>
+<br>
+<div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;ft.tbl = sl-&gt;vals;
+sl-&gt;ft.size = 8;</pre></code>
+<p></p>
+<p>The sliders can be retrieved with <code>page_sliders_ftbl</code>.
+</p>
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>sp_ftbl * page_sliders_ftable(page_sliders_d *sl);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>sp_ftbl * page_sliders_ftable(page_sliders_d *sl)
+{
+    return &sl-&gt;ft;
+}</pre></code>
+
+<h4>2.4.5. Increment Amounts</h4>
+
+<p><a id="wm_010_0083"></a>The increment value is how much to increase or decrease a
 slider value when a knob is turned. There are two different
 kinds of knobs, thus two increment types.
 </p>
 
-<h5>2.4.4.1. Griffin Increment</h5>
+<h5>2.4.5.1. Griffin Increment</h5>
 
-<p><a id="wm_010_0073"></a>The increment amount anytime the griffin knob is turned.
+<p><a id="wm_010_0085"></a>The increment amount anytime the griffin knob is turned.
 By default, it is set to be 0.01.
 <div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>PWFLT inc;</pre></code>
 <div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;inc = 0.01;</pre></code>
@@ -87,9 +109,9 @@ By default, it is set to be 0.01.
     slide-&gt;inc = inc;
 }</pre></code>
 
-<h5>2.4.4.2. Arc Increment</h5>
+<h5>2.4.5.2. Arc Increment</h5>
 
-<p><a id="wm_010_0084"></a>The Arc was introduced later on in the development of the
+<p><a id="wm_010_0096"></a>The Arc was introduced later on in the development of the
 sliders page. It initially used the griffin increment
 amount, but it was found to move too quickly. For this
 reason, the Arc uses a separate (and smaller) increment
@@ -113,18 +135,18 @@ approximate 1:1 relationship to the turn of the encoder.
     slide-&gt;arc_inc = inc;
 }</pre></code>
 
-<h4>2.4.5. Previous Position</h4>
+<h4>2.4.6. Previous Position</h4>
 
-<p><a id="wm_010_0096"></a>The previous XY location is stored. This logic is used in order to get a slider
+<p><a id="wm_010_0108"></a>The previous XY location is stored. This logic is used in order to get a slider
 to zero (pressing the left-most row twice). It is initialized to negative
 values.
 <div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int px, py;</pre></code>
 <div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;px = -1;
 sl-&gt;py = -1;</pre></code>
 
-<h4>2.4.6. Selected Slider</h4>
+<h4>2.4.7. Selected Slider</h4>
 
-<p><a id="wm_010_0102"></a>The currently selected slider value is stored as an integer <code>curslider</code>.
+<p><a id="wm_010_0114"></a>The currently selected slider value is stored as an integer <code>curslider</code>.
 It is automatically set when
 you control a particular slider from the monome. This value tells the griffin
 knob which slider to adjust.
@@ -133,16 +155,16 @@ knob which slider to adjust.
 been selected.
 <div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;curslider = -1;</pre></code>
 
-<h4>2.4.7. Internal Gate</h4>
+<h4>2.4.8. Internal Gate</h4>
 
-<p><a id="wm_010_0109"></a>When the griffin knob is pushed down, the internal state data is stored inside
+<p><a id="wm_010_0121"></a>When the griffin knob is pushed down, the internal state data is stored inside
 of a value called <code>gate</code>.
 <div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int gate;</pre></code>
 <div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;gate = 0;</pre></code>
 
-<h4>2.4.8. Griffin Lock</h4>
+<h4>2.4.9. Griffin Lock</h4>
 
-<p><a id="wm_010_0115"></a>An integer boolean value that locks the griffin to
+<p><a id="wm_010_0127"></a>An integer boolean value that locks the griffin to
 the currently selected slider. By default, this is disabled.
 <div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int griffin_lock;</pre></code>
 <div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;griffin_lock = 0;</pre></code>
@@ -155,9 +177,9 @@ the currently selected slider. By default, this is disabled.
     slide-&gt;griffin_lock = state;
 }</pre></code>
 
-<h4>2.4.9. Arc Slider Positions</h4>
+<h4>2.4.10. Arc Slider Positions</h4>
 
-<p><a id="wm_010_0126"></a>These store which sliders the Arc is controlling.
+<p><a id="wm_010_0138"></a>These store which sliders the Arc is controlling.
 By default, it is the first 4 sliders.
 <div><b><i>&lt;&lt;page_sliders_contents&gt;&gt;=</i></b></div><pre><code>int arc_slider[4];</pre></code>
 <div><b><i>&lt;&lt;sliders_init&gt;&gt;=</i></b></div><pre><code>sl-&gt;arc_slider[0] = 0;
@@ -185,7 +207,7 @@ done anywhere else.
 <br>
 <p><hr>
 
-<a href="/proj/monolith/program/wm_010_0002">prev</a> | <a href="/proj/monolith/program/wm_010">home</a> | <a href="/proj/monolith/program/wm_010_0138">next</a></p>
+<a href="/proj/monolith/program/wm_010_0002">prev</a> | <a href="/proj/monolith/program/wm_010">home</a> | <a href="/proj/monolith/program/wm_010_0150">next</a></p>
 </div>
 </body>
 </html>

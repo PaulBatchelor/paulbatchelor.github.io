@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>6. Sliders Scheme Functions</h2>
+
+<p><a id="wm_010_0264"></a></p>
+
+<h3>6.1. Scheme Loader</h3>
+
+<p><a id="wm_010_0265"></a>The top-level scheme loader is called <code>s9_load_sliders</code>.
+<div><b><i>&lt;&lt;sliders_function_declarations&gt;&gt;=</i></b></div><pre><code>void s9_load_sliders(void);</pre></code>
+<div><b><i>&lt;&lt;sliders_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;sliders_scheme_functions&gt;&gt;
+static S9_PRIM sliders_primitives[] = {
+&lt;&lt;sliders_scheme_entries&gt;&gt;
+    {NULL}
+};
+void s9_load_sliders(void)
+{
+    add_primitives("monolith", sliders_primitives);
+}</pre></code>
+
+<h3>6.2. Create New Sliders Page</h3>
+
+<p><a id="wm_010_0275"></a>A new sliders page is created with <code>monolith:grid-new</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-new", pp_sliders_new, 1, 1, {STR, ___, ___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_new(cell x)
+{
+    const char *str;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    str = string(car(x));
+
+    rc = monolith_dict_newpage(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not create sliders page (maybe it already exists?)",
+            car(x));
+    }
+
+    page_sliders(pg);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h3>6.3. Select Slider</h3>
+
+<p><a id="wm_010_0283"></a>In Scheme, the slider can be selected in scheme using the function
+<code>monolith:sliders-select</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-select", pp_sliders_select, 2, 2, {STR,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_select(cell x)
+{
+    const char *str;
+    cell cstr;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    int slider;
+    char name[] = "monolith:sliders-select";
+    page_sliders_d *slide;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    slider = integer_value(name, car(x));
+
+    if(slider &lt; 0 || slider &gt;= 8) {
+        return error("Slider number is out of range", car(x));
+    }
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+    slide-&gt;curslider = slider;
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h3>6.4. Set Slider Value</h3>
+
+<p><a id="wm_010_0289"></a>In Scheme, the value of a particular slider can be selected using the function
+<code>monolith:sliders-set</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-set", pp_sliders_set, 3, 3, {STR,INT,REA}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_set(cell x)
+{
+    const char *str;
+    cell cstr;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    int slider;
+    page_sliders_d *slide;
+    int mantissa;
+    int exponent;
+    cell real;
+    char name[] = "monolith:sliders-set";
+    PWFLT val;
+    s9_cell cslider;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    cslider = car(x);
+    slider = integer_value(name, cslider);
+    x = cdr(x);
+    real = car(x);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    if(slider &lt; 0 || slider &gt;= 8) {
+        return error("Slider number is out of range", cslider);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    mantissa = s9_bignum_to_int(s9_real_mantissa(real));
+    exponent = s9_real_exponent(real);
+
+    val = mantissa * pow(10, exponent);
+
+    if(val &lt; 0) val = 0;
+    if(val &gt; 1) val = 1;
+
+    slide-&gt;vals[slider] = val;
+
+    sliders_update_monome(slide, slider, val);
+    sliders_update_arc(slide, slider, val);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h3>6.5. Get Slider Value</h3>
+
+<p><a id="wm_010_0295"></a>In Scheme, the value of a particular slider can be retreived using the function
+<code>monolith:sliders-get</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-get", pp_sliders_get, 2, 2, {STR,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_get(cell x)
+{
+    const char *str;
+    cell cstr;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    int rc;
+    int slider;
+    page_sliders_d *slide;
+    PWFLT val;
+    unsigned int ival;
+    s9_cell cslider;
+    char name[] = "monolith:sliders-get";
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    cslider = car(x);
+    slider = integer_value(name, cslider);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    if(slider &lt; 0 || slider &gt;= 8) {
+        return error("Slider value is out of range", cslider);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    val = slide-&gt;vals[slider];
+    ival = floor(val); /* get non-decimal part */
+    val = floor(1e4 * (ival + (val - ival))); /* get 4 decimal places */
+    return s9_make_real(1, -4, s9_make_integer(val));
+}</pre></code>
+
+<h3>6.6. Set Increment</h3>
+
+<p><a id="wm_010_0301"></a>In Scheme, the incrementer can be set with the function
+<code>monolith:sliders-increment-set</code>.
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-increment-set", pp_sliders_increment_set, 2, 2, {STR,REA,___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_increment_set(cell x)
+{
+    const char *str;
+    cell cstr;
+    cell real;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    page_sliders_d *slide;
+    PWFLT val;
+    int mantissa;
+    int exponent;
+    int rc;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    real = car(x);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    mantissa = s9_bignum_to_int(s9_real_mantissa(real));
+    exponent = s9_real_exponent(real);
+    val = mantissa * pow(10, exponent);
+
+    page_sliders_increment_set(slide, val);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h3>6.7. Griffin Lock</h3>
+
+<p><a id="wm_010_0307"></a><div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-griffin-lock",
+pp_sliders_griffin_lock,
+2, 2,
+{STR,INT,___}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_griffin_lock(cell x)
+{
+    page_sliders_d *slide;
+    monolith_dict *dict;
+    monolith_page *pg;
+    monolith_d *m;
+    int state;
+    int rc;
+    const char *str;
+    cell cstr;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    state = integer_value("monolith:sliders-griffin-lock",
+                           car(x));
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+    page_sliders_griffin_lock(slide, state);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h3>6.8. Arc Slider Set</h3>
+
+<p><a id="wm_010_0312"></a><div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:sliders-arc-set",
+pp_sliders_arc_set,
+3, 3,
+{STR,INT,INT}},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_arc_set(cell x)
+{
+    page_sliders_d *slide;
+    monolith_dict *dict;
+    monolith_page *pg;
+    monolith_d *m;
+    int arc;
+    int slider;
+    int rc;
+    const char *str;
+    cell cstr;
+    char name[] = "monolith:sliders-arc-set";
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    arc = integer_value(name, car(x));
+    x = cdr(x);
+
+    slider = integer_value(name, car(x));
+    x = cdr(x);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    page_sliders_arc_set(slide, arc, slider);
+    sliders_update_arc(slide, slider, slide-&gt;vals[slider]);
+    return UNSPECIFIC;
+}</pre></code>
+
+<h3>6.9. Set Arc Increment</h3>
+
+<p><a id="wm_010_0317"></a>In Scheme, the incrementer can be set with the function
+<code>monolith:sliders-increment-set</code>.
+</p>
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{
+    "monolith:sliders-arc-increment-set",
+    pp_sliders_arc_increment_set,
+    2, 2,
+    {STR,REA,___}
+},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_arc_increment_set(cell x)
+{
+    const char *str;
+    cell cstr;
+    cell real;
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    page_sliders_d *slide;
+    PWFLT val;
+    int mantissa;
+    int exponent;
+    int rc;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    x = cdr(x);
+
+    real = car(x);
+
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+    if(!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    mantissa = s9_bignum_to_int(s9_real_mantissa(real));
+    exponent = s9_real_exponent(real);
+    val = mantissa * pow(10, exponent);
+
+    page_sliders_arc_increment_set(slide, val);
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h3>6.10. Push Internal FTable</h3>
+
+<p><a id="wm_010_0323"></a>The function <code>monolith:sliders-push-ftable</code> will push
+the internal ftable wrapped around the values onto the
+Runt Stack, to be used with other nodes.
+</p>
+<div><b><i>&lt;&lt;sliders_scheme_entries&gt;&gt;=</i></b></div><pre><code>{
+    "monolith:sliders-push-ftable",
+    pp_sliders_push_ftable,
+    1, 1,
+    {STR,___,___}
+},</pre></code>
+<div><b><i>&lt;&lt;sliders_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sliders_push_ftable(cell x)
+{
+    monolith_d *m;
+    monolith_dict *dict;
+    monolith_page *pg;
+    page_sliders_d *slide;
+    runt_vm *vm;
+    sp_ftbl *ft;
+    int rc;
+    const char *str;
+    cell cstr;
+    runt_stacklet *out;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+    vm = monolith_runt_vm(m);
+
+    cstr = car(x);
+    str = string(cstr);
+    rc = monolith_dict_lookup(dict, &pg, str, strlen(str));
+
+    if (!rc) {
+        return error(
+            "Could not find sliders page",
+            car(x));
+    }
+
+    if(!is_sliders(pg)) {
+        return error("This is not a sliders page", cstr);
+    }
+
+    slide = monolith_page_data_get(pg);
+
+    ft = page_sliders_ftable(slide);
+
+    rc = runt_ppush(vm, &out);
+
+    /* TODO: better scheme-runt error checking */
+
+    if (rc != RUNT_OK) {
+        return error("Runt Stack problem.", cstr);
+    }
+
+    rpw_stacklet_ftable(vm, out, ft);
+
+    return UNSPECIFIC;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_010_0248">prev</a> | <a href="/proj/monolith/program/wm_010">home</a> | <a href="/proj/monolith/program/wm_010_0329">next</a></p>
+</div>
+</body>
+</html>
