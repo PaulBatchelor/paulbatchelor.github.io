@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>17. Actions</h2>
+
+<p><a id="wm_021_1042"></a>An action in Gest is an event that can happen when
+a new target is selected.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_action gest_action;</pre></code>
+<p></p>
+<p>An action is callback that can have it's own mutable
+state attached to it. It is part of a linked list entry,
+so it has a <code>next</code> pointer as well.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct gest_action {
+    void (*fun)(gest_d*, void*, int);
+    void *data;
+    gest_action *next;
+};</pre></code>
+<p></p>
+<p>An action lives inside of a list of actions, creatively
+referred to as an action list.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_actionlist gest_actionlist;</pre></code>
+<div><b><i>&lt;&lt;gest_actionlist_struct&gt;&gt;=</i></b></div><pre><code>struct gest_actionlist {
+    gest_action *head;
+    gest_action *tail;
+    int sz;
+};</pre></code>
+<p></p>
+<p>An actionlist is part of a target.
+</p>
+<div><b><i>&lt;&lt;gest_target&gt;&gt;=</i></b></div><pre><code>gest_actionlist lst;</pre></code>
+<div><b><i>&lt;&lt;gest_target_init&gt;&gt;=</i></b></div><pre><code>gest_actionlist_init(&t-&gt;lst);</pre></code>
+<p></p>
+<p>An actionlist can be initialized with <code>gest_actionlist_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_actionlist_init(gest_actionlist *lst);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_actionlist_init(gest_actionlist *lst)
+{
+    lst-&gt;head = NULL;
+    lst-&gt;tail = NULL;
+    lst-&gt;sz = 0;
+}</pre></code>
+<p></p>
+<p>Actions are appended to an action list associated with
+a target (usually the actively selected one). This
+can be done with the static function <code>append_action</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void append_action(gest_d *g,
+                          gest_target *t,
+                          void (*fun)(gest_d*, void*, int),
+                          void *data);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void append_action(gest_d *g,
+                          gest_target *t,
+                          void (*fun)(gest_d*, void*, int),
+                          void *data)
+{
+    gest_action *a;
+    gest_actionlist *lst;
+
+    lst = &t-&gt;lst;
+    a = gest_alloc(g, sizeof(gest_action));
+
+    a-&gt;data = data;
+    a-&gt;fun = fun;
+    a-&gt;next = NULL;
+
+    if (lst-&gt;head == NULL) {
+        lst-&gt;head = a;
+    }
+
+    if (lst-&gt;tail != NULL) lst-&gt;tail-&gt;next = a;
+    lst-&gt;tail = a;
+    lst-&gt;sz++;
+}</pre></code>
+<p></p>
+<p>A new action requires making a callback, and optionally
+some data associated with it. The callback takes in
+the instance of gest, the user data associated with
+the action, and an integer value representing the current
+sample position inside the current render block. This
+position can be used for sample-accurate timing.
+</p>
+<p>When a target is set up to be the current target, it
+calls the actions inside the action list. This is called
+<code>do_actions</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void do_actions(gest_d *g, gest_target *t, int pos);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void do_actions(gest_d *g, gest_target *t, int pos)
+{
+    gest_actionlist *lst;
+    gest_action *a;
+    int i;
+
+    lst = &t-&gt;lst;
+
+    a = lst-&gt;head;
+
+    for (i = 0; i &lt; lst-&gt;sz; i++) {
+        a-&gt;fun(g, a-&gt;data, pos);
+        a = a-&gt;next;
+    }
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_1015">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_1075">next</a></p>
+</div>
+</body>
+</html>

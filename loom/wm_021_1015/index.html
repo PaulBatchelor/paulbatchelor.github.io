@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>16. Random Number Generation</h2>
+
+<p><a id="wm_021_1015"></a>Gest implements an internal PRNG using a simple
+LCG, similar to many implementations of rand().
+This is done to make Gest more consistent across
+platforms.
+</p>
+<p>It is (perhaps erroneously) assumed that long integer
+values are at least 32-bits long.
+</p>
+<div><b><i>&lt;&lt;gest_d&gt;&gt;=</i></b></div><pre><code>unsigned long rng;</pre></code>
+<p></p>
+<p>The initial RNG state can be seeded with <code>gest_seed</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_seed(gest_d *g, unsigned long rng);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_seed(gest_d *g, unsigned long rng)
+{
+    g-&gt;rng = rng;
+}</pre></code>
+<p></p>
+<p>At initializatin, it is seeded with the system <code>rand</code>function. For more consistent results, <code>gest_seed</code> can
+be explicit called immediately after initialization.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>gest_seed(g, rand());</pre></code>
+<p></p>
+<p>A random value is produced with <code>gest_rand</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>unsigned long gest_rand(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>unsigned long gest_rand(gest_d *g)
+{
+    g-&gt;rng = (1103515245 * g-&gt;rng + 12345) % 2147483648;
+    return g-&gt;rng;
+}</pre></code>
+<p></p>
+<p>A normalized floating point value can be returned with
+<code>gest_randf</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_randf(gest_d *g);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT gest_randf(gest_d *g)
+{
+    unsigned long x;
+
+    x = gest_rand(g);
+
+    return (SKFLT)x / 2147483648.0;
+}</pre></code>
+<p></p>
+<p>A random integer between 0 and N-1 can be
+found with <code>gest_randi</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_randi(gest_d *g, int N);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int gest_randi(gest_d *g, int N)
+{
+    int x;
+
+    x = floor(gest_randf(g) * N);
+
+    if (x &gt;= N) x = N - 1;
+
+    return x;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0856">prev</a> | <a href="#">home</a> | <a href="/loom/wm_021_1042">next</a></p>
+</div>
+</body>
+</html>
