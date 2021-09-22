@@ -544,6 +544,34 @@ from the buffer stack.
     *val = s-&gt;f;
     return 0;
 }</pre></code>
+<p></p>
+<p>For situations where only cables are allowed, use
+<code>sk_param_get_cable</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_param_get_cable(sk_core *core, sk_param *p);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_param_get_cable(sk_core *core, sk_param *p)
+{
+    sk_stack *stk;
+    sk_stacklet *s;
+    int rc;
+
+    stk = &core-&gt;stack;
+
+    rc = sk_stack_pop(stk, &s);
+    SK_ERROR_CHECK(rc);
+
+    if (s-&gt;type == SK_TYPE_CABLE) {
+        p-&gt;type = 1;
+        p-&gt;data.c = (pw_cable *)s-&gt;ptr;
+        pw_cable_pop(p-&gt;data.c);
+    } else {
+        /* Wrong type! */
+        return 1;
+    }
+
+    return 0;
+}</pre></code>
 
 <h3>Setting a Parameter</h3>
 
@@ -871,14 +899,14 @@ makes an underlying call to <code>sk_register_nextfree</code>.
 <p><code>start</code> indicates which register position to start at. Leave
 this to be 0 if there is no preference.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_regnext(sk_core *core, int start, int *pos);
-int sk_register_nextfree(sk_regtbl *rt, int start);</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_regnxt(sk_core *core, int start, int *pos);
+int sk_register_nxtfree(sk_regtbl *rt, int start);</pre></code>
 <p></p>
 <p><code>sk_register_nextfree</code> will iterate through
 the registers until it finds one that is free. it will
 return the id of this register.
 </p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_register_nextfree(sk_regtbl *rt, int start)
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_register_nxtfree(sk_regtbl *rt, int start)
 {
     int pos;
     int i;
@@ -902,9 +930,9 @@ return the id of this register.
 no available registers. This is done to make it play better
 with the <code>SK_ERROR_CHECK</code> paradigm.
 </p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_regnext(sk_core *core, int start, int *pos)
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_regnxt(sk_core *core, int start, int *pos)
 {
-    *pos = sk_register_nextfree(&core-&gt;regtbl, start);
+    *pos = sk_register_nxtfree(&core-&gt;regtbl, start);
 
     if (*pos &lt; 0) return 1;
 
