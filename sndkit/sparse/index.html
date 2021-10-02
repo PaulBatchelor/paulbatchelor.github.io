@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Sparse</title>
+<h1>Sparse</h1>
+
+<h2>Overview</h2>
+
+<p><code>Sparse</code> implements a sparse noise generator. This algorithm
+will randomly fire impulses with amplitudes within the
+range [-1, 1] at an average rate determined by a parametric
+frequency value. The resulting sound is something that
+can crudely approximate the kind of crackling noise from
+a vinyl record (some filtering on the sparse noise helps
+a bit).
+</p>
+<p>Sparse noise is closely related to <code>Velvet Noise</code>, a special
+kind of signal that's been often used in the context of
+reverberation. The difference between the two is that velvet
+noise only has impulses with amplitudes of -1 and 1, and
+nothing in between. Putting sparse noise through a
+<a href="https://en.wikipedia.org/wiki/Sign_function">Sign Function</a> will
+convert it to Velvet Noise.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>Sparse tangles to two self contained files <code>sparse.c</code> and
+<code>sparse.h</code>. Define <code>SK_SPARSE_PRIV</code> will expose the contents
+of the <code>sk_sparse</code> struct.
+</p>
+<div><b><i>&lt;&lt;sparse.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_SPARSE_H
+#define SK_SPARSE_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+
+#ifdef SK_SPARSE_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;sparse.c&gt;&gt;=</i></b></div><pre><code>#define SK_SPARSE_PRIV
+#include "sparse.h"
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Struct</h2>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_sparse sk_sparse;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_sparse {
+    int sr;
+    &lt;&lt;sk_sparse&gt;&gt;
+};</pre></code>
+
+<h2>Initialization</h2>
+
+<p>The function <code>sk_sparse_init</code> will initialize an instance
+of <code>sk_sparse</code>. It requires the sampling rate <code>sr</code>, and
+an initial seed for the internal random number generator.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_sparse_init(sk_sparse *sp, int sr, unsigned long seed);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_sparse_init(sk_sparse *sp, int sr, unsigned long seed)
+{
+    sp-&gt;sr = sr;
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h2>Setting The Frequency Parameter</h2>
+
+<p>The rate of the sparse noise generator is set with
+the frequency parameter via <code>sk_sparse_freq</code>.
+</p>
+<p>The frequency variable
+uses <a href="/sndkit/parameter_caching">parameter caching</a> in
+order to update values only when needed.
+</p>
+<div><b><i>&lt;&lt;sk_sparse&gt;&gt;=</i></b></div><pre><code>SKFLT freq;
+SKFLT pfreq;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_sparse_freq(sp, 30); /* arbitrary positive value */
+sp-&gt;pfreq = -1;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_sparse_freq(sk_sparse *sp, SKFLT freq);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_sparse_freq(sk_sparse *sp, SKFLT freq)
+{
+    sp-&gt;freq = freq;
+}</pre></code>
+
+<h2>Threshold Component</h2>
+
+<p>The <code>thresh</code> variable will maintain a threshold generator,
+that gets updated every time the frequency changes. This
+is a value between 0 and 1. The higher the value, the more
+likely an impulse will be generated.
+</p>
+<div><b><i>&lt;&lt;sk_sparse&gt;&gt;=</i></b></div><pre><code>SKFLT thresh;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sp-&gt;thresh = 0;</pre></code>
+
+<h2>Random Number Generator</h2>
+
+<p>For randomness, a simple 32-bit LCG is good enough for
+musical purposes. This is used over system <code>rand</code> for
+portability reasons.
+</p>
+<div><b><i>&lt;&lt;sk_sparse&gt;&gt;=</i></b></div><pre><code>unsigned long rng;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sp-&gt;rng = seed;</pre></code>
+<p></p>
+<p>The 32-bit random value that is generated from the LCG
+gets normalized to be in range 0 and 1.
+</p>
+<p>A little utility called <code>randval</code> will be used to compute
+and normalize the LCG.
+</p>
+<br>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT randval(sk_sparse *sp);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT randval(sk_sparse *sp)
+{
+    sp-&gt;rng = (1103515245L * sp-&gt;rng + 12345L);
+    sp-&gt;rng %= 2147483648L;
+
+    return (SKFLT)sp-&gt;rng / 2147483648L;
+}</pre></code>
+
+<h2>Computation</h2>
+
+<p>A single sample of audio is computed with <code>sk_sparse_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_sparse_tick(sk_sparse *sp);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_sparse_tick(sk_sparse *sp)
+{
+    SKFLT out;
+    SKFLT r;
+    out = 0;
+
+    &lt;&lt;check_and_update_frequency&gt;&gt;
+    &lt;&lt;compute_random_value&gt;&gt;
+    &lt;&lt;check_and_produce_impulse&gt;&gt;
+
+    return out;
+}</pre></code>
+<p></p>
+<p>Before any computation can be begin, the frequency parameter
+is checked and updated if needed. It's at this point that
+the threshold value is updated by dividing the frequency
+by the sampling rate. A frequency set at the sampling rate
+will generate a random value at every sample, effectively
+making white noise. If the frequency is 0 or negative, no
+values will ever be generated, and the output will only be
+silence.
+</p>
+<div><b><i>&lt;&lt;check_and_update_frequency&gt;&gt;=</i></b></div><pre><code>if (sp-&gt;freq != sp-&gt;pfreq) {
+    sp-&gt;pfreq = sp-&gt;freq;
+    sp-&gt;thresh = sp-&gt;freq / (SKFLT)sp-&gt;sr;
+}</pre></code>
+<p></p>
+<p>For every sample, a random number is generated and checked
+against the threshold. If it is less than the threshold,
+an impulse will be fired with a random amplitude.
+</p>
+<div><b><i>&lt;&lt;compute_random_value&gt;&gt;=</i></b></div><pre><code>r = randval(sp);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;check_and_produce_impulse&gt;&gt;=</i></b></div><pre><code>if (r &lt; sp-&gt;thresh) out = (2 * randval(sp)) - 1;</pre></code>
+</div>
+</body>
+</html>
