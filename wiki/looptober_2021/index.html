@@ -36,7 +36,7 @@ using Gest and Voc. All singing stuff.
 <pre><code>(define (run)
 (bunholdall)
 (regclr -1)
-(loop13)
+(loop21)
 (out zz))</pre></code>
 
 <h2>Utilities</h2>
@@ -62,6 +62,9 @@ using Gest and Voc. All singing stuff.
   (load-shape "jul-ahmute" (mkshapepath "shapes/julia_ahmute.raw"))
   (load-shape "jul-uh" (mkshapepath "shapes/julia_uh.raw"))
   (load-shape "jul-uhmute" (mkshapepath "shapes/julia_uhmute.raw"))
+  (load-shape "lowshape1" (mkshapepath "shapes/lowshape1.raw"))
+  (load-shape "lowshape2" (mkshapepath "shapes/lowshape2.raw"))
+  (load-shape "lowshape3" (mkshapepath "shapes/lowshape3.raw"))
 )</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (mkshapepath path)
@@ -131,6 +134,26 @@ using Gest and Voc. All singing stuff.
   (tract:target g "jul-ahmute")
   tk)
 
+(define (jul-eh g tk)
+  (tract:target g "jul-la")
+  tk)
+
+(define (jul-la g tk)
+  (tract:target g "jul-eh")
+  tk)
+
+(define (jul-ls1 g tk)
+  (tract:target g "lowshape1")
+  tk)
+
+(define (jul-ls2 g tk)
+  (tract:target g "lowshape2")
+  tk)
+
+(define (jul-ls3 g tk)
+  (tract:target g "lowshape3")
+  tk)
+
 (define pitch-words
   '(("vow-a" vow-a)
     ("vow-e" vow-e)
@@ -145,7 +168,12 @@ using Gest and Voc. All singing stuff.
     ("jul-oh" jul-oh)
     ("jul-uh" jul-uh)
     ("jul-ee" jul-ee)
+    ("jul-la" jul-la)
+    ("jul-eh" jul-eh)
     ("jul-ahmute" jul-ahmute)
+    ("ls1" jul-ls1)
+    ("ls2" jul-ls2)
+    ("ls3" jul-ls3)
 ))</pre></code>
 <p></p>
 <p><code>singer</code> is a helpful little function that allows singing
@@ -202,6 +230,25 @@ idea if you want to use values set by targets.
   (lambda (g tk)
      (gest:setscalar g scl (string-&gt;number (car tk)))
      (cdr tk)))</pre></code>
+<p></p>
+<p>The wavetable token for gest <code>tok-wt</code> was used in loop18,
+and is a generalized way to access wavetables from the
+monolith dictionary in a gesture.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (tok-wt g tk)
+  (gosc:target g (car tk))
+    (cdr tk))</pre></code>
+<p></p>
+<p><code>mksineft</code> makes a sine ftable and pushes stores it in
+the next available free register.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (mksineft)
+  (let ((ft (monolith:nextfree 0)))
+    (regset (gen_sine (ftnew 8192)) ft) ft))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (mksineft-nxt nxt)
+  (let ((ft (monolith:nextfree nxt)))
+    (regset (gen_sine (ftnew 8192)) ft) ft))</pre></code>
 
 <h2>Day 1</h2>
 
@@ -2011,7 +2058,7 @@ breathy altos
 
     (dcblock zz)
 
-    (mul zz (ampdb -5))
+    (mul zz (ampdb -3))
     (bunhold (cabget 0)))
 
   (bdup)
@@ -3013,10 +3060,6 @@ loop fin
     (cnd)
     (gest:iculate g))))
 
-(define (mksineft)
-  (let ((ft (monolith:nextfree 0)))
-    (regset (gen_sine (ftnew 8192)) ft) ft))
-
 (define (loop12-bass cnd)
   (let
       ((seq (monolith:mkcab (loop12-bass-seq cnd) 0))
@@ -3294,6 +3337,2113 @@ loop fin
 
   (dcblock zz)
   (mul zz (ampdb -6))
+))</pre></code>
+
+<h2>Day 14</h2>
+
+<p>Thinking about: Hold Music, Corporate Bossa Nova, whispering,
+airy, raspy.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop14)
+  (let ((rev (monolith:cabnew (lambda () (const 0)) 1)))
+        (cabset (bhold (phasor (/ 125 60) 0)) 0)
+        (loop14-shaker (cabgetf 0))
+        (mul zz (ampdb -5))
+        (bdup)
+        (cthrow zz 0.1 (cabgetf rev))
+        (loop14-clavi (cabgetf 0))
+        (mul zz (ampdb -3))
+        (bdup)
+        (cthrow zz 0.2 (cabgetf rev))
+        (add zz zz)
+        (loop14-voices (cabgetf 0))
+        (mul zz 1.2)
+        (bdup)
+        (cthrow zz 0.3 (cabgetf rev))
+        (add zz zz)
+        (bunhold (cabget 0))
+
+        (mul zz (ampdb -2))
+        (cabget rev)
+        (bdup)
+        (revsc zz zz 0.9 8000)
+        (bdrop)
+        (mul zz (ampdb -10))
+        (dcblock zz)
+        (add zz zz)
+        (cabclr rev)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop14-shaker cnd)
+  (let
+      ((g (gest:new))
+       (hit (gest:newscalar))
+       (amp (gest:newscalar)))
+    (gst:eval-addwords
+     g (list
+        (wordentry "hit" (mkhit hit))
+        (wordentry "amp" (mksetter amp))
+) "
+beg 4 8
+hit amp 1 hit amp 0.3 hit
+hit amp 1 hit amp 0.3 hit
+hit amp 1 hit amp 0.3
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (bdrop)
+  (gest:tick hit)
+  (tenvx zz 0.001 0.05 0.01)
+  (noise 0.4)
+  (gest:scalar amp)
+  (mul zz zz)
+  (buthp zz 5000)
+  (butlp zz 8000)
+  (mul zz zz)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop14-clavi cnd)
+  (let
+      ((g (gest:new))
+       (hit (gest:newscalar)))
+    (gst:eval-addwords
+     g (list
+        (wordentry "hit" (mkhit hit))
+        (wordentry "rest" (mkrest))
+) "
+beg 4 4
+rest
+hit
+hit
+rest
+end
+beg 4 8
+mr 3 hit
+mr 3 hit
+mr 2 hit
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (bdrop)
+  (gest:tick hit)
+  (mode zz 1200 20)
+  (bdup)
+  (mode zz 2200 20)
+  (bswap)
+  (mode zz 5000 100)
+  (add zz zz)
+  (dcblock zz)
+
+  (mul zz (ampdb -6))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define loop14-base 58)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop14-mkvoice cnd score tense off)
+(let
+      ((seq (gest:new))
+       (tr (tract:new))
+       (gt (gest:newscalar)))
+    (configure-tract tr seq 0.01)
+    (singer-words seq (list (wordentry "gt" (mksetter gt))) score)
+    (cnd)
+    (gest:iculate seq)
+    (add zz (+ loop14-base off))
+    (mtof zz)
+    (glottis zz tense)
+    (tract:node tr)
+    (adsr (gest:scalar gt) 0.02 0.1 1 0.04)
+    (mul zz zz)))</pre></code>
+<p></p>
+<p>Playing around with delaying the voices a little bit. adds
+a bit of stagger, smears the transients.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop14-voices cnd)
+(loop14-mkvoice cnd "
+beg 8 8
+mr 4 t 11 mg jul-ah gt 1
+t 11 mg jul-ah gt 0
+t 4 mg jul-oo gt 1
+mr 2 pr 3
+t 11 mg jul-ah
+t 7 mg jul-oh
+t 4 mg jul-ah
+end
+beg 8 8
+mr 4 t 10 mg jul-ah gt 1
+mr 4 t 10 mg jul-ah gt 0
+end
+beg 8 8
+mr 4 t 9 mg jul-ah gt 1
+t 9 mg jul-ah gt 0
+t 2 mg jul-oh gt 1
+mr 2 pr 3
+t 9 mg jul-ah
+t 5 mg jul-uh
+t 2 mg jul-ah
+end
+beg 8 8
+mr 3 t 8 mg jul-ah gt 1
+t 8 mg jul-ah gt 0
+mr 2 t 8 mg jul-oo gt 1
+mr 2 t 10 mg jul-ah
+end
+loop fin
+" 0.1 0)
+
+(loop14-mkvoice cnd "
+beg 8 8
+mr 4 t 7 mg jul-ah gt 1
+t 7 mg jul-ah gt 0
+t 0 mg jul-oo gt 1
+mr 2 pr 3
+t 7 mg jul-ah
+t 4 mg jul-oh
+t 0 mg jul-ah
+end
+beg 8 8
+mr 4 t 7 mg jul-ah gt 1
+mr 4 t 7 mg jul-ah gt 0
+end
+beg 8 8
+mr 4 t 5 mg jul-ah gt 1
+t 5 mg jul-ah gt 0
+t -3 mg jul-oh gt 1
+mr 2 pr 3
+t 5 mg jul-ah
+t 0 mg jul-uh
+t -3 mg jul-ah
+end
+beg 8 8
+mr 3 t 5 mg jul-ah gt 1
+t 5 mg jul-ah gt 0
+mr 2 t 5 mg jul-oo gt 1
+mr 2 t 7 mg jul-ah
+end
+loop fin
+" 0.1 0)
+(simple-delay zz 0 0.02)
+(add zz zz)
+(loop14-mkvoice cnd "
+beg 8 8
+mr 4 t 4 mg vow-a gt 1
+t 4 mg vow-a gt 0
+t 0 mg vow-o gt 1
+mr 2 pr 3
+t 7 mg vow-a
+t 4 mg vow-oh
+t 0 mg vow-a
+end
+beg 8 8
+mr 4 t 3 mg vow-a gt 1
+mr 4 t 3 mg vow-a gt 0
+end
+beg 8 8
+mr 4 t 2 mg vow-a gt 1
+t 2 mg vow-a gt 0
+t 2 mg vow-oh gt 1
+mr 2 pr 3
+t 9 mg vow-a
+t 5 mg vow-uh
+t 2 mg vow-a
+end
+beg 8 8
+mr 3 t 1 mg vow-a gt 1
+t 1 mg vow-a gt 0
+mr 2 t 1 mg vow-o gt 1
+mr 2 t 3 mg vow-a
+end
+loop fin
+"
+0.3 0)
+(simple-delay zz 0 0.03)
+(add zz zz)
+
+(loop14-mkvoice cnd "
+beg 8 8
+mr 4 t 0 mg vow-a gt 1
+t 0 mg vow-a gt 0
+t -1 mg vow-o gt 1
+mr 2 pr 3
+t 0 mg vow-a
+t -1 mg vow-oh
+t -5 mg vow-a
+end
+beg 8 8
+mr 4 t 0 mg vow-a gt 1
+mr 4 t 0 mg vow-a gt 0
+end
+beg 8 8
+mr 4 t -2 mg vow-a gt 1
+t -2 mg vow-a gt 0
+t -7 mg vow-oh gt 1
+mr 2 pr 3
+t -2 mg vow-a
+t -3 mg vow-uh
+t -7 mg vow-a
+end
+beg 8 8
+mr 3 t -2 mg vow-a gt 1
+t -2 mg vow-a gt 0
+mr 2 t -2 mg vow-o gt 1
+mr 2 t 1 mg vow-a
+end
+loop fin
+" 0.3 0)
+(simple-delay zz 0 0.04)
+(add zz zz)
+(mul zz (ampdb -5)))</pre></code>
+
+<h2>Day 15</h2>
+
+<p>Thinking about: abrupt chaos. pockets of calm. using more
+of the vocal tract shapes I made, even the strange ones.
+Roomful of Teeth tumbles around in the back of my head.
+Also finally got around to making so you don't have
+to assign vowel shapes to every target.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define loop15-base 58)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15)
+  (let ((g1 (gest:new)) (g2 (gest:new)) (g3 (gest:new)))
+    (gest:weight g1)
+    (mul zz 30)
+    (gest:weight g2)
+    (mul zz 30)
+    (add zz zz)
+    (gest:weight g3)
+    (mul zz 30)
+    (add zz zz)
+
+    (add zz 120)
+    (mul zz (/ 1 60))
+    (phasor zz 0)
+    (bhold zz)
+    (cabset zz 0)
+
+    (loop15-vox1 g1 (cabgetf 0))
+    (loop15-vox2 g2 (cabgetf 0))
+    (add zz zz)
+    (loop15-vox3 g3 (cabgetf 0))
+    (add zz zz)
+    (dcblock zz)
+    (mul zz (ampdb -3))
+    (bunhold (cabget 0))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-mkvox g cnd sco)
+  (let ((tr (tract:new)))
+    (configure-tract tr g 0.04)
+    (singer g sco)
+    (cnd)
+    (gest:iculate g)
+    (add zz loop15-base)
+    (mtof zz)
+    (glottis zz 0.5)
+    (tract:node tr)))</pre></code>
+<p></p>
+<p>Vocals 1.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-vox1 g cnd)
+  (loop15-mkvox g cnd "
+beg 4 1
+mr 4 t 0 gl jul-ah mass 0 inertia 0.01
+end
+beg 4 4
+t 1 lin jul-uh
+t 3 lin jul-ah
+t -12 lin vow-rr
+t -10 exp 3 vow-e
+end
+beg 4 1
+mr 4 t -2 gl jul-oo
+end
+beg 4 4
+pr 4
+t -1 sg jul-ah
+t 2 sg jul-oh
+t 1 sg jul-ah
+t 0 sg jul-oh
+
+pr 5
+t -1 sg jul-ah
+t 2 sg jul-oh
+t 1 sg jul-ah
+t 7 mg jul-ee
+t 8 mg jul-ee
+
+pr 5
+t -1 sg jul-ah
+t 2 sg jul-oh
+t 1 sg jul-ah
+t 0 sg jul-oh
+t 1 sg jul-ah
+
+t -1 lin jul-ah mass -120
+end
+beg 4 1
+mr 4 t 3 mg jul-ah
+end
+
+beg 4 4
+t 0 mg jul-oh
+t -1 mg
+t 1 mg
+t -2 mg
+end
+
+beg 4 4
+mr 4 t 5 mg jul-oo
+end
+
+beg 4 4
+mr 4 t -8 exp 1 jul-ee mass -120
+end
+loop fin
+"))</pre></code>
+<p></p>
+<p>Vocals 2.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-vox2 g cnd)
+  (loop15-mkvox g cnd "
+beg 4 1
+mr 4 t 7 mg jul-ah mass 0 inertia 0.01
+end
+
+beg 4 5
+t 11 lin jul-ah
+t 12 lin jul-ee
+t 9 lin jul-uh
+t 13 lin jul-ee
+end
+
+beg 4 4
+mr 4 t 5 gl jul-oo
+end
+
+beg 4 4
+pr 6 mass 10
+t 0 sg jul-oo
+t 3 sg
+t 7 sg
+t 11 sg
+t 13 sg
+t 12 sg
+
+pr 6 grow 0.8
+t 0 sg jul-ee
+t 3 sg
+t 7 sg
+t 11 sg
+t 13 sg
+t 12 sg
+
+pr 6 grow 0.7
+t 0 sg jul-uh
+t 3 sg
+t 7 sg
+t 11 sg
+t 13 sg
+t 12 sg
+
+pr 6 grow 0.7
+t 0 sg jul-ah
+t 3 sg
+t 7 sg
+mr 3 t 17 gl mass -120
+end
+
+beg 4 1
+mr 4 t 10 gl jul-ah mass 0
+end
+
+beg 4 4
+t 3 mg jul-oh mass -100
+t 2 mg shrink 0.5
+t 4 mg shrink 0.5
+t 1 mg shrink 0.9
+end
+
+beg 4 4
+mr 4 t 12 mg jul-oo mass 0
+end
+
+beg 4 4
+mr 4 t -10 exp 2 vow-e
+end
+loop fin
+"))</pre></code>
+<p></p>
+<p>Vocals 3.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-vox3 g cnd)
+  (loop15-mkvox g cnd "
+beg 4 1
+mr 4 t 2 mg jul-ah mass 0
+end
+
+beg 4 6
+skwexp 0
+t 0 lin
+t -14 lin vow-rr mass -60
+t 12 lin vow-uh shrink 0.9
+t 7 mg vow-oh shrink 0.9
+
+pr 7
+t 1 mg vow-rr
+t 2 mg jul-oo
+t 1 mg vow-rr
+t 7 mg jul-ah
+t 1 mg vow-rr
+
+t -13 lin jul-ah shrink 0.5
+end
+
+beg 4 1
+mr 4 t 3 gl jul-oo mass 0
+end
+
+beg 4 4
+skwexp 1
+pr 3
+  mr 2 t 1 lin jul-oo
+  t -23 lin vow-a
+pr 3
+  mr 2 t 1 lin jul-oo
+  t -23 lin vow-o
+pr 3
+  mr 2 t 1 lin jul-la
+  t -23 lin
+pr 3
+  mr 2 t 1 lin jul-oo mass -120
+  t 18 lin vow-o
+end
+
+beg 4 1
+mr 4 t 2 gl jul-ah mass 0
+end
+
+beg 4 4
+pr 2
+  t 6 mg jul-oh mass -50
+  t 12 mg
+pr 3
+  t 5 mg shrink 0.3 vow-uh
+  t 11 mg jul-ahmute
+  t 14 gl jul-ah
+
+pr 4
+  t 7 mg shrink 0.3 jul-la
+  t 10 mg shrink 0.3
+  t 14 mg shrink 0.3 jul-ah
+  t 17 gl jul-ee
+
+pr 2
+  t 4 mg shrink 0.9
+  t 9 mg
+end
+
+beg 4 4
+mr 4 t 4 mg jul-oo mass 0
+end
+
+beg 4 4
+t -12 gl vow-e
+mr 3 t -24 exp 3 vow-a
+end
+loop fin
+"))</pre></code>
+
+<h2>Day 16</h2>
+
+<p>Thinking about: arpy vocals. Just doing a vamp. Not really
+much time spent on this tbh.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16)
+  (let ((rev (monolith:cabnew (lambda () (const 0)) 1)))
+    (cabset (bhold (phasor (/ 110 60) 0)) 0)
+    (loop16-arpvox (cabgetf 0))
+    (eqfil zz 4500 4500 2)
+    (mul zz (ampdb -4))
+
+    (loop16-bassvox (cabgetf 0))
+    (mul zz (ampdb -3))
+    (loop16-tenorvox (cabgetf 0))
+    (mul zz (ampdb -5))
+    (add zz zz)
+    (eqfil zz 60 60 2)
+
+    (add zz zz)
+
+    (bdup)
+    (cthrow zz 0.3 (cabgetf rev))
+
+    (loop16-leadvox (cabgetf 0))
+    (mul zz (ampdb -5))
+    (bdup)
+    (simple-delay zz 0.6 (* (/ 60 110) 1.5))
+    (mul zz (ampdb -8))
+    (add zz zz)
+    (buthp zz 300)
+    (bdup)
+    (cthrow zz 0.8 (cabgetf rev))
+    (add zz zz)
+
+    (mul zz (ampdb -3))
+
+    (cabget rev)
+    (bdup)
+    (revsc zz zz 0.97 8000)
+    (bdrop)
+    (dcblock zz)
+    (mul zz (ampdb -15))
+    (add zz zz)
+    (cabclr rev)
+    (bunhold (cabget 0))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define loop16-base 58)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-arpvox cnd)
+  (let ((g (gest:new)) (tr (tract:new)))
+    (configure-tract tr g 0.01)
+    (singer g "
+beg 4 16
+t 0 mg jul-ah
+t 5 mg jul-oh
+t 7 mg jul-oh
+t 10 mg jul-ah
+
+t 12 mg jul-oh
+t 10 mg jul-oh
+t 7 mg jul-ah
+t 5 mg jul-oh
+
+t 0 mg jul-oh
+t 5 mg jul-ah
+t 7 mg jul-oh
+t 10 mg jul-oh
+
+t 12 mg jul-ah
+t 10 mg jul-oh
+t 7 mg jul-ah
+t 5 mg jul-oh
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (add zz loop16-base)
+  (mtof zz)
+  (glottis zz 0.3)
+  (tract:node tr)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-bassvox cnd)
+  (let ((g (gest:new)) (tr (tract:new)))
+    (configure-tract tr g 0.01)
+    (singer g "
+beg 8 16
+mr 3 t 0 mg vow-a
+mr 3 t -4 mg vow-uh
+mr 5 t -7 gl vow-a
+mr 5 t -19 mg vow-uh
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (add zz (- loop16-base 12))
+  (mtof zz)
+  (glottis zz 0.8)
+  (tract:node tr)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-tenorvox cnd)
+  (let ((g (gest:new)) (tr (tract:new)))
+    (configure-tract tr g 0.01)
+    (singer g "
+beg 8 16
+mr 3 pr 3
+  mr 2 t 7 mg vow-a
+  t 10 mg vow-o
+mr 3 pr 3
+  mr 2 t 3 gl vow-uh
+  t -2 mg vow-uh
+mr 10 t 0 mg vow-a
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (add zz (- loop16-base 12))
+  (mtof zz)
+  (glottis zz 0.8)
+  (tract:node tr)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-leadvox cnd)
+  (let ((g (gest:new)) (tr (tract:new)))
+    (configure-tract tr g 0.01)
+    (singer g "
+beg 8 1
+t 7 mg jul-ah
+end
+beg 8 1
+pr 2
+  t 10 lin jul-oh
+  t 10 lin jul-ah
+end
+beg 8 1
+t 12 mg jul-ah
+end
+beg 8 8
+mr 6 t 14 mg jul-oh
+mr 2 t 15 gl jul-ah
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (add zz loop16-base)
+  (sine 6 0.3)
+  (add zz zz)
+  (mtof zz)
+  (glottis zz 0.7)
+  (tract:node tr))
+  (dcblock zz))</pre></code>
+
+<h2>Day 17</h2>
+
+<p>Thinking about: music for airports. isorhythms again.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop17)
+  (let ()
+    (regset (gen_sine (ftnew 8192)) 1)
+
+    (phasor (biscale (oscf 0.1 0.5 (reggetf 1)) 0.8 1.5) 0)
+    (bhold zz)
+    (cabset zz 0)
+
+    (loop17-vox1 (cabgetf 0))
+    (loop17-vox2 (cabgetf 0))
+    (add zz zz)
+    (loop17-vox3 (cabgetf 0))
+    (add zz zz)
+    (loop17-vox4 (cabgetf 0))
+    (add zz zz)
+
+    (mul zz (ampdb -4))
+    (eqfil zz 5000 1000 0.1)
+    (bdup)
+    (buthp zz 300)
+    (bdup)
+    (revsc zz zz 0.97 10000)
+    (bdrop)
+    (dcblock zz)
+    (mul zz (ampdb -15))
+    (bswap)
+    (mul zz 0.9)
+    (add zz zz)
+
+    (bunhold (cabget 0)))
+    (regclr 1))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define loop17-base 59)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop17-mkvox cnd vsco esco)
+  (let ((g (gest:new))
+        (tr (tract:new))
+        (gt (gest:newscalar))
+        (expr (gest:new)))
+    (configure-tract tr g 0.02)
+    (singer-words g (list (gst:wordentry "gt" (mksetter gt))) vsco)
+    (cnd)
+    (gest:iculate g)
+    (add zz loop17-base)
+    (oscf 6 0 (reggetf 1))
+
+    (gst:eval expr esco)
+    (cnd)
+    (gest:iculate expr)
+    (mul zz 0.1)
+    (mul zz zz)
+    (add zz zz)
+    (mtof zz)
+    (glottis zz 0.5)
+    (tract:node tr)
+    (gest:scalar gt)
+    (adsr zz 0.3 0.1 1 0.2)
+    (mul zz zz)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop17-vox1 cnd)
+   (loop17-mkvox cnd "
+beg 6 6
+mn 6 2
+  pr 6
+    mr 2 t 0 jul-ahmute gt 1
+    mr 4 t 0 jul-ah gt 0
+  pr 6
+    mr 2 t 12 jul-oo gt 1
+    mr 4 t 12 jul-ah gt 0
+end
+loop fin
+"
+"beg 6 4 t 0 exp 1 t 1 mr 2 t 1 stp end loop fin"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop17-vox2 cnd)
+   (loop17-mkvox cnd "
+beg 7 7
+mn 7 3
+  pr 7
+    t 5 jul-ahmute gt 0
+    mr 2 t 5 jul-oh gt 1
+    mr 4 t 5 jul-ah gt 0
+  pr 7
+    t 2 jul-ahmute gt 0
+    mr 2 t 2 jul-oo gt 1
+    mr 4 t 2 jul-ah gt 0
+  pr 7
+    t 2 jul-ahmute gt 0
+    t 2 jul-oo mg gt 1
+    t 14 jul-oo
+    mr 4 t 14 jul-ah gt 0
+end
+loop fin
+"
+"beg 7 4 t 0 exp 1 t 1 mr 2 t 1 stp end loop fin"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop17-vox3 cnd)
+   (loop17-mkvox cnd "
+beg 8 8
+mn 8 2
+pr 8
+  mr 2 t 7 jul-ahmute gt 0
+  mr 2 t 7 jul-oo gt 1
+  mr 4 t 7 jul-ah gt 0
+pr 8
+  mr 2 t 9 jul-ahmute gt 0
+  mr 2 t 9 jul-ahmute gt 1
+  mr 4 t 9 jul-ah gt 0
+end
+loop fin
+"
+"beg 8 4 t 0 exp 1 t 1 mr 2 t 1 stp end loop fin"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop17-vox4 cnd)
+   (loop17-mkvox cnd "
+beg 10 10
+mn 10 2
+  pr 10
+    mr 3 t -2 jul-ahmute gt 0
+    t -2 jul-oo mg gt 1
+    mr 3 t -3 jul-ah mg
+    mr 3 t -3 jul-oo gt 0
+  pr 10
+    mr 3 t 4 jul-ahmute gt 0
+    mr 4 t 4 jul-ahmute gt 1
+    mr 3 t 4 jul-ah gt 0
+end
+loop fin
+"
+"beg 10 4 t 0 exp 1 t 1 mr 2 t 1 stp end loop fin"
+))</pre></code>
+
+<h2>Day 18</h2>
+
+<p>Thinking about: liquid drum-n-bass, unfa beatboxing, morphing
+FM wavetables.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-db)
+  ;;(let ((dbr (monolith:nextfree 1)))
+  ;;  (sqlite-open "s/a.db")
+  ;;  (regset zz dbr)
+  ;;  dbr)
+  (lambda () (monsqlite "sqlite")))</pre></code>
+<p></p>
+<p>This needs to be called once, in order to load the SQLite db.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-init)
+  (sqlar:sqlite-open (monolith:mkhome "s/a.db") "sqlite")
+  (loop18-cratewt)
+  (loop18-setup-wavetables))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18)
+  (let*
+   ((k (gest:new))
+   (s (gest:new))
+   (h (gest:new))
+   (v (gest:new))
+   (rev (monolith:mkcab (lambda () (const 0)) 1))
+   (db (loop18-db)))
+    (gest:weight k)
+    (mul zz 20)
+    (gest:weight h)
+    (mul zz 20)
+    (add zz zz)
+    (gest:weight s)
+    (mul zz 20)
+    (mul zz 0.5)
+    (add zz zz)
+    (gest:weight v)
+    (mul zz 60)
+    (add zz zz)
+
+    (add zz 160)
+    (mul zz (/ 1 60))
+    (phasor zz 0)
+    (bhold zz)
+    (cabset zz 0)
+    (let ((ks (loop18-kik k db (cabgetf 0))))
+
+    (scale (tenvx (cabget ks) 0.01 0.1 0.01) 1 0.3)
+    (loop18-bass (cabgetf 0))
+    (mul zz zz)
+    (cabclr ks))
+    (bdup)
+    (buthp zz 500)
+    (cthrow zz 0.9 (cabgetf rev))
+    (add zz zz)
+
+    (loop18-snr s db (cabgetf 0))
+    (bdup)
+    (cthrow zz 0.5 (cabgetf rev))
+    (add zz zz)
+    (loop18-hat h db (cabgetf 0))
+    (add zz zz)
+
+    (loop18-vox v (cabgetf 0))
+    (bdup)
+    (cthrow zz 0.5 (cabgetf rev))
+    (add zz zz)
+
+    (mul zz (ampdb -3))
+
+    (cabget rev)
+    (bdup)
+    (revsc zz zz 0.97 10000)
+    (bdrop)
+    (dcblock zz)
+    (mul zz (ampdb -10))
+    (add zz zz)
+
+    (cabclr rev)
+
+    (limit zz -0.99 0.99)
+    (bunhold (cabget 0))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-loadwav db id)
+  (let ((r (monolith:nextfree 0)))
+    (regset (cratewav db id) r)
+    r))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-mkdrums g db cnd id score)
+  (let ((s (loop18-loadwav db id))
+        (tk (gest:newscalar))
+        (amp (gest:newscalar))
+        (play (gest:newscalar)))
+    (gst:eval-addwords g
+(list
+  (gst:wordentry "hit" (mkhit tk))
+  (gst:wordentry "rest" (mkrest))
+  (gst:wordentry "play" (mksetter play))
+  (gst:wordentry "amp" (mksetter amp))) score)
+    (cnd)
+    (gest:iculate g)
+    (bdrop)
+    (gest:tick tk)
+    (tsmp zz (gest:scalar play) (reggetf s))
+    (mul zz (gest:scalar amp))
+    (regclr s)))</pre></code>
+<p></p>
+<p>A terrible hack. But time is short. This will return
+the trigger signal. Made for sidechain compression.
+Be sure to unhold.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-mkdrums-savesig g db cnd id score)
+  (let* ((s (loop18-loadwav db id))
+        (tk (gest:newscalar))
+        (amp (gest:newscalar))
+        (play (gest:newscalar))
+        (sig (monolith:cabnew (lambda ()
+
+    (gst:eval-addwords g
+(list
+  (gst:wordentry "hit" (mkhit tk))
+  (gst:wordentry "rest" (mkrest))
+  (gst:wordentry "play" (mksetter play))
+  (gst:wordentry "amp" (mksetter amp))) score)
+    (cnd)
+    (gest:iculate g)
+    (bdrop)
+    (gest:tick tk))
+0)))
+    (cabget sig)
+    (tsmp zz (gest:scalar play) (reggetf s))
+    (mul zz (gest:scalar amp))
+    (regclr s)
+    sig
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-kik g db cnd)
+(loop18-mkdrums-savesig g db cnd
+"453aafaf%"
+"
+beg 4 4
+mn 1 2
+hit mass 0 amp 1 inertia 0.1 play 1
+pr 4 mr 3 hit mass -10 hit mass 0
+rest pr 2 rest hit mass 0
+
+rest
+end
+loop fin
+"))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-snr g db cnd)
+  (loop18-mkdrums
+  g db cnd "6aa8f%"
+"
+beg 4 4
+rest
+mn 1 2
+hit amp 1 mass 0 play 1
+pr 4 mr 3
+hit amp 1 mass 30 play 1
+hit amp 0.8
+
+rest
+
+mn 1 2 hit hit play 0.5 mass -60
+end
+loop fin
+"))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-hat g db cnd)
+  (loop18-mkdrums
+  g db cnd "cfa43159%"
+"
+beg 4 16
+hit play 1 amp 1 mass 0 inertia 0.01
+hit amp 0.5 hit hit amp 1
+
+hit amp 0.5 hit amp 1 hit hit
+hit hit hit pr 2 mass 30 hit hit
+mn 4 2
+pr 4
+hit hit mr 2 pr 3 hit play 0.9 mass 30 hit hit play 1
+pr 6
+mass -30 hit shrink 0.5 hit shrink 0.5 hit shrink 0.5
+hit shrink 0.5 hit hit
+end
+loop fin
+")
+  (buthp zz 4000))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-bass cnd)
+
+  (let* ((cgst (gest:new))
+         (mgst (gest:new))
+         (gfmp (gosc:new-fm cgst mgst)))
+
+         (gst:eval-addwords
+     mgst (list (gst:wordentry "wt" tok-wt)) "
+beg 6 4
+mr 2 t 0 lin wt crunchy
+mr 2 t 0 lin wt sawft
+end
+loop fin
+")
+    (cnd)
+    (gest:iculate mgst)
+    (bdrop)
+
+    (gst:eval-addwords
+     cgst (list (gst:wordentry "wt" tok-wt)) "
+beg 16 4
+t 0 exp 3 wt sineft
+t 3 exp 3 wt sineft
+mr 2 t -2 lin wt sinsumft
+end
+beg 16 4
+t 0 exp 3 wt sineft
+t 3 exp 3 wt sineft
+mr 2
+pr 3
+t 0 exp 3 wt sinsumft
+t 7 exp 3 wt sawft
+t -2 exp 3 wt sineft
+end
+loop fin
+")
+    (cabget 0)
+    (gest:iculate cgst)
+    (bdup)
+    (add zz (- 36 8 12))
+    (mtof zz)
+    (param 2)
+    (param 4.01)
+    (param 8)
+    (param 0.1)
+    (gosc:node-fm gfmp))
+    (bswap)
+    (add zz (- 36 8))
+    (mtof zz)
+    (blsaw zz 0.5)
+    (butlp zz 500)
+    (add zz zz)
+    (mul zz 0.5)
+    (eqfil zz 60 60 1.5)
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-vox g cnd)
+  (let ((tr (tract:new)))
+    (configure-tract tr g 0.02)
+    (singer g "
+beg 8 1
+t 3 exp 1 jul-ah mass 0 inertia 0.001
+end
+beg 8 1
+t 12 lin jul-oo
+end
+beg 8 1
+t 3 exp 1 jul-ee
+end
+beg 8 1
+pr 2
+t 12 exp 1 jul-ah
+pr 2
+t 7 mg jul-uh
+pr 8
+t 0 mg jul-ah mass -100
+t 3 mg jul-uh shrink 0.8
+t 7 mg jul-oh shrink 0.8
+t 10 mg jul-oo shrink 0.8
+mr 4 t -2 gl jul-ah shrink 0.8
+end
+loop fin
+")
+    (cnd)
+    (gest:iculate g)
+    (add zz (+ (- 36 8) 36))
+    (sine 6 0.3)
+    (add zz zz)
+    (mtof zz)
+    (glottis zz 0.3)
+    (tract:node tr)
+    (mul zz (ampdb 3))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-cratewt)
+  (sqlar:cratewav "sqlite" "crunchy" "19263c%")
+  (sqlar:cratewav "sqlite" "dusty" "e90813%"))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop18-setup-wavetables)
+(monolith:ftbl-create "sineft" 8192)
+(gen_sine (monft "sineft"))
+(monolith:ftbl-create "sawft" 8192)
+(monft "sawft")
+(rvl "gen_saw")
+(monolith:ftbl-create "sinsumft" 8192)
+(monft "sinsumft")
+(gen_sinesum zz "1.0 0 0.5 0.2"))</pre></code>
+
+<h2>Day 19</h2>
+
+<p>Thinking about: the innsmouth look, ritual, basso profondo,
+throat singing, the predator, whispers.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop19)
+  (let ((g (gest:new))
+  (rev (monolith:cabnew (constf 0) 1)))
+    (gest:weight g)
+    (mul zz 30)
+    (add zz 60)
+    (mul zz (/ 1 60))
+    (bhold (phasor zz 0))
+    (cabset zz 0)
+
+    (loop19-vox g (cabgetf 0))
+    (eqfil zz 100 80 5)
+    (bdup)
+    (buthp zz 300)
+    (cthrow zz 0.5 (cabgetf rev))
+
+    (loop19-bell (cabgetf 0))
+    (bdup)
+    (cthrow zz 0.9 (cabgetf rev))
+    (mul zz (ampdb -5))
+    (add zz zz)
+
+    (cabget rev)
+    (simple-delay zz 0 0.1)
+    (bdup)
+    (revsc zz zz 0.97 10000)
+    (bdrop)
+    (dcblock zz)
+    (mul zz (ampdb -10))
+
+    (add zz zz)
+    (buthp zz 30)
+
+    (blsaw (randi 60 80 7) 0.5)
+    (blsaw (randi 60 200 10) 0.5)
+    (add zz zz)
+    (mul zz (ampdb -15))
+    (butlp zz 80)
+    (add zz zz)
+
+    (cabclr rev)
+    (bunhold (cabget 0))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop19-vox g cnd)
+  (let
+      ((tr (tract:new))
+       (vow (gest:new))
+       (tidal (gest:new))
+       (gt (gest:newscalar))
+)
+  (configure-tract tr vow 0.02)
+  (singer vow "
+beg 3 3
+t 0 lin ls1
+t 0 lin ls2
+t 0 lin ls3
+end
+beg 3 3
+pr 2
+  t 0 lin vow-a
+  t 0 lin ls2
+pr 4
+  t 0 lin vow-uh
+  t 0 lin vow-o
+  pr 3
+    t 0 lin vow-a
+    t 0 lin vow-uh
+    t 0 lin vow-a
+  t 0 lin vow-e
+t 0 lin ls1
+end
+beg 3 3
+pr 4
+  t 0 lin vow-uh
+  t 0 lin vow-o
+  t 0 lin vow-a
+  t 0 lin vow-e
+pr 2
+  pr 3
+    t 0 lin vow-a
+    t 0 lin vow-eh
+    t 0 lin jul-ah
+  t 0 lin ls2
+t 0 lin ls1
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate vow)
+  (bdrop)
+
+  (gst:eval-addwords g (list (gst:wordentry "gt" (mksetter gt))) "
+beg 12 4
+t 0 gt 1 mass 0 inertia 0.1
+t 0.3 mg
+t -3 mg mass -60
+t -3 mg gt 0
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (add zz 34)
+  (mtof zz)
+  (glottis zz (randi 0.8 0.7 1))
+
+  (let ((ts (monolith:mkcab (lambda ()
+  (gst:eval tidal "
+beg 12 4
+t 1 stp
+t 0 stp
+t 0 stp
+pr 2
+t 0 exp -1
+t 1 exp 3
+end loop fin
+")
+  (cnd)
+  (gest:iculate tidal)) 0)))
+  (cabget ts)
+  (noise 0.5)
+  (butlp zz 1000)
+  (mul zz zz)
+  (metro (scale (cabget ts) 1 13))
+  (mode zz (scale (cabget ts) 800 1000) 15)
+  (add zz zz)
+  (cabclr ts))
+  (bswap)
+  (gest:scalar gt)
+  (adsr zz 0.1 0.1 1.0 0.2)
+  (crossfade zz zz zz)
+  (tract:node tr)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop19-bell cnd)
+  (let ((g (gest:new)) (tk (gest:newscalar)))
+    (gst:eval-addwords
+     g (list (gst:wordentry "hit" (mkhit tk))
+  (gst:wordentry "rst" (mkrest))) "
+beg 12 4
+rst
+rst
+rst
+hit
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (bdrop)
+  (gest:tick tk)
+  (tgate zz 0.005)
+  (port zz 0.001)
+  (bdup)
+  (mode zz 800 40)
+  (bswap)
+  (mode zz 1800 1400)
+  (add zz zz)
+  (limit zz -0.5 0.5)
+  (dcblock zz)
+
+  (bdup)
+  (mode zz 300 50)
+  (bswap)
+  (mode zz 880 200)
+  (add zz zz)
+  (dcblock zz)
+  (buthp zz 200)
+  (mul zz 0.3)
+
+  (mul zz (ampdb -10))))</pre></code>
+
+<h2>Day 20</h2>
+
+<p>Thinking about: Rachmaninoff Vespers, afro-cuban grooves,
+Tanpura Drones
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop20)
+  (let
+    ((v1 (gest:new))
+     (rev (monolith:mkcab (constf 0) 1)))
+    (gest:weight v1)
+    (mul zz 0.2)
+    (mul zz 30)
+    (add zz 140)
+    (mul zz (/ 1 60))
+    (phasor zz 0)
+    (bhold zz)
+    (cabset zz 0)
+
+    (loop20-vox v1 (cabgetf 0))
+    (eqfil zz 1000 1000 1.2)
+    (buthp zz 100)
+    (mul zz (ampdb -3))
+    (bdup)
+    (cthrow zz 0.7 (cabgetf rev))
+
+    (loop20-vox-b (cabgetf 0))
+    (mul zz (ampdb -3))
+    (buthp zz 100)
+    (butlp zz 5000)
+    (bdup)
+    (cthrow zz 0.4 (cabgetf rev))
+    (mul zz (ampdb -2))
+
+    (add zz zz)
+
+    ;(mul zz 0)
+
+    (loop20-drones (cabgetf 0))
+    (eqfil zz 1000 2000 0.2)
+    (mul zz (ampdb -6))
+    (bdup)
+    (cthrow zz 0.5 (cabgetf rev))
+    (mul zz (ampdb -3))
+    (add zz zz)
+
+    (loop20-clavi (cabgetf 0))
+    (mul zz (ampdb -10))
+    (bdup)
+    (cthrow zz 0.5 (cabgetf rev))
+    (add zz zz)
+
+    (loop20-castinets (cabgetf 0))
+    (mul zz (ampdb -10))
+    (bdup)
+    (cthrow zz 0.7 (cabgetf rev))
+    (mul zz (ampdb -2))
+    (add zz zz)
+
+    (loop20-shaker (cabgetf 0))
+    (mul zz (ampdb -19))
+    (buthp zz 5000)
+    (bdup)
+    (cthrow zz 0.9 (cabgetf rev))
+    (mul zz (ampdb -2))
+    (add zz zz)
+
+    (cabget rev)
+    (simple-delay zz 0.0 0.07)
+    (bdup)
+    (revsc zz zz 0.93 8000)
+    (bdrop)
+    (dcblock zz)
+    (mul zz (ampdb -10))
+    (add zz zz)
+
+    (mul zz (ampdb -1))
+    (limit zz -1 1)
+
+    (bunhold (cabget 0))
+    (cabclr rev)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop20-vox g cnd)
+  (let
+      ((tr (tract:new))
+        (expr (gest:new)))
+    (configure-tract tr g 0.02)
+    (singer g "
+beg 4 4
+mr 2 t 7 mg vow-a mass 0 inertia 0.001
+mr 2 pr 3
+  t 7 mg vow-o mass -60
+  t 5 mg vow-a grow 0.5
+  pr 2
+    t 4 mg vow-o mass 0
+    t 5 mg vow-eh
+end
+beg 4 4
+mr 2 pr 3
+  mr 2 t 7 mg vow-a mass -30
+  pr 2
+    t 5 mg vow-o mass 50
+    t 7 mg vow-a
+mr 2 t 8 mg vow-eh mass -30
+end
+
+beg 4 4
+t 7 mg vow-eh mass -10
+t 5 mg vow-eh
+mr 2
+t 7 mg vow-a mass 0
+end
+
+beg 4 1
+t 7 gl vow-o
+end
+
+beg 4 4
+mr 2 t 7 mg vow-a mass 0
+mr 2 pr 3
+  t 7 mg vow-o mass -30
+  t 5 mg vow-a shrink 0.4
+  pr 2
+    t 4 mg vow-o grow 0.8
+    t 5 mg vow-eh grow 0.8
+end
+beg 4 4
+mr 2 pr 3
+  mr 2 t 7 mg vow-a
+  pr 2
+    t 5 mg vow-o mass -50
+    t 7 mg vow-a grow 0.4
+mr 2 t 10 mg vow-eh grow 0.4
+end
+
+beg 4 4
+mr 2 pr 3
+t 8 mg vow-o shrink 0.5
+t 7 mg vow-a shrink 0.8
+t 5 mg vow-o shrink 0.8
+mr 2
+pr 6
+  t 7 mg vow-a mass 20
+  t 5 mg vow-a
+  mr 4 t 4 mg vow-a
+end
+
+beg 4 1
+t 4 gl vow-o mass 0
+end
+
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (add zz (+ 48 7))
+  (sine 6 0.4)
+  (gst:eval expr "
+beg 4 4
+mr 2 t 0.1
+t 0.8
+t 0.2
+end
+
+beg 4 4
+mr 2 t 0.1 exp 1
+mr 2 t 1
+end
+
+beg 4 4
+mr 2 t 1 exp 2
+mr 2 t 0.5
+end
+
+beg 4 4
+mr 2 t 0.3
+mr 2 t 0.0
+end
+
+loop fin
+")
+  (cnd)
+  (gest:iculate expr)
+  (scale zz 0.2 1)
+  (mul zz zz)
+  (add zz zz)
+  (mtof zz)
+  (glottis zz 0.73)
+  (tract:node tr)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop20-vox-b cnd)
+  (let
+      ((tr (tract:new))
+       (g (gest:new))
+        (expr (gest:new)))
+    (configure-tract tr g 0.02)
+    (singer g "
+beg 4 4
+mr 2 t 4 mg jul-ah
+mr 2 pr 3
+  t 4 mg jul-oh
+  t 2 mg jul-ah
+  pr 2
+    t 0 mg jul-oo
+    t 2 mg jul-ee
+end
+
+beg 4 4
+mr 2 pr 3
+  mr 2 t 4 mg jul-ah
+  pr 2
+    t 2 mg jul-oo
+    t 4 mg jul-ah
+mr 2 t 5 mg jul-eh
+end
+
+beg 4 4
+t 4 mg jul-ah
+t 2 mg jul-ee
+mr 2
+t 4 mg jul-ah
+end
+
+beg 4 1
+t 4 gl jul-oo
+end
+
+beg 4 4
+mr 2 t 4 mg jul-ah
+mr 2 pr 3
+  t 4 mg jul-oh
+  t 2 mg jul-ah
+  pr 2
+    t 0 mg jul-oo
+    t 2 mg jul-ee
+end
+
+beg 4 4
+mr 2 pr 3
+  mr 2 t 4 mg jul-ah
+  pr 2
+    t 2 mg jul-oo
+    t 4 mg jul-ah
+mr 2 t 7 mg jul-eh
+end
+
+beg 4 4
+mr 2 pr 3
+t 5 mg jul-oh
+t 4 mg jul-ah
+t 2 mg jul-oh
+mr 2
+pr 6
+  t 4 mg jul-ah
+  t 2 mg jul-ah
+  mr 4 t 0 mg jul-oh
+end
+
+beg 4 1
+t 0 gl jul-oh
+end
+
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (add zz (+ 48 7))
+  (sine 5 0.3)
+  (gst:eval expr "
+beg 4 4
+mr 2 t 0.0
+mr 2 t 0.4
+end
+
+beg 4 4
+mr 2 t 0.8
+mr 2 t 0.0
+end
+
+beg 4 4
+mr 2 t 0
+mr 2 t 0.4
+end
+
+beg 4 4
+mr 2 t 0.0
+mr 2 t 0.4
+end
+
+loop fin
+")
+  (cnd)
+  (gest:iculate expr)
+  (scale zz 0.2 1)
+  (mul zz zz)
+  (add zz zz)
+  (mtof zz)
+  (glottis zz 0.6)
+  (tract:node tr)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop20-drones cnd)
+   (let (
+   (dr1 (gest:new))
+   (dr2 (gest:new))
+)
+      (gst:eval dr1 "
+beg 8 4
+mr 3 t 0 mg
+t -2 lin
+end
+loop fin
+")
+   (cnd)
+   (gest:iculate dr1)
+   (add zz (+ 36 7))
+   (mtof zz)
+   (violin zz
+           (param 0.1)
+           (scale (biramp (phasor 0.2 0) 0.5) 0.01 0.2)
+           0.1)
+
+      (gst:eval dr2 "
+beg 10 5
+t 8 lin
+mr 3 t 7 mg
+end
+loop fin
+")
+   (cnd)
+   (gest:iculate dr2)
+   (add zz (+ 36 7))
+   (mtof zz)
+   (violin zz
+           (param 0.1)
+           (scale (biramp (phasor 0.12 0.25) 0.5) 0.05 0.2)
+           0.1)
+
+   (add zz zz)
+   (buthp zz 200)
+   (dcblock zz)
+
+   (blsaw (mtof (+ 36 7 -12)) 0.5)
+   (blsaw (mtof (+ 36 7 -12.1)) 0.5)
+   (add zz zz)
+   (butlp zz 500)
+   (mul zz (ampdb -6))
+   (add zz zz)
+   ;(eqfil zz 80 50 1.5)
+   (mul zz (ampdb -3))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop20-clavi cnd)
+  (let
+      ((g (gest:new))
+       (hit (gest:newscalar)))
+    (gst:eval-addwords
+     g (list
+        (wordentry "hit" (mkhit hit))
+        (wordentry "rest" (mkrest))
+) "
+beg 4 4
+pr 3
+mr 2 hit hit
+rest
+pr 3
+hit
+mr 2 hit
+hit
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (bdrop)
+  (gest:tick hit)
+  (mode zz 1200 20)
+  (bdup)
+  (mode zz 2200 20)
+  (bswap)
+  (mode zz 5000 100)
+  (add zz zz)
+  (dcblock zz)
+
+  (mul zz (ampdb -6))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop20-shaker cnd)
+  (let
+      ((g (gest:new))
+       (hit (gest:newscalar))
+       (amp (gest:newscalar)))
+    (gst:eval-addwords
+     g (list
+        (wordentry "hit" (mkhit hit))
+        (wordentry "amp" (mksetter amp))
+) "
+beg 4 12
+hit amp 1 hit amp 0.3 hit
+hit amp 1 hit amp 0.3 hit
+hit amp 1 hit amp 0.3
+hit amp 1 hit amp 0.3
+hit amp 1 hit amp 0.3
+end
+
+beg 4 12
+hit amp 1 hit amp 0.3 hit
+hit amp 1 hit amp 0.3 hit
+hit amp 1 hit amp 0.3
+hit amp 1 hit amp 0.3
+hit amp 1 pr 2 hit amp 0.9 hit
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (bdrop)
+  (gest:tick hit)
+  (tenvx zz 0.001 0.05 0.01)
+  (noise 0.4)
+  (gest:scalar amp)
+  (mul zz zz)
+  (buthp zz 5000)
+  (butlp zz 8000)
+  (mul zz zz)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop20-castinets cnd)
+  (let
+      ((g (gest:new))
+       (hit (gest:newscalar)))
+    (gst:eval-addwords
+     g (list
+        (wordentry "hit" (mkhit hit))
+        (wordentry "rest" (mkrest))
+) "
+beg 4 12
+rest hit hit
+rest hit pr 2 hit hit
+rest hit
+rest hit
+rest pr 3 hit hit hit
+end
+beg 4 12
+rest hit hit
+rest hit pr 2 hit hit
+rest hit
+rest hit
+rest hit
+end
+loop fin
+")
+  (cnd)
+  (gest:iculate g)
+  (bdrop)
+  (gest:tick hit)
+  (mode zz 600 10)
+  (bdup)
+  (mode zz 2200 20)
+  (bswap)
+  (mode zz 5000 100)
+  (add zz zz)
+  (dcblock zz)
+
+  (mul zz (ampdb -6))))</pre></code>
+
+<h2>Day 21</h2>
+
+<p>Thinking about: O Willow Wally, Milowda, Lighthouses,
+Ghost stories.
+</p>
+<p>Some say that to this day, you can still hear her calling
+from the lighthouse tower...
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop21)
+  (let* ((rev (monolith:cabnew (constf 0) 1))
+         (ft (mksineft-nxt rev))
+         (g (gest:new)))
+    (gest:weight g)
+    (mul zz 20)
+    (add zz 70)
+    (mul zz (/ 1 60))
+    (bhold (phasor zz 0))
+    (cabset zz 0)
+
+    (loop21-vox g (cabgetf 0))
+    (eqfil zz 2000 1000 1)
+    (bdup)
+    (cthrow zz 0.6 (cabgetf rev))
+    (mul zz (ampdb -3))
+
+    (loop21-strings (reggetf ft) (cabgetf 0))
+    (eqfil zz 1000 2000 0.2)
+    (mul zz (ampdb -8))
+    (bdup)
+    (cthrow zz 0.6 (cabgetf rev))
+    (add zz zz)
+
+    (cabget rev)
+    (simple-delay zz 0 0.1)
+    (bdup)
+    (revsc zz zz 0.91 10000)
+    (bdrop)
+    (dcblock zz)
+    (mul zz (ampdb -10))
+    (add zz zz)
+
+    (mul zz (ampdb -2))
+    (cabclr rev)
+    (regclr ft)
+    (bunhold (cabget 0))))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop21-expr cnd score)
+  (let ((g (gest:new)))
+    (gst:eval g score)
+    (cnd)
+    (gest:iculate g)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop21-expr-words cnd words score)
+  (let ((g (gest:new)))
+    (gst:eval-addwords g words score)
+    (cnd)
+    (gest:iculate g)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop21-exprf cnd score)
+  (lambda () (loop21-expr cnd score)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define loop21-base 57)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop21-vox g cnd)
+  (let ((tr (tract:new))
+        (ex (monolith:cabnew
+(loop21-exprf cnd
+"
+beg 8 8
+mr 4 t 0 exp 1
+mr 4 t 1 lin
+end
+loop fin
+") 0))
+        (gt (gest:newscalar)))
+    (configure-tract tr g 0.02)
+    (singer-words
+     g (list (gst:wordentry "gt" (gst:mksetter gt))) "
+beg 4 4
+mr 2 t 7 mg jul-oo gt 1 mass 0 inertia 0.01
+t 7 mg
+t 8 mg
+end
+
+beg 4 4
+mr 3 t 7 mg mass 0
+t 7 mg gt 0
+end
+
+beg 4 4
+mr 2 t 5 mg jul-oo gt 1 mass 0 inertia 0.01
+t 5 mg
+t 7 mg
+end
+beg 4 4
+mr 3 t 5 mg
+t 5 mg gt 0
+end
+
+beg 4 4
+mr 2 t 7 mg gt 1
+t 7 gl
+pr 2
+  t 12 mg mass -80
+  t 10 mg shrink 0.9
+end
+
+beg 4 4
+mr 3 t 8 mg
+t 8 mg gt 0
+end
+
+beg 4 4
+mr 2 t 5 mg gt 1 jul-oo mass -30
+t 5 mg
+pr 2
+  t 3 mg mass -50
+  t 2 mg shrink 0.8
+end
+
+beg 4 4
+mr 3 t 0 mg shrink 0.5
+t 0 mg gt 0
+end
+loop fin
+")
+    (cnd)
+    (gest:iculate g)
+    (add zz (+ loop21-base 12))
+    (sine (scale (cabget ex) 5 6) 0.2)
+    (scale (cabget ex) 0.1 1)
+    (mul zz zz)
+    (add zz zz)
+    (mtof zz)
+    (glottis zz (scale (cabget ex) 0.4 0.5))
+    (tract:node tr)
+    (adsr (gest:scalar gt) 0.05 0.1 1 0.08)
+    (mul zz zz)
+    (cabclr ex)
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop21-strings ft cnd)
+  (loop21-stringvoice ft cnd "
+beg 8 8
+mr 4 t 12 mg gt 1
+mr 3 t 11 mg
+t 11 mg gt 0
+end
+beg 8 8
+t 12 mg gt 0
+t 15 mg gt 1
+t 14 mg
+t 12 mg
+mr 3 t 11 mg
+t 11 mg gt 0
+end
+beg 8 8
+mr 4 t 10 mg gt 1
+mr 3 t 12 mg
+t 12 mg gt 0
+end
+
+beg 8 8
+mr 4 t 12 mg gt 1
+mr 3 t 12 mg
+t 12 mg gt 0
+end
+loop fin
+"
+"
+beg 8 8
+rep 2
+mr 4 t 0 exp 1
+mr 4 t 0.8 stp
+end
+beg 8 8
+rep 2
+mr 4 t 0.5 exp 1
+mr 4 t 1 stp
+end
+loop fin
+"
+)
+
+(loop21-stringvoice ft cnd "
+beg 8 8
+t 15 mg gt 0
+mr 3 t 15 mg gt 1
+mr 3 t 14 mg
+t 14 mg gt 0
+end
+beg 8 8
+mr 4 t 17 mg gt 1
+mr 3 t 17 mg
+t 17 mg gt 0
+end
+
+beg 8 8
+mr 4 t 15 mg gt 1
+t 17 mg
+mr 2 t 15 mg
+pr 2 t 14 mg
+t 15 mg
+end
+
+beg 8 8
+mr 4 t 17 mg gt 1
+t 17 mg
+pr 2 t 16 mg t 14 mg
+
+mr 2 pr 4
+mr 3 t 16 mg
+t 16 mg gt 0
+end
+loop fin
+"
+"
+beg 8 8
+rep 2
+mr 4 t 0 exp 1
+mr 4 t 0.8 stp
+end
+beg 8 8
+rep 2
+mr 4 t 0.5 exp 1
+mr 4 t 1 stp
+end
+loop fin
+"
+)
+
+(add zz zz)
+
+(loop21-stringvoice ft cnd "
+beg 8 8
+mr 4 t 7 mg gt 1
+mr 3 t 7 mg
+t 7 mg gt 0
+end
+beg 8 8
+mr 4 t 8 mg gt 1
+mr 3 t 7 mg
+t 7 mg gt 0
+end
+beg 8 8
+mr 4 t 7 mg gt 1
+mr 3 t 8 mg
+t 8 mg gt 0
+end
+beg 8 8
+mr 4 t 8 mg gt 1
+mr 3 t 7 mg
+t 7 mg gt 0
+end
+loop fin
+"
+"
+beg 8 8
+rep 2
+mr 4 t 0 exp 1
+mr 4 t 0.8 stp
+end
+beg 8 8
+rep 2
+mr 4 t 0.5 exp 1
+mr 4 t 1 stp
+end
+loop fin
+"
+)
+
+(add zz zz)
+
+(loop21-stringvoice ft cnd "
+beg 8 8
+t 0 mg gt 0
+mr 3 t 0 mg gt 1
+mr 3 t -5 mg
+t -5 stp gt 0
+end
+beg 8 8
+t -7 mg gt 0
+mr 3 t -7 mg gt 1
+mr 2 t -5 mg
+t -5 mg
+t -7 mg
+end
+
+beg 8 8
+mr 4 t -9 mg gt 1
+mr 2 t -4 mg
+t -4 mg
+t -5 mg
+end
+
+beg 8 8
+t -7 mg gt 1
+mr 2 t -9 mg
+t -10 mg
+mr 3 t -12 mg
+t -12 mg gt 0
+end
+loop fin
+"
+"
+beg 8 8
+rep 2
+mr 4 t 0 exp 1
+mr 4 t 0.8 stp
+end
+beg 8 8
+rep 2
+mr 4 t 0.5 exp 1
+mr 4 t 1 stp
+end
+loop fin
+"
+)
+
+(add zz zz)
+
+(loop21-expr cnd "
+beg 32 2
+t 1 exp 2
+t 1.2 stp
+end
+loop fin
+")
+(mul zz zz)
+
+(loop21-expr cnd "
+beg 32 2
+t 2500 exp 2
+t 3000 stp
+end
+loop fin
+")
+
+(butlp zz zz))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop21-stringvoice ft cnd score expr)
+  (let ((gt (gest:newscalar))
+        (ex (monolith:mkcab (loop21-exprf cnd expr) 0)))
+  (oscf (randi (param 6) (param 6.1) (randh 1 2 0.5)) 0 ft)
+  (mul zz 0.1)
+  (scale (cabget ex) 0.3 1)
+  (mul zz zz)
+  (loop21-expr-words
+   cnd
+   (list (gst:wordentry "gt" (gst:mksetter gt)))
+   score)
+  (add zz zz)
+  (add zz loop21-base)
+  (mtof zz)
+  (blsquare zz
+    (scale (cabget ex) 0.1 0.15)
+    (scale (cabget ex) 0.3 0.35))
+
+  (adsr (gest:scalar gt) 0.3 0.1 1 0.3)
+  (mul zz zz)
+  (cabclr ex)
 ))</pre></code>
 <hr>
 <p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
