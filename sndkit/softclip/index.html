@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Softclip</title>
+<h1>Softclip</h1>
+
+<h2>Overview</h2>
+
+<p>The <code>softclip</code> algorithm will apply soft cliping to an input
+signal so that it lies in the range of [-1, 1]. Under the
+hood, this implements a fast approximation of the <code>tanh</code>function with a <code>drive</code> parameter. This yields a reasonable
+sounding saturation effect.
+</p>
+<p>The approximation used was found via the
+<a href="https://www.musicdsp.org/en/latest/Other/238-rational-tanh-approximation.html">music-dsp mailing list</a>.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>As per usual, <code>softclip.c</code> and <code>softclip.h</code>.
+</p>
+<div><b><i>&lt;&lt;softclip.c&gt;&gt;=</i></b></div><pre><code>#include "softclip.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;softclip.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_SOFTCLIP_H
+#define SK_SOFTCLIP_H
+#ifndef SKFLT
+#define SKFLT float
+#endif
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+
+<h2>Stateless Function</h2>
+
+<p>The softclip algorithm can be implemented as a
+stateless function, called <code>sk_stateless_tick</code>.
+It takes in an input signal <code>in</code> and a multiplier
+amount <code>drive</code>. For a desired effect to occur,
+<code>drive</code> should be greater than 1.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_softclip_tick(SKFLT in, SKFLT drive);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT rational_tanh(SKFLT x)
+{
+    if( x &lt; -3 )
+        return -1;
+    else if( x &gt; 3 )
+        return 1;
+    else
+        return x * ( 27 + x * x ) / ( 27 + 9 * x * x );
+}
+
+SKFLT sk_softclip_tick(SKFLT in, SKFLT drive)
+{
+    return rational_tanh(in * drive);
+}</pre></code>
+</div>
+</body>
+</html>
