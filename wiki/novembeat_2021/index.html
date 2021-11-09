@@ -13,7 +13,6 @@
 <h1>Novembeat 2021</h1>
 <p>(Recordings coming soon^H^H^H^H eventually.)
 </p>
-</p>
 
 <h2>Table Of Contents</h2>
 
@@ -77,7 +76,7 @@ somehow MacGyver a bridge connecting them.
 <pre><code>(define (run)
 (bunholdall)
 (regclr -1)
-(loop7)
+(loop8)
 (out zz))</pre></code>
 
 <h2>Util</h2>
@@ -162,7 +161,7 @@ be abstracted away there now too.
     (gen_sine (ftnew 8192))
     (regset zz ft) ft))</pre></code>
 
-<h3>FM oscillator test</h3>
+<h3>FM oscillator test (testfm)</h3>
 
 <p>The gist is: create an FM oscillator pair, with sine
 as carrier and wt as modulator, and slowly drive the
@@ -193,6 +192,29 @@ hear is the behavior of spectrum evolution.
 </p>
 <div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (att amt)
   (mul zz (ampdb amt)))</pre></code>
+
+<h3>Oscillator Test</h3>
+
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (testwt wt nn)
+  (let ((ftl (monolith:nextfree 0)))
+    (ftlist-new)
+    (regset zz ftl)
+
+    (ftlist-append
+      (lambda () (gen_sinesum (ftnew 8192) "0.2 0.2 0.2 0.2 0.2"))
+      (reggetf ftl))
+    (ftlist-append
+      (lambda () (monft wt))
+      (reggetf ftl))
+
+
+      (phasor (mtof nn) 0)
+    (tabmorf zz (expmap (flipper (phasor 0.3 0)) -1)
+             (reggetf ftl))
+    (mul zz 0.3)
+    (regclr ftl)))
+</pre></code>
 
 <h2>Day 1: Health</h2>
 
@@ -2035,25 +2057,6 @@ transformation that matters.
   &lt;&lt;loop6-init&gt;&gt;
 )
 
-(define (testwt nn wt)
-  (let ((ftl (monolith:nextfree 0)))
-    (ftlist-new)
-    (regset zz ftl)
-
-    (ftlist-append
-      (lambda () (gen_sinesum (ftnew 8192) "0.2 0.2 0.2 0.2 0.2"))
-      (reggetf ftl))
-    (ftlist-append
-      (lambda () (monft wt))
-      (reggetf ftl))
-
-
-      (phasor (mtof nn) 0)
-    (tabmorf zz (expmap (flipper (phasor 0.3 0)) -1)
-             (reggetf ftl))
-    (mul zz 0.3)
-    (regclr ftl)))
-
 (define (loop6)
   (let ((phs (newsig (gst:cndf 91) 0))
         (del (mksend))
@@ -2913,6 +2916,423 @@ yields.
 gwerfuskq /aw_2010_wav32/add_binaddsine/binadd_sine_01110111.wav
 gdqukkowq /aw_2010_wav32/hm_amfmsine/amfm_002.wav
 grflwkask /aw_2010_wav32/spectral_spm_log/spm_log_16_06_16_04.wav</pre></code>
+
+<h4>gripeoesj (sawfilt)</h4>
+
+<div><b><i>&lt;&lt;loop8-init&gt;&gt;=</i></b></div><pre><code>(crateload "sawfilt" "gripeoesj%")</pre></code>
+<p></p>
+<p>> fm48,139: this a very unstable sound. lots of ugly beating. this
+waveform does not want to be a modulator. That is what it is
+telling me.
+</p>
+<p>> p48: kind of that electricity sort of high end. definitely not
+great at this register.
+</p>
+<p>> p36: huh, I was kind of hoping for more low end, but this
+just a very buzzy sound. I don't know how I'm going to use
+this.
+</p>
+
+<h4>gwerfuskq (binadd)</h4>
+
+<div><b><i>&lt;&lt;loop8-init&gt;&gt;=</i></b></div><pre><code>(crateload "binadd" "gwerfuskq%")</pre></code>
+<p></p>
+<p>> fm60,115: very conventional FM-sounding behavior. As the
+name suggests, it must be very sinusoidal.
+</p>
+<p>> p48: this has very similar qualities to my reference
+buzzwave. this makes sense, actually.
+</p>
+
+<h4>gdqukkowq (amfm)</h4>
+
+<div><b><i>&lt;&lt;loop8-init&gt;&gt;=</i></b></div><pre><code>(crateload "amfm" "gdqukkowq%")</pre></code>
+<p></p>
+<p>> fm24,11A: I've pitched this one down low to hear this
+clearly, but there's this weird shimmering sound that
+happens on top of everything else
+</p>
+<p>> p60: very square-like spectrum.
+</p>
+
+<h4>grflwkask (spmlog)</h4>
+
+<div><b><i>&lt;&lt;loop8-init&gt;&gt;=</i></b></div><pre><code>(crateload "spmlog" "grflwkask%")</pre></code>
+<p></p>
+<p>> fm36,11a: really crunchy tanpura-ish drone.
+</p>
+<p>> fm60,115: towards the top, the sound starts to beat and
+gargle a bit.
+</p>
+<p>> p38: buzzy and grainy
+</p>
+<p>> p60: yeah, it's aliasing like crazy. But it's making me think
+of crystalline structures. Could be useful with the right
+lowpass filter.
+</p>
+
+<h3>Loop</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-init)
+  (open-db-in-monolith)
+  (loadsineft)
+  &lt;&lt;loop8-init&gt;&gt;
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8)
+  (let ((cnd (newsig (gst:cndf 93) 0))
+        (db (mkdb))
+        (rev (mksend)))
+    (loop8-melody (cabgetf cnd))
+    (att -8)
+    (buthp zz 300)
+    (throw 0.8 (cabgetf rev))
+    (loop8-backup-a (cabgetf cnd))
+    (att -9)
+    (throw 0.7 (cabgetf rev))
+    (loop8-backup-b (cabgetf cnd))
+    (att -10)
+    (add zz zz)
+    (loop8-backup-c (cabgetf cnd))
+    (att -13)
+    (throw 0.7 (cabgetf rev))
+    (att -9)
+    (add zz zz)
+    (att -5)
+    (add zz zz)
+    ;;(mul zz 0)
+
+    (loop8-darksnare (cabgetf cnd) (reggetf db))
+    (att -9)
+    (throw 0.7 (cabgetf rev))
+
+    (loop8-cowbell (cabgetf cnd) (reggetf db))
+    (att -13)
+    (throw 0.9 (cabgetf rev))
+    (add zz zz)
+
+    (loop8-ringsnare (cabgetf cnd) (reggetf db))
+    (att -10)
+    (throw 0.7 (cabgetf rev))
+    (add zz zz)
+
+    (loop8-tamb (cabgetf cnd) (reggetf db))
+    (att -15)
+    (throw 0.9 (cabgetf rev))
+    (att -6)
+    (add zz zz)
+
+    (att -8)
+    (add zz zz)
+
+    (cabclr cnd)
+
+    ;(mul zz 0)
+
+    (cabget rev)
+    (simple-delay zz 0 0.04)
+    (bdup)
+    (revsc zz zz (param 0.91) (param 8000))
+    (add zz zz)
+    (dcblock zz)
+    (dcblock zz)
+    (att -15)
+    (add zz zz)
+
+    (cabclr rev)
+)
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-melody cnd)
+  (loop8-fmvoice cnd "
+beg 24 6
+mr 3 t 0 wt sineft lin
+mr 3 t 0 wt sineft
+end
+loop fin
+"
+
+"
+beg 9 9
+mr 3 nt F#4 wt binadd mg
+mr 3 nt F#4 wt binadd mg
+mr 2 nt G#4 wt binadd mg
+nt A-4 wt binadd gl
+end
+beg 9 9
+mr 3 nt E-4 wt binadd mg
+mr 3 nt E-4 wt binadd mg
+mr 2 nt G#4 wt binadd mg
+nt A-4 wt binadd gl
+end
+beg 9 9
+mr 3 nt D-4 wt binadd mg
+mr 3 nt D-4 wt binadd mg
+mr 2 nt G#4 wt binadd mg
+nt A-4 wt binadd gl
+end
+beg 9 9
+mr 3 nt C#4 wt binadd mg
+mr 3 nt C#4 wt binadd mg
+mr 3 nt E-4 wt binadd gl
+end
+loop fin
+"
+
+"
+beg 9 9
+mr 6 t 1 exp 3
+mr 3 t 5 mg
+end
+loop fin
+"
+"
+beg 9 9
+mr 6 t 0.3 exp 3
+mr 3 t 1 exp -1
+end
+loop fin
+"
+)
+
+ (att -5)
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-fmvoice cnd csco msco isco expr)
+  (let* ((cgst (gest:new))
+         (mgst (gest:new))
+         (gfmp (gosc:new-fm cgst mgst))
+         (amp (gest:newscalar))
+         (tr (tract:new)))
+
+    (gst:eval-addwords cgst (list (gst:wordentry "wt" tok-wt)) csco)
+    (cnd)
+    (gest:iculate cgst)
+    (bdrop)
+
+    (gst:eval-addwords
+     mgst
+     (list
+      (gst:wordentry "nt" tok-nt)
+      (gst:wordentry "wt" tok-wt)) msco)
+    (cnd)
+    (gest:iculate mgst)
+
+    (let ((g (newsig (gst:gexprf cnd expr) 0)))
+      (oscf
+       (scale (cabget g) 5.5 6.3)
+       (param 0)
+       (monftf "sineft"))
+      (mul zz (scale (cabget g) 0 0.3))
+      (cabclr g))
+    (add zz zz)
+    (mtof zz)
+    (param 1)
+    (param 1)
+    (let ((g (gst:gexpr cnd isco)))
+      (gest:squawk g 0))
+    (param 0.0)
+    (gosc:node-fm gfmp)
+    (mul zz 0.5)
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-backup-a cnd)
+
+(loop8-fmvoice cnd "
+beg 24 6
+mr 3 t 0 wt sineft lin
+mr 3 t 0 wt sineft
+end
+loop fin
+"
+
+"
+beg 9 9
+mr 9 nt D-3 wt amfm mg
+end
+beg 9 9
+mr 9 nt C#3 wt amfm mg
+end
+beg 9 9
+mr 9 nt B-2 wt amfm mg
+end
+beg 9 9
+mr 9 nt A-2 wt amfm mg
+end
+loop fin
+"
+
+"
+beg 9 9
+mr 6 t 1 exp 3
+mr 3 t 3 mg
+end
+loop fin
+"
+"
+beg 9 9
+mr 6 t 0.1 exp 1
+mr 3 t 0.5 exp -1
+end
+loop fin
+"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-backup-b cnd)
+  (loop8-fmvoice cnd "
+beg 9 6
+mr 3 t 0 wt sineft lin
+mr 3 t 0 wt binadd
+end
+loop fin
+"
+
+"
+beg 9 9
+mr 9 nt A-3 wt amfm mg
+end
+beg 9 9
+mr 3 nt B-3 wt amfm gl
+mr 6 nt A-3 wt amfm gl
+end
+beg 9 9
+mr 6 nt C#4 wt amfm mg
+mr 3 nt G#3 wt amfm mg
+end
+beg 9 9
+mr 9 nt A-3 wt amfm mg
+end
+loop fin
+"
+
+"
+beg 9 9
+mr 6 t 0 exp 3
+mr 3 t 1 mg
+end
+loop fin
+"
+"
+beg 9 9
+mr 6 t 0.3 exp 3
+mr 3 t 0.3 exp -1
+end
+loop fin
+"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-backup-c cnd)
+  (loop8-fmvoice cnd "
+beg 9 6
+mr 3 t 0 wt sineft lin
+mr 3 t 0 wt binadd
+end
+loop fin
+"
+
+"
+beg 9 9
+mr 9 nt A-4 wt sawfilt gl
+end
+beg 9 9
+mr 9 nt C#5 wt sawfilt gl
+end
+beg 9 9
+mr 3 nt D-5 wt sawfilt gl
+mr 6 nt C#5 wt sawfilt gl
+end
+beg 9 9
+mr 9 nt B-4 wt amfm mg
+end
+loop fin
+"
+
+"
+beg 9 9
+mr 6 t 0 exp 3
+mr 3 t 1 mg
+end
+loop fin
+"
+"
+beg 9 9
+mr 6 t 0.3 exp 1
+mr 3 t 0.1 exp -1
+end
+loop fin
+"
+)
+(buthp zz 800)
+(butlp zz 8000)
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-darksnare cnd db)
+  (phsclk
+   (gst:gexpr cnd "
+beg 9 1
+t 0 exp 3 rmp
+end
+loop fin
+")
+(param 16))
+  (maygate zz 0.8 1)
+  (tsmp zz (randi 0.8 2.01 2.8) (lambda () (cratewav db "glkuhlluk%")))
+
+  (bdup)
+  (vdelay zz (param 0.8) (randi 0.001 0.1 20) (param 0.5))
+  (att -15)
+  (add zz zz))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-cowbell cnd db)
+  (phsclk
+   (gst:gexpr cnd "
+beg 9 1
+t 0 exp 3 rmp
+end
+loop fin
+")
+(param 32))
+  (maygate zz 0.9 1)
+  (tsmp zz (randi 1 4.01 2.8) (lambda () (cratewav db "geehdjlrl%")))
+
+  (bdup)
+  (vdelay zz (param 0.9) (randi 0.001 0.2 15) (param 0.5))
+  (att -15)
+  (add zz zz))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-ringsnare cnd db)
+  (phsclk
+   (gst:gexpr cnd "
+beg 9 1
+t 0 exp 4.5 rmp
+end
+loop fin
+")
+(param 32))
+  (maygate zz 0.8 1)
+  (tsmp zz (randi 0.8 2.01 3.8) (lambda () (cratewav db "gijawpldh%")))
+
+  (bdup)
+  (vdelay zz (param 0.9) (randi 0.001 0.2 15) (param 0.5))
+  (att -15)
+  (add zz zz))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop8-tamb cnd db)
+  (phsclk
+   (gst:gexpr cnd "
+beg 9 1
+t 0 exp -2 rmp
+end
+loop fin
+")
+(param 16))
+  (maygate zz 0.3 1)
+  (tsmp zz (randi 0.4 1.01 10) (lambda () (cratewav db "gsaqurphh%")))
+
+  (bdup)
+  (vdelay zz (param 0.9) (randi 0.001 0.2 15) (param 0.5))
+  (att -15)
+  (add zz zz))</pre></code>
 <hr>
 <p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
 </body>
