@@ -27,6 +27,9 @@
 <p><a href="/wiki/novembeat_2021#day8">Day 8: Floral </a></p>
 <p><a href="/wiki/novembeat_2021#day9">Day 9: Restful</a></p>
 <p><a href="/wiki/novembeat_2021#day10">Day 10: Hyper</a></p>
+<p><a href="/wiki/novembeat_2021#day11">Day 11: Twin</a></p>
+<p><a href="/wiki/novembeat_2021#day12">Day 12: Vast</a></p>
+<p><a href="/wiki/novembeat_2021#day13">Day 13: Brawl</a></p>
 
 <h2>Process</h2>
 
@@ -79,7 +82,7 @@ somehow MacGyver a bridge connecting them.
 <pre><code>(define (run)
 (bunholdall)
 (regclr -1)
-(loop10)
+(loop13)
 (out zz))</pre></code>
 
 <h2>Util</h2>
@@ -4114,6 +4117,852 @@ loop fin
 
     (cabclr rev)
     (regclr db)))</pre></code>
+
+<h2>Day 11: Twin</h2>
+
+<p>Twin.
+</p>
+<p>This is a badass definition from <a href="/wiki/websters1913">websters1913</a>:
+</p>
+<p>(Crystallog.) A compound crystal composed of two or more
+crystals, or parts of crystals, in reversed position with
+reference to each other.
+</p>
+
+<h3>Initial thoughts</h3>
+
+<p>I took the weird definition. "crystallog" is probably short
+for "crystallography" or something. It's tempting to try and
+apply this definition to musical structure. I may do that.
+There isn't much of atmosphere one can conjure up with
+a word like "twin".
+</p>
+<p>I was really interested with the concepts I was exploring
+yesterday. The idea of composing percussion with sequences
+ramps and subdivisions is compelling. I may want to push
+that further and have the number of subdivisions be a scalar.
+Also, the ramp itself could be mapped to something like
+pitch or amplitude.
+</p>
+
+<h3>Drums</h3>
+
+<p>These were really really bad:
+</p>
+<pre><code>gsrpjjewl /vintage_drums/NovationDrumstation/Kit11/DS11909Hat_O.wav
+gsfjfefku /vintage_drums/YamahaRY-10/MaxV - BD38VRB.wav
+gsioujkra /vintage_drums/AcetoneRhythmAce/MaxV - KICK2.wav
+gakfwerdh /vintage_drums/SimmonsSD-8/MaxV - TOM_07.wav</pre></code>
+<p></p>
+<p>So bad, I just picked 4 new random ones:
+</p>
+<pre><code>gpqukuqod /vintage_drums/oberheim_matrix_1000/034.wav
+griralikr /vintage_drums/BossDr220a/MaxV - DR220A_CCY.wav
+gjripjsok /vintage_drums/BossDR-660/DR-660Kick38.wav
+gfaririwk /vintage_drums/Quasimidi309/QuasiB 076.wav</pre></code>
+<p></p>
+<p>These kind of suck too. Uugggh.
+</p>
+
+<h3>Wavetables</h3>
+
+<pre><code>glhihkrps /aw_2010_wav32/add_partials4n/partials_01_06_09_13.wav
+gjahreldk /aw_2010_wav32/spectral_sposc_2lin/sposc2_lin_5_2_9_5_1.wav
+gsafdsrdk /aw_2010_wav32/add_partials2n/partials_12_21.wav
+gpirdsfhj /aw_2010_wav32/fm_2varriableindex/fm2_c15/fm2_15_16_00.50.wav</pre></code>
+
+<h3>Loop</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop11-init)
+  (open-db-in-monolith)
+  (loadsineft)
+  (crateload "part4" "glhihkrps%")
+  (crateload "sposc" "gjahreldk%")
+  (crateload "part2" "gsafdsrdk%")
+  (crateload "fm2vi" "gpirdsfhj%"))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop11)
+  (let* ((db (mkdb))
+        (phs
+         (newsig
+          (lambda ()
+             (gst:cnd
+               (scale (expmap (flipper (phasor (/ 1 25) 0)) 2) 4 84)))
+          0))
+        (rev (mksend))
+        (drmphs (newsig (lambda ()
+(gst:gexpr (cabgetf phs) "
+beg 1 4
+t 0 rmp t 0 rmp
+t 0 rmp t 0 rmp
+end
+loop fin")
+) phs))
+)
+
+     (cabget phs)
+     (param 1)
+     (bswap)
+     (sub zz zz)
+     (expmap zz -1)
+     (trd zz (lambda () (cratewav (reggetf db) "gpqukuqod%")))
+     (cabget phs)
+     (expmap zz 1)
+     (trd zz (lambda () (cratewav (reggetf db) "gpqukuqod%")))
+     (add zz zz)
+
+     (att -3)
+     (throw 0.01 (cabgetf rev))
+
+
+
+     (cabget phs)
+     (scale zz 1 0)
+     (expmap zz -1)
+     (trd zz (lambda () (cratewav (reggetf db) "griralikr%")))
+
+     (cabget phs)
+     (expmap zz 1)
+     (trd zz (lambda () (cratewav (reggetf db) "griralikr%")))
+     (add zz zz)
+     (att -4)
+     (throw 0.1 (cabgetf rev))
+
+     (add zz zz)
+
+     (loop11-tomkick (cabgetf drmphs) (reggetf db))
+     (att -5)
+     (throw 0.3 (cabgetf rev))
+     (add zz zz)
+     (loop11-snr (cabgetf drmphs) (reggetf db))
+     (att -2)
+     (throw 0.3 (cabgetf rev))
+     (add zz zz)
+
+     (loop11-lead-a (cabgetf drmphs))
+     (att -5)
+     (throw 0.5 (cabgetf rev))
+     (add zz zz)
+     (loop11-lead-b (cabgetf drmphs))
+     (att -5)
+     (throw 0.5 (cabgetf rev))
+     (add zz zz)
+
+     (cabget rev)
+     (vdelay zz (param 0.1) (port (randh 0.1 0.4 0.3) 0.1) (param 0.5))
+     (bdup)
+     (revsc zz zz (randi 0.8 0.97 0.9) (param 10000))
+     (add zz zz)
+     (dcblock zz)
+     (att -13)
+     (add zz zz)
+
+     (regclr db)
+     (cabclr phs)
+     (cabclr rev)
+     (cabclr drmphs)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop11-tomkick cnd db)
+  (let ((rep (gest:newscalar)))
+  (gst:gexpr-words cnd (list (gst:wordentry "r"
+(gst:mksetter rep))) "
+beg 4 4
+t 0 rmp r 2
+t 0 rmp r 3
+mr 2 pr 3
+t 0 rmp r 4
+t 0 rmp r 5
+t 0 rmp r 6
+end
+loop fin
+")
+  (bdup)
+  (phsclk zz (gest:scalar rep))
+  (tsmp zz (param 1.0) (lambda () (cratewav db "gjripjsok%")))
+  (bswap)
+  (scale zz 1 0.1)
+  (mul zz zz)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop11-tomkick cnd db)
+  (let ((rep (gest:newscalar)))
+  (gst:gexpr-words cnd (list (gst:wordentry "r"
+(gst:mksetter rep))) "
+beg 4 4
+t 0 rmp r 2
+t 0 rmp r 3
+mr 2 pr 3
+t 0 rmp r 4
+t 0 rmp r 5
+t 0 rmp r 6
+end
+beg 4 4
+t 0 rmp r 5
+t 0 rmp r 8
+mr 2 pr 3
+t 0 rmp r 2
+t 0 rmp r 1
+t 0 rmp r 1
+end
+loop fin
+")
+  (bdup)
+  (phsclk zz (gest:scalar rep))
+  (tsmp zz (param 1.0) (lambda () (cratewav db "gjripjsok%")))
+  (bswap)
+  (scale zz 1 0.1)
+  (mul zz zz)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop11-snr cnd db)
+  (let ((rep (gest:newscalar)))
+  (gst:gexpr-words cnd (list (gst:wordentry "r"
+(gst:mksetter rep))) "
+beg 4 4
+mr 2 pr 3
+t 0 rmp r 1
+t 0 rmp r 1
+t 0 rmp r 2
+
+t 0 rmp r 8
+t 0 rmp r 5
+end
+beg 4 4
+mr 2 pr 3
+t 0 rmp r 6
+t 0 rmp r 5
+t 0 rmp r 4
+end
+t 0 rmp r 3
+t 0 rmp r 2
+loop fin
+")
+  (bdup)
+  (phsclk zz (gest:scalar rep))
+  (tsmp zz (param 0.8) (lambda () (cratewav db "gfaririwk%")))
+  (bswap)
+  (scale zz 0.1 1.0)
+  (mul zz zz)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop11-lead-a cnd)
+  (loop11-fmvoice cnd "
+beg 4 4
+mr 4 t 0 wt sineft gl
+end
+beg 4 4
+t 0 wt part4 exp -3
+mr 3 t 0 wt sineft
+end
+loop fin
+"
+"
+beg 4 4
+mr 2 pr 3
+nt C-4 wt sposc mg
+nt F-4 wt sposc mg
+nt Bb4 wt sposc mg
+
+nt A-3 wt sposc gl
+nt D-4 wt sposc lin
+end
+loop fin
+"
+"
+beg 4 8
+t 0 r 1 rmp
+t 0 r 3 rmp
+t 0 r 1 rmp
+t 0 r 4 rmp
+t 0 r 1 rmp
+t 0 r 1 rmp
+t 0 r 2 rmp
+t 0 r 3 rmp
+end
+loop fin
+"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop11-lead-b cnd)
+  (loop11-fmvoice cnd "
+beg 4 4
+mr 4 t 0 wt sineft gl
+end
+beg 4 4
+t 0 wt part2 exp -3
+mr 3 t 0 wt sineft
+end
+loop fin
+"
+"
+beg 12 4
+mr 2 pr 3
+nt C-3 wt fm2vi mg
+nt F-3 wt fm2vi mg
+nt Bb3 wt fm2vi mg
+
+nt A-2 wt fm2vi gl
+nt D-3 wt fm2vi lin
+end
+loop fin
+"
+"
+beg 12 8
+t 0 r 1 rmp
+t 0 r 1 rmp
+t 0 r 2 rmp
+t 0 r 3 rmp
+t 0 r 1 rmp
+t 0 r 3 rmp
+t 0 r 1 rmp
+t 0 r 4 rmp
+end
+loop fin
+"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop11-fmvoice cnd csco msco rsco)
+  (let* ((cgst (gest:new))
+         (mgst (gest:new))
+         (gfmp (gosc:new-fm cgst mgst))
+         (amp (gest:newscalar))
+         (rep (gest:newscalar))
+         (ramp (newsig (lambda () (gst:gexpr-words cnd
+(list (gst:wordentry "r" (gst:mksetter rep))) rsco)) 0))
+         (tr (tract:new)))
+
+    (gst:eval-addwords cgst (list (gst:wordentry "wt" tok-wt)) csco)
+    (cnd)
+    (gest:iculate cgst)
+    (bdrop)
+
+    (gst:eval-addwords
+     mgst
+     (list
+      (gst:wordentry "nt" tok-nt)
+      (gst:wordentry "wt" tok-wt)) msco)
+    (cnd)
+    (gest:iculate mgst)
+
+    (mtof zz)
+    (param 2)
+    (param 5)
+    (port (scale (expmap (cabget ramp) 3) 1 0) 0.001)
+    (param 0.0)
+    (gosc:node-fm gfmp)
+    (mul zz 0.5)
+
+    (phsclk (cabget ramp) (gest:scalar rep))
+    (tenvx zz 0.01 0.02 0.4)
+    (mul zz zz)
+
+    (cabclr ramp)
+))</pre></code>
+
+<h2>Day 12: Vast</h2>
+
+<p>Vast:
+</p>
+<p>Of great extent; very spacious or large; also, huge in
+bulk; immense; enormous; as, the vast ocean; vast
+mountains;
+</p>
+
+<h3>Initial Thoughts</h3>
+
+<p>I'm scaling back my sample requirements for this. It's
+just starting to be tedious and unhelpful to work all
+the wavetables and samples. I'd rather fixate on a few,
+and try to make those work with the idea.
+</p>
+<p>4 wavetables is just too many for the kind of sound objects
+I'm working on. Two, plus sine, is enough.
+</p>
+<p>Drums... 4 sometimes pushes it? I'll stick with 3 and add
+one more if the mix needs it.
+</p>
+<p>Okay... the subject of Vast: I love big reverb and I cannot
+lie?
+</p>
+
+<h3>Drums</h3>
+
+<pre><code>gpoefoqqe /vintage_drums/EmuDrumulator/DrumulatorETomMid.wav
+gquooaewp /vintage_drums/BossDR-550MkII/MaxV - 032.wav
+gfpheoqld /vintage_drums/AlesisDM5/DM5Tom11_M.wav</pre></code>
+
+<h3>Wavetables</h3>
+
+<pre><code>gflsskjwa /aw_2010_wav32/spectral_gatelog/sp_gate_log_2.3125_02_a.wav
+gafkojkqd /aw_2010_wav32/spectral_spm_linlf/spm_lin_lf_04_26_16.wav</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;loop12-init&gt;&gt;=</i></b></div><pre><code>(crateload "gatelog" "gflsskjwa%")
+(crateload "spmlinlf" "gafkojkq%")</pre></code>
+
+<h4>gatelog "glfsskjwa"</h4>
+
+<p>> fm48,119: There's kind of this mid-low range resonance.
+Makes me think of the word "gumminess". But I do not
+understand why.
+</p>
+<p>> fm36,11f: the underlying beating pattern is very audible
+here. Kind of a short short long long kind of deal.
+</p>
+
+<h4>spmlinf "gafkojkq"</h4>
+
+<p>> fm36,11f: very linear sounding growth in spectrum.
+</p>
+<p>> fm24,13f: robo-monster sounds. actually quite similar to
+sinewave in responsiveness, just with a bit more crunch
+</p>
+<p>> fm24,131: just want to note here that this has more
+presence than when using just a plain sine.
+</p>
+
+<h3>Loop</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop12-init)
+  (open-db-in-monolith)
+  (loadsineft)
+  &lt;&lt;loop12-init&gt;&gt;
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop12)
+  (let ((phs (newsig (gst:cndf 60) 0))
+        (db (mkdb))
+        (rev (mksend))
+)
+  (loop12-basso (cabgetf phs))
+  (att -3)
+  (throw 0.5 (cabgetf rev))
+  (loop12-tenor (cabgetf phs))
+  (att -9)
+  (throw 0.5 (cabgetf rev))
+  (att -10)
+  (add zz zz)
+
+  (loop12-drum1 (cabgetf phs) (reggetf db))
+  (att -3)
+  (throw 0.6 (cabgetf rev))
+  (add zz zz)
+
+  (loop12-revcym (cabgetf phs) (reggetf db))
+  (att -6)
+  (throw 0.9 (cabgetf rev))
+  (att -9)
+  (add zz zz)
+
+  (cabget rev)
+  (simple-delay zz 0 0.2)
+  (buthp zz 300)
+  (bdup)
+  (revsc zz zz 0.97 10000)
+  (add zz zz)
+  (dcblock zz)
+  (dcblock zz)
+  (att -10)
+  (add zz zz)
+
+  (cabclr phs)
+  (cabclr rev)
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop12-basso cnd)
+  (loop12-fmvoice cnd "
+beg 4 4
+mr 4 t 0 wt sineft
+end
+loop fin
+"
+"
+beg 8 8
+mr 8 nt C-1 wt gatelog
+end
+loop fin
+"
+"
+beg 8 8
+mr 4 t 1 exp 2
+mr 4 t 15
+end
+loop fin
+"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop12-tenor cnd)
+  (loop12-fmvoice cnd "
+beg 4 1
+t 0 wt sineft
+end
+loop fin
+"
+"
+beg 8 8
+mr 8 nt F-3 wt spmlinlf gl
+end
+beg 16 16
+mn 16 2
+nt E-3 wt spmlinlf gl
+pr 2
+nt Ab3 wt spmlinlf gl
+nt G-3 wt spmlinlf gl
+end
+beg 8 8
+mr 8 nt F-3 wt spmlinlf gl
+end
+beg 16 16
+mr 8 nt E-3 wt spmlinlf lin
+mr 8 nt C-3 wt spmlinlf gl
+end
+loop fin
+"
+"
+beg 8 8
+mr 4 t 1
+mr 4 t 9
+end
+loop fin
+"
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop12-fmvoice cnd csco msco isco)
+  (let* ((cgst (gest:new))
+         (mgst (gest:new))
+         (gfmp (gosc:new-fm cgst mgst))
+         (amp (gest:newscalar))
+         (tr (tract:new)))
+
+    (gst:eval-addwords cgst (list (gst:wordentry "wt" tok-wt)) csco)
+    (cnd)
+    (gest:iculate cgst)
+    (bdrop)
+
+    (gst:eval-addwords
+     mgst
+     (list
+      (gst:wordentry "nt" tok-nt)
+      (gst:wordentry "wt" tok-wt)) msco)
+    (cnd)
+    (gest:iculate mgst)
+
+    (mtof zz)
+    (param 1)
+    (param 1)
+    (gst:gexpr cnd isco)
+    (param 0.0)
+    (gosc:node-fm gfmp)
+    (mul zz 0.5)
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop12-drum1 cnd db)
+  (let ((rep (gest:newscalar)))
+    (gst:gexpr-words cnd (list (gst:wordentry "r"
+(gst:mksetter rep))) "
+beg 4 4
+mr 4 t 0 rmp r 8 exp 2
+end
+beg 4 4
+mr 2 t 0 rmp r 8 exp 2
+mr 2 t 0 rmp r 3 exp 2
+end
+beg 8 8
+mr 8 t 0 rmp r 1
+end
+loop fin
+")
+  (bdup)
+  (let ((tk (newsig (lambda () (phsclk zz (gest:scalar rep))) 0)))
+    (cabget tk)
+    (trand (cabget tk) 0.5 0.51)
+    (tsmp zz zz (lambda () (cratewav db "gpoefoqqe%")))
+    (trand (cabget tk) 0.9 1.0)
+    (mul zz zz)
+    (tgate (cabget tk) 0.11)
+    (port zz 0.001)
+    (mul zz zz)
+    (bswap)
+    (scale zz 0.1 1.0)
+    (mul zz zz))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop12-revcym cnd db)
+   (gst:gexpr cnd "
+beg 8 1
+t 0 stp irmp
+end
+beg 8 1
+t 0 exp 1 irmp
+end
+beg 16 1
+t 0 stp irmp
+end
+loop fin
+"
+)
+     (trd zz (lambda () (cratewav db "gquooae%"))))</pre></code>
+
+<h2>Day 13: Brawl</h2>
+
+<p><a id="day13"></a>To quarrel noisily and outrageously.
+</p>
+
+<h3>Initial thoughts</h3>
+
+<p>I think I am taking a breather. I don't think I'll get this
+one done today.
+</p>
+<p>But "Brawl" is another one of those fun ones that's easy to
+imagine musically.
+</p>
+<p>Brawling is duality. Two opposing force, opposing violently.
+Add two sound sound objects, have them collide, and you have
+a sonic brawl.
+</p>
+<p>The work I've done up to this point involving exponentials
+meters and distortion should work well with this recipe.
+</p>
+<p>Most wavetables are pretty noisy by default, so it shouldn't
+be too hard to program them to be violent and brawly.
+</p>
+
+<h3>Drum Samples</h3>
+
+<pre><code>gqwfdqdpo /vintage_drums/LinnDrumLM2/Linn cowbell.wav
+gokpkqwqf /vintage_drums/YamahaCS6/Yamaha CS6 054.wav
+gfseqwlqd /vintage_drums/BossDR-202/202snr26.wav</pre></code>
+
+<h3>Wavetables</h3>
+
+<pre><code>geflsulaf /aw_2010_wav32/spectral_sposc_2lin/sposc2_lin_4_0_9_3_2.wav
+gieoorfwh /aw_2010_wav32/misc_impulsetrain/impulse_train_tri_032.wav</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;loop13-init&gt;&gt;=</i></b></div><pre><code>(crateload "sposc2" "geflsulaf%")
+(crateload "imptri" "gieoorfwh%")</pre></code>
+
+<h3>Loop</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop13-init)
+  (open-db-in-monolith)
+  (loadsineft)
+  &lt;&lt;loop13-init&gt;&gt;
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop13)
+  (let ((phs (newsig (gst:cndf 75) 0))
+        (rev (mksend))
+        (db (mkdb)))
+    (loop13-cowbell (cabgetf phs) (reggetf db))
+    (att -6)
+    (throw 0.5 (cabgetf rev))
+    (loop13-snare (cabgetf phs) (reggetf db))
+    (att -6)
+    (throw 0.5 (cabgetf rev))
+    (add zz zz)
+    (loop13-snare-alt (cabgetf phs) (reggetf db))
+    (att -6)
+    (throw 0.5 (cabgetf rev))
+    (add zz zz)
+
+    (loop13-angrydrone (cabgetf phs))
+    (att -3)
+    (throw 0.8 (cabgetf rev))
+    (crossfade zz zz (gst:gexpr (cabgetf phs)
+"
+beg 4 4
+t 0.01 mg
+t 0.5 mg
+t 0.01 mg
+t 0.9 mg
+end
+beg 8 8
+mn 8 3 rndn
+pr 2
+t 0.5 mg
+t 0.0 lin
+t 0.5 exp 1
+t 0.0 exp 3
+end
+
+beg 8 8
+mr 8 t 1.0 exp 1
+end
+loop fin
+"
+))
+
+    (cabget rev)
+    (simple-delay zz 0 0.05)
+    (bdup)
+    (revsc zz zz 0.6 8000)
+    (add zz zz)
+    (gst:gexpr (cabgetf phs) "
+beg 32 8
+mr 4 t 1 exp 3
+mr 4 t 8 gl
+end
+loop fin
+    ")
+    (softclip zz zz)
+    (att -10)
+    (dcblock zz)
+    (add zz zz)
+
+    (limit zz -0.99 0.99)
+    (regclr db)
+    (cabclr phs)
+    (cabclr rev)
+    ))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop13-cowbell cnd db)
+  (let ((rep (gest:newscalar)))
+    (gst:gexpr-words cnd (list (gst:wordentry "r"
+(gst:mksetter rep))) "
+beg 4 4
+t 0 rmp r 2
+t 0 rmp r 1
+t 0 rmp r 1
+t 0 rmp r 3
+end
+beg 4 4
+t 0 rmp r 2
+t 0 rmp r 2
+t 0 rmp r 3
+t 0 rmp r 4
+end
+beg 4 4
+t 0 rmp r 5
+t 0 rmp r 5
+t 0 rmp r 6
+t 0 rmp r 6
+end
+beg 8 8
+mr 7 t 0 rmp r 32 exp 3
+t 0 rmp r 12
+end
+loop fin
+")
+  (bdup)
+  (let ((tk (newsig (lambda () (phsclk zz (gest:scalar rep))) 0)))
+    (cabget tk)
+    (trand (cabget tk) 1.0 1.9)
+    (tsmp zz zz (lambda () (cratewav db "gqwfdqdpo%")))
+    (trand (cabget tk) 0.9 1.0)
+    (mul zz zz)
+    (tgate (cabget tk) 0.11)
+    (port zz 0.001)
+    (mul zz zz)
+    (bswap)
+    (scale zz 0.1 1.0)
+    (mul zz zz))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop13-snare cnd db)
+  (let ((rep (gest:newscalar)))
+    (gst:gexpr-words cnd (list (gst:wordentry "r"
+(gst:mksetter rep))) "
+beg 4 4
+t 0 rmp r 1
+t 0 rmp r 4
+t 0 rmp r 3
+t 0 rmp r 1
+end
+beg 4 4
+t 0 rmp r 1
+t 0 rmp r 8
+t 0 rmp r 1
+t 0 rmp r 8
+end
+beg 4 4
+t 0 rmp r 3
+t 0 rmp r 3
+t 0 rmp r 3
+t 0 rmp r 3
+end
+beg 10 8
+mr 7 t 0 rmp r 32 exp -3
+t 0 rmp r 12
+end
+loop fin
+")
+  (bdup)
+  (let ((tk (newsig (lambda () (phsclk zz (gest:scalar rep))) 0)))
+    (cabget tk)
+    (trand (cabget tk) 1.0 1.9)
+    (tsmp zz zz (lambda () (cratewav db "gokpkqwqf%")))
+    (trand (cabget tk) 0.9 1.0)
+    (mul zz zz)
+    (tgate (cabget tk) 0.11)
+    (port zz 0.001)
+    (mul zz zz)
+    (bswap)
+    (scale zz 0.1 1.0)
+    (mul zz zz))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop13-snare-alt cnd db)
+  (let ((rep (gest:newscalar)))
+    (gst:gexpr-words cnd (list (gst:wordentry "r"
+(gst:mksetter rep))) "
+beg 4 4
+mr 3 t 0 rmp r 6 exp -3
+t 0 rmp r 1
+end
+beg 4 4
+mr 3 t 0 rmp r 8 exp -3
+t 0 rmp r 1
+end
+beg 4 4
+mr 3 t 0 rmp r 12 exp -3
+t 0 rmp r 1
+end
+beg 12 8
+mr 7 t 0 rmp r 64 exp 3
+t 0 rmp r 12 exp -2
+end
+loop fin
+")
+  (bdup)
+  (let ((tk (newsig (lambda () (phsclk zz (gest:scalar rep))) 0)))
+    (cabget tk)
+    (trand (cabget tk) 0.5 1.0)
+    (tsmp zz zz (lambda () (cratewav db "gfseqwlqd%")))
+    (trand (cabget tk) 0.9 1.0)
+    (mul zz zz)
+    (tgate (cabget tk) 0.11)
+    (port zz 0.001)
+    (mul zz zz)
+    (bswap)
+    (scale zz 0.1 1.0)
+    (mul zz zz))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop13-angrydrone cnd)
+  (loop12-fmvoice cnd "
+beg 4 4
+mr 4 t 0 wt sineft
+end
+loop fin
+"
+"
+beg 8 8
+mr 8 nt C-1 wt sposc2 gl
+end
+beg 8 8
+mr 4 nt C-3 wt imptri exp 1
+mr 4 nt Eb1 wt sposc2 lin
+end
+loop fin
+"
+"
+beg 8 8
+mr 4 t 1 exp 2
+mr 4 t 15
+end
+beg 8 8
+mr 4 t 16 exp 2
+mr 4 t 1
+end
+loop fin
+"
+))</pre></code>
 <hr>
 <p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
 </body>
