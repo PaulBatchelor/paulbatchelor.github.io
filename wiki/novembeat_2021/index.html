@@ -82,7 +82,7 @@ somehow MacGyver a bridge connecting them.
 <pre><code>(define (run)
 (bunholdall)
 (regclr -1)
-(loop13)
+(loop16)
 (out zz))</pre></code>
 
 <h2>Util</h2>
@@ -4963,6 +4963,663 @@ end
 loop fin
 "
 ))</pre></code>
+
+<h2>Day 14: Life (WIP)</h2>
+
+<p>Life:
+</p>
+<p>The state of being which begins with generation, birth, or
+germination, and ends with death; also, the time during
+which this state continues;
+</p>
+
+<h3>Initial Thoughts</h3>
+
+<p>I am behind a day. Do I rush this one, or wait a day and
+maintain my debt?
+</p>
+<p>One structure I really like is one of an initial seed that
+grows (germinates, if you will) an entire sound bed. This
+could then shrivel up at the end (death, if you will).
+</p>
+
+<h3>Wavetables</h3>
+
+<pre><code>gfpefpuef /aw_2010_wav32/fm_2varriableindex/fm2_c15/fm2_15_02_01.00.wav
+gdsjjewkj /aw_2010_wav32/fm_2varriableindex/fm2_c11/fm2_11_14_16.00.wav
+galwawqpj /aw_2010_wav32/fm_3/fm3_04_06_03.wav</pre></code>
+
+<h3>Drums</h3>
+
+<pre><code>ghelsoiql /vintage_drums/AlesisDM5/96/DM5Tom23_Lo.wav
+gddfqflqu /vintage_drums/BossDR-550/DR550TomE.wav
+gelasoiuj /vintage_drums/AlesisDM5/DM5Snare063.wav</pre></code>
+
+<h3>Loop</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop14-init)
+  (open-db-in-monolith)
+  (loadsineft)
+  (crateload "fm2_c15" "gfpefpuef")
+  (crateload "fm2_c11" "gdsjjewkj")
+  (crateload "fm3" "galwawqpj")
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop14)
+  (let ((phs (newsig (gst:cndf 60) 0))
+        (db (mkdb))
+        (tk (newsig (lambda () (tick)) 0))
+        (rev (mksend))
+        )
+     (fmpair2
+       (mtof 66)
+       (param 1)
+       (param 1)
+       (scale (tenvx (cabget tk) 0.001 0.005 0.01) 0 3)
+       (param 0.3)
+       (monftf "sineft")
+       (monftf "fm2_c11"))
+
+     (tenvx (cabget tk) 0.001 0.01 0.2)
+     (mul zz zz)
+     (att -3)
+     (throw 0.5 (cabgetf rev))
+
+     (cabget rev)
+     (bdup)
+     (revsc zz zz 0.97 10000)
+     (add zz zz)
+     (dcblock zz)
+     (att -10)
+     (add zz zz)
+     (cabclr rev)
+     (cabclr tk)
+     (cabclr phs)
+     (regclr db)
+))</pre></code>
+
+<h2>Day 15: Translate</h2>
+
+<p>Translate:
+</p>
+<p>To remove to heaven without a natural death.
+</p>
+
+<h3>Wavetables</h3>
+
+<pre><code>gerripsoe /aw_2010_wav32/spectral_spm_ilowfreq/spmi_low_e_0108.wav
+gjlkljfap /aw_2010_wav32/spectral_spm_linb/spm_linb_064_04_004_16.wav</pre></code>
+
+<h3>Drums</h3>
+
+<pre><code>gfohawsjq /vintage_drums/AlesisDM5/96/DM5Snare074.wav
+gdujfdpsd /vintage_drums/RolandDDR30/MaxV - DR 04.wav
+ghkeewpjj /vintage_drums/AlesisDM5/DM5Perc078.wav</pre></code>
+
+<h3>Loop</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-init)
+  (open-db-in-monolith)
+  (loadsineft)
+  (crateload "ilowfreq" "gerripsoe")
+  (crateload "linb" "gjlkljfap")
+)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define loop15-base 58)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15)
+  (let ((phs (newsig (gst:cndf 73) 0))
+        (db (mkdb))
+        (tk (newsig (lambda () (tick)) 0))
+        (rev (mksend))
+        )
+     (loop15-bass (cabgetf phs))
+     (att -15)
+     (throw 0.3 (cabgetf rev))
+     (att -3)
+     (fmpair2
+       (mtof (+ loop15-base 7))
+       (param 2)
+       (param 3)
+       (begin
+         (param 1)
+         (param 3)
+         (gst:gexpr (cabgetf phs) "
+beg 16 16
+mr 12 t 1 exp 3
+mr 4 t 50 lin
+end
+loop fin
+")
+         (randh zz zz zz)
+         (port zz 0.005))
+       (randi 0.1 0.3 1)
+       (monftf "sineft")
+       (monftf "linb"))
+     (att -15)
+     (throw 0.5 (cabgetf rev))
+     (att -10)
+
+     (add zz zz)
+
+
+     (att -3)
+
+     (loop15-mel (cabgetf phs))
+
+     (att -18)
+     (throw 0.9 (cabgetf rev))
+     (att -3)
+     (add zz zz)
+
+     (loop15-thoomp (cabgetf phs) (reggetf db))
+     (att -2)
+     (throw 0.9 (cabgetf rev))
+     (add zz zz)
+     (loop15-snare (cabgetf phs) (reggetf db))
+     (att -3)
+     (throw 0.8 (cabgetf rev))
+     (add zz zz)
+     (loop15-ping (cabgetf phs) (reggetf db))
+     (att -8)
+     (throw 1.9 (cabgetf rev))
+     (att -10)
+     (add zz zz)
+
+     (cabget rev)
+     (simple-delay zz 0 0.2)
+     (bdup)
+     (revsc zz zz 0.93 8000)
+     (add zz zz)
+     (dcblock zz)
+     (att -10)
+     (add zz zz)
+     (cabclr rev)
+     (cabclr tk)
+     (cabclr phs)
+     (regclr db)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-mel cnd)
+  (let ((tk (gest:newscalar)))
+
+    (gst:gexpr-words
+     cnd
+     (list (gst:wordentry "tk" (gst:mktick tk))) "
+beg 4 4
+mr 2 t 4 mg tk
+t 5 mg
+t 7 mg
+end
+beg 4 4
+mr 2 t 8 mg
+t 7 mg
+pr 3
+mr 2
+t 5 mg
+pr 2
+t 7 mg
+t 5 mg
+end
+beg 4 4
+mr 2 t 4 gl
+mr 2 t 0 mg
+end
+
+beg 4 4
+mr 2 t 4 mg tk
+t 5 mg
+t 7 mg
+end
+beg 4 4
+mr 2 t 8 mg
+t 7 mg
+pr 3
+mr 2
+t 5 mg
+pr 2
+t 7 mg
+t 5 mg
+end
+beg 4 4
+mr 2 t 4 gl
+mr 2 t 0 mg
+end
+
+beg 4 4
+mr 2 t 11 lin
+mr 2 t 12 gl
+end
+
+beg 4 4
+mr 2 t -2 lin
+mr 2 t 0 gl
+end
+
+beg 4 4
+t 0 lin
+t 1 lin
+mr 2 t 0 gl
+end
+loop fin
+")
+   (add zz loop15-base)
+   (mtof zz)
+  (fmpair2
+   zz
+   (param 1)
+   (param 1.0)
+   (gst:gexpr cnd "
+beg 4 4
+mr 2 t 1 exp 1
+mr 2 t 3 mg
+end
+beg 4 4
+mr 4 t 3 mg
+end
+beg 4 4
+mr 4 t 1 mg
+end
+loop fin
+")
+   (param 0.9)
+   (monftf "sineft")
+   (monftf "ilowfreq"))
+  ))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-bass cnd)
+  (gst:gexpr cnd "
+beg 8 8
+mr 4 t 0 mg
+mr 4 t -7 mg
+end
+beg 8 8
+mr 4 t 0 mg
+mr 4 t -4 mg
+end
+beg 8 8
+mr 4 t -7 mg
+mr 4 t 0 mg
+end
+beg 8 8
+mr 3 t 0 mg
+t -2 lin
+mr 3 t 0 mg
+t -2 lin
+end
+beg 4 4
+mr 4 t 0 mg
+end
+loop fin
+")
+  (add zz (+ loop15-base -24))
+  (mtof zz)
+  (fmpair2
+   zz
+   (param 1)
+   (param 1)
+   (param 8)
+(gst:gexpr cnd "
+beg 8 2
+t 0.1 exp 1
+t 0.7
+end
+loop fin
+")
+   (monftf "sineft")
+   (monftf "ilowfreq"))
+   (softclip zz 8)
+   (butlp zz 800)
+)</pre></code>
+
+<h3>Drum Loops</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-thoomp cnd db)
+  (let ((rep (gest:newscalar))
+        (roll (gest:newscalar))
+)
+    (gst:gexpr-words
+     cnd
+     (list
+      (gst:wordentry "r" (gst:mksetter rep))
+      (gst:wordentry "unroll" (gst:mksetter roll))
+) "
+beg 4 4
+t 0 rmp r 3 unroll 0.5
+t 0 rmp r 2 unroll 0
+t 0 rmp r 1 unroll 1
+t 0 rmp r 1
+end
+beg 4 4
+t 0 rmp r 3 unroll 0.5
+t 0 rmp r 2 unroll 1
+t 0 rmp r 1
+t 0 rmp r 12 unroll 0
+end
+loop fin
+")
+  (bdup)
+  (let ((tk (newsig (lambda () (phsclk zz (gest:scalar rep))) 0)))
+    (cabget tk)
+    (trand (cabget tk) 1.0 1.9)
+    (tsmp zz zz (lambda () (cratewav db "gdujfdp%")))
+    (trand (cabget tk) 0.9 1.0)
+    (mul zz zz)
+    (tgate (cabget tk) 0.11)
+    (port zz 0.001)
+    (mul zz zz)
+    (bswap)
+    (scale zz 0.1 1.0)
+    (param 1)
+    (crossfade zz zz (gest:scalar roll))
+    (mul zz zz))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-snare cnd db)
+  (let ((rep (gest:newscalar))
+        (roll (gest:newscalar)))
+    (gst:gexpr-words
+     cnd
+     (list
+      (gst:wordentry "r" (gst:mksetter rep))
+      (gst:wordentry "unroll" (gst:mksetter roll))
+) "
+beg 4 4
+mr 4 t 0 rmp r 16 unroll 0 exp 1
+end
+beg 4 4
+mr 2 t 0 rmp r 3 unroll 0 lin
+mr 2 t 0 rmp r 5 unroll 0 lin
+end
+beg 4 4
+mr 2 t 0 rmp r 3 unroll 0 exp -1
+mr 2 t 0 rmp r 12 unroll 0 exp 3
+end
+loop fin
+")
+  (bdup)
+  (let ((tk (newsig (lambda () (phsclk zz (gest:scalar rep))) 0)))
+    (cabget tk)
+    (trand (cabget tk) 1.0 3)
+    (tsmp zz zz (lambda () (cratewav db "gfohawsjq%")))
+    (trand (cabget tk) 0.9 1.0)
+    (mul zz zz)
+    (tgate (cabget tk) 0.11)
+    (port zz 0.001)
+    (mul zz zz)
+    (bswap)
+    (scale zz 0.1 1.0)
+    (param 1)
+    (crossfade zz zz (gest:scalar roll))
+    (mul zz zz))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop15-ping cnd db)
+  (let ((rep (gest:newscalar))
+        (roll (gest:newscalar)))
+    (gst:gexpr-words
+     cnd
+     (list
+      (gst:wordentry "r" (gst:mksetter rep))
+      (gst:wordentry "unroll" (gst:mksetter roll))
+) "
+beg 24 1
+t 0 rmp r 64 unroll 0 exp 3
+end
+loop fin
+")
+  (bdup)
+  (let ((tk (newsig (lambda () (phsclk zz (gest:scalar rep))) 0)))
+    (cabget tk)
+    (trand (cabget tk) 1.0 3)
+    (tsmp zz zz (lambda () (cratewav db "ghkeewp%")))
+    (trand (cabget tk) 0.9 1.0)
+    (mul zz zz)
+    (tgate (cabget tk) 0.11)
+    (port zz 0.001)
+    (mul zz zz)
+    (bswap)
+    (scale zz 0.1 1.0)
+    (param 1)
+    (crossfade zz zz (gest:scalar roll))
+    (mul zz zz))
+))</pre></code>
+
+<h2>Day 16: Wooden</h2>
+
+<p>Wooden:
+</p>
+<p>Clumsy; awkward; ungainly; stiff; spiritless.
+</p>
+
+<h3>Initial thoughts</h3>
+
+<p>Thinking of leaning on the "stiffness" aspects. Lots
+of quarter note and eigth note rhythic phrases
+that a Very Much On the beat. Maybe have a contrasting
+line that is a bit out of step.
+</p>
+
+<h3>Drum Samples</h3>
+
+<pre><code>gddqjepiw /vintage_drums/Quasimidi309/QuasiC 035.wav
+goadadaua /vintage_drums/YamahaRX-5/MaxV - RX5ITM2.wav
+gpwafopfr /vintage_drums/FairlightIIx/MaxV - Clap.wav
+gijqrqkia /vintage_drums/BossDR-660/DR-660Snare65.wav</pre></code>
+
+<h3>Wavetables</h3>
+
+<pre><code>gsjwrfdup /aw_2010_wav32/spectral_sposc_logr/sposc_log_3.000_016_004.wav                                                                     
+goopqkhuk /aw_2010_wav32/spectral_spm_log/spm_log_04_07_04_01.wav</pre></code>
+
+<h3>Loop</h3>
+
+<pre><code>(define (loop16)
+  (let ((phs (newsig (gst:cndf 89) 0))
+        (db (mkdb)))
+    (loop16-lo (cabgetf phs) (reggetf db))
+    (att -6)
+    (loop16-tom (cabgetf phs) (reggetf db))
+    (att -6)
+    (add zz zz)
+    (loop16-darkclap (cabgetf phs) (reggetf db))
+    (att -6)
+    (add zz zz)
+    (loop16-snare (cabgetf phs) (reggetf db))
+    (att -6)
+    (add zz zz)
+    (loop16-bass (cabgetf phs) (reggetf db))
+    (att -6)
+    (add zz zz)
+    (loop16-lead (cabgetf phs) (reggetf db))
+    (att -6)
+    (add zz zz)
+    (cabclr phs)
+  ))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-lo cnd db)
+  (let ((tk (gest:newscalar)))
+    (gst:gexpr-words cnd
+       (list
+         (gst:wordentry "+" (gst:mkhit tk))
+         (gst:wordentry "-" (gst:mkrest))
+) "
+beg 4 4
++ - - pr 2 - +
+end
+loop fin
+")
+    (bdrop)
+    (gest:tick tk)
+    (bdup)
+    (tsmp zz (param 1.0) (lambda () (cratewav db "gddqjep%")))
+    (bswap)
+    (expon zz 1 0.8 0.001)
+    (mul zz zz)
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-tom cnd db)
+  (let ((tk (gest:newscalar)))
+    (gst:gexpr-words cnd
+       (list
+         (gst:wordentry "+" (gst:mkhit tk))
+         (gst:wordentry "-" (gst:mkrest))
+) "
+beg 4 4
+- + - -
+end
+loop fin
+")
+    (bdrop)
+    (gest:tick tk)
+    (tsmp zz (param 1.0) (lambda () (cratewav db "goadadaua%")))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-darkclap cnd db)
+  (let ((tk (gest:newscalar)))
+    (gst:gexpr-words cnd
+       (list
+         (gst:wordentry "+" (gst:mkhit tk))
+         (gst:wordentry "-" (gst:mkrest))
+) "
+beg 4 4
+- - + -
+end
+loop fin
+")
+    (bdrop)
+    (gest:tick tk)
+    (tsmp zz (param 1.0) (lambda () (cratewav db "gpwafop%")))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-snare cnd db)
+  (let ((tk (gest:newscalar)))
+    (gst:gexpr-words cnd
+       (list
+         (gst:wordentry "+" (gst:mkhit tk))
+         (gst:wordentry "-" (gst:mkrest))
+) "
+beg 4 4
+- - - +
+end
+loop fin
+")
+    (bdrop)
+    (gest:tick tk)
+    (tsmp zz (param 1.0) (lambda () (cratewav db "gijqrqkia%")))
+))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-bass cnd db)
+  (let ((tk (gest:newscalar)))
+    (gst:gexpr-words cnd
+       (list
+         (gst:wordentry "tk" (gst:mktick tk))
+         (gst:wordentry "nt" tok-nt)
+         (gst:wordentry "-" (gst:mkrest))
+) "
+beg 4 4
+mr 2 nt D-2 tk sg
+nt A-2 tk sg
+nt A-1 tk sg
+end
+loop fin
+")
+    (mtof zz)
+    (fmpair2 zz 1 1 3 0
+(lambda () (gen_sine (ftnew 2048))) (cratewavf db "goopqkhuk%"))
+    (gest:tick tk)
+    (tenvx zz 0.01 0.1 0.1)
+    (mul zz zz)
+
+    (att -10)))</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (loop16-lead cnd db)
+  (let ((tk (gest:newscalar)))
+    (gst:gexpr-words cnd
+       (list
+         (gst:wordentry "tk" (gst:mktick tk))
+         (gst:wordentry "nt" tok-nt)
+         (gst:wordentry "nt" tok-nt)
+         (gst:wordentry "-" (gst:mkrest))
+) "
+beg 4 8
+nt D-4 tk sg
+nt F#4 tk sg
+nt A-4 tk sg
+nt D-4 tk sg
+nt F#4 tk sg
+nt A-4 tk sg
+mr 2 nt D-4 tk sg
+end
+
+beg 4 8
+nt D-4 tk sg
+nt F#4 tk sg
+nt B-4 tk sg
+nt D-4 tk sg
+nt F#4 tk sg
+nt B-4 tk sg
+mr 2 nt D-4 tk sg
+end
+
+beg 4 9
+nt D-4 tk gl
+nt F#4 tk gl
+nt C#5 tk gl
+
+nt D-4 tk gl
+nt F#4 tk gl
+nt C#5 tk gl
+
+mr 3 pr 4
+nt E-5 tk lin
+nt D-5 tk gl
+nt E-5 tk gl
+nt F#5 tk gl
+end
+
+beg 4 8
+nt D-4 tk sg
+nt F#4 tk sg
+nt B-4 tk sg
+nt D-4 tk sg
+nt F#4 tk sg
+nt B-4 tk sg
+mr 2 nt D-4 tk sg
+end
+
+loop fin
+")
+    (mtof zz)
+    (fmpair2 zz 1 3 2 0
+(lambda () (gen_sine (ftnew 2048))) (cratewavf db "gsjwrfdup%"))
+    (gest:tick tk)
+    (tenv zz 0.01 0.1 0.001)
+    (expmap zz 3)
+    (mul zz zz)
+
+    (att -10)))</pre></code>
+
+<h2>Day 17: Tuxedo (WIP)</h2>
+
+
+<h3>Initial Thoughts</h3>
+
+<p>James Bond? At berklee we called it "line cliche".
+</p>
+<p>ugh. thinking I might quit this. I'm tired.
+</p>
+
+<h3>Wavetables</h3>
+
+<pre><code>gelfudope /aw_2010_wav32/add_binaddsine/binadd_sine_10111010.wav
+glakpjhrr /aw_2010_wav32/add_binaddarth/binadd_arth_10110011.wav</pre></code>
+
+<h3>Drum Samples</h3>
+
+<pre><code>gphjiqepq /vintage_drums/DubstepDrumKit/Dubstep Hat 5.wav
+gprjproal /vintage_drums/AlesisSr16/SR16Snare08.wav
+ghefflkpr /vintage_drums/AlesisDM5/DM5Snare079.wav
+grjsiapsa /vintage_drums/YamahaEX7Drums/MaxV - Glexd70.wav</pre></code>
 <hr>
 <p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
 </body>
