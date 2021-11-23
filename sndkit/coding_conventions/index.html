@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Coding Conventions</title>
+<h1>Coding Conventions</h1>
+
+<h2>Overview</h2>
+
+<p>This document aims to outline some of the various
+coding conventions and patterns used in the
+sndkit <a href="#">algorithm</a>. This can be used
+as a guide to help read the programs written here.
+</p>
+
+<h2>Literate Programming</h2>
+
+<p>Each algorithm is written using a paradigm known as
+<code>literate programming</code>. In a very small nutshell,
+it is a technique that allows programmer
+to melt natural language structure with computer logic
+structure. In sndkit, algorithms are written in
+org markup using org-mode. Between the blocks of text
+are noweb style named code blocks, following the conventions
+of org-babel. From there, the org documents can either be
+rendered to HTML (a process known as <code>weaving</code>), or
+be used to generate C code readable by a C compiler (a
+process known as <code>tangling</code>).
+</p>
+<p>While emacs and org-mode are very conveniently used to
+write the algorithms,
+<b>emacs is not a dependency for using sndkit</b>.
+</p>
+<p>For tangling to C code, sndkit uses a custom org tangler
+called <code>worgle</code>, written in ANSI C. It is included with
+the sndkit distribution. For weaving into HTML, a tool
+called weewiki. weewiki is not included with sndkit. You'll
+need to install that program separately in order to render
+the HTML pages locally.
+</p>
+
+<h2>Algorithm Overview</h2>
+
+<p>At the start of every algorithm is some kind of overview.
+This provides a few short sentences on what the algorithm
+does, and maybe something about the inputs and outputs.
+</p>
+<p>Sometimes, some upfront elaboration is needed. This happens
+in sections afterwards.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>Typically, a sndkit algorithm will tangle out to a single C
+and header file, foo.c and foo.h. The declarations
+themselves are in a section usually called <code>tangled files</code>.
+</p>
+<p>Algorithms in sndkit designed to be as self-contained as
+possible. It should be possible to use the files by
+themselves without anything else from sndkit. This makes
+it easy to extract things from sndkit in other projects and
+use only what is needed.
+</p>
+<p>The downside of this is that yes, there is sometimes
+redudant code and functionality. This is an acceptable
+tradeoff for now, as decomposability of sndkit is an
+important pillar in the design philosophy of this
+project.
+</p>
+
+<h2>Named Codeblocks</h2>
+
+<p>Literate programs, such as the ones made in sndkit, are
+composed of named code blocks. Blocks are chunks of text
+that can have blocks nested inside of them. Blocks can
+also be appended to, which can be a useful way to
+dynamically add code.
+</p>
+<p>At this point, sndkit program structures follow a pretty
+predictable structure, and often use the same conventions
+for named code blocks.
+</p>
+
+<h3>C and Header Tangle Blocks</h3>
+
+<p>A sndkit algorithm tangles to two files: a C and a header
+file. These are considered to be two top-level named blocks.
+For an algorithm foo, these are named foo.c and foo.h.
+Inside these blocks contain all the other blocks.
+</p>
+<p>What makes these blocks special are that they 
+explicitely tell the tangler to write to files.
+</p>
+
+<h3>funcs</h3>
+
+<p>All C functions are appended to a named code block called
+<code>funcs</code>. This is included inside of the top-level C file
+block.
+</p>
+
+<h3>funcdefs</h3>
+
+<p>All public function declarations/definitions are appended to
+a codeblock called <code>funcdefs</code>, and are included in the
+top-level header file block.
+</p>
+<p>In a literate program, a
+<code>funcdefs</code> block is usually closely followed by a
+corresponding <code>func</code> block.
+</p>
+
+<h3>static_funcdefs</h3>
+
+<p>A static function definitions/declarations are done in
+a block called <code>static_funcdefs</code>. This is included towards
+the beginning of the C file code block.
+</p>
+
+<h3>typedefs</h3>
+
+<p>Public facing structs in C use type definitions, or
+typedefs. All typedefs are appended to the <code>typedefs</code> block,
+contained in the header file code block.
+</p>
+
+<h3>structs</h3>
+
+<p>Structs used by a particular algorithm are defined in the
+<code>structs</code> codeblock, contained in the header file codeblock.
+By default, these are made opaque, but can be exposed by
+defining the <code>SK_FOO_PRIV</code> macro.
+</p>
+
+<h3>macros</h3>
+
+<p>macros can be defined in a codeblock called <code>macros</code>.
+Usually these are defined with local scope in the C file
+rather than the header file. If there is a different
+between local macros in the C file and public ones in
+the header, use <code>local_macros</code> and <code>macros</code>.
+</p>
+
+<h3>init</h3>
+
+<p>A very common design pattern is to have some function
+that initializes data in a struct called <code>sk_foo_init</code>.
+Using codeblocks, one can add and initialize variables
+in a piecemeal. Variable declarations can be declared in
+one block. Initialization can happen in a block called
+<code>init</code>. For a an algorithm with struct <code>sk_foo</code>, contents
+inside of that struct usually would use a code block
+called <code>foo</code>.
+</p>
+
+<h2>SKFLT</h2>
+
+<p>Floating point types use a macro called <code>SKFLT</code>, and by
+default this is set to be <code>float</code>. Every DSP algorithm
+has a way to explicitely define this if it hasn't been
+previously defined.
+</p>
+
+<h2>Function Naming Conventions</h2>
+
+<p>Sndkit algorithms share a common set of things
+they do like initialization, and computing a sample
+of audio, or setting a variable. Below are a set of
+the most common functions, and the names used to describe
+them.
+</p>
+
+<h3>tick</h3>
+
+<p>When a DSP algorithm computes a single sample of audio,
+it is called a <code>tick</code>, and is usually called <code>sk_foo_tick</code>.
+If a tick function takes any audio-rate signals, these
+are provided as arguments to the function.
+</p>
+<p>Most DSP algorithms in sndkit are mono, so the functions
+will simply return one <code>SKFLT</code>. For multiple outputs,
+the values are stored in pointers at the end of the
+function. For stereo processors such as <a href="/sndkit/bigverb">bigverb</a>,
+this is the one time where single-letter
+camel case variable names are used, such as
+<code>inL</code>, <code>inR</code>, <code>outL</code>, or <code>outR</code>.
+</p>
+
+<h3>init</h3>
+
+<p>For intializing data in a struct, the word <code>init</code> is used,
+as in <code>sk_foo_init</code>. The first argument to this function
+is the struct itself, which expects to be <code>sk_foo</code>.
+Following this is the sampling rate <code>sr</code>, if needed. Any
+other init-time variables are supplied after.
+</p>
+<p><code>init</code> should only be used to initialize and zero out
+data. For dynamic memory allocation for things like
+delay lines, <code>del</code> and <code>new</code> conventions are used.
+</p>
+
+<h3>del and new</h3>
+
+<p>For algorithms that require dynamic memory allocation, such
+as <a href="/sndkit/bigverb">bigverb</a>, the <code>del</code> and <code>new</code> words are used,
+as in <code>sk_foo_new</code> and <code>sk_foo_del</code>. A <code>new</code> function
+will allocate and initialize a new instance of <code>sk_foo</code>.
+The <code>del</code> function will clean up all memory, as well
+the instance itself.
+</p>
+
+<h3>setting and getting parameters</h3>
+
+<p>It is the convention to use setters and getters
+rather than manipulate variables directly.
+</p>
+<p>When in doubt, for parameter <code>param</code>, use <code>sk_foo_param_set</code>and <code>sk_foo_param_get</code>. To get and set the parameters.
+However, it is typical for setters drop the <code>set</code>, as in
+<code>sk_foo_param</code> for terseness, as it is understood that it is
+a setter.
+</p>
+</div>
+</body>
+</html>
