@@ -1128,6 +1128,49 @@ int sk_core_table_pop(sk_core *core, sk_table **tab);</pre></code>
     return rc;
 }</pre></code>
 
+<h3>Dumping Raw Table Information</h3>
+
+<p>Raw table data can be written to disk 
+format using <code>sk_table_dump</code>.
+</p>
+<p>The function <code>sk_core_tabdump</code> will pop the
+table off the stack and then call <code>sk_table_dump</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_table_dump(sk_table *tab, const char *filename);
+int sk_core_tabdump(sk_core *core, const char *filename);</pre></code>
+<p></p>
+<p>Note that tables
+are representing in floating-point format, and will
+use the endian encoding used by the OS when writing/reading
+from disk.
+</p>
+<br>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_table_dump(sk_table *tab, const char *filename)
+{
+    FILE *fp;
+
+    fp = fopen(filename, "w");
+
+    if (fp == NULL) return 1;
+
+    fwrite(tab-&gt;tab, sizeof(SKFLT), tab-&gt;sz, fp);
+
+    fclose(fp);
+
+    return 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_tabdump(sk_core *core, const char *filename)
+{
+    int rc;
+    sk_table *tab;
+
+    rc = sk_core_table_pop(core, &tab);
+    SK_ERROR_CHECK(rc);
+
+    return sk_table_dump(tab, filename);
+}</pre></code>
+
 <h2>Error Checking</h2>
 
 <p><code>SK_ERROR_CHECK</code> is a convenient macro used that will
@@ -1167,6 +1210,15 @@ on the LCG found in Soundpipe.
 {
     core-&gt;rng = (1103515245 * core-&gt;rng + 12345) % SK_CORE_RANDMAX;
     return core-&gt;rng;
+}</pre></code>
+<p></p>
+<p><code>sk_core_randf</code> returns a random number between 0 and 1.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_core_randf(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_core_randf(sk_core *core)
+{
+    return (SKFLT)sk_core_rand(core) / SK_CORE_RANDMAX;
 }</pre></code>
 </div>
 </body>
