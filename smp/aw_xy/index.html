@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>XY instrument</title>
+<h1>XY instrument</h1>
+<p>This is an XY pad instrument built in monolith, used
+to help preview waveforms. It specifically uses the
+g430s pad from xp-pen.
+</p>
+<p>I think the XY pad is a great surface for exploring
+wavetable sounds. It is ideally suitable for a monophonic
+instrument (good!), and the stylus nature of the device
+makes natural exploration of gestures (also good!)
+</p>
+
+<h2>Begin/end stuff (read this first)</h2>
+
+<p>Eval this block:
+</p>
+<pre><code>&lt;&lt;loader&gt;&gt;
+&lt;&lt;top&gt;&gt;</pre></code>
+<p></p>
+<p>Then, run <code>(init)</code>. This will start the patch.
+</p>
+<pre><code>(init)</pre></code>
+<p></p>
+<p>Running the stylus over the xp-pen tablet should make
+some sound.
+</p>
+<p>Quit with:
+</p>
+<pre><code>(quit)</pre></code>
+
+<h2>How to load wavetables (also read this!)</h2>
+
+<p>This will vary. The oscillator has at least one wavetable
+created by monolith that is meant to be persistent between
+re-compilations. The function <code>load-wavetable</code>, or
+<code>lwt</code> will load wavetables from the SQLar db into the
+ftable.
+</p>
+<p>Filenames are long and hard to remember, so for each
+folder/category of wavetables, a set of appropriate
+functions will be provided.
+</p>
+<p>For example, a sine-based formant wavetable filename can
+be generated with <code>(fmntsine 1)</code>, and this filename can be
+loaded into the oscillator wavetable with
+<code>(lwt (fmntsine 1)</code>. More information can be found in the
+<<Load wavetable utils>> section.
+</p>
+
+<h2>Load wavetable utils</h2>
+
+<p>Be sure to tangle first. This will load all the generated
+scheme files via <code>monolith:load</code>.
+</p>
+
+<h3>Top-level wavetable load</h3>
+
+<p>In order to load local files via <code>monolith:load</code>, this
+directory must be appened to via <code>monolith:append-path</code>,
+before attempting to load.
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>(monolith:append-path
+ (string-append
+  (sys:getenv "HOME")
+  "/p/aw_2010_wav32"))
+&lt;&lt;wavetables&gt;&gt;</pre></code>
+
+<h2>Wavetables</h2>
+
+
+<h3>Formants</h3>
+
+<div><b><i>&lt;&lt;wavetables&gt;&gt;=</i></b></div><pre><code>(monolith:load "formants.scm")
+; local shortcuts
+(define fmtsin formants-fname-sine)
+(define fmtnsin formants-fname-nonsine)</pre></code>
+
+<h3>Fractal</h3>
+
+<div><b><i>&lt;&lt;wavetables&gt;&gt;=</i></b></div><pre><code>(monolith:load "fractal.scm")
+(define frctfmsaw fractal-fmsaw-name)
+(define frctam fractal-am-name)</pre></code>
+
+<h2>Loader</h2>
+
+<div><b><i>&lt;&lt;loader&gt;&gt;=</i></b></div><pre><code>(monolith:load "g430.scm")
+(monolith:load "ugens.scm")</pre></code>
+
+<h2>Top</h2>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>&lt;&lt;init&gt;&gt;
+&lt;&lt;run&gt;&gt;</pre></code>
+
+<h2>Init</h2>
+
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>(define (init)
+  (monolith:g430-setup)
+  (monolith:start)
+  (mkft)
+  (run))</pre></code>
+
+<h2>mkft</h2>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (mkft)
+  (monolith:ftbl-create "ft" 2048)
+  &lt;&lt;additional_ftables&gt;&gt;
+)</pre></code>
+<p></p>
+<p>Additional ftables are needed for the morphing oscillator.
+</p>
+<div><b><i>&lt;&lt;additional_ftables&gt;&gt;=</i></b></div><pre><code>  (monolith:ftbl-create "ftB" 2048)
+  (monolith:ftbl-create "ftC" 2048)</pre></code>
+<p></p>
+<p>Get the ftable with <code>getft</code> it will take in a number,
+and return the correct string.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (getft n)
+  (case n
+    ((0) "ft")
+    ((1) "ftB")
+    ((2) "ftC")
+    (else "ft")))</pre></code>
+
+<h2>monft scheme wrapper</h2>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (monft ft)
+  (param ft)
+  (rvl "monft"))</pre></code>
+
+<h2>sinesum test</h2>
+
+<p>This will apply a sinesum function to the main ftable.
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (sinesum s) (gen_sinesum (monft "ft") s))</pre></code>
+
+<h2>Single Oscillator Instrument</h2>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (axis-scale axis min max)
+  (scale (axis) (min) (max)))
+(define (single-osc)
+  (display "Loading Single Oscillator")
+  (newline)
+  (osc (mtof (axis-scale
+              (lambda () (port (g430x) (param 0.008)))
+              (paramf 24)
+              (paramf 96)))
+       (param 0.3)
+       (param 0)
+       (lambda () (gen_sine (monft "ft"))))
+
+  (mul '() (port (sub (param 1) (g430y)) (param 0.001)))
+  (mul '() (port (g430s) (param 0.01))))</pre></code>
+
+<h2>Three-stage morphing oscillator</h2>
+
+<p>This will create an oscillator with three configurable
+wavetables that it can morph between. The x-axis controls
+frequency (same as the single oscillator). The y-axis
+controls wavetable position. This oscillator is made
+possible via an instance of <code>phasor</code> and <code>tcross</code>.
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (morph-osc)
+  ;; initialize as sine waves
+  (display "Loading Morphing Oscillator")
+  (newline)
+  (gen_sine (monft (getft 0)))
+  (gen_sine (monft (getft 1)))
+  (gen_sine (monft (getft 2)))
+  (rvl "3 drops")
+  (tcross
+   (phasor
+    (mtof (axis-scale
+           (lambda () (port (g430x) (param 0.008)))
+           (paramf 24)
+           (paramf 96)))
+    (param 0))
+   (port (sub (param 1) (g430y)) (param 0.001))
+   (lambda () (monft (getft 0)))
+   (lambda () (monft (getft 1)))
+   (lambda () (monft (getft 2))))
+  (mul '() 0.5)
+  (mul '() (port (g430s) (param 0.01)))
+)</pre></code>
+
+<h2>Changing the synth</h2>
+
+<p>The synth can be changed with <code>change-synth</code>#+NAME: top
+<pre><code>(define (change-synth synth) (set! current-synth synth))</pre></code>
+
+<h2>Run</h2>
+
+<p>The core run function contained around the instrument.
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define current-synth single-osc)</pre></code>
+<div><b><i>&lt;&lt;run&gt;&gt;=</i></b></div><pre><code>(define (run)
+   ;;(single-osc)
+   (morph-osc)
+   ;;(current-synth)
+   (out '()))</pre></code>
+
+<h2>SQLar wavetable loader (load-wavetable)</h2>
+
+<p>This will load a wavetable from the SQLar database, given
+a filename.
+</p>
+<p>Monolith needs to know where on the computer this database
+is located. Nothing clever with this right now. It's just
+hard coded in.
+</p>
+<p>TODO: replace the path with some sort of ROOTDIR variable.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define SQLAR-DB
+  "/home/paul/p/aw_2010_wav32/aw_2010_wav32.sqlar")</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (load-wavetable wt slot)
+  (monolith:sqlar-wavread SQLAR-DB wt (getft slot)))</pre></code>
+<p></p>
+<p>Or <code>lwt</code> for short.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define lwt load-wavetable)</pre></code>
+</div>
+</body>
+</html>

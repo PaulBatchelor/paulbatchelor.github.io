@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>fractal</title>
+<h1>fractal</h1>
+<p>Waveforms with the prefix "fractal". I have no idea what it
+means to be fractal in this context. Could be fun.
+</p>
+</p>
+
+<h2>fractal.scm</h2>
+
+<p>Scheme bindings for fractal.
+<div><b><i>&lt;&lt;fractal.scm&gt;&gt;=</i></b></div><pre><code>;; Things to come later...
+&lt;&lt;top&gt;&gt;</pre></code>
+
+<h2>TODO am</h2>
+
+
+<h3>Notes</h3>
+
+
+<h4>[2020-02-14 Fri 12:55] making filename generator</h4>
+
+<p>This seems to have a similar format to the fmsaw
+generator. So that makes things be easy.
+</p>
+<p>Using the ABC numbering system:
+</p>
+<p>A has a range of 1-9.
+</p>
+<p>B has  a range of 1-9, but they aren't all there all
+the time. Even A values have only odd B values I think.
+</p>
+<p>C goes 1, 2, 4 8.
+</p>
+<p>Another cryptic system to decipher.
+</p>
+
+<h4>[2020-02-14 Fri 13:02] initial listening.</h4>
+
+<p></p>
+<p>111 is a bit reedy sounding, compared to the fmsaw.
+</p>
+<p>Crossfading between 111 211, there is a gap of silence.
+Some serious phasing perhaps?
+</p>
+<p>I swear I can hear more fifths in 311.
+</p>
+<p>Thirds in 411?
+</p>
+<p>By 611, the tonal center becomes harder to percieve. Perhaps
+the fundamental goes away?
+</p>
+<p>118 has vocal-like qualities at the lower to mid registers.
+</p>
+<p>348 sounds "dusty" to me, for some reason.
+</p>
+
+<h3>Filename Generator</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (fractal-am-name-withdir dir a b c)
+  (let ((name
+         (string-append
+          "fractal_am_0"
+          (number-&gt;string a)
+          "_0"
+          (number-&gt;string b)
+          "_0"
+          (number-&gt;string c)'
+          ".wav")))
+    (if (equal? dir "")
+        (eval name)
+        (string-append dir "/" name))))</pre></code>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (fractal-am-name a b c)
+  (fractal-am-name-withdir "fractal_am" a b c))</pre></code>
+
+<h2>WIP fmsaw</h2>
+
+
+<h3>Notes</h3>
+
+
+<h4>[2020-02-12 Wed 14:19] first one to try</h4>
+
+<p>Our first dive into this. This looked the
+most intersting. saw waves are good, and I think they tend
+to make pretty good timbres when doing FM.
+</p>
+<p>The FM saw has a name format of the following:
+"frctfmNNNN.wav". No idea what those numbers
+could mean. But I'll write an initial filename generator
+for this in scheme. <code>dir</code> is the directory/filepath of
+the name, which can be an empty string "", and <code>a</code>, <code>b</code>,
+and <code>c</code> are the numbers.
+</p>
+<p>It seems that despite the numbers being double digit,
+the range is between 1 and 9.
+</p>
+<p>Upon first glance, it would appear that <code>a</code> has a
+total of 9 values, <code>b</code> goes through 9 values, and <code>c</code>only goes through 2 values.
+</p>
+<p>I really need to be able to draw these waveforms to see
+what they look like. I have a utility from before that
+does this, but it may be nice to build something a bit
+more robust. Perhaps make use of btprnt? A wav plotter
+would be a very helpful tool to build for later.
+</p>
+
+<h4>[2020-02-12 Wed 14:48] initial impressions</h4>
+
+<p>I have created an initial file loader, and have put them
+in the XY instrument. I am using the <code>frctfmsaw</code> shortcut
+there, so I'll be talking about waveforms using the triplets
+found there.
+</p>
+<p>the wave found at <code>1 1 1</code> is a super massive sound at the
+low end. Comparatively <code>5 1 1</code> has a distinct major third,
+and the low end goes away.
+</p>
+<p>Could relate to over tones?
+</p>
+<p>Going from <code>1 1 1</code> to <code>1 5 1</code> does not sound as dramatic.
+Nor does <code>1 1 1</code> to <code>1 1 2</code>. Perhaps there is something
+happening visually that is more dramatic?
+</p>
+<p><code>8 3 1</code> is a pretty crazy sounding triplet. Probably because
+it starts at a higher harmonic.
+</p>
+<p>As expected, a good deal amount of aliasing. As the numbers
+increase more aliasing happens. <code>1 1 1</code> actually isn't too
+bad.
+</p>
+
+<h4>[2020-02-14 Fri 12:53] 192 is noiser than 191</h4>
+
+<p>Not sure what that means. Again, I think more information
+can be found visually. Working on a portable solution in
+btprnt.
+</p>
+
+<h3>Filename Generator</h3>
+
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (fractal-fmsaw-name-withdir dir a b c)
+  (let ((name
+         (string-append
+          "frctfm_saw_0"
+          (number-&gt;string a)
+          "_0"
+          (number-&gt;string b)
+          "_0"
+          (number-&gt;string c)'
+          ".wav")))
+    (if (equal? dir "")
+        (eval name)
+        (string-append dir "/" name))))</pre></code>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (fractal-fmsaw-name a b c)
+  (fractal-fmsaw-name-withdir "fractal_fmsaw" a b c))</pre></code>
+
+<h2>TODO fmsoftsq</h2>
+
+
+<h2>TODO fmsoftsw</h2>
+
+
+<h2>TODO fmsoftsquare</h2>
+
+
+<h2>TODO saw</h2>
+
+
+<h2>TODO square</h2>
+
+
+<h2>TODO staircase</h2>
+
+
+<h2>Combintations</h2>
+
+
+<h3>Combo0</h3>
+
+<p>An fmsaw + am hybrid.
+</p>
+<p>The gritty meat of fmsaw 111, with a middle of
+the vocal-like frctam 118, followed by the dusty
+metallic frctam 348.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (frct-combo0)
+  (lwt (frctfmsaw 1 1 1) 0)
+  (lwt (frctam 1 1 8) 1)
+  (lwt (frctam 3 4 8) 2))</pre></code>
+</div>
+</body>
+</html>

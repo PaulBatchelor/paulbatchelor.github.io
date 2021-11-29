@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Usage</title>
+<h1>Usage</h1>
+<p>How to use this thing.
+</p>
+<p>This is a specially managed weewiki and zet. Careful usage
+is required.
+</p>
+<p>Writing stuff down as I go.
+</p>
+
+<h2>Utilities</h2>
+
+<p>Utilities are stored in the "u" folder. These
+are small shell scripts wrapped around weewiki that
+do specific things.
+</p>
+
+<h3>zsay</h3>
+
+<p>Most of what happens here is making logs. Do this
+with <code>u/zsay</code>.
+</p>
+
+<h3>cgroups</h3>
+
+<p>Print all the crate items associated with a particular
+group. Will display the filename, as well as the UUID
+in ergo-id format for easier typing.
+</p>
+<p>Example: print all the items with the USED tag.
+<pre><code>u/cgroups USED</pre></code>
+
+<h3>rpicker</h3>
+
+<p>This is a helpful utility that allows one to randomly pick
+samples from a group.
+</p>
+<p>Note that at the time of writing, this doesn't have an
+ignore group, which would enable choices to include samples
+that haven't been used before (via excluding the USED group).
+</p>
+
+<h3>hist</h3>
+
+<p>The <code>hist</code> command provides a nice view of the most recently
+commented samples in a group, and their message history.
+</p>
+<pre><code>u/hist @aw_2010% 10</pre></code>
+<p></p>
+<p>This one can take a few seconds to load.
+</p>
+
+<h2>Logs</h2>
+
+<p>Logs are short timestamped messages added to the
+zettelkasten. The idea is to take notes about various
+samples and collections.
+</p>
+<p>For general messages, use the <code>logs</code> tag.
+</p>
+<pre><code>u/zsay @logs</pre></code>
+<p></p>
+<p>Logs are also tied to specific sqlar groups.
+</p>
+<p>Be sure to periodically dump the zet with <code>dumpzet.sh</code>.
+</p>
+<p>If you don't do this, stuff won't be saved.
+</p>
+<p>It is <b>very</b> important that you tie whatever is being
+said to <b>exactly one</b> group that gets explicitely
+exported. If you don't, the message will get erased. If
+you link more than one, it will get duplicated in the repo.
+</p>
+<p>What are explicitely exported groups? See the <code>dump_zet</code>script.
+</p>
+
+<h2>Importing new samples</h2>
+
+<p>Importing new samples.
+</p>
+<p>First you need to convert the sample collection into a sqlar
+archive. Place them into a top level folder and run this
+command:
+</p>
+<pre><code>sqlar foo.sqlar foo</pre></code>
+<p></p>
+<p>It's <b>very</b> important that there isn't a slash after the
+foo. For some reason using <code>foo/</code> would make it so the
+folder doesn't show up in <code>sqlarfs</code>.
+</p>
+<p>After this is created it can be imported. Do this from
+the directory where the sqlar archive is located, not where
+the smp db is located. Then run:
+</p>
+<pre><code>weewiki crate import PATH_TO_SMP/a.db foo.sqlar</pre></code>
+<p></p>
+<p>See if the import worked with:
+</p>
+<pre><code>u/cgroups foo.sqlar</pre></code>
+<p></p>
+<p>Once imported, it's really important to make a new directory
+in the smp folder, and optionally a landing page.
+</p>
+<p>From there, it needs to be exported to a TSV file, so
+it can be managed in source control.
+</p>
+<pre><code>weewiki zet export foo.sqlar &gt; foo/zet.tsv</pre></code>
+<p></p>
+<p>Add all these files and make a commit.
+</p>
+<p>After that, you'll need to add these entries to the
+<code>dump_zet.sh</code> and <code>mkdb.sh</code> scripts.
+</p>
+<p>in <code>dump_zet.sh</code>, add:
+</p>
+<pre><code>zetout foo</pre></code>
+<p></p>
+<p>in <code>mkdb.sh</code>, add:
+</p>
+<pre><code>zetit foo</pre></code>
+<p></p>
+<p>Finally, don't forget to import any wiki pages in the
+<code>genwiki.janet</code> script.
+</p>
+
+<h2>Copying SQLar archives</h2>
+
+<p>SQLar archives, once imported, don't always need to be
+present. They can be removed (not implemented yet), copied
+again.
+</p>
+<p>To copy a sample database previously imported, use the <code>copy</code>command. For instance:
+</p>
+<pre><code>weewiki crate copy ~/sqlar/aw_2010_wav32.sqlar a.db</pre></code>
+<p></p>
+<p>Will transfer the samples over to the smp's database <code>a.db</code>.
+</p>
+<p>Unfortunately, there isn't an inverse operation for this
+yet. But if you know the folder samples are in, they can
+be removed using sqlar's <code>-d</code> command.
+</p>
+
+<h2>Using a Sample</h2>
+
+<p>When a sample gets used for the first time, it should
+get tagged with the <code>USED</code> label via linking:
+</p>
+<pre><code>u/tag UUID USED</pre></code>
+<p></p>
+<p>This lets me know what samples I have used and have not used.
+</p>
+</div>
+</body>
+</html>

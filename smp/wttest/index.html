@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Wavetable Testing</title>
+<h1>Wavetable Testing</h1>
+
+<h2>Overview</h2>
+
+<p>Stuff tagged with the <code>wttest</code> tag are subjected to
+forms of wavetable testing and evaluation.
+</p>
+<p>How does one evaluate the characteristic of a wavetable?
+For me, mechanical non-audio processes like waveforms and
+magnitude spectrum plots are only so useful. I'd like
+to try and use my ears and listen.
+</p>
+
+<h2>Buzz Morphing Oscillator</h2>
+
+<p>To evaluate the sonic qualities of a waveform, you really
+want to be as no-frills as possible. I reach for a 
+table lookup oscillator play a steady-pitch. I've found it's
+help to have a reference wavetable to play against. A
+band-limited buzzwave is good because it has a pretty rich
+spectrum without being too abrasive.
+</p>
+<p>The code below implements a test oscillator for wavetables
+using monolith. It morphs between a wavetable crate ID <code>wt</code>and a buzzwave at a fixed pitch <code>nn</code> (in MIDI).
+</p>
+<pre><code>(define (testwt nn wt)
+  (let ((ftl (monolith:nextfree 0)))
+    (ftlist-new)
+    (regset zz ftl)
+
+    (ftlist-append
+      (lambda () (gen_sinesum (ftnew 8192) "0.2 0.2 0.2 0.2 0.2"))
+      (reggetf ftl))
+    (ftlist-append
+      (lambda () (monft wt))
+      (reggetf ftl))
+
+
+      (phasor (mtof nn) 0)
+    (tabmorf zz (expmap (flipper (phasor 0.3 0)) -1)
+             (reggetf ftl))
+    (mul zz 0.3)
+    (regclr ftl)))</pre></code>
+<p></p>
+<p>I've been listening to wavetables at 3 octaves currently.
+Pitched at 24 (p24), 36 (p36), and 48 (p48). Wavetable
+spectrums usually have a sweet spot, or they only dont
+sound like crap at very specific frequency regions.
+</p>
+
+<h2>FM testing</h2>
+
+<p>Seeing how wavetables behave in the context of FM becomes
+a bit more unpredictable. So this process is still evolving.
+</p>
+<p>The core oscillator used is a classic FM pair. The idea would
+be to mix and match classic sine tables with the current
+wavetable. To keep things simple, a 1:1 ratio will be used
+mostly. Modulation index will be routinely adjusted just
+to see how the timbre changes.
+</p>
+<p>Here's a test FM oscillator:
+</p>
+<p>The gist is: create an FM oscillator pair, with sine
+as carrier and wt as modulator, and slowly drive the
+modulation index up and down. The thing to listen for
+hear is the behavior of spectrum evolution.
+</p>
+<p>Note that the tables <b>might</b> have to match still.
+</p>
+<div><b><i>&lt;&lt;top&gt;&gt;=</i></b></div><pre><code>(define (testfm wt nn car mod mi)
+  (fmpair2
+    (mtof nn)
+    (param car) (param mod)
+    (scale (expmap (flipper (phasor 0.3 0)) -1) 0 mi)
+    (param 0.0)
+    (lambda () (gen_sine (ftnew 2048)))
+    (lambda () (monft wt)))
+  (mul zz 0.5))</pre></code>
+<p></p>
+<p>If I wanted to test a wavetable with this patch using
+a pitch 36 with a C:M ratio of 1:2, and a max mod index
+of 6, I'd declare it as <code>fm36,126</code>. triplet values can
+be a hex for a range of 0-15.
+</p>
+
+<h2>Padsynth testing</h2>
+
+<p>As it turns out, wavetables make for great inputs
+for the padsynth algorithm! So we're going to be
+experimenting with those for a little while.
+</p>
+<p>The utility <code>pstest</code> can be used to generate files
+with the following parameters, note number, base
+frequency, and bandwidth.
+</p>
+<p>It is typical practice to prepend messages related
+to testing the wavetable with the pstest utility
+with: pstestNN,FREQ,BW.
+</p>
+
+<h2>LIL implementations</h2>
+
+<p>Here is an implementation in LIL, using the local version
+of <a href="/smp/sndkit">sndkit</a>.
+</p>
+<div><b><i>&lt;&lt;wttest.lil&gt;&gt;=</i></b></div><pre><code>&lt;&lt;wttest&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;wttest&gt;&gt;=</i></b></div><pre><code>func wttfm {wt nn c m i} {
+    gensine [tabnew 8192]
+    cratewav $wt
+    mtof $nn
+    param $c
+    param $m
+    phasor 0.3 0
+    flipper zz
+    expmap zz -1
+    scale zz 0 $i
+    param 0
+    fmpair2 zz zz zz zz zz zz zz zz
+    mul zz 0.5
+}</pre></code>
+<p></p>
+<p>Note that <code>wt</code> is ignored here, but it is included here
+to match the <code>wttfm</code> function argument structure. This
+makes the <code>fmtest</code> utility much easier to work with.
+</p>
+<div><b><i>&lt;&lt;wttest&gt;&gt;=</i></b></div><pre><code>func wttfm_ref {wt nn c m i} {
+    gensine [tabnew 8192]
+    dup
+    mtof $nn
+    param $c
+    param $m
+    phasor 0.3 0
+    flipper zz
+    expmap zz -1
+    scale zz 0 $i
+    param 0
+    fmpair2 zz zz zz zz zz zz zz zz
+    mul zz 0.5
+}</pre></code>
+</div>
+</body>
+</html>
