@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>14. opening a SQLite database in the monolith dictionary</h2>
+
+<p><a id="wm_007_0165"></a>This will use <code>monolith_sqlite_open</code>, which is a function
+stolen from an existing function which does the same thing,
+but inside of graforge. I figured this functionality would
+be more worthy of the shorter (and relevant) namespace.
+</p>
+
+<h3>14.1. C Function</h3>
+
+<p><a id="wm_007_0167"></a><div><b><i>&lt;&lt;static_sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>sqlite3 * monolith_sqlite_open(monolith_d *m,
+                               const char *fname,
+                               const char *key,
+                               size_t keylen);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>static void free_sqlite_entry(monolith_dict_entry *ent)
+{
+    sqlite3 *db;
+
+    db = monolith_dict_entry_data(ent);
+    sqlite3_close(db);
+}
+
+sqlite3 * monolith_sqlite_open(monolith_d *m,
+                               const char *fname,
+                               const char *key,
+                               size_t keylen)
+{
+    sqlite3 *db;
+    monolith_dict *dict;
+    monolith_dict_entry *ent;
+    int rc;
+
+    dict = monolith_dict_get(m);
+    db = NULL;
+
+    rc = monolith_dict_newentry(dict, &ent,
+                                key, keylen);
+
+    if (rc != MONOLITH_OK) {
+        fprintf(stderr, "Unable to create entry ");
+        fwrite(key, 1, keylen, stderr);
+        fprintf(stderr, "\n");
+        return NULL;
+    }
+
+    sqlite3_open(fname, &db);
+
+    monolith_dict_entry_data_set(ent, db);
+    monolith_dict_entry_clean(ent, free_sqlite_entry);
+
+    return db;
+}</pre></code>
+
+<h3>14.2. Scheme Function</h3>
+
+<p><a id="wm_007_0172"></a>Called with <code>sqlar:sqlite-open</code>. This could be called
+<code>monolith:sqlite-open</code>, except that it's sort of a one-off
+thing, and the loader is technically in the "sqlar"
+namespace. If more general sqlite-related scheme
+functions pop up in the future, it might make more
+sense to put this in it's own set of functions.
+</p>
+<div><b><i>&lt;&lt;sqlar_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"sqlar:sqlite-open", pp_sqlite_open, 2, 2, {STR,STR,___}},</pre></code>
+<div><b><i>&lt;&lt;sqlar_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sqlite_open(cell x)
+{
+    const char *file;
+    const char *name;
+    monolith_d *m;
+
+    m = monolith_data_get();
+
+    file = string(car(x));
+    x = cdr(x);
+    name = string(car(x));
+
+    monolith_sqlite_open(m, file, name, strlen(name));
+
+    return UNSPECIFIC;
+}</pre></code>
+
+<h3>14.3. Pushing SQLite database to runt stack via =monsqlite=</h3>
+
+<p><a id="wm_007_0178"></a>The <code>monsqlite</code> word will look up the sqlite handle in
+the monolith database and push it onto the stack.
+</p>
+<div><b><i>&lt;&lt;monsqlite_word_entry&gt;&gt;=</i></b></div><pre><code>runt_keyword_define(vm,
+                    "monsqlite", 9,
+                    rproc_monsqlite, &c);
+runt_cell_data(vm, c, pw);</pre></code>
+<div><b><i>&lt;&lt;rproc_sqlite_open&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_monsqlite(runt_vm *vm, runt_ptr p)
+{
+    sqlite3 *db;
+    int rc;
+    runt_stacklet *s;
+    const char *key;
+    monolith_dict *dict;
+    monolith_dict_entry *ent;
+    runt_ptr mp;
+    monolith_d *m;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    key = runt_to_string(s-&gt;p);
+
+    if (key == NULL) {
+        runt_print(vm, "This probably wasn't a string\n");
+        return RUNT_NOT_OK;
+    }
+
+    rc = runt_data_search(vm, "__ml", &mp);
+
+    if(rc != RUNT_OK) {
+        runt_print(vm, "Could not find monolith.\n");
+        return RUNT_NOT_OK;
+    }
+
+    m = runt_to_cptr(mp);
+
+    dict = monolith_dict_get(m);
+
+    rc = monolith_dict_find(dict, &ent, key, strlen(key));
+
+    if (rc != MONOLITH_OK) {
+        runt_print(vm, "Could not find SQLite database\n");
+        return RUNT_NOT_OK;
+    }
+
+    db = monolith_dict_entry_data(ent);
+
+    if (db == NULL) {
+        runt_print(vm, "There was a problem opening the SQLite file\n");
+        return RUNT_NOT_OK;
+    }
+
+    rc = runt_ppush(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    rgf_stacklet_sqlite(vm, s, db);
+    return RUNT_OK;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_007_0161">prev</a> | <a href="/proj/monolith/program/wm_007">home</a> | next</p>
+</div>
+</body>
+</html>

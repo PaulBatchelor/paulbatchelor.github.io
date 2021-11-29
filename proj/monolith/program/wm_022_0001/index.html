@@ -20,30 +20,30 @@ assumed to be a phasor signal.
 <p>table, a polypulse "wavetable" stored as an integer.
 </p>
 <div><b><i>&lt;&lt;bitosc.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
-#include "patchwerk.h"
+#include "graforge.h"
 static int tick = 1;
 
-static void compute(pw_node *node)
+static void compute(gf_node *node)
 {
     int blksize;
-    pw_cable *c[4];
+    gf_cable *c[4];
     int n;
 
-    blksize = pw_node_blksize(node);
+    blksize = gf_node_blksize(node);
 
     for (n = 0; n &lt; 4; n++) {
-        pw_node_get_cable(node, n, &c[n]);
+        gf_node_get_cable(node, n, &c[n]);
     }
 
     for (n = 0; n &lt; blksize; n++) {
         unsigned long wt;
         int sz;
         int pos;
-        PWFLT out;
+        GFFLT out;
 
-        sz = floor(pw_cable_get(c[2], n));
-        wt = floor(pw_cable_get(c[1], n));
-        pos = floor(pw_cable_get(c[0], n) * sz);
+        sz = floor(gf_cable_get(c[2], n));
+        wt = floor(gf_cable_get(c[1], n));
+        pos = floor(gf_cable_get(c[0], n) * sz);
 
         if (pos &gt;= sz) pos = sz - 1;
 
@@ -60,16 +60,16 @@ static void compute(pw_node *node)
 
         out = (out * 2) - 1;
 
-        pw_cable_set(c[3], n, out);
+        gf_cable_set(c[3], n, out);
     }
 }
 
-int node_bitosc(pw_node *node)
+int node_bitosc(gf_node *node)
 {
-    pw_node_cables_alloc(node, 4);
-    pw_node_set_block(node, 3);
-    pw_node_set_compute(node, compute);
-    return PW_OK;
+    gf_node_cables_alloc(node, 4);
+    gf_node_set_block(node, 3);
+    gf_node_set_compute(node, compute);
+    return GF_OK;
 }</pre></code>
 <p></p>
 <br>

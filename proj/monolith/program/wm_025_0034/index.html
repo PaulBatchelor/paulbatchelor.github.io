@@ -9,150 +9,53 @@
 <body>
 <div id="main">
 
-<h2>3. sqlar_wavread</h2>
+<h2>3. sqlar_loadraw</h2>
 
-<p><a id="wm_025_0034"></a>CLOSED: [2020-10-07 Wed 12:21]
-Reads from wav file via drwav, and loads it into an existing
-ftable (without allocating).
+<p><a id="wm_025_0034"></a>Like <code>sqlar_loadwav</code>, only for RAW data.
 </p>
-<p>This was created for the sole purpose of loading/unloading
-wavetables.
-</p>
-
-<h3>3.1. sqlar-wavread in C</h3>
-
-<p><a id="wm_025_0036"></a>CLOSED: [2020-01-06 Mon 10:53]
-There are two functions here. <code>sqlar_wavread</code> is the
-low-level version, that only requires a DB handle and a
-ftable. The high-level (simple) version opens the DB handle
-and finds the ftable internally; all that is needed are the
-db filename, wav filename, and keyword.
-</p>
-<br>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sqlar_wavread(sqlite3 *db,
-                  const char *name,
-                  sp_ftbl *ft);
-int sqlar_wavread_simple(monolith_d *m,
-                         const char *db,
-                         const char *wav,
-                         const char *ftname);</pre></code>
-<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int sqlar_wavread(sqlite3 *db,
-                  const char *name,
-                  sp_ftbl *ft)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sqlar_loadraw_db(sqlite3 *db,
+                     const char *filename,
+                     sp_ftbl **ft);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int sqlar_loadraw_db(sqlite3 *db,
+                     const char *filename,
+                     sp_ftbl **ft)
 {
-    char *buf;
+    char *bytes;
     int sz;
-    drwav wav;
+    size_t size;
+    SPFLOAT *tbl;
+    sp_ftbl *ftp;
     int rc;
+    SPFLOAT *buf;
+    int i;
 
     sz = 0;
-    buf = NULL;
-    rc = sqlar_extract_to_buffer_db(db, name, &buf, &sz);
+    bytes = NULL;
+    rc = sqlar_extract_to_buffer_db(db, filename, &bytes, &sz);
+
+    buf = (SPFLOAT *)bytes;
 
     if (rc != SQLITE_OK) {
         if (buf != NULL) free(buf);
         fprintf(stderr, "SQLite problems\n");
-        return MONOLITH_NOTOK;
+        return SP_NOT_OK;
     }
 
-    if (!drwav_init_memory(&wav, buf, sz)) {
-        fprintf(stderr, "drwav could not initialize\n");
-        free(buf);
-        return MONOLITH_NOTOK;
-    }
+    size = sz / sizeof(SPFLOAT);
+    sp_ftbl_create(NULL, ft, size);
+    ftp = *ft;
+    tbl = ftp-&gt;tbl;
 
-    drwav_read_f32(&wav, ft-&gt;size, ft-&gt;tbl);
-    drwav_uninit(&wav);
-    return MONOLITH_OK;
-}
-</pre></code>
-<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int sqlar_wavread_simple(monolith_d *m,
-                         const char *sqlar,
-                         const char *wav,
-                         const char *ftname)
-{
-    int rc;
-    sqlite3 *db;
-    sp_ftbl *ft;
+    for (i = 0; i &lt; size; i++) tbl[i] = buf[i];
 
-    /* Open database */
-
-    if (access(sqlar, F_OK) == -1) {
-        fprintf(stderr,
-                "SQLar: could not find db %s\n",
-                sqlar);
-        return MONOLITH_NOTOK;
-    }
-
-    rc = sqlite3_open(sqlar, &db);
-
-    if (rc) {
-        fprintf(stderr, "SQLar: %s\n", sqlite3_errmsg(db));
-        return MONOLITH_NOTOK;
-    }
-
-    /* find ftable */
-    rc = monolith_ftbl_get(m, ftname, strlen(ftname), &ft);
-
-    if (rc != MONOLITH_OK) {
-        fprintf(stderr,
-                "Could not find table %s\n",
-                ftname);
-        sqlite3_close(db);
-        return MONOLITH_NOTOK;
-    }
-
-    rc = sqlar_wavread(db, wav, ft);
-
-    sqlite3_close(db);
-    return rc;
-}</pre></code>
-
-<h3>3.2. sqlar wavread in scheme</h3>
-
-<p><a id="wm_025_0044"></a>CLOSED: [2020-10-07 Wed 12:21]
-Known as <code>monolith:sqlar-wavread</code>.
-</p>
-<p>Loaded as <code>s9_load_sqlar_wavread</code>.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void s9_load_sqlar_wavread(void);</pre></code>
-<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;scheme_functions&gt;&gt;
-void s9_load_sqlar_wavread(void)
-{
-    S9_PRIM primitives[] = {
-&lt;&lt;scheme_entries&gt;&gt;
-        {NULL}
-    };
-    monolith_scheme_add_primitives("monolith", primitives);
-}</pre></code>
-<div><b><i>&lt;&lt;scheme_entries&gt;&gt;=</i></b></div><pre><code>{
-    "monolith:sqlar-wavread",
-    pp_sqlar_wavread, 3, 3,
-    {S9_T_STRING, S9_T_STRING, S9_T_STRING}
-},</pre></code>
-<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static s9_cell pp_sqlar_wavread(s9_cell x)
-{
-    const char *db;
-    const char *wav;
-    const char *ftname;
-    monolith_d *m;
-
-    m = monolith_data_get();
-
-    db = monolith_scheme_string(s9_car(x));
-    x = s9_cdr(x);
-    wav = monolith_scheme_string(s9_car(x));
-    x = s9_cdr(x);
-    ftname = monolith_scheme_string(s9_car(x));
-
-    sqlar_wavread_simple(m, db, wav, ftname);
-    return S9_UNSPECIFIC;
+    free(bytes);
+    return SP_OK;
 }</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/proj/monolith/program/wm_025_0011">prev</a> | <a href="/proj/monolith/program/wm_025">home</a> | <a href="/proj/monolith/program/wm_025_0060">next</a></p>
+<a href="/proj/monolith/program/wm_025_0011">prev</a> | <a href="/proj/monolith/program/wm_025">home</a> | <a href="/proj/monolith/program/wm_025_0040">next</a></p>
 </div>
 </body>
 </html>

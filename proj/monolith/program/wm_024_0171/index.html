@@ -15,8 +15,8 @@
 
 <h3>6.1. Mother Node</h3>
 
-<p><a id="wm_024_0172"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>tdelay_d * node_tdelay_mother(pw_node *node, int nloops);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void tdelay_compute(pw_node *node)
+<p><a id="wm_024_0172"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>tdelay_d * node_tdelay_mother(gf_node *node, int nloops);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void tdelay_compute(gf_node *node)
 {
     tdelay_d *td;
     int blksize;
@@ -25,8 +25,8 @@
     int event_tick;
     int rc;
 
-    td = pw_node_get_data(node);
-    blksize = pw_node_blksize(node);
+    td = gf_node_get_data(node);
+    blksize = gf_node_blksize(node);
 
     event_tick = 0;
     clock_tick = 0;
@@ -44,14 +44,14 @@
 
     for (n = 0; n &lt; blksize; n++) {
 
-        rc = pw_cable_get(td-&gt;in, n) != 0 && !event_tick;
+        rc = gf_cable_get(td-&gt;in, n) != 0 && !event_tick;
 
         if (rc) {
             event_tick = 1;
             tdelay_trigger_loop(td, n);
         }
 
-        rc = pw_cable_get(td-&gt;clk, n) != 0 && !clock_tick;
+        rc = gf_cable_get(td-&gt;clk, n) != 0 && !clock_tick;
 
         if (rc) {
             clock_tick = 1;
@@ -60,50 +60,50 @@
     }
 }
 
-static void tdelay_destroy(pw_node *node)
+static void tdelay_destroy(gf_node *node)
 {
     tdelay_d *td;
     void *mem;
-    pw_patch *patch;
+    gf_patch *patch;
     int rc;
-    pw_node_cables_free(node);
+    gf_node_cables_free(node);
 
-    rc = pw_node_get_patch(node, &patch);
-    if (rc != PW_OK) return;
+    rc = gf_node_get_patch(node, &patch);
+    if (rc != GF_OK) return;
 
-    td = pw_node_get_data(node);
+    td = gf_node_get_data(node);
     if (td == NULL) return;
     mem = td-&gt;bank;
-    rc = pw_memory_free(patch, &mem);
-    if (rc != PW_OK) return;
+    rc = gf_memory_free(patch, &mem);
+    if (rc != GF_OK) return;
     mem = td;
-    pw_memory_free(patch, &mem);
+    gf_memory_free(patch, &mem);
 }
 
-tdelay_d * node_tdelay_mother(pw_node *node, int nloops)
+tdelay_d * node_tdelay_mother(gf_node *node, int nloops)
 {
     tdelay_d *td;
-    pw_patch *patch;
+    gf_patch *patch;
     int rc;
     void *mem;
     int i;
 
-    rc = pw_node_get_patch(node, &patch);
-    if (rc != PW_OK) return NULL;
+    rc = gf_node_get_patch(node, &patch);
+    if (rc != GF_OK) return NULL;
 
     mem = NULL;
-    rc = pw_memory_alloc(patch, sizeof(tdelay_d), &mem);
+    rc = gf_memory_alloc(patch, sizeof(tdelay_d), &mem);
 
-    if (rc != PW_OK) return NULL;
+    if (rc != GF_OK) return NULL;
     td = mem;
 
-    rc = pw_memory_alloc(patch,
+    rc = gf_memory_alloc(patch,
                          sizeof(tdelay_loop) * nloops,
                          &mem);
 
-    if (rc != PW_OK) {
+    if (rc != GF_OK) {
         mem = td;
-        pw_memory_free(patch, &mem);
+        gf_memory_free(patch, &mem);
         return NULL;
     }
 
@@ -118,29 +118,29 @@ tdelay_d * node_tdelay_mother(pw_node *node, int nloops)
         tdelay_loop_init(&td-&gt;bank[i]);
     }
 
-    pw_node_cables_alloc(node, 4);
+    gf_node_cables_alloc(node, 4);
 &lt;&lt;bind_cables&gt;&gt;
 
-    pw_node_set_data(node, td);
-    pw_node_set_destroy(node, tdelay_destroy);
-    pw_node_set_compute(node, tdelay_compute);
+    gf_node_set_data(node, td);
+    gf_node_set_destroy(node, tdelay_destroy);
+    gf_node_set_compute(node, tdelay_compute);
     return td;
 }</pre></code>
 
 <h3>6.2. Loop Node</h3>
 
-<p><a id="wm_024_0179"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int node_tdelay_loop(pw_node *node, tdelay_d *td, int loop);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void loop_compute(pw_node *node)
+<p><a id="wm_024_0179"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int node_tdelay_loop(gf_node *node, tdelay_d *td, int loop);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void loop_compute(gf_node *node)
 {
     int n;
     int blksize;
-    pw_cable *out;
-    PWFLT tick;
+    gf_cable *out;
+    GFFLT tick;
     tdelay_loop *lp;
 
-    pw_node_get_cable(node, 0, &out);
-    blksize = pw_node_blksize(node);
-    lp = pw_node_get_data(node);
+    gf_node_get_cable(node, 0, &out);
+    blksize = gf_node_blksize(node);
+    lp = gf_node_get_data(node);
 
     for (n = 0; n &lt; blksize; n++) {
         tick = 0;
@@ -149,20 +149,20 @@ tdelay_d * node_tdelay_mother(pw_node *node, int nloops)
             tick = lp-&gt;energy;
         }
 
-        pw_cable_set(out, n, tick);
+        gf_cable_set(out, n, tick);
     }
 }
 
-int node_tdelay_loop(pw_node *node, tdelay_d *td, int loop)
+int node_tdelay_loop(gf_node *node, tdelay_d *td, int loop)
 {
     if (loop &gt;= td-&gt;nloops) {
-        return PW_NOT_OK;
+        return GF_NOT_OK;
     }
-    pw_node_cables_alloc(node, 1);
-    pw_node_set_block(node, 0);
-    pw_node_set_data(node, &td-&gt;bank[loop]);
-    pw_node_set_compute(node, loop_compute);
-    return PW_OK;
+    gf_node_cables_alloc(node, 1);
+    gf_node_set_block(node, 0);
+    gf_node_set_data(node, &td-&gt;bank[loop]);
+    gf_node_set_compute(node, loop_compute);
+    return GF_OK;
 }</pre></code>
 <p></p>
 <br>

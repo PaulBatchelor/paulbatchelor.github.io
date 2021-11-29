@@ -9,7 +9,7 @@
 <body>
 <div id="main">
 
-<h2>9. Grid Patchwerk Nodes</h2>
+<h2>9. Grid Graforge Nodes</h2>
 
 <p><a id="wm_009_0151"></a></p>
 
@@ -17,57 +17,57 @@
 
 <p><a id="wm_009_0152"></a></p>
 
-<h4>9.1.1. Gridstate Patchwerk Node</h4>
+<h4>9.1.1. Gridstate Graforge Node</h4>
 
 <p><a id="wm_009_0153"></a></p>
 
 <h5>9.1.1.1. Gridstate Node Function</h5>
 
-<p><a id="wm_009_0154"></a><div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_gridstate(pw_node *node, monolith_page *pg);</pre></code>
+<p><a id="wm_009_0154"></a><div><b><i>&lt;&lt;grid_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_gridstate(gf_node *node, monolith_page *pg);</pre></code>
 <div><b><i>&lt;&lt;grid_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;gridstate_node_functions&gt;&gt;
-static int node_gridstate(pw_node *node, monolith_page *pg)
+static int node_gridstate(gf_node *node, monolith_page *pg)
 {
-    pw_node_cables_alloc(node, 3);
-    pw_node_set_block(node, 2);
-    pw_node_set_data(node, pg);
-    pw_node_set_destroy(node, gridstate_destroy);
-    pw_node_set_compute(node, gridstate_compute);
+    gf_node_cables_alloc(node, 3);
+    gf_node_set_block(node, 2);
+    gf_node_set_data(node, pg);
+    gf_node_set_destroy(node, gridstate_destroy);
+    gf_node_set_compute(node, gridstate_compute);
     /* TODO: "pin" page here */
-    return PW_OK;
+    return GF_OK;
 }</pre></code>
 
 <h5>9.1.1.2. Gridstate Compute</h5>
 
-<p><a id="wm_009_0161"></a><div><b><i>&lt;&lt;gridstate_node_functions&gt;&gt;=</i></b></div><pre><code>static void gridstate_compute(pw_node *node)
+<p><a id="wm_009_0161"></a><div><b><i>&lt;&lt;gridstate_node_functions&gt;&gt;=</i></b></div><pre><code>static void gridstate_compute(gf_node *node)
 {
     int blksize;
     int s;
-    PWFLT s_x, s_y, s_out;
-    pw_cable *x, *y, *out;
+    GFFLT s_x, s_y, s_out;
+    gf_cable *x, *y, *out;
     monolith_page *pg;
     page_grid_d *grid;
 
-    blksize = pw_node_blksize(node);
-    pw_node_get_cable(node, 0, &x);
-    pw_node_get_cable(node, 1, &y);
-    pw_node_get_cable(node, 2, &out);
-    pg = pw_node_get_data(node);
+    blksize = gf_node_blksize(node);
+    gf_node_get_cable(node, 0, &x);
+    gf_node_get_cable(node, 1, &y);
+    gf_node_get_cable(node, 2, &out);
+    pg = gf_node_get_data(node);
     grid = monolith_page_data_get(pg);
 
     for(s = 0; s &lt; blksize; s++) {
-        s_x = pw_cable_get(x, s);
-        s_y = pw_cable_get(y, s);
+        s_x = gf_cable_get(x, s);
+        s_y = gf_cable_get(y, s);
         s_out = monolith_page_mstate_get(grid-&gt;mstate, (int)s_x, (int)s_y);
-        pw_cable_set(out, s, s_out);
+        gf_cable_set(out, s, s_out);
     }
 }</pre></code>
 
 <h5>9.1.1.3. Gridstate Destroy</h5>
 
-<p><a id="wm_009_0165"></a><div><b><i>&lt;&lt;gridstate_node_functions&gt;&gt;=</i></b></div><pre><code>static void gridstate_destroy(pw_node *node)
+<p><a id="wm_009_0165"></a><div><b><i>&lt;&lt;gridstate_node_functions&gt;&gt;=</i></b></div><pre><code>static void gridstate_destroy(gf_node *node)
 {
     /* TODO: "unpin" page here */
-    pw_node_cables_free(node);
+    gf_node_cables_free(node);
 }</pre></code>
 
 <h4>9.1.2. Gridstate Runt Word</h4>
@@ -77,14 +77,14 @@ static int node_gridstate(pw_node *node, monolith_page *pg)
 {
     monolith_d *m;
     runt_int rc;
-    rpw_param x;
-    rpw_param y;
+    rgf_param x;
+    rgf_param y;
     const char *name;
     runt_stacklet *s;
     runt_stacklet *out;
     monolith_page *pg;
-    pw_patch *patch;
-    pw_node *node;
+    gf_patch *patch;
+    gf_node *node;
 
     m = runt_to_cptr(p);
     rc = runt_ppop(vm, &s);
@@ -92,10 +92,10 @@ static int node_gridstate(pw_node *node, monolith_page *pg)
 
     name = runt_to_string(s-&gt;p);
 
-    rc = rpw_get_param(vm, &y);
+    rc = rgf_get_param(vm, &y);
     RUNT_ERROR_CHECK(rc);
 
-    rc = rpw_get_param(vm, &x);
+    rc = rgf_get_param(vm, &x);
     RUNT_ERROR_CHECK(rc);
 
     rc = runt_ppush(vm, &out);
@@ -106,16 +106,16 @@ static int node_gridstate(pw_node *node, monolith_page *pg)
                                    is_grid, &pg);
     RUNT_ERROR_CHECK(rc);
 
-    patch = monolith_patchwerk_get(m);
+    patch = monolith_graforge_get(m);
 
-    rc = pw_patch_new_node(patch, &node);
-    PW_RUNT_ERROR_CHECK(rc);
+    rc = gf_patch_new_node(patch, &node);
+    GF_RUNT_ERROR_CHECK(rc);
 
     node_gridstate(node, pg);
 
-    rpw_set_param(vm, node, &x, 0);
-    rpw_set_param(vm, node, &y, 1);
-    rpw_push_output(vm, node, out, 2);
+    rgf_set_param(vm, node, &x, 0);
+    rgf_set_param(vm, node, &y, 1);
+    rgf_push_output(vm, node, out, 2);
 
     return RUNT_OK;
 }</pre></code>

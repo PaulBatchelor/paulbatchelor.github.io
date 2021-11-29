@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>5. sqlar_wavdraw</h2>
+
+<p><a id="wm_025_0066"></a>The <code>sqlar_wavdraw</code> function uses the wavdraw facilities
+in monolith to draw a waveform from a wavfile in a sqlar
+file.
+</p>
+<p>This assumes that btprnt and a btprnt region has been
+initialized prior to running this function.
+</p>
+<p>To keep things consistent with the
+rest of the functions here, this returns
+TRUE (1) on sucess, FALSE (0) on error.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>typedef struct btprnt_region btprnt_region;
+void btprnt_wavdraw_drwav(btprnt_region *r,
+                          drwav *wav,
+                          int c);
+
+int sqlar_wavdraw(sqlite3 *db,
+                  const char *filename,
+                  btprnt_region *r,
+                  int c)
+{
+    char *buf;
+    int sz;
+    drwav wav;
+    int rc;
+
+    sz = 0;
+    buf = NULL;
+    rc = sqlar_extract_to_buffer_db(db, filename, &buf, &sz);
+
+    if (rc != SQLITE_OK) {
+        if (buf != NULL) free(buf);
+        fprintf(stderr, "SQLite problems\n");
+        return SP_NOT_OK;
+    }
+
+    if (!drwav_init_memory(&wav, buf, sz)) {
+        fprintf(stderr, "drwav could not initialize\n");
+        free(buf);
+        return SP_NOT_OK;
+    }
+
+    btprnt_wavdraw_drwav(r, &wav, c);
+
+    drwav_uninit(&wav);
+    free(buf);
+    return SP_OK;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_025_0040">prev</a> | <a href="/proj/monolith/program/wm_025">home</a> | next</p>
+</div>
+</body>
+</html>

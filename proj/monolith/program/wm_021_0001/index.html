@@ -15,39 +15,39 @@ truncates it to an on/off state, then sends it out at
 full scale.
 </p>
 <div><b><i>&lt;&lt;bitter.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
-#include "patchwerk.h"
-static void compute(pw_node *node)
+#include "graforge.h"
+static void compute(gf_node *node)
 {
     int n;
     int blksize;
-    pw_cable *in;
-    pw_cable *out;
-    PWFLT tmp;
+    gf_cable *in;
+    gf_cable *out;
+    GFFLT tmp;
 
-    blksize = pw_node_blksize(node);
+    blksize = gf_node_blksize(node);
 
     in = NULL;
     out = NULL;
-    pw_node_get_cable(node, 0, &in);
-    pw_node_get_cable(node, 1, &out);
+    gf_node_get_cable(node, 0, &in);
+    gf_node_get_cable(node, 1, &out);
 
     for (n = 0; n &lt; blksize; n++) {
-        tmp = pw_cable_get(in, n);
+        tmp = gf_cable_get(in, n);
         tmp = (tmp + 1) * 0.5;
         if (tmp &lt; 0) tmp = 0;
         else if (tmp &gt; 1) tmp = 1;
         tmp = round(tmp);
         tmp = (2 * tmp) - 1;
-        pw_cable_set(out, n, tmp);
+        gf_cable_set(out, n, tmp);
     }
 }
 
-int node_bitter(pw_node *node)
+int node_bitter(gf_node *node)
 {
-    pw_node_cables_alloc(node, 2);
-    pw_node_set_block(node, 1);
-    pw_node_set_compute(node, compute);
-    return PW_OK;
+    gf_node_cables_alloc(node, 2);
+    gf_node_set_block(node, 1);
+    gf_node_set_compute(node, compute);
+    return GF_OK;
 }</pre></code>
 <p></p>
 <br>

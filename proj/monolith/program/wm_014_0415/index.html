@@ -36,9 +36,9 @@ static int trig_runt_loader(monolith_d *m)
 {
     monolith_d *m;
     runt_int rc;
-    rpw_param in;
-    pw_patch *patch;
-    pw_node *node;
+    rgf_param in;
+    gf_patch *patch;
+    gf_node *node;
     const char *name;
     runt_stacklet *s;
     monolith_page *pg;
@@ -50,7 +50,7 @@ static int trig_runt_loader(monolith_d *m)
 
     name = runt_to_string(s-&gt;p);
 
-    rc = rpw_get_param(vm, &in);
+    rc = rgf_get_param(vm, &in);
     RUNT_ERROR_CHECK(rc);
 
     rc = runt_monolith_lookup_page(vm, m,
@@ -60,12 +60,12 @@ static int trig_runt_loader(monolith_d *m)
 
     trig = monolith_page_data_get(pg);
 
-    patch = monolith_patchwerk_get(m);
-    rc = pw_patch_new_node(patch, &node);
-    PW_RUNT_ERROR_CHECK(rc);
+    patch = monolith_graforge_get(m);
+    rc = gf_patch_new_node(patch, &node);
+    GF_RUNT_ERROR_CHECK(rc);
     node_trigclk(node, trig);
 
-    rpw_set_param(vm, node, &in, 0);
+    rgf_set_param(vm, node, &in, 0);
     return RUNT_OK;
 }</pre></code>
 
@@ -76,8 +76,8 @@ static int trig_runt_loader(monolith_d *m)
 {
     monolith_d *m;
     runt_int rc;
-    pw_patch *patch;
-    pw_node *node;
+    gf_patch *patch;
+    gf_node *node;
     const char *name;
     runt_stacklet *s;
     monolith_page *pg;
@@ -96,9 +96,9 @@ static int trig_runt_loader(monolith_d *m)
 
     trig = monolith_page_data_get(pg);
 
-    patch = monolith_patchwerk_get(m);
-    rc = pw_patch_new_node(patch, &node);
-    PW_RUNT_ERROR_CHECK(rc);
+    patch = monolith_graforge_get(m);
+    rc = gf_patch_new_node(patch, &node);
+    GF_RUNT_ERROR_CHECK(rc);
     node_trigex(node, trig);
     return RUNT_OK;
 }</pre></code>
@@ -110,13 +110,13 @@ static int trig_runt_loader(monolith_d *m)
 {
     monolith_d *m;
     runt_int rc;
-    pw_patch *patch;
-    pw_node *node;
+    gf_patch *patch;
+    gf_node *node;
     const char *name;
     runt_stacklet *s;
     monolith_page *pg;
     page_trig_d *trig;
-    rpw_param pwire;
+    rgf_param pwire;
     int wire;
     runt_stacklet *out;
 
@@ -131,28 +131,28 @@ static int trig_runt_loader(monolith_d *m)
                                    is_trig, &pg);
     RUNT_ERROR_CHECK(rc);
 
-    rc = rpw_get_param(vm, &pwire);
+    rc = rgf_get_param(vm, &pwire);
     RUNT_ERROR_CHECK(rc);
 
-    if (!rpw_param_is_constant(&pwire)) {
+    if (!rgf_param_is_constant(&pwire)) {
         runt_print(vm, "wire must be a constant\n");
         return RUNT_NOT_OK;
     }
 
-    wire = rpw_param_get_constant(&pwire);
+    wire = rgf_param_get_constant(&pwire);
 
     rc = runt_ppush(vm, &out);
     RUNT_ERROR_CHECK(rc);
 
     trig = monolith_page_data_get(pg);
 
-    patch = monolith_patchwerk_get(m);
-    rc = pw_patch_new_node(patch, &node);
-    PW_RUNT_ERROR_CHECK(rc);
+    patch = monolith_graforge_get(m);
+    rc = gf_patch_new_node(patch, &node);
+    GF_RUNT_ERROR_CHECK(rc);
     rc = node_trigwget(node, trig, wire);
-    PW_RUNT_ERROR_CHECK(rc);
+    GF_RUNT_ERROR_CHECK(rc);
 
-    rpw_push_output(vm, node, out, 0);
+    rgf_push_output(vm, node, out, 0);
     return RUNT_OK;
 }</pre></code>
 
@@ -163,13 +163,13 @@ static int trig_runt_loader(monolith_d *m)
 {
     monolith_d *m;
     runt_int rc;
-    pw_patch *patch;
-    pw_node *node;
+    gf_patch *patch;
+    gf_node *node;
     const char *name;
     runt_stacklet *s;
     monolith_page *pg;
     page_trig_d *trig;
-    rpw_param pos;
+    rgf_param pos;
 
     m = runt_to_cptr(p);
     rc = runt_ppop(vm, &s);
@@ -182,20 +182,20 @@ static int trig_runt_loader(monolith_d *m)
                                    is_trig, &pg);
     RUNT_ERROR_CHECK(rc);
 
-    rc = rpw_get_param(vm, &pos);
+    rc = rgf_get_param(vm, &pos);
     RUNT_ERROR_CHECK(rc);
 
     trig = monolith_page_data_get(pg);
 
-    if (!rpw_param_is_constant(&pos)) {
+    if (!rgf_param_is_constant(&pos)) {
         runt_print(vm, "trigrex: pos must be a constant\n");
         return RUNT_NOT_OK;
     }
 
-    patch = monolith_patchwerk_get(m);
-    rc = pw_patch_new_node(patch, &node);
-    PW_RUNT_ERROR_CHECK(rc);
-    node_trigrex(node, trig, rpw_param_get_constant(&pos));
+    patch = monolith_graforge_get(m);
+    rc = gf_patch_new_node(patch, &node);
+    GF_RUNT_ERROR_CHECK(rc);
+    node_trigrex(node, trig, rgf_param_get_constant(&pos));
     return RUNT_OK;
 }</pre></code>
 <p></p>

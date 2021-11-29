@@ -9,71 +9,71 @@
 <body>
 <div id="main">
 
-<h2>6. Patchwerk and Soundpipe</h2>
+<h2>6. Graforge and Soundpipe</h2>
 
-<p><a id="wm_000_0439"></a>Patchwerk is the underlying audio engine used for synthesis.
+<p><a id="wm_000_0439"></a>Graforge is the underlying audio engine used for synthesis.
 It is controlled via the Runt programming language.
 </p>
 
-<h3>6.1. Patchwerk Top</h3>
+<h3>6.1. Graforge Top</h3>
 
-<p><a id="wm_000_0441"></a>The top-level data struct for patchwerk is <code>pw_patch</code>.
+<p><a id="wm_000_0441"></a>The top-level data struct for graforge is <code>gf_patch</code>.
 </p>
-<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>pw_patch *patch;</pre></code>
+<div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>gf_patch *patch;</pre></code>
 <p></p>
 <p>This patch is required by anything that wishes to create a
 node in the audio graph. It can be retrieved using the
-function <code>monolith_patchwerk_get</code>.
-<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>pw_patch * monolith_patchwerk_get(monolith_d *m);</pre></code>
-<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>pw_patch * monolith_patchwerk_get(monolith_d *m)
+function <code>monolith_graforge_get</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>gf_patch * monolith_graforge_get(monolith_d *m);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>gf_patch * monolith_graforge_get(monolith_d *m)
 {
    return m-&gt;patch;
 }</pre></code>
 <p></p>
-<p>Patchwerk data can be returned as an unsafe type for use in
-Janet via <code>monolith/patchwerk</code>. From there, it can be used
-with the Patchwerk Janet API.
+<p>Graforge data can be returned as an unsafe type for use in
+Janet via <code>monolith/graforge</code>. From there, it can be used
+with the Graforge Janet API.
 <div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
-"monolith/patchwerk",
-j_patchwerk,
-"Returns patchwerk data."
+"monolith/graforge",
+j_graforge,
+"Returns graforge data."
 },</pre></code>
-<div><b><i>&lt;&lt;janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_patchwerk(int32_t argc, Janet *argv)
+<div><b><i>&lt;&lt;janet_functions&gt;&gt;=</i></b></div><pre><code>static Janet j_graforge(int32_t argc, Janet *argv)
 {
     monolith_d *m;
     m = monolith_data_get();
-    return janet_wrap_pointer(monolith_patchwerk_get(m));
+    return janet_wrap_pointer(monolith_graforge_get(m));
 }</pre></code>
 <p></p>
-<p>Patchwerk can be returned in scheme with <code>monolith:patchwerk</code>.
+<p>Graforge can be returned in scheme with <code>monolith:graforge</code>.
 </p>
-<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:patchwerk", pp_patchwerk, 0, 0, {___,___,___}},</pre></code>
-<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_patchwerk(cell p) {
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:graforge", pp_graforge, 0, 0, {___,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_graforge(cell p) {
     monolith_d *m;
     m = monolith_data_get();
-    return s9_make_pointer(monolith_patchwerk_get(m));
+    return s9_make_pointer(monolith_graforge_get(m));
 }</pre></code>
 <p></p>
 <p>Soundpipe, a DSP library, is the main synthesis library used
-by inside of patchwerk. It has a core data type called
+by inside of graforge. It has a core data type called
 <code>sp_data</code>.
 </p>
 <div><b><i>&lt;&lt;struct_contents&gt;&gt;=</i></b></div><pre><code>sp_data *sp;</pre></code>
 <p></p>
-<p>The soundpipe and patchwerk structs are allocated and
+<p>The soundpipe and graforge structs are allocated and
 initialized at init-time, and freed at cleanup.
 The samplerate is set to a default value of
 44100. This can be set again with <code>monolith_sr_set</code>.
 </p>
-<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;patch = malloc(pw_patch_size());
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>m-&gt;patch = malloc(gf_patch_size());
 sp_create(&m-&gt;sp);
 monolith_sr_set(m, 44100);
-pw_patch_init(m-&gt;patch, MONOLITH_BLKSIZE);
-pw_patch_alloc(m-&gt;patch, 8, 10);
-pw_patch_srate_set(m-&gt;patch, m-&gt;sr);
-pw_patch_data_set(m-&gt;patch, m-&gt;sp);</pre></code>
-<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>pw_patch_destroy(m-&gt;patch);
-pw_patch_free_nodes(m-&gt;patch);
+gf_patch_init(m-&gt;patch, MONOLITH_BLKSIZE);
+gf_patch_alloc(m-&gt;patch, 8, 10);
+gf_patch_srate_set(m-&gt;patch, m-&gt;sr);
+gf_patch_data_set(m-&gt;patch, m-&gt;sp);</pre></code>
+<div><b><i>&lt;&lt;cleanup&gt;&gt;=</i></b></div><pre><code>gf_patch_destroy(m-&gt;patch);
+gf_patch_free_nodes(m-&gt;patch);
 sp_destroy(&m-&gt;sp);
 free(m-&gt;patch);</pre></code>
 
@@ -87,7 +87,7 @@ unsigned int monolith_sr_get(monolith_d *sr);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_sr_set(monolith_d *m, unsigned int sr)
 {
     m-&gt;sr = sr;
-    pw_patch_srate_set(m-&gt;patch, m-&gt;sr);
+    gf_patch_srate_set(m-&gt;patch, m-&gt;sr);
     m-&gt;sp-&gt;sr = m-&gt;sr;
 }
 
@@ -105,16 +105,16 @@ unsigned int monolith_sr_get(monolith_d *m)
 }</pre></code>
 <p></p>
 <p>The function <code>monolith:pw-srate-get</code> gets the samplerate
-from a patchwerk pointer (presumably via <code>monolith:patchwerk</code>).
+from a graforge pointer (presumably via <code>monolith:graforge</code>).
 This is mostly for testing purposes.
 </p>
-<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:pw-srate-get", pp_pw_srate_get, 1, 1, {S9_T_POINTER,___,___}},</pre></code>
-<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_pw_srate_get(cell x)
+<div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:pw-srate-get", pp_gf_srate_get, 1, 1, {S9_T_POINTER,___,___}},</pre></code>
+<div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_gf_srate_get(cell x)
 {
     int sr;
-    pw_patch *patch;
+    gf_patch *patch;
     patch = s9_to_pointer(car(x));
-    sr = pw_patch_srate_get(patch);
+    sr = gf_patch_srate_get(patch);
     return s9_make_integer(sr);
 }</pre></code>
 
@@ -229,7 +229,7 @@ int monolith_ftbl_create(monolith_d *m,
     return UNSPECIFIC;
 }</pre></code>
 
-<h5>6.4.1.3. ftable crecation in janet (monolith/ftbl-create)</h5>
+<h5>6.4.1.3. ftable creation in janet (monolith/ftbl-create)</h5>
 
 <p><a id="wm_000_0512"></a><div><b><i>&lt;&lt;core_janet_entries&gt;&gt;=</i></b></div><pre><code>{
 "monolith/ftbl-create",
@@ -325,7 +325,7 @@ stack.
     rc = monolith_ftbl_get(m, str, strlen(str), &ft);
     if (rc != MONOLITH_OK) return RUNT_NOT_OK;
 
-    rpw_stacklet_ftable(vm, s, ft);
+    rgf_stacklet_ftable(vm, s, ft);
     return RUNT_OK;
 }</pre></code>
 
@@ -414,7 +414,7 @@ stack (presumably an ftable), and save it to disk.
     vm = monolith_runt_vm(m);
     filename = s9_string(car(x));
 
-    rc = rpw_get_ftable(vm, &ft);
+    rc = rgf_get_ftable(vm, &ft);
     MONOLITH_SCHEME_ERROR_CHECK(rc, "Could not get ftable");
 
     rc = monolith_ftbl_save(ft, filename);
@@ -449,7 +449,7 @@ stack (presumably an ftable), and load it from disk.
     vm = monolith_runt_vm(m);
     filename = s9_string(car(x));
 
-    rc = rpw_get_ftable(vm, &ft);
+    rc = rgf_get_ftable(vm, &ft);
     MONOLITH_SCHEME_ERROR_CHECK(rc, "Could not get ftable");
 
     rc = monolith_ftbl_load(ft, filename);
@@ -461,9 +461,22 @@ stack (presumably an ftable), and load it from disk.
     return UNSPECIFIC;
 }</pre></code>
 
-<h3>6.5. Re-allocating patchwerk</h3>
+<h4>6.4.5. initializaing an ftable dictionary entry</h4>
 
-<p><a id="wm_000_0555"></a>For graphics, the block size in patchwerk needs
+<p><a id="wm_000_0555"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef SOUNDPIPE_H
+void monolith_dict_entry_ftbl(monolith_dict_entry *ent,
+                              sp_ftbl *ft);
+#endif</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_dict_entry_ftbl(monolith_dict_entry *ent,
+                              sp_ftbl *ft)
+{
+    ent-&gt;type = MONOLITH_ENTRY_FTBL;
+    ent-&gt;ud = ft;
+}</pre></code>
+
+<h3>6.5. Re-allocating graforge</h3>
+
+<p><a id="wm_000_0560"></a>For graphics, the block size in graforge needs
 to be changed from the default in order to better sync up
 with frames. Call this with caution, preferrably before
 starting anything.
@@ -471,7 +484,7 @@ starting anything.
 
 <h4>6.5.1. Reallocation in C</h4>
 
-<p><a id="wm_000_0557"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_realloc(monolith_d *m,
+<p><a id="wm_000_0562"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_realloc(monolith_d *m,
                       int nbuf,
                       int stack_size,
                       int blksize);</pre></code>
@@ -480,12 +493,12 @@ starting anything.
                       int stack_size,
                       int blksize)
 {
-    pw_patch_realloc(m-&gt;patch, nbuf, stack_size, blksize);
+    gf_patch_realloc(m-&gt;patch, nbuf, stack_size, blksize);
 }</pre></code>
 
 <h4>6.5.2. Reallocation in Scheme</h4>
 
-<p><a id="wm_000_0562"></a><div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:realloc", pp_realloc, 3, 3, {INT,INT,INT}},</pre></code>
+<p><a id="wm_000_0567"></a><div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:realloc", pp_realloc, 3, 3, {INT,INT,INT}},</pre></code>
 <div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_realloc(cell x)
 {
     int nbuf, nstack, blksize;
@@ -502,28 +515,28 @@ starting anything.
     return UNSPECIFIC;
 }</pre></code>
 
-<h3>6.6. Resetting Patchwerk Error Flag</h3>
+<h3>6.6. Resetting Graforge Error Flag</h3>
 
-<p><a id="wm_000_0567"></a>When Patchwerk has a global unrecoverable error
+<p><a id="wm_000_0572"></a>When Graforge has a global unrecoverable error
 (such as running out of buffers in the buffer pool), it sets
 a flag that must explicitly be reset in order to work.
 </p>
 
 <h4>6.6.1. Reset the PW error Flag in C</h4>
 
-<p><a id="wm_000_0569"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_reset_err(monolith_d *m);</pre></code>
+<p><a id="wm_000_0574"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void monolith_reset_err(monolith_d *m);</pre></code>
 <p></p>
 <p>A reset is a matter of explicitely setting things back to
-<code>PW_OK</code>.
+<code>GF_OK</code>.
 </p>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void monolith_reset_err(monolith_d *m)
 {
-    pw_patch_err(m-&gt;patch, PW_OK);
+    gf_patch_err(m-&gt;patch, GF_OK);
 }</pre></code>
 
 <h4>6.6.2. Reset the PW error flag in Scheme</h4>
 
-<p><a id="wm_000_0575"></a>Done with <code>monolith:reset-err</code>.
+<p><a id="wm_000_0580"></a>Done with <code>monolith:reset-err</code>.
 </p>
 <div><b><i>&lt;&lt;primitive_entries&gt;&gt;=</i></b></div><pre><code>{"monolith:reset-err", pp_reset_err, 0, 0, {___,___,___}},</pre></code>
 <div><b><i>&lt;&lt;scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_reset_err(cell x)
@@ -538,7 +551,7 @@ a flag that must explicitly be reset in order to work.
 <br>
 <p><hr>
 
-<a href="/proj/monolith/program/wm_000_0221">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_0581">next</a></p>
+<a href="/proj/monolith/program/wm_000_0221">prev</a> | <a href="/proj/monolith/program/wm_000">home</a> | <a href="/proj/monolith/program/wm_000_0586">next</a></p>
 </div>
 </body>
 </html>

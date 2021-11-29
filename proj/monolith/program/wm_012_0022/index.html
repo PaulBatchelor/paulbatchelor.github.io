@@ -51,9 +51,9 @@ the line segment.
 
 <h5>3.1.3.2. Value</h5>
 
-<p><a id="wm_012_0054"></a>The value of a point is a normalized <code>PWFLT</code> floating point
+<p><a id="wm_012_0054"></a>The value of a point is a normalized <code>GFFLT</code> floating point
 value between 0 and 1.
-<div><b><i>&lt;&lt;line16_point_contents&gt;&gt;=</i></b></div><pre><code>PWFLT val;</pre></code>
+<div><b><i>&lt;&lt;line16_point_contents&gt;&gt;=</i></b></div><pre><code>GFFLT val;</pre></code>
 <div><b><i>&lt;&lt;line16_point_init&gt;&gt;=</i></b></div><pre><code>pt-&gt;val = 0;</pre></code>
 
 <h5>3.1.3.3. Duration</h5>
@@ -61,7 +61,7 @@ value between 0 and 1.
 <p><a id="wm_012_0060"></a>The duration tells how long the segment is, and by
 definition also illustrates how long the interpolation
 time to the next value will be.
-<div><b><i>&lt;&lt;line16_point_contents&gt;&gt;=</i></b></div><pre><code>PWFLT dur;</pre></code>
+<div><b><i>&lt;&lt;line16_point_contents&gt;&gt;=</i></b></div><pre><code>GFFLT dur;</pre></code>
 <div><b><i>&lt;&lt;line16_point_init&gt;&gt;=</i></b></div><pre><code>pt-&gt;dur = 0;</pre></code>
 
 <h5>3.1.3.4. Aux Values</h5>
@@ -69,7 +69,7 @@ time to the next value will be.
 <p><a id="wm_012_0066"></a>These are two aux values. These will be controllable
 via the arc. These will map to any special point
 functionalities that may arise in the future.
-<div><b><i>&lt;&lt;line16_point_contents&gt;&gt;=</i></b></div><pre><code>PWFLT aux[2];</pre></code>
+<div><b><i>&lt;&lt;line16_point_contents&gt;&gt;=</i></b></div><pre><code>GFFLT aux[2];</pre></code>
 <div><b><i>&lt;&lt;line16_point_init&gt;&gt;=</i></b></div><pre><code>pt-&gt;aux[0] = 0;
 pt-&gt;aux[1] = 0;</pre></code>
 
@@ -77,9 +77,9 @@ pt-&gt;aux[1] = 0;</pre></code>
 
 <p><a id="wm_012_0072"></a>Every point has their own playback rate amount.
 The idea is that this can be modified inside of
-patchwerk. By default, this is set to be 1 (normal
+graforge. By default, this is set to be 1 (normal
 speed).
-<div><b><i>&lt;&lt;line16_point_contents&gt;&gt;=</i></b></div><pre><code>PWFLT rate;</pre></code>
+<div><b><i>&lt;&lt;line16_point_contents&gt;&gt;=</i></b></div><pre><code>GFFLT rate;</pre></code>
 <div><b><i>&lt;&lt;line16_point_init&gt;&gt;=</i></b></div><pre><code>pt-&gt;rate = 1;</pre></code>
 
 <h5>3.1.3.6. Type</h5>
@@ -170,18 +170,18 @@ lines available for programming.
 
 <h4>3.3.4. Global Playback Rate</h4>
 
-<p><a id="wm_012_0143"></a><div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>PWFLT rate;</pre></code>
+<p><a id="wm_012_0143"></a><div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>GFFLT rate;</pre></code>
 <div><b><i>&lt;&lt;line16_init&gt;&gt;=</i></b></div><pre><code>line16_rate_set(line16, 1);</pre></code>
 <p>This can be accessed with <code>line16_rate_set</code> and
 <code>line16_rate_get</code>.
-<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_rate_set(page_line16_d *l, PWFLT x);
-static PWFLT line16_rate_get(page_line16_d *l);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_rate_set(page_line16_d *l, PWFLT x)
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_rate_set(page_line16_d *l, GFFLT x);
+static GFFLT line16_rate_get(page_line16_d *l);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_rate_set(page_line16_d *l, GFFLT x)
 {
     l-&gt;rate = x;
 }
 
-static PWFLT line16_rate_get(page_line16_d *l)
+static GFFLT line16_rate_get(page_line16_d *l)
 {
     return l-&gt;rate;
 }</pre></code>
@@ -244,7 +244,7 @@ it is only initialized and not time has passed.
 <h5>3.3.10.2. Aux Timer</h5>
 
 <p><a id="wm_012_0191"></a>This is used to rate limit updated values coming from
-patchwerk nodes. To prevent weird interruptions and
+graforge nodes. To prevent weird interruptions and
 glitches, a separate timer is used. This only needs to be
 set to 0.
 <div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>double aux_timer;</pre></code>
@@ -260,34 +260,34 @@ set to 0.
 <h4>3.3.12. 1 / SR</h4>
 
 <p><a id="wm_012_0205"></a>This is a constant that is the inverse of the sampling rate.
-<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>PWFLT onedsr;</pre></code>
-<div><b><i>&lt;&lt;line16_init&gt;&gt;=</i></b></div><pre><code>line16-&gt;onedsr = 1.0 / pw_patch_srate_get(patch);</pre></code>
+<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>GFFLT onedsr;</pre></code>
+<div><b><i>&lt;&lt;line16_init&gt;&gt;=</i></b></div><pre><code>line16-&gt;onedsr = 1.0 / gf_patch_srate_get(patch);</pre></code>
 
 <h4>3.3.13. Counter</h4>
 
 <p><a id="wm_012_0211"></a>This is the counter, stored as a floating point value, in
 seconds. Stores the current duration of the line segment.
-<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>PWFLT counter;</pre></code>
+<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>GFFLT counter;</pre></code>
 <div><b><i>&lt;&lt;line16_init&gt;&gt;=</i></b></div><pre><code>line16-&gt;counter = 0;</pre></code>
 
-<h4>3.3.14. Patchwerk Cable</h4>
+<h4>3.3.14. Graforge Cable</h4>
 
-<p><a id="wm_012_0217"></a>This holds a pre-allocated patchwerk cable with
+<p><a id="wm_012_0217"></a>This holds a pre-allocated graforge cable with
 an internal block. At every render block, the line
 gets computed exactly once, and it is written to this
 cable.. Other nodes then retrieve the block and copy
 it over to their internal block.
-<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>pw_cable out;
-PWFLT *blk;</pre></code>
-<p>Still need to initialize with patchwerk block.
+<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>gf_cable out;
+GFFLT *blk;</pre></code>
+<p>Still need to initialize with graforge block.
 Also need to allocate and bind a block.
-<div><b><i>&lt;&lt;line16_init&gt;&gt;=</i></b></div><pre><code>pw_cable_init(NULL, &line16-&gt;out);
+<div><b><i>&lt;&lt;line16_init&gt;&gt;=</i></b></div><pre><code>gf_cable_init(NULL, &line16-&gt;out);
 line16-&gt;blk = calloc(1,
-                     pw_patch_blksize(patch) *
-                     sizeof(PWFLT));
-pw_cable_set_block(&line16-&gt;out,
+                     gf_patch_blksize(patch) *
+                     sizeof(GFFLT));
+gf_cable_set_block(&line16-&gt;out,
                    line16-&gt;blk,
-                   pw_patch_blksize(patch));</pre></code>
+                   gf_patch_blksize(patch));</pre></code>
 <p>Said block needs to be freed here.
 <div><b><i>&lt;&lt;line16_cleanup&gt;&gt;=</i></b></div><pre><code>free(line16-&gt;blk);</pre></code>
 
@@ -432,31 +432,31 @@ bank.
 
 <p><a id="wm_012_0264"></a>This will set the range of possible durations for the line
 segments.
-<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>PWFLT min;
-PWFLT max;</pre></code>
+<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>GFFLT min;
+GFFLT max;</pre></code>
 <div><b><i>&lt;&lt;line16_init&gt;&gt;=</i></b></div><pre><code>line16_dur_min_set(line16, 0.1);
 line16_dur_max_set(line16, 10);</pre></code>
 <p></p>
 <p>These are accessible through setters and getters, defined
 below.
 </p>
-<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_dur_min_set(page_line16_d *l, PWFLT val);
-static void line16_dur_max_set(page_line16_d *l, PWFLT val);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_dur_min_set(page_line16_d *l, PWFLT val)
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_dur_min_set(page_line16_d *l, GFFLT val);
+static void line16_dur_max_set(page_line16_d *l, GFFLT val);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_dur_min_set(page_line16_d *l, GFFLT val)
 {
     l-&gt;min = val;
 }
-static void line16_dur_max_set(page_line16_d *l, PWFLT val)
+static void line16_dur_max_set(page_line16_d *l, GFFLT val)
 {
     l-&gt;max = val;
 }</pre></code>
-<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_dur_min_get(page_line16_d *l);
-static PWFLT line16_dur_max_get(page_line16_d *l);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_dur_min_get(page_line16_d *l)
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_dur_min_get(page_line16_d *l);
+static GFFLT line16_dur_max_get(page_line16_d *l);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_dur_min_get(page_line16_d *l)
 {
     return l-&gt;min;
 }
-static PWFLT line16_dur_max_get(page_line16_d *l)
+static GFFLT line16_dur_max_get(page_line16_d *l)
 {
     return l-&gt;max;
 }</pre></code>
@@ -473,7 +473,7 @@ naturally go through a kind of sample and hold. Holding
 onto values for the duration of the line is more musical
 than if it were constantly changing because it allows
 more contrast to happen.
-<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>PWFLT aux_cache[2];</pre></code>
+<div><b><i>&lt;&lt;page_line16_contents&gt;&gt;=</i></b></div><pre><code>GFFLT aux_cache[2];</pre></code>
 <div><b><i>&lt;&lt;line16_init&gt;&gt;=</i></b></div><pre><code>line16-&gt;aux_cache[0] = 0;
 line16-&gt;aux_cache[1] = 0;</pre></code>
 
@@ -518,9 +518,9 @@ occurs, the sample position is stored.
 <div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void page_line16_init(monolith_page *pg, page_line16_d *line16)
 {
     int i;
-    pw_patch *patch;
+    gf_patch *patch;
 
-    patch = monolith_page_patchwerk(pg);
+    patch = monolith_page_graforge(pg);
 &lt;&lt;line16_init&gt;&gt;
     line16_redraw_points(line16);
     line16_select_point(line16, line16-&gt;selected_point);

@@ -9,7 +9,7 @@
 <body>
 <div id="main">
 
-<h2>10. DONE Step Patchwerk Nodes</h2>
+<h2>10. DONE Step Graforge Nodes</h2>
 
 <p><a id="wm_011_0548"></a>CLOSED: [2019-02-24 Sun 14:17]
 </p>
@@ -24,32 +24,32 @@ the clock triggers, it will step the sequence forward in time.
 <h4>10.1.1. DONE Step Clock Node Setup</h4>
 
 <p><a id="wm_011_0552"></a>CLOSED: [2019-02-23 Sat 12:22]
-<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_stepclk(pw_node *node, page_step_d *step);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_stepclk(pw_node *node, page_step_d *step)
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_stepclk(gf_node *node, page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_stepclk(gf_node *node, page_step_d *step)
 {
-    pw_node_cables_alloc(node, 1);
-    pw_node_set_compute(node, stepclk_compute);
-    pw_node_set_destroy(node, stepclk_destroy);
-    pw_node_set_data(node, step);
+    gf_node_cables_alloc(node, 1);
+    gf_node_set_compute(node, stepclk_compute);
+    gf_node_set_destroy(node, stepclk_destroy);
+    gf_node_set_data(node, step);
 }</pre></code>
 
 <h4>10.1.2. DONE Step Clock Node Compute</h4>
 
 <p><a id="wm_011_0558"></a>CLOSED: [2019-02-23 Sat 12:22]
-<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepclk_compute(pw_node *node);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepclk_compute(pw_node *node)
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepclk_compute(gf_node *node);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepclk_compute(gf_node *node)
 {
     int s;
     int blksize;
-    pw_cable *in;
+    gf_cable *in;
     page_step_d *step;
 
-    pw_node_get_cable(node, 0, &in);
-    blksize = pw_node_blksize(node);
-    step = pw_node_get_data(node);
+    gf_node_get_cable(node, 0, &in);
+    blksize = gf_node_blksize(node);
+    step = gf_node_get_data(node);
 
     for(s = 0; s &lt; blksize; s++) {
-        if(pw_cable_get(in, s) != 0) {
+        if(gf_cable_get(in, s) != 0) {
             step_step(step);
         }
     }
@@ -58,10 +58,10 @@ the clock triggers, it will step the sequence forward in time.
 <h4>10.1.3. DONE Step Clock Node Destroy</h4>
 
 <p><a id="wm_011_0564"></a>CLOSED: [2019-02-23 Sat 11:49]
-<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepclk_destroy(pw_node *node);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepclk_destroy(pw_node *node)
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepclk_destroy(gf_node *node);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepclk_destroy(gf_node *node)
 {
-    pw_node_cables_free(node);
+    gf_node_cables_free(node);
 }</pre></code>
 
 <h3>10.2. DONE Step Note Node</h3>
@@ -73,33 +73,33 @@ The step node function returns the current note value.
 <h4>10.2.1. DONE Step Note Node Setup</h4>
 
 <p><a id="wm_011_0572"></a>CLOSED: [2019-02-23 Sat 12:48]
-<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_stepnt(pw_node *node, page_step_d *step);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_stepnt(pw_node *node, page_step_d *step)
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_stepnt(gf_node *node, page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_stepnt(gf_node *node, page_step_d *step)
 {
-    pw_node_cables_alloc(node, 1);
-    pw_node_set_block(node, 0);
-    pw_node_set_compute(node, stepnt_compute);
-    pw_node_set_destroy(node, stepclk_destroy); /* re-use */
-    pw_node_set_data(node, step);
+    gf_node_cables_alloc(node, 1);
+    gf_node_set_block(node, 0);
+    gf_node_set_compute(node, stepnt_compute);
+    gf_node_set_destroy(node, stepclk_destroy); /* re-use */
+    gf_node_set_data(node, step);
 }</pre></code>
 
 <h4>10.2.2. DONE Step Note Node Compute</h4>
 
 <p><a id="wm_011_0578"></a>CLOSED: [2019-02-23 Sat 12:48]
-<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepnt_compute(pw_node *node);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepnt_compute(pw_node *node)
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepnt_compute(gf_node *node);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepnt_compute(gf_node *node)
 {
     int s;
     int blksize;
-    pw_cable *out;
+    gf_cable *out;
     page_step_d *step;
 
-    pw_node_get_cable(node, 0, &out);
-    blksize = pw_node_blksize(node);
-    step = pw_node_get_data(node);
+    gf_node_get_cable(node, 0, &out);
+    blksize = gf_node_blksize(node);
+    step = gf_node_get_data(node);
 
     for(s = 0; s &lt; blksize; s++) {
-        pw_cable_set(out, s, get_performed_note(step));
+        gf_cable_set(out, s, get_performed_note(step));
     }
 }</pre></code>
 
@@ -119,33 +119,33 @@ The step gate node returns the current gate value.
 <h4>10.3.1. DONE Step Gate Node Setup</h4>
 
 <p><a id="wm_011_0588"></a>CLOSED: [2019-02-23 Sat 13:04]
-<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_stepgt(pw_node *node, page_step_d *step);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_stepgt(pw_node *node, page_step_d *step)
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_stepgt(gf_node *node, page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_stepgt(gf_node *node, page_step_d *step)
 {
-    pw_node_cables_alloc(node, 1);
-    pw_node_set_block(node, 0);
-    pw_node_set_compute(node, stepgt_compute);
-    pw_node_set_destroy(node, stepclk_destroy); /* re-use */
-    pw_node_set_data(node, step);
+    gf_node_cables_alloc(node, 1);
+    gf_node_set_block(node, 0);
+    gf_node_set_compute(node, stepgt_compute);
+    gf_node_set_destroy(node, stepclk_destroy); /* re-use */
+    gf_node_set_data(node, step);
 }</pre></code>
 
 <h4>10.3.2. DONE Step Gate Node Compute</h4>
 
 <p><a id="wm_011_0594"></a>CLOSED: [2019-02-23 Sat 13:11]
-<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepgt_compute(pw_node *node);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepgt_compute(pw_node *node)
+<div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepgt_compute(gf_node *node);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepgt_compute(gf_node *node)
 {
     int s;
     int blksize;
-    pw_cable *out;
+    gf_cable *out;
     page_step_d *step;
 
-    pw_node_get_cable(node, 0, &out);
-    blksize = pw_node_blksize(node);
-    step = pw_node_get_data(node);
+    gf_node_get_cable(node, 0, &out);
+    blksize = gf_node_blksize(node);
+    step = gf_node_get_data(node);
 
     for(s = 0; s &lt; blksize; s++) {
-        pw_cable_set(out, s, get_performed_gate(step));
+        gf_cable_set(out, s, get_performed_gate(step));
     }
 }</pre></code>
 
@@ -165,32 +165,32 @@ or not.
 
 <h4>10.4.1. Step Play Node Setup</h4>
 
-<p><a id="wm_011_0604"></a><div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_play(pw_node *node, page_step_d *step);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_play(pw_node *node, page_step_d *step)
+<p><a id="wm_011_0604"></a><div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_play(gf_node *node, page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_play(gf_node *node, page_step_d *step)
 {
-    pw_node_cables_alloc(node, 1);
-    pw_node_set_block(node, 0);
-    pw_node_set_compute(node, stepplay_compute);
-    pw_node_set_destroy(node, stepclk_destroy); /* re-use */
-    pw_node_set_data(node, step);
+    gf_node_cables_alloc(node, 1);
+    gf_node_set_block(node, 0);
+    gf_node_set_compute(node, stepplay_compute);
+    gf_node_set_destroy(node, stepclk_destroy); /* re-use */
+    gf_node_set_data(node, step);
 }</pre></code>
 
 <h4>10.4.2. Step Play Node Compute</h4>
 
-<p><a id="wm_011_0609"></a><div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepplay_compute(pw_node *node);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepplay_compute(pw_node *node)
+<p><a id="wm_011_0609"></a><div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepplay_compute(gf_node *node);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepplay_compute(gf_node *node)
 {
     int s;
     int blksize;
-    pw_cable *out;
+    gf_cable *out;
     page_step_d *step;
 
-    pw_node_get_cable(node, 0, &out);
-    blksize = pw_node_blksize(node);
-    step = pw_node_get_data(node);
+    gf_node_get_cable(node, 0, &out);
+    blksize = gf_node_blksize(node);
+    step = gf_node_get_data(node);
 
     for(s = 0; s &lt; blksize; s++) {
-        pw_cable_set(out, s, page_step_playing_get(step));
+        gf_cable_set(out, s, page_step_playing_get(step));
     }
 }</pre></code>
 
@@ -209,27 +209,27 @@ values go backwards.
 
 <h4>10.5.1. Step Step Node Setup</h4>
 
-<p><a id="wm_011_0618"></a><div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_step(pw_node *node, page_step_d *step);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_step(pw_node *node, page_step_d *step)
+<p><a id="wm_011_0618"></a><div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void node_step(gf_node *node, page_step_d *step);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void node_step(gf_node *node, page_step_d *step)
 {
-    pw_node_cables_alloc(node, 1);
-    pw_node_set_compute(node, stepstep_compute);
-    pw_node_set_destroy(node, stepclk_destroy); /* re-use */
-    pw_node_set_data(node, step);
+    gf_node_cables_alloc(node, 1);
+    gf_node_set_compute(node, stepstep_compute);
+    gf_node_set_destroy(node, stepclk_destroy); /* re-use */
+    gf_node_set_data(node, step);
 }</pre></code>
 
 <h4>10.5.2. Step Step Node Compute</h4>
 
-<p><a id="wm_011_0623"></a><div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepstep_compute(pw_node *node);</pre></code>
-<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepstep_compute(pw_node *node)
+<p><a id="wm_011_0623"></a><div><b><i>&lt;&lt;step_function_declarations&gt;&gt;=</i></b></div><pre><code>static void stepstep_compute(gf_node *node);</pre></code>
+<div><b><i>&lt;&lt;step_functions&gt;&gt;=</i></b></div><pre><code>static void stepstep_compute(gf_node *node)
 {
     int s;
-    pw_cable *in;
+    gf_cable *in;
     page_step_d *step;
 
-    pw_node_get_cable(node, 0, &in);
-    step = pw_node_get_data(node);
-    s = floor(pw_cable_get(in, 0));
+    gf_node_get_cable(node, 0, &in);
+    step = gf_node_get_data(node);
+    s = floor(gf_cable_get(in, 0));
 
     page_step_step_set(step, s);
 }</pre></code>

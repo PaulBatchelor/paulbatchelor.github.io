@@ -61,7 +61,7 @@ and <code>FIRE</code></p>
 <p><a id="wm_024_0114"></a>The <code>energy</code> level is used to determine whether or not
 a trigger should fire.
 </p>
-<div><b><i>&lt;&lt;tdelay_loop&gt;&gt;=</i></b></div><pre><code>PWFLT energy;</pre></code>
+<div><b><i>&lt;&lt;tdelay_loop&gt;&gt;=</i></b></div><pre><code>GFFLT energy;</pre></code>
 <div><b><i>&lt;&lt;tdelay_loop_init&gt;&gt;=</i></b></div><pre><code>lp-&gt;energy = 0;</pre></code>
 
 <h5>5.1.3.3. Block Position</h5>
@@ -196,7 +196,7 @@ before the loop states are processed.
 <div><b><i>&lt;&lt;state_fire&gt;&gt;=</i></b></div><pre><code>case BEGIN:
     lp-&gt;energy = 1;
 
-    lp-&gt;counter = floor(pw_cable_get(td-&gt;dly, pos)) - 1;
+    lp-&gt;counter = floor(gf_cable_get(td-&gt;dly, pos)) - 1;
 
     if (lp-&gt;counter &lt; 0) {
         lp-&gt;counter = 0;
@@ -234,13 +234,13 @@ small 64-sample blocks, this a non-issue.
 </p>
 <div><b><i>&lt;&lt;state_fire&gt;&gt;=</i></b></div><pre><code>case FIRE:
 case RELOAD:
-    lp-&gt;energy *= pw_cable_get(td-&gt;fdbk, pos);
+    lp-&gt;energy *= gf_cable_get(td-&gt;fdbk, pos);
     if (lp-&gt;energy &lt; td-&gt;eps) {
         lp-&gt;state = SLEEP;
         td-&gt;last_free = loop;
         td-&gt;nactive--;
     } else {
-        lp-&gt;counter = floor(pw_cable_get(td-&gt;dly, pos)) - 1;
+        lp-&gt;counter = floor(gf_cable_get(td-&gt;dly, pos)) - 1;
 
         if (lp-&gt;counter &lt;= 0) {
             lp-&gt;counter = 0;

@@ -156,8 +156,8 @@ to the internal block.
 <h4>4.8.1. Main Callback</h4>
 
 <p><a id="wm_012_0372"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_compute_line(page_line16_d *l,
-                                pw_patch *p,
-                                pw_cable *in);</pre></code>
+                                gf_patch *p,
+                                gf_cable *in);</pre></code>
 <p>A line is a connection between to points. At the time of
 writing, this connection is limited to linear interpolation.
 Exponential mapping could be in the future, but to get
@@ -188,18 +188,18 @@ are updated.
 }
 
 static void line16_compute_line(page_line16_d *l,
-                                pw_patch *p,
-                                pw_cable *in)
+                                gf_patch *p,
+                                gf_cable *in)
 {
     int blksize;
     int s;
-    pw_cable *out;
-    PWFLT dur;
-    PWFLT o;
+    gf_cable *out;
+    GFFLT dur;
+    GFFLT o;
     line16_point *pt_a;
     line16_point *pt_b;
 
-    blksize = pw_patch_blksize(p);
+    blksize = gf_patch_blksize(p);
     line16_state_apply(l);
     out = &l-&gt;out;
 
@@ -209,7 +209,7 @@ static void line16_compute_line(page_line16_d *l,
         line16_update_pointpos(l);
         if(l-&gt;pointpos &lt; 0) {
             for(s = 0; s &lt; blksize; s++) {
-                pw_cable_set(out, s, 0);
+                gf_cable_set(out, s, 0);
                 update_counters(l);
             }
             return;
@@ -222,7 +222,7 @@ static void line16_compute_line(page_line16_d *l,
     if (pt_a == NULL && pt_b == NULL) return;
 
     for (s = 0; s &lt; blksize; s++) {
-        if (pw_cable_get(in, s) != 0) {
+        if (gf_cable_get(in, s) != 0) {
             l-&gt;trig = 1;
         }
         if (l-&gt;pointpos &lt; 0) {
@@ -290,7 +290,7 @@ static void line16_compute_line(page_line16_d *l,
                 }
             }
         }
-        pw_cable_set(out, s, o);
+        gf_cable_set(out, s, o);
         update_counters(l);
     }
 }</pre></code>
@@ -301,18 +301,18 @@ static void line16_compute_line(page_line16_d *l,
 
 <h5>4.8.2.1. Linear</h5>
 
-<p><a id="wm_012_0379"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line_linear(page_line16_d *l,
+<p><a id="wm_012_0379"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line_linear(page_line16_d *l,
                          line16_point *pt_a,
                          line16_point *pt_b,
-                         PWFLT counter);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line_linear(page_line16_d *l,
+                         GFFLT counter);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line_linear(page_line16_d *l,
                          line16_point *pt_a,
                          line16_point *pt_b,
-                         PWFLT counter)
+                         GFFLT counter)
 {
-    PWFLT a, b;
-    PWFLT o;
-    PWFLT dur;
+    GFFLT a, b;
+    GFFLT o;
+    GFFLT dur;
 
     a = pt_a-&gt;val;
     b = pt_b-&gt;val;
@@ -325,21 +325,21 @@ static void line16_compute_line(page_line16_d *l,
 
 <h5>4.8.2.2. Exponential Positive</h5>
 
-<p><a id="wm_012_0384"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line_exp_pos(page_line16_d *l,
+<p><a id="wm_012_0384"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line_exp_pos(page_line16_d *l,
                           line16_point *pt_a,
                           line16_point *pt_b,
-                          PWFLT counter,
-                          PWFLT aux);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line_exp_pos(page_line16_d *l,
+                          GFFLT counter,
+                          GFFLT aux);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line_exp_pos(page_line16_d *l,
                           line16_point *pt_a,
                           line16_point *pt_b,
-                          PWFLT counter,
-                          PWFLT aux)
+                          GFFLT counter,
+                          GFFLT aux)
 {
-    PWFLT a, b;
-    PWFLT o;
-    PWFLT slp;
-    PWFLT dur;
+    GFFLT a, b;
+    GFFLT o;
+    GFFLT slp;
+    GFFLT dur;
 
     a = pt_a-&gt;val;
     b = pt_b-&gt;val;
@@ -356,21 +356,21 @@ static void line16_compute_line(page_line16_d *l,
 
 <h5>4.8.2.3. Exponential Negative</h5>
 
-<p><a id="wm_012_0389"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line_exp_neg(page_line16_d *l,
+<p><a id="wm_012_0389"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line_exp_neg(page_line16_d *l,
                           line16_point *pt_a,
                           line16_point *pt_b,
-                          PWFLT counter,
-                          PWFLT aux);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line_exp_neg(page_line16_d *l,
+                          GFFLT counter,
+                          GFFLT aux);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line_exp_neg(page_line16_d *l,
                           line16_point *pt_a,
                           line16_point *pt_b,
-                          PWFLT counter,
-                          PWFLT aux)
+                          GFFLT counter,
+                          GFFLT aux)
 {
-    PWFLT a, b;
-    PWFLT o;
-    PWFLT slp;
-    PWFLT dur;
+    GFFLT a, b;
+    GFFLT o;
+    GFFLT slp;
+    GFFLT dur;
 
     a = pt_a-&gt;val;
     b = pt_b-&gt;val;
@@ -392,26 +392,26 @@ static void line16_compute_line(page_line16_d *l,
 </p>
 <p>B(t) = (1 - t)^2<b>P0 + 2</b>(1 - t)P1 + t^2P2
 </p>
-<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line_bezier(page_line16_d *l,
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line_bezier(page_line16_d *l,
                          line16_point *pt_a,
                          line16_point *pt_b,
-                         PWFLT counter,
-                         PWFLT aux1,
-                         PWFLT aux2);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line_bezier(page_line16_d *l,
+                         GFFLT counter,
+                         GFFLT aux1,
+                         GFFLT aux2);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line_bezier(page_line16_d *l,
                          line16_point *pt_a,
                          line16_point *pt_b,
-                         PWFLT counter,
-                         PWFLT aux1,
-                         PWFLT aux2)
+                         GFFLT counter,
+                         GFFLT aux1,
+                         GFFLT aux2)
 {
-    PWFLT a, b;
-    PWFLT o;
-    PWFLT x[3];
-    PWFLT y[3];
-    PWFLT dur;
-    PWFLT val;
-    PWFLT t;
+    GFFLT a, b;
+    GFFLT o;
+    GFFLT x[3];
+    GFFLT y[3];
+    GFFLT dur;
+    GFFLT val;
+    GFFLT t;
 
     a = pt_a-&gt;val;
     b = pt_b-&gt;val;
@@ -439,14 +439,14 @@ static void line16_compute_line(page_line16_d *l,
 
     return o;
 }</pre></code>
-<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT find_t(PWFLT x0, PWFLT x1, PWFLT x2, PWFLT x);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT find_t(PWFLT x0, PWFLT x1, PWFLT x2, PWFLT x)
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT find_t(GFFLT x0, GFFLT x1, GFFLT x2, GFFLT x);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT find_t(GFFLT x0, GFFLT x1, GFFLT x2, GFFLT x)
 {
-    PWFLT a;
-    PWFLT b;
-    PWFLT c;
-    PWFLT out;
-    PWFLT det;
+    GFFLT a;
+    GFFLT b;
+    GFFLT c;
+    GFFLT out;
+    GFFLT det;
 
     a = (x0 - 2.0 * x1 + x2);
     b = 2.0 * (-x0 + x1);
@@ -472,25 +472,25 @@ This function is used to compute a single line instance. It
 will compute once per block.
 </p>
 <div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>void line16_compute_localline(line16_localline *localline,
-                              pw_patch *patch,
-                              pw_cable *in,
-                              pw_cable *out);</pre></code>
+                              gf_patch *patch,
+                              gf_cable *in,
+                              gf_cable *out);</pre></code>
 <div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>void line16_compute_localline(line16_localline *ll,
-                              pw_patch *patch,
-                              pw_cable *in,
-                              pw_cable *out)
+                              gf_patch *patch,
+                              gf_cable *in,
+                              gf_cable *out)
 {
     int blksize;
     int s;
-    /* pw_cable *out; */
-    PWFLT dur;
-    PWFLT o;
+    /* gf_cable *out; */
+    GFFLT dur;
+    GFFLT o;
     line16_point *pt_a;
     line16_point *pt_b;
     line16_line *line;
     page_line16_d *pg;
 
-    blksize = pw_patch_blksize(patch);
+    blksize = gf_patch_blksize(patch);
     /* line16_state_apply(l); */
     /* out = &l-&gt;out; */
 
@@ -507,7 +507,7 @@ will compute once per block.
         }
         if(ll-&gt;pointpos &lt; 0) {
             for(s = 0; s &lt; blksize; s++) {
-                pw_cable_set(out, s, 0);
+                gf_cable_set(out, s, 0);
                 /* update_counters(l); */
             }
             return;
@@ -520,7 +520,7 @@ will compute once per block.
     if (pt_a == NULL && pt_b == NULL) return;
 
     for (s = 0; s &lt; blksize; s++) {
-        if (pw_cable_get(in, s) != 0) ll-&gt;trig = 1;
+        if (gf_cable_get(in, s) != 0) ll-&gt;trig = 1;
         if (ll-&gt;pointpos &lt; 0) {
             o = 0;
         } else {
@@ -588,7 +588,7 @@ will compute once per block.
                 }
             }
         }
-        pw_cable_set(out, s, o);
+        gf_cable_set(out, s, o);
         /* update_counters(l); */
     }
 }</pre></code>
@@ -620,11 +620,11 @@ passed to the line callback.
 <div><b><i>&lt;&lt;line16_struct&gt;&gt;=</i></b></div><pre><code>struct line16_localline {
     page_line16_d *pg;
     line16_line *l;
-    PWFLT counter;
+    GFFLT counter;
     int pointpos;
     int nextpoint;
     int trig;
-    PWFLT aux[2];
+    GFFLT aux[2];
 };</pre></code>
 <p></p>
 <p>This struct is initialized with <code>line16_localline_init</code>.
@@ -703,8 +703,8 @@ current point position.
 
 <p><a id="wm_012_0434"></a>Increments a value up or down and returns it. This includes
 clamping value to be in range 0-1.
-<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_increment(PWFLT val, int delta);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_increment(PWFLT val, int delta)
+<div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_increment(GFFLT val, int delta);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_increment(GFFLT val, int delta)
 {
     val += 0.001 * delta;
     if(val &lt; 0) val = 0;
@@ -756,11 +756,11 @@ set.
 <p><a id="wm_012_0456"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_point_val_set(page_line16_d *l,
                                  int linepos,
                                  int pos,
-                                 PWFLT val);</pre></code>
+                                 GFFLT val);</pre></code>
 <div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_point_val_set(page_line16_d *l,
                                  int linepos,
                                  int pos,
-                                 PWFLT val)
+                                 GFFLT val)
 {
     line16_line *line;
     int lite;
@@ -788,10 +788,10 @@ set.
 
 <h4>4.13.2. line16_point_val_get</h4>
 
-<p><a id="wm_012_0461"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_point_val_get(page_line16_d *l,
+<p><a id="wm_012_0461"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_point_val_get(page_line16_d *l,
                                   int linepos,
                                   int pos);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_point_val_get(page_line16_d *l,
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_point_val_get(page_line16_d *l,
                                   int linepos,
                                   int pos)
 {
@@ -813,11 +813,11 @@ set.
 <p><a id="wm_012_0466"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_point_dur_set(page_line16_d *l,
                                  int linepos,
                                  int pos,
-                                 PWFLT dur);</pre></code>
+                                 GFFLT dur);</pre></code>
 <div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_point_dur_set(page_line16_d *l,
                                  int linepos,
                                  int pos,
-                                 PWFLT dur)
+                                 GFFLT dur)
 {
     line16_line *line;
     int lite;
@@ -845,10 +845,10 @@ set.
 
 <h4>4.13.4. line16_point_dur_get</h4>
 
-<p><a id="wm_012_0471"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_point_dur_get(page_line16_d *l,
+<p><a id="wm_012_0471"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_point_dur_get(page_line16_d *l,
                                   int line,
                                   int pos);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_point_dur_get(page_line16_d *l,
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_point_dur_get(page_line16_d *l,
                                   int linepos,
                                   int pos)
 {
@@ -871,15 +871,15 @@ set.
                                  int linepos,
                                  int pos,
                                  int aux,
-                                 PWFLT val);</pre></code>
+                                 GFFLT val);</pre></code>
 <p>Because this can set the monome, this function is rate
 limited. This is especially important for cases when the
-aux value is being set by a patchwerk node.
+aux value is being set by a graforge node.
 <div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_point_aux_set(page_line16_d *l,
                                  int linepos,
                                  int pos,
                                  int aux,
-                                 PWFLT val)
+                                 GFFLT val)
 {
     line16_line *line;
     int lite;
@@ -915,11 +915,11 @@ aux value is being set by a patchwerk node.
 
 <h4>4.13.6. line16_point_aux_get</h4>
 
-<p><a id="wm_012_0482"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_point_aux_get(page_line16_d *l,
+<p><a id="wm_012_0482"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_point_aux_get(page_line16_d *l,
                                   int linepos,
                                   int pos,
                                   int aux);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_point_aux_get(page_line16_d *l,
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_point_aux_get(page_line16_d *l,
                                   int linepos,
                                   int pos,
                                   int aux)
@@ -1040,11 +1040,11 @@ upper bits.
 <p><a id="wm_012_0509"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static void line16_point_rate_set(page_line16_d *l,
                                   int linepos,
                                   int pos,
-                                  PWFLT rate);</pre></code>
+                                  GFFLT rate);</pre></code>
 <div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static void line16_point_rate_set(page_line16_d *l,
                                   int linepos,
                                   int pos,
-                                  PWFLT rate)
+                                  GFFLT rate)
 {
     line16_line *line;
 
@@ -1061,10 +1061,10 @@ upper bits.
 
 <h4>4.13.12. line16_point_rate_get</h4>
 
-<p><a id="wm_012_0514"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_point_rate_get(page_line16_d *l,
+<p><a id="wm_012_0514"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_point_rate_get(page_line16_d *l,
                                    int linepos,
                                    int pos);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_point_rate_get(page_line16_d *l,
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_point_rate_get(page_line16_d *l,
                                    int linepos,
                                    int pos)
 {
@@ -1171,10 +1171,10 @@ bit twiddling is needed.
 
 <h3>4.15. Scale to duration</h3>
 
-<p><a id="wm_012_0544"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_durscale(page_line16_d *l, PWFLT val);</pre></code>
-<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static PWFLT line16_durscale(page_line16_d *l, PWFLT val)
+<p><a id="wm_012_0544"></a><div><b><i>&lt;&lt;line16_function_declarations&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_durscale(page_line16_d *l, GFFLT val);</pre></code>
+<div><b><i>&lt;&lt;line16_functions&gt;&gt;=</i></b></div><pre><code>static GFFLT line16_durscale(page_line16_d *l, GFFLT val)
 {
-    PWFLT mn, mx;
+    GFFLT mn, mx;
     mn = line16_dur_min_get(l);
     mx = line16_dur_max_get(l);
     return val * (mx - mn) + mn;

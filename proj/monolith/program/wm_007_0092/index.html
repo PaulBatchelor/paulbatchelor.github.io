@@ -9,10 +9,10 @@
 <body>
 <div id="main">
 
-<h2>8. sqlite_open</h2>
+<h2>8. sqlite open (in graforge)</h2>
 
 <p><a id="wm_007_0092"></a>The <code>sqlite_open</code> operation allows a sqlite handle to be
-opened and managed inside of a patchwerk patch.
+opened and managed inside of a graforge patch.
 </p>
 <p>This is primarily intended to be used with SQLar, but
 since opening SQLar archives is just open a SQLite database,
@@ -23,29 +23,29 @@ figured I might as well generalize this baby.
 
 <p><a id="wm_007_0094"></a>The lowest level function for this is
 <code>monolith_sqlite_open</code> as a C function. Provided is the
-patchwerk patch, as well the filename.
+graforge patch, as well the filename.
 </p>
 <p>This will attempt to open and store a SQLite database
 filehandle, and then return the <code>sqlite3</code> pointer to the
 instance. If something wrong happens, <code>NULL</code> is returned.
 </p>
-<p>The SQLite handle is appended as a patchwerk pointer, with
+<p>The SQLite handle is appended as a graforge pointer, with
 a destroy function that will close the SQLite handle. Like
-all patchwerk pointers, this gets called when the patch is
+all graforge pointers, this gets called when the patch is
 destroyed.
 </p>
-<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>sqlite3 * monolith_sqlite_open(pw_patch *pw,
-                               const char *fname);</pre></code>
-<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>static void free_sqlite(pw_pointer *p)
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>sqlite3 * monolith_sqlite_open_pw(gf_patch *pw,
+                                  const char *fname);</pre></code>
+<div><b><i>&lt;&lt;sqlar_functions&gt;&gt;=</i></b></div><pre><code>static void free_sqlite(gf_pointer *p)
 {
     sqlite3 *db;
 
-    db = pw_pointer_data(p);
+    db = gf_pointer_data(p);
     sqlite3_close(db);
 }
 
-sqlite3 * monolith_sqlite_open(pw_patch *pw,
-                               const char *fname)
+sqlite3 * monolith_sqlite_open_pw(gf_patch *pw,
+                                  const char *fname)
 {
     sqlite3 *db;
     int rc;
@@ -54,17 +54,13 @@ sqlite3 * monolith_sqlite_open(pw_patch *pw,
 
     if (rc) return NULL;
 
-    pw_patch_append_userdata(pw, free_sqlite, db);
+    gf_patch_append_userdata(pw, free_sqlite, db);
     return db;
 }</pre></code>
 
 <h3>8.2. sqlite_open in runt</h3>
 
-<p><a id="wm_007_0100"></a></p>
-
-<h4>8.2.1. Word</h4>
-
-<p><a id="wm_007_0101"></a>the <code>sqlite_open</code> runt word wraps <code>monolith_sqlite_open</code>inside of a struct.
+<p><a id="wm_007_0100"></a>the <code>sqlite_open</code> runt word wraps <code>monolith_sqlite_open</code>inside of a struct.
 </p>
 <p>The loader for this is <code>load_sqlite_open</code>.
 </p>
@@ -76,14 +72,14 @@ int load_sqlite_open(runt_vm *vm, runt_ptr pw)
     runt_keyword_define(vm,
                         "sqlite_open", 11,
                         rproc_sqlite_open, &c);
-
     runt_cell_data(vm, c, pw);
+&lt;&lt;monsqlite_word_entry&gt;&gt;
     return runt_is_alive(vm);
 }</pre></code>
 <div><b><i>&lt;&lt;rproc_sqlite_open&gt;&gt;=</i></b></div><pre><code>static runt_int rproc_sqlite_open(runt_vm *vm, runt_ptr p)
 {
     sqlite3 *db;
-    pw_patch *pw;
+    gf_patch *pw;
     int rc;
     runt_stacklet *s;
     const char *filename;
@@ -98,7 +94,7 @@ int load_sqlite_open(runt_vm *vm, runt_ptr pw)
     }
 
     pw = runt_to_cptr(p);
-    db = monolith_sqlite_open(pw, filename);
+    db = monolith_sqlite_open_pw(pw, filename);
 
     if (db == NULL) {
         runt_print(vm, "There was a problem opening the SQLite file\n");
@@ -107,14 +103,14 @@ int load_sqlite_open(runt_vm *vm, runt_ptr pw)
 
     rc = runt_ppush(vm, &s);
     RUNT_ERROR_CHECK(rc);
-    rpw_stacklet_sqlite(vm, s, db);
+    rgf_stacklet_sqlite(vm, s, db);
     return RUNT_OK;
 }</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/proj/monolith/program/wm_007_0081">prev</a> | <a href="/proj/monolith/program/wm_007">home</a> | <a href="/proj/monolith/program/wm_007_0112">next</a></p>
+<a href="/proj/monolith/program/wm_007_0081">prev</a> | <a href="/proj/monolith/program/wm_007">home</a> | <a href="/proj/monolith/program/wm_007_0113">next</a></p>
 </div>
 </body>
 </html>

@@ -9,7 +9,7 @@
 <body>
 <div id="main">
 
-<h2>9. WIP Trig Patchwerk Nodes</h2>
+<h2>9. WIP Trig Graforge Nodes</h2>
 
 <p><a id="wm_014_0317"></a></p>
 
@@ -45,7 +45,7 @@ page is first initialized.
 <div><b><i>&lt;&lt;trig_typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wire_evstack wire_evstack;</pre></code>
 <div><b><i>&lt;&lt;trig_other_structs&gt;&gt;=</i></b></div><pre><code>struct wire_evstack {
     int nitems;
-    PWFLT vals[4];
+    GFFLT vals[4];
     int input;
     float *ref;
     clock_evstack *ces;
@@ -75,41 +75,41 @@ as block events in an event stack.
 
 <h4>9.2.1. Trigclk Node Function</h4>
 
-<p><a id="wm_014_0333"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigclk(pw_node *node, page_trig_d *trig);</pre></code>
+<p><a id="wm_014_0333"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigclk(gf_node *node, page_trig_d *trig);</pre></code>
 <div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;trig_nodeclk_functions&gt;&gt;
-static int node_trigclk(pw_node *node, page_trig_d *trig)
+static int node_trigclk(gf_node *node, page_trig_d *trig)
 {
-    pw_node_cables_alloc(node, 1);
-    pw_node_set_data(node, trig);
-    pw_node_set_destroy(node, trigclk_destroy);
-    pw_node_set_compute(node, trigclk_compute);
-    return PW_OK;
+    gf_node_cables_alloc(node, 1);
+    gf_node_set_data(node, trig);
+    gf_node_set_destroy(node, trigclk_destroy);
+    gf_node_set_compute(node, trigclk_compute);
+    return GF_OK;
 }</pre></code>
 
 <h4>9.2.2. Trigclk Compute</h4>
 
-<p><a id="wm_014_0340"></a><div><b><i>&lt;&lt;trig_nodeclk_functions&gt;&gt;=</i></b></div><pre><code>static void trigclk_compute(pw_node *n)
+<p><a id="wm_014_0340"></a><div><b><i>&lt;&lt;trig_nodeclk_functions&gt;&gt;=</i></b></div><pre><code>static void trigclk_compute(gf_node *n)
 {
     int blksize;
     int s;
-    pw_cable *in;
+    gf_cable *in;
     page_trig_d *trig;
     clock_evstack *ces;
 
-    trig = pw_node_get_data(n);
-    blksize = pw_node_blksize(n);
+    trig = gf_node_get_data(n);
+    blksize = gf_node_blksize(n);
 
     ces = &trig-&gt;ces;
 
-    pw_node_get_cable(n, 0, &in);
+    gf_node_get_cable(n, 0, &in);
 
     ces-&gt;nitems = 0;
 
     update_and_clear(trig);
 
     for(s = 0; s &lt; blksize; s++) {
-        PWFLT smp;
-        smp = pw_cable_get(in, s);
+        GFFLT smp;
+        smp = gf_cable_get(in, s);
         if (smp != 0) {
             if (ces-&gt;nitems &lt; 4) {
                 ces-&gt;vals[ces-&gt;nitems] = s;
@@ -122,9 +122,9 @@ static int node_trigclk(pw_node *node, page_trig_d *trig)
 
 <h4>9.2.3. Trigclk Destroy</h4>
 
-<p><a id="wm_014_0344"></a><div><b><i>&lt;&lt;trig_nodeclk_functions&gt;&gt;=</i></b></div><pre><code>static void trigclk_destroy(pw_node *node)
+<p><a id="wm_014_0344"></a><div><b><i>&lt;&lt;trig_nodeclk_functions&gt;&gt;=</i></b></div><pre><code>static void trigclk_destroy(gf_node *node)
 {
-     pw_node_cables_free(node);
+     gf_node_cables_free(node);
 }</pre></code>
 
 <h3>9.3. Trig Execute (trigex)</h3>
@@ -135,14 +135,14 @@ Should be called just once per patch.
 
 <h4>9.3.1. Trigex Node Function</h4>
 
-<p><a id="wm_014_0349"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigex(pw_node *node, page_trig_d *trig);</pre></code>
+<p><a id="wm_014_0349"></a><div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigex(gf_node *node, page_trig_d *trig);</pre></code>
 <div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;node_trigex_functions&gt;&gt;
-static int node_trigex(pw_node *node, page_trig_d *trig)
+static int node_trigex(gf_node *node, page_trig_d *trig)
 {
-    pw_node_set_data(node, trig);
-    pw_node_set_destroy(node, trigex_destroy);
-    pw_node_set_compute(node, trigex_compute);
-    return PW_OK;
+    gf_node_set_data(node, trig);
+    gf_node_set_destroy(node, trigex_destroy);
+    gf_node_set_compute(node, trigex_compute);
+    return GF_OK;
 }</pre></code>
 
 <h4>9.3.2. Trigex Compute</h4>
@@ -162,7 +162,7 @@ event is found, the node prepares to step through the VM.
 </p>
 <p>Before the VM can step, input signals are processed. While
 the trig VM doesn't make a distinction between inputs
-and outputs, patchwerk does. The function will iterate
+and outputs, graforge does. The function will iterate
 through all 8 wire event stacks. If the wire event stack
 is marked as an input cable are there are events to process,
 it will copy the event over to the cable.
@@ -216,7 +216,7 @@ the last signal the valid one.
 
 <h5>9.3.2.4. The Callback Itself</h5>
 
-<p><a id="wm_014_0370"></a><div><b><i>&lt;&lt;node_trigex_functions&gt;&gt;=</i></b></div><pre><code>static void trigex_compute(pw_node *n)
+<p><a id="wm_014_0370"></a><div><b><i>&lt;&lt;node_trigex_functions&gt;&gt;=</i></b></div><pre><code>static void trigex_compute(gf_node *n)
 {
     int blksize;
     int s;
@@ -226,8 +226,8 @@ the last signal the valid one.
     int pos;
     trig_vm *tvm;
 
-    trig = pw_node_get_data(n);
-    blksize = pw_node_blksize(n);
+    trig = gf_node_get_data(n);
+    blksize = gf_node_blksize(n);
 
     ces = &trig-&gt;ces;
     nitems = ces-&gt;nitems;
@@ -275,9 +275,9 @@ the last signal the valid one.
 
 <h4>9.3.3. Trigex Destroy</h4>
 
-<p><a id="wm_014_0374"></a><div><b><i>&lt;&lt;node_trigex_functions&gt;&gt;=</i></b></div><pre><code>static void trigex_destroy(pw_node *node)
+<p><a id="wm_014_0374"></a><div><b><i>&lt;&lt;node_trigex_functions&gt;&gt;=</i></b></div><pre><code>static void trigex_destroy(gf_node *node)
 {
-     pw_node_cables_free(node);
+     gf_node_cables_free(node);
 }</pre></code>
 
 <h3>9.4. WIP Wire Get (trigwget)</h3>
@@ -296,24 +296,24 @@ grid interface makes them 1-indexed (1, 2, 3, 4) because
 it works out better visually. To keep the end-user interface
 consistent, the wire id will be 1-indexed, then converted
 internally.
-<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigwget(pw_node *node,
+<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigwget(gf_node *node,
                          page_trig_d *trig,
                          int wire);</pre></code>
 <div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;node_trigwget_functions&gt;&gt;
-static int node_trigwget(pw_node *node,
+static int node_trigwget(gf_node *node,
                          page_trig_d *trig,
                          int wire)
 {
     if (wire &lt; 1 || wire &gt; 8) {
         fprintf(stderr, "Invalid wire %d\n", wire);
-        return PW_NOT_OK;
+        return GF_NOT_OK;
     }
-    pw_node_cables_alloc(node, 1);
-    pw_node_set_block(node, 0);
-    pw_node_set_data(node, &trig-&gt;wes[wire - 1]);
-    pw_node_set_destroy(node, trigwget_destroy);
-    pw_node_set_compute(node, trigwget_compute);
-    return PW_OK;
+    gf_node_cables_alloc(node, 1);
+    gf_node_set_block(node, 0);
+    gf_node_set_data(node, &trig-&gt;wes[wire - 1]);
+    gf_node_set_destroy(node, trigwget_destroy);
+    gf_node_set_compute(node, trigwget_compute);
+    return GF_OK;
 }</pre></code>
 
 <h4>9.4.2. Trigwget Compute</h4>
@@ -321,7 +321,7 @@ static int node_trigwget(pw_node *node,
 <p><a id="wm_014_0387"></a>Reading from a wire is a matter of parsing the event stack
 for that wire. If the event stack is empty, then the value
 is read from the VM wire directly.
-<div><b><i>&lt;&lt;node_trigwget_functions&gt;&gt;=</i></b></div><pre><code>static void trigwget_compute(pw_node *n)
+<div><b><i>&lt;&lt;node_trigwget_functions&gt;&gt;=</i></b></div><pre><code>static void trigwget_compute(gf_node *n)
 {
     int blksize;
     int s;
@@ -329,16 +329,16 @@ is read from the VM wire directly.
     wire_evstack *wes;
     int nitems;
     int pos;
-    PWFLT val;
-    pw_cable *out;
+    GFFLT val;
+    gf_cable *out;
 
-    wes = pw_node_get_data(n);
-    blksize = pw_node_blksize(n);
+    wes = gf_node_get_data(n);
+    blksize = gf_node_blksize(n);
 
     ces = wes-&gt;ces;
     nitems = ces-&gt;nitems;
 
-    pw_node_get_cable(n, 0, &out);
+    gf_node_get_cable(n, 0, &out);
 
     if (nitems == 0) {
         val = *wes-&gt;ref;
@@ -356,7 +356,7 @@ is read from the VM wire directly.
             }
         }
 
-        pw_cable_set(out, s, val);
+        gf_cable_set(out, s, val);
     }
 
     wes-&gt;last = val;
@@ -364,9 +364,9 @@ is read from the VM wire directly.
 
 <h4>9.4.3. Trigwget Destroy</h4>
 
-<p><a id="wm_014_0392"></a><div><b><i>&lt;&lt;node_trigwget_functions&gt;&gt;=</i></b></div><pre><code>static void trigwget_destroy(pw_node *node)
+<p><a id="wm_014_0392"></a><div><b><i>&lt;&lt;node_trigwget_functions&gt;&gt;=</i></b></div><pre><code>static void trigwget_destroy(gf_node *node)
 {
-     pw_node_cables_free(node);
+     gf_node_cables_free(node);
 }</pre></code>
 
 <h3>9.5. TODO Wire Set (trigwset)</h3>
@@ -402,30 +402,30 @@ main <code>trigex</code> function.
 
 <p><a id="wm_014_0399"></a>The node function will allocate a new instance <code>trig_state</code>,
 and then store the starting position and <code>trig_vm</code> data.
-<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigrex(pw_node *node,
+<div><b><i>&lt;&lt;trig_function_declarations&gt;&gt;=</i></b></div><pre><code>static int node_trigrex(gf_node *node,
                         page_trig_d *trig,
                         int pos);</pre></code>
 <div><b><i>&lt;&lt;trig_functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;node_trigrex_functions&gt;&gt;
-static int node_trigrex(pw_node *node,
+static int node_trigrex(gf_node *node,
                         page_trig_d *trig,
                         int pos)
 {
     trig_state *ts;
     int rc;
     void *ud;
-    pw_patch *patch;
+    gf_patch *patch;
 
-    rc = pw_node_get_patch(node, &patch);
+    rc = gf_node_get_patch(node, &patch);
 
     if (pos &gt; 32 || pos &lt; 1) {
         printf("trigrex: pos %d must be in range 1-32\n",
                pos);
-        return PW_NOT_OK;
+        return GF_NOT_OK;
     }
 
-    if (rc != PW_OK) return rc;
+    if (rc != GF_OK) return rc;
 
-    rc = pw_memory_alloc(patch, sizeof(trig_state), &ud);
+    rc = gf_memory_alloc(patch, sizeof(trig_state), &ud);
     ts = ud;
 
     trig_state_init(ts);
@@ -433,10 +433,10 @@ static int node_trigrex(pw_node *node,
     trig_state_ipos(ts, pos);
     trig_state_reset(ts);
 
-    pw_node_set_data(node, ts);
-    pw_node_set_destroy(node, trigrex_destroy);
-    pw_node_set_compute(node, trigrex_compute);
-    return PW_OK;
+    gf_node_set_data(node, ts);
+    gf_node_set_destroy(node, trigrex_destroy);
+    gf_node_set_compute(node, trigrex_compute);
+    return GF_OK;
 }</pre></code>
 
 <h4>9.6.2. Trigrex Compute</h4>
@@ -444,7 +444,7 @@ static int node_trigrex(pw_node *node,
 <p><a id="wm_014_0407"></a>This behaves very similarly to <code>trigex</code>. It iterates through
 the blocks event stack, but instead of calling
 <code>trig_vm_step</code>, it calls <code>trig_state_step</code>.
-<div><b><i>&lt;&lt;node_trigrex_functions&gt;&gt;=</i></b></div><pre><code>static void trigrex_compute(pw_node *n)
+<div><b><i>&lt;&lt;node_trigrex_functions&gt;&gt;=</i></b></div><pre><code>static void trigrex_compute(gf_node *n)
 {
     int blksize;
     int s;
@@ -455,8 +455,8 @@ the blocks event stack, but instead of calling
     trig_vm *tvm;
     trig_state *ts;
 
-    ts = pw_node_get_data(n);
-    blksize = pw_node_blksize(n);
+    ts = gf_node_get_data(n);
+    blksize = gf_node_blksize(n);
 
     trig = trig_state_ud_get(ts);
     ces = &trig-&gt;ces;
@@ -497,19 +497,19 @@ the blocks event stack, but instead of calling
 
 <h4>9.6.3. Trigrex Destroy</h4>
 
-<p><a id="wm_014_0412"></a><div><b><i>&lt;&lt;node_trigrex_functions&gt;&gt;=</i></b></div><pre><code>static void trigrex_destroy(pw_node *node)
+<p><a id="wm_014_0412"></a><div><b><i>&lt;&lt;node_trigrex_functions&gt;&gt;=</i></b></div><pre><code>static void trigrex_destroy(gf_node *node)
 {
      void *ud;
-     pw_patch *patch;
+     gf_patch *patch;
      int rc;
 
-     rc = pw_node_get_patch(node, &patch);
-     if (rc != PW_OK) return;
+     rc = gf_node_get_patch(node, &patch);
+     if (rc != GF_OK) return;
 
-     ud = pw_node_get_data(node);
-     pw_memory_free(patch, &ud);
+     ud = gf_node_get_data(node);
+     gf_memory_free(patch, &ud);
 
-     pw_node_cables_free(node);
+     gf_node_cables_free(node);
 }</pre></code>
 <p></p>
 <br>

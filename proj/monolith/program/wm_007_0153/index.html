@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>12. crateloadraw</h2>
+
+<p><a id="wm_007_0153"></a>Loads a RAW file from a crate into a named table in the
+monolith dictionary.
+</p>
+<p>It's not called <code>crateraw</code> because it's too close to
+<code>cratedraw</code>.
+</p>
+<div><b><i>&lt;&lt;sqlar_scheme_entries&gt;&gt;=</i></b></div><pre><code>{"sqlar:crateloadraw", pp_sqlar_crateloadraw, 3, 3, {STR,STR,STR}},</pre></code>
+<div><b><i>&lt;&lt;sqlar_function_declarations&gt;&gt;=</i></b></div><pre><code>int load_crateloadraw(runt_vm *vm, runt_ptr pw);</pre></code>
+<div><b><i>&lt;&lt;sqlar_scheme_functions&gt;&gt;=</i></b></div><pre><code>static cell pp_sqlar_crateloadraw(cell x)
+{
+    const char *dbkey;
+    const char *ftname;
+    const char *idstr;
+    monolith_d *m;
+    int rc;
+    sqlite3 *db;
+    const char *filename;
+    sqlite3_stmt *stmt;
+    monolith_dict_entry *dbent;
+    monolith_dict_entry *ftent;
+    sp_ftbl *ft;
+    monolith_dict *dict;
+    int count;
+    char *ergo;
+
+    m = monolith_data_get();
+    dict = monolith_dict_get(m);
+
+    dbkey = string(car(x));
+    x = cdr(x);
+    ftname = string(car(x));
+    x = cdr(x);
+    idstr = string(car(x));
+
+    /* get DB from monolith dictionary */
+
+    rc = monolith_dict_find(dict, &dbent, dbkey, strlen(dbkey));
+
+    if (rc != MONOLITH_OK) {
+        error("Could not find SQLite database", UNSPECIFIC);
+    }
+
+    db = monolith_dict_entry_data(dbent);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT value, COUNT(DISTINCT uuid) "
+                       "from wikizet "
+                       "WHERE uuid LIKE ?1 || \"%\" "
+                       "AND value LIKE \"/%\";",
+                       -1, &stmt, NULL);
+
+    ergo = NULL;
+    if (idstr[0] == 'g') {
+        size_t sz;
+        /* 'g' is truncated, so N - 1 */
+        sz = strlen(idstr) - 1;
+        ergo = malloc(sz + 1);
+        ergo[sz] = '\0';
+        ergo_to_hex(&idstr[1], sz, ergo);
+
+        sqlite3_bind_text(stmt, 1, ergo, -1, NULL);
+    } else {
+        sqlite3_bind_text(stmt, 1, idstr, -1, NULL);
+    }
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr, "cratewav: %s\n", sqlite3_errmsg(db));
+        error("error", UNSPECIFIC);
+    }
+
+    count = sqlite3_column_int(stmt, 1);
+
+    if (count &lt; 1) {
+        fprintf(stderr, "Could not resolve id %s\n", idstr);
+        sqlite3_finalize(stmt);
+        error("error", UNSPECIFIC);
+        return UNSPECIFIC;
+    } else if (count &gt; 1) {
+        fprintf(stderr, "id pattern %s not unique.\n", idstr);
+        sqlite3_finalize(stmt);
+        error("error", UNSPECIFIC);
+        return UNSPECIFIC;
+    }
+
+    /* create new ftable entry */
+
+    rc = monolith_dict_newentry(dict, &ftent,
+                                ftname, strlen(ftname));
+
+    if (rc != MONOLITH_OK) {
+        error("Unable to create entry", UNSPECIFIC);
+    }
+
+    /* load file into ftable */
+    filename = (const char *)sqlite3_column_text(stmt, 0);
+    rc = sqlar_loadraw_db(db, &filename[1], &ft);
+
+    /* bind ftable */
+
+    monolith_dict_entry_ftbl(ftent, ft);
+
+    if (rc != SP_OK) {
+        error("There were SQLar problems", UNSPECIFIC);
+        sqlite3_finalize(stmt);
+    }
+
+    if (ergo != NULL) free(ergo);
+
+    return UNSPECIFIC;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/proj/monolith/program/wm_007_0144">prev</a> | <a href="/proj/monolith/program/wm_007">home</a> | <a href="/proj/monolith/program/wm_007_0161">next</a></p>
+</div>
+</body>
+</html>
