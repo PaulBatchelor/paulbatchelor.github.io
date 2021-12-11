@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>TriKuf</title>
+<h1>TriKuf</h1>
+<p>All ideas and code are placed in the public domain.
+</p>
+<p>A <code>trikuf</code> is a 3x3 tile that conforms to the
+basic rules of square geometric kufic calligraphy. It
+is inspired by the <a href="/wiki/kuf">kuf</a> project.
+</p>
+<p>The basic rule is: given any 2x2 tile quad ABCD (left
+to right, top to bottom), cannot have the following
+patterns: 0000 (0x00), 0110 (0x6), 1001 (0x9),
+1111 (0xF).
+</p>
+<p>This C program below will generate all the possible 3x3
+tiles, and filter out the tiles that do not conform
+to square kufic. The valid tiles will be printed to
+standard output.
+</p>
+<p>In addition to being technically correct square kufic,
+the trikufs selected to be printed also do not have any
+empty columns. This is an extra constraint added for
+aesthetic reasons. The idea behind this was to create
+a set of glyphs that could be more visually distinct
+on the horizontal axis when separated by whitespace. (And
+the reason why I want to do build glyphs like this is
+because I'm designing
+a symbolic programming language and VM for the <a href="/wiki/monome_grid">monome grid</a>).
+</p>
+<p>If <code>USE_BTPRNT</code> is defined, it will
+also use <a href="/wiki/btprnt">btprnt</a> to generate a pretty PBM that
+looks like this:
+</p>
+<p><img src="/res/wiki/trikuf/trikufs.png">
+</p>
+<p>To begin, the top level code.
+</p>
+<div><b><i>&lt;&lt;trikuf.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdint.h&gt;
+#include "btprnt/btprnt.h"
+
+&lt;&lt;make_quad&gt;&gt;
+&lt;&lt;violation_quad&gt;&gt;
+&lt;&lt;trirow&gt;&gt;
+&lt;&lt;trirow_get&gt;&gt;
+&lt;&lt;triglyph_to_trirows&gt;&gt;
+&lt;&lt;trikuf&gt;&gt;
+&lt;&lt;print&gt;&gt;
+&lt;&lt;noblankcols&gt;&gt;
+
+#ifdef USE_BTPRNT
+int drawglyph(btprnt_region *reg, uint16_t g, int pos)
+{
+    int x, y;
+    int offx, offy;
+
+    offx = 2 + (pos % 14) * 19;
+    offy = 2 + (pos / 14) * 19;
+
+    btprnt_draw_rect(reg, offx, offy, 16, 16, 1);
+
+    offx += 2;
+    offy += 2;
+
+    for (y = 0; y &lt; 3; y++) {
+        uint8_t r;
+        r = g &gt;&gt; 3*y;
+        for (x = 0; x &lt; 3; x++) {
+            if (r & (1 &lt;&lt; x)) {
+                btprnt_draw_rect_filled(reg,
+                offx + 4*x,
+                offy + 4*y, 4, 4, 1);
+            }
+        }
+    }
+}
+#endif
+
+int main(int argc, char *argv[])
+{
+    uint16_t g;
+    uint16_t gmax;
+    int count;
+#ifdef USE_BTPRNT
+    btprnt *bp;
+    btprnt_region r;
+#endif
+    int w, h;
+
+
+    w = 4 + 14 * 19;
+    h = 4 + 7 * 19;
+
+#ifdef USE_BTPRNT
+    bp = btprnt_new(w, h);
+
+    btprnt_region_init(btprnt_canvas_get(bp),
+                       &r, 2, 2,
+                       w - 4, h - 4);
+#endif
+
+    gmax = (1 &lt;&lt; 9) - 1;
+
+    count = 0;
+
+    for (g = 0; g &lt;= gmax; g++) {
+        if (trikuf(g) && noblankcols(g)) {
+            print_triglyph(g);
+#ifdef USE_BTPRNT
+            drawglyph(&r, g, count);
+#endif
+            count++;
+        }
+    }
+
+
+#ifdef USE_BTPRNT
+    btprnt_buf_pbm(btprnt_buf_get(bp), "out.pbm");
+    btprnt_del(&bp);
+#endif
+
+    printf("%d total trikufs\n", count);
+    return 0;
+}</pre></code>
+<p></p>
+<p>A quad is a set of 4 tiles A, B, C, and D, which gets
+represented 4 bits in a binary value. <code>mkquad</code> will
+construct one of these quads.
+</p>
+<div><b><i>&lt;&lt;make_quad&gt;&gt;=</i></b></div><pre><code>uint8_t mkquad(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
+{
+    return (a & 1) | (b & 1) &lt;&lt; 1 | (c & 1) &lt;&lt; 2 | (d  & 1) &lt;&lt; 3;
+}</pre></code>
+<p></p>
+<p>The binary representation fo the quad allows to quickly
+check if a quad is a so-called "violation" pattern.
+</p>
+<div><b><i>&lt;&lt;violation_quad&gt;&gt;=</i></b></div><pre><code>int violation(uint8_t q)
+{
+    return q == 0x00 || q == 0x6 || q == 0x9 || q == 0xF;
+}</pre></code>
+<p></p>
+<p>A <code>trirow</code> is a set of 3 tiles aligned horizontally,
+represented as 3 bits in an 8-bit integer.
+</p>
+<p>A trirow can be created with <code>mktrirow</code>,
+with bits <code>x</code>, <code>y</code>, and <code>z</code> (which correspond from
+left to right).
+</p>
+<div><b><i>&lt;&lt;trirow&gt;&gt;=</i></b></div><pre><code>uint8_t mktrirow(uint8_t x, uint8_t y, uint8_t z)
+{
+    return (x & 1) | (y & 1) &lt;&lt; 1 | (z & 1) &lt;&lt; 2;
+}</pre></code>
+<p></p>
+<p>For a given row, a bit at position <code>p</code> can be retrieved.
+This is expected to be in range 0-2.
+</p>
+<div><b><i>&lt;&lt;trirow_get&gt;&gt;=</i></b></div><pre><code>uint8_t trirow_get(uint8_t r, int p)
+{
+    return (r & (1 &lt;&lt; p)) &gt;&gt; p;
+}</pre></code>
+<p></p>
+<p>A 3x3 set of tiles is referred here as a <code>triglyph</code>, stored
+as 9 bits inside of a 16-bit integer. The bits of a triglyph
+can be broken up into 3 <code>trirows</code>, which will be called <code>a</code>,
+<code>b</code>, and <code>c</code>. This is done with the function <code>triglyph2trirows</code>.
+</p>
+<div><b><i>&lt;&lt;triglyph_to_trirows&gt;&gt;=</i></b></div><pre><code>void triglyph2trirows(uint16_t g, uint8_t *a, uint8_t *b, uint8_t *c)
+{
+    *a = g & 0x7;
+    g &gt;&gt;= 3;
+    *b = g & 0x7;
+    g &gt;&gt;= 3;
+    *c = g & 0x7;
+}</pre></code>
+<p></p>
+<p>These operations defined above can now be used to create the
+trikuf checker.
+</p>
+<p>A triglyph <code>g</code> can be represented as 3 trirows top-to-bottom
+<code>a</code>, <code>b</code>, <code>c</code>, each consisting of 3 bits:
+</p>
+<p>A position a(0)
+would indicate the first bit at row <code>a</code>.
+</p>
+<p>A map of the layout:
+</p>
+<pre><code>a 0 1 2
+b 0 1 2
+c 0 1 2</pre></code>
+<p></p>
+<p>Up to 4 quads will need to be checked for violations. Using
+they notation described above, the quads are the following
+(moving left to right, top to bottom):
+</p>
+<pre><code>a(0) a(1) b(0) b(1)
+a(1) a(2) b(1) b(2)
+b(0) b(1) c(0) c(1)
+b(1) b(2) c(1) c(2)</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;trikuf&gt;&gt;=</i></b></div><pre><code>int check(uint8_t a, uint8_t b,
+          uint8_t w, uint8_t x, uint8_t y, uint8_t z)
+{
+    return violation(mkquad(
+        trirow_get(a, w),
+        trirow_get(a, x),
+        trirow_get(b, y),
+        trirow_get(b, z)));
+}
+
+int trikuf(uint16_t g)
+{
+    uint8_t a, b, c;
+    int rc;
+
+    a = b = c = 0;
+
+    triglyph2trirows(g, &a, &b, &c);
+
+    rc = check(a, b, 0, 1, 0, 1);
+    if (rc) return 0;
+    rc = check(a, b, 1, 2, 1, 2);
+    if (rc) return 0;
+    rc = check(b, c, 0, 1, 0, 1);
+    if (rc) return 0;
+    rc = check(b, c, 1, 2, 1, 2);
+    if (rc) return 0;
+
+    return 1;
+}</pre></code>
+<p></p>
+<p>The function <code>print_triglyph</code> is used to print a triglyph to
+standard output, using '#' to represent a filled tile,
+and '-' to represent an empty tile. The function will
+also place a little border around the triglyph as well.
+</p>
+<div><b><i>&lt;&lt;print&gt;&gt;=</i></b></div><pre><code>void print_triglyph(uint16_t g)
+{
+    int x, y;
+
+    printf("%x:\n", g);
+    printf("+---+\n");
+    for (y = 0; y &lt; 3; y++) {
+        uint8_t r;
+        r = g &gt;&gt; 3*y;
+        putchar('|');
+        for (x = 0; x &lt; 3; x++) {
+            if (r & (1 &lt;&lt; x)) {
+                putchar('#');
+            } else {
+                putchar('-');
+            }
+        }
+        printf("|\n");
+    }
+    printf("+---+\n");
+}</pre></code>
+<p></p>
+<p>An additional constraint added to this program is to check
+that a glyph has no empty columns. This is done with
+the function <code>noblankcols</code>.
+</p>
+<div><b><i>&lt;&lt;noblankcols&gt;&gt;=</i></b></div><pre><code>int checkcol(uint8_t a, uint8_t b, uint8_t c, int pos)
+{
+    return trirow_get(a, pos) == 0 &&
+           trirow_get(b, pos) == 0 &&
+           trirow_get(c, pos) == 0;
+}
+
+int noblankcols(uint16_t g)
+{
+    uint8_t a, b, c;
+    int rc;
+
+    a = b = c = 0;
+    triglyph2trirows(g, &a, &b, &c);
+
+    rc = checkcol(a, b, c, 0);
+    if (rc) return 0;
+    rc = checkcol(a, b, c, 1);
+    if (rc) return 0;
+    rc = checkcol(a, b, c, 2);
+    if (rc) return 0;
+
+    return 1;
+}
+</pre></code>
+<hr>
+<p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
