@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>tseq</title>
+<h1>tseq</h1>
+
+<h2>Overview</h2>
+
+<p><code>tseq</code> is a simple sequencer that reads values from a table,
+and is clocked by a trigger. Eventually, it will have
+programable modes.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>tseq.h</code> and <code>tseq.c</code>.
+</p>
+<div><b><i>&lt;&lt;tseq.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_TSEQ_H
+#define SK_TSEQ_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#ifdef SK_TSEQ_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;tseq.c&gt;&gt;=</i></b></div><pre><code>#define SK_TSEQ_PRIV
+#include "tseq.h"
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Struct and Initialization</h2>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_tseq sk_tseq;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_tseq {
+    SKFLT *seq;
+    int sz;
+    int pos;
+    int mode; /* TODO */
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tseq_init(sk_tseq *ts, SKFLT *seq, int sz);</pre></code>
+<p></p>
+<p>The position is explicitely set to -1 so that if there
+is an initial tick in the beginning, it will increment
+to the first value (0).
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tseq_init(sk_tseq *ts, SKFLT *seq, int sz)
+{
+    ts-&gt;seq = seq;
+    ts-&gt;sz = sz;
+    ts-&gt;pos = -1;
+    ts-&gt;mode = 0; /* TODO */
+}</pre></code>
+<p></p>
+</p>
+
+<h2>Computation</h2>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tseq_tick(sk_tseq *ts, SKFLT trig);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tseq_tick(sk_tseq *ts, SKFLT trig)
+{
+    SKFLT out;
+
+    out = 0;
+
+    if (trig != 0) {
+        ts-&gt;pos++;
+        if (ts-&gt;pos &gt;= ts-&gt;sz) ts-&gt;pos = 0;
+    }
+
+    if (ts-&gt;pos &lt; 0) ts-&gt;pos = 0;
+    if (ts-&gt;pos &gt;= ts-&gt;sz) ts-&gt;pos = ts-&gt;sz - 1;
+
+    out = ts-&gt;seq[ts-&gt;pos];
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>

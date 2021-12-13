@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Crossfade</title>
+<h1>Crossfade</h1>
+
+<h2>Overview</h2>
+
+<p><code>Crossfade</code> between two signals <code>a</code> and <code>b</code> using some
+position <code>pos</code> (a value between 0 and 1). When the position
+is 0, it is signal A, when position is 1, it is signal B.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>crossfade.c</code> and <code>crossfade.h</code>.
+</p>
+<div><b><i>&lt;&lt;crossfade.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_CROSSFADE_H
+#define SK_CROSSFADE_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;crossfade.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include "crossfade.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define SQRT2 1.41421356237309504880
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Linear Crossfade</h2>
+
+<p>A linear crossfade is simply linear interpolation.
+</p>
+<p>This is done with <code>sk_crossfade_linear</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_crossfade_linear(SKFLT a, SKFLT b, SKFLT pos);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_crossfade_linear(SKFLT a, SKFLT b, SKFLT pos)
+{
+    return (1 - pos)*a + pos*b;
+}</pre></code>
+
+<h2>Square Root Crossfade</h2>
+
+<p>crossfade using <code>sqrt</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_crossfade_sqrt(SKFLT a, SKFLT b, SKFLT pos);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_crossfade_sqrt(SKFLT a, SKFLT b, SKFLT pos)
+{
+    return a * sqrt(pos) + b * sqrt(1 - pos);
+}</pre></code>
+
+<h2>Equal Power</h2>
+
+<p>Uses equal power to do crossfade.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_crossfade_equal(SKFLT a, SKFLT b, SKFLT pos);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_crossfade_equal(SKFLT a, SKFLT b, SKFLT pos)
+{
+    SKFLT c;
+    SKFLT s;
+    c = cos(M_PI * pos * 0.5);
+    s = sin(M_PI * pos * 0.5);
+
+    a *= SQRT2 * (c + s) * 0.5;
+    b *= SQRT2 * (c - s) * 0.5;
+
+    return a + b;
+}</pre></code>
+</div>
+</body>
+</html>

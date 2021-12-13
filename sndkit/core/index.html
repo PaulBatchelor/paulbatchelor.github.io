@@ -15,11 +15,11 @@
 
 <p>This document describes and outlines a small API for
 sndkit. It is primarily designed to be a small layer on top
-of Patchwerk, a library used to build up directed audio
+of Graforge, a library used to build up directed audio
 graphs. A large portion of the functionality is based on
-what is found in runt-patchwerk. Just simpler.
+what is found in runt-graforge. Just simpler.
 </p>
-<p>In addition to maintaining an instance of patchwerk, the
+<p>In addition to maintaining an instance of graforge, the
 sndkit API provides a stack and a register system. The
 stack is the primary means of sharing data between nodes.
 Registers are for more persitently used values.
@@ -29,8 +29,8 @@ Registers are for more persitently used values.
 
 <p><code>core.h</code> and <code>core.c</code>.
 </p>
-<div><b><i>&lt;&lt;core.h&gt;&gt;=</i></b></div><pre><code>#ifndef SKPW_H
-#define SKPW_H
+<div><b><i>&lt;&lt;core.h&gt;&gt;=</i></b></div><pre><code>#ifndef SKGF_H
+#define SKGF_H
 
 #ifndef SKFLT
 #define SKFLT float
@@ -55,9 +55,10 @@ Registers are for more persitently used values.
 <div><b><i>&lt;&lt;core.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
 #include &lt;math.h&gt;
 #include &lt;string.h&gt;
-#include "patchwerk.h"
+#include "graforge.h"
 #define SK_CORE_PRIV
 #include "core.h"
+&lt;&lt;static_funcdefs&gt;&gt;
 &lt;&lt;enums&gt;&gt;
 &lt;&lt;funcs&gt;&gt;</pre></code>
 
@@ -65,27 +66,30 @@ Registers are for more persitently used values.
 
 <p>All this behavior is defined in a struct called <code>sk_core</code>.
 </p>
+
+<h3>new/del</h3>
+
 <p>Creating/freeing is done with <code>sk_core_new</code> and
 <code>sk_core_del</code>.
-</p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>sk_core * sk_core_new(int sr);
 void sk_core_del(sk_core *core);</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>sk_core * sk_core_new(int sr)
 {
     sk_core *core;
-    pw_patch *patch;
+    gf_patch *patch;
 
     core = malloc(sizeof(sk_core));
-    core-&gt;patch = malloc(pw_patch_size());
+    core-&gt;patch = malloc(gf_patch_size());
 
     patch = core-&gt;patch;
-    pw_patch_init(patch, 64);
-    pw_patch_alloc(patch, 8, 10);
-    pw_patch_srate_set(patch, sr);
+    gf_patch_init(patch, 64);
+    gf_patch_alloc(patch, 8, 10);
+    gf_patch_srate_set(patch, sr);
 
     sk_stack_init(&core-&gt;stack);
     sk_regtbl_init(&core-&gt;regtbl);
+    sk_dict_init(&core-&gt;dict);
 
     sk_core_srand(core, 0);
     return core;
@@ -95,23 +99,28 @@ void sk_core_del(sk_core *core);</pre></code>
 {
     if (core == NULL) return;
 
-    pw_patch_destroy(core-&gt;patch);
-    pw_patch_free_nodes(core-&gt;patch);
+    gf_patch_destroy(core-&gt;patch);
+    gf_patch_free_nodes(core-&gt;patch);
     free(core-&gt;patch);
-
+    sk_dict_clean(&core-&gt;dict);
     free(core);
     core = NULL;
 }</pre></code>
-<p></p>
+
+<h3>core struct</h3>
+
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_core sk_core;</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;core&gt;&gt;=</i></b></div><pre><code>struct sk_core {
-    pw_patch *patch;
+    gf_patch *patch;
     sk_stack stack;
     sk_regtbl regtbl;
+    sk_dict dict;
     unsigned long rng;
 };</pre></code>
-<p></p>
+
+<h3>computing a block of audio</h3>
+
 <p>A internal block of audio can be computed with
 <code>sk_core_compute</code>. Usually this size is 64 samples.
 </p>
@@ -119,9 +128,11 @@ void sk_core_del(sk_core *core);</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_core_compute(sk_core *core)
 {
-    pw_patch_compute(core-&gt;patch);
+    gf_patch_compute(core-&gt;patch);
 }</pre></code>
-<p></p>
+
+<h3>computing seconds of audio</h3>
+
 <p><code>sk_core_computes</code> is like <code>sk_core_compute</code>, but computes
 an approximuate number of seconds of audio. This value
 gets rounded to the nearest block. The number of blocks
@@ -140,18 +151,22 @@ rendered gets rendered.
 
     return nblocks;
 }</pre></code>
-<p></p>
-<p>Building up nodes involves interacting with the patchwerk
+
+<h3>patch getter</h3>
+
+<p>Building up nodes involves interacting with the graforge
 API. To get the top level struct of that opaquely, use
 <code>sk_core_patch</code>.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>pw_patch * sk_core_patch(sk_core *core);</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>gf_patch * sk_core_patch(sk_core *core);</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>pw_patch * sk_core_patch(sk_core *core)
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>gf_patch * sk_core_patch(sk_core *core)
 {
     return core-&gt;patch;
 }</pre></code>
-<p></p>
+
+<h3>seconds to blocks</h3>
+
 <p>The function <code>sk_core_seconds_to_blocks</code> converts
 seconds to a number of render blocks.
 </p>
@@ -162,10 +177,31 @@ seconds to a number of render blocks.
     size_t nblocks;
     int sr;
 
-    sr = pw_patch_srate_get(core-&gt;patch);
+    sr = gf_patch_srate_get(core-&gt;patch);
     nblocks = floor((sr * secs) / 64) + 1;
 
     return nblocks;
+}</pre></code>
+
+<h3>resizing the internal block size</h3>
+
+<p>Note that this can only be between 1 and the max
+block size (hard-coded to be 64).
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_blkset(sk_core *core, int sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_blkset(sk_core *core, int sz)
+{
+    return gf_patch_blksize_set(core-&gt;patch, sz);
+}</pre></code>
+
+<h3>Stack getter</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>sk_stack* sk_core_stack(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>sk_stack* sk_core_stack(sk_core *core)
+{
+    return &core-&gt;stack;
 }</pre></code>
 
 <h2>Stack</h2>
@@ -197,6 +233,13 @@ pointer for C structures.
     s-&gt;type = SK_TYPE_NONE;
     s-&gt;f = 0;
     s-&gt;ptr = NULL;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_stacklet_constant(sk_stacklet *s);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_stacklet_constant(sk_stacklet *s)
+{
+    return s-&gt;f;
 }</pre></code>
 <p></p>
 <p>An array of stacklets forms the foundation of a <code>sk_stack</code>.
@@ -242,6 +285,37 @@ stack.
    SK_TYPE_TABLE,
    SK_TYPE_GENERIC
 };</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_stacklet_isnone(sk_stacklet *s);
+int sk_stacklet_isconstant(sk_stacklet *s);
+int sk_stacklet_iscable(sk_stacklet *s);
+int sk_stacklet_istable(sk_stacklet *s);
+int sk_stacklet_isgeneric(sk_stacklet *s);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_stacklet_isnone(sk_stacklet *s)
+{
+    return s-&gt;type == SK_TYPE_NONE;
+}
+
+int sk_stacklet_isconstant(sk_stacklet *s)
+{
+    return s-&gt;type == SK_TYPE_CONSTANT;
+}
+
+int sk_stacklet_iscable(sk_stacklet *s)
+{
+    return s-&gt;type == SK_TYPE_CABLE;
+}
+
+int sk_stacklet_istable(sk_stacklet *s)
+{
+    return s-&gt;type == SK_TYPE_TABLE;
+}
+
+int sk_stacklet_isgeneric(sk_stacklet *s)
+{
+    return s-&gt;type == SK_TYPE_GENERIC;
+}</pre></code>
 
 <h3>Push/Pop</h3>
 
@@ -335,8 +409,8 @@ the argument is not <code>NULL</code>.
 <p></p>
 <br>
 <p><code>sk_core_dup</code> will call <code>sk_stack_dup</code> on the internal
-stack, but also will call a dup operation on the patchwerk
-stack if the item is a patchwerk cable.
+stack, but also will call a dup operation on the graforge
+stack if the item is a graforge cable.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_dup(sk_core *core);</pre></code>
 <p></p>
@@ -349,9 +423,9 @@ stack if the item is a patchwerk cable.
     SK_ERROR_CHECK(rc);
 
     if (s-&gt;type == SK_TYPE_CABLE) {
-        pw_stack *stack;
-        stack = pw_patch_stack(core-&gt;patch);
-        pw_stack_dup(stack);
+        gf_stack *stack;
+        stack = gf_patch_stack(core-&gt;patch);
+        gf_stack_dup(stack);
     }
 
     return 0;
@@ -382,8 +456,8 @@ not <code>NULL</code>.
 }</pre></code>
 <p></p>
 <p>The function <code>sk_core_drop</code> performs a drop on the stack
-in the core struct. If the item is a patchwerk cable, it
-will also perform a drop on the patchwerk buffer stack.
+in the core struct. If the item is a graforge cable, it
+will also perform a drop on the graforge buffer stack.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_drop(sk_core *core);</pre></code>
 <p></p>
@@ -396,9 +470,9 @@ will also perform a drop on the patchwerk buffer stack.
     SK_ERROR_CHECK(rc);
 
     if (s-&gt;type == SK_TYPE_CABLE) {
-        pw_stack *stack;
-        stack = pw_patch_stack(core-&gt;patch);
-        pw_stack_pop(stack, NULL);
+        gf_stack *stack;
+        stack = gf_patch_stack(core-&gt;patch);
+        gf_stack_pop(stack, NULL);
     }
 
     return 0;
@@ -441,7 +515,7 @@ the stack, meaning the index position must be at least 1.
 }</pre></code>
 <p></p>
 <p>The function <code>sk_core_swap</code> does a swap, and will also swap
-on the patchwerk buffer stack if both items are cables.
+on the graforge buffer stack if both items are cables.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_swap(sk_core *core);</pre></code>
 <p></p>
@@ -454,9 +528,9 @@ on the patchwerk buffer stack if both items are cables.
     SK_ERROR_CHECK(rc);
 
     if (s[0]-&gt;type == SK_TYPE_CABLE && s[1]-&gt;type == SK_TYPE_CABLE) {
-        pw_stack *stack;
-        stack = pw_patch_stack(core-&gt;patch);
-        pw_stack_swap(stack);
+        gf_stack *stack;
+        stack = gf_patch_stack(core-&gt;patch);
+        gf_stack_swap(stack);
     }
 
     return 0;
@@ -465,12 +539,12 @@ on the patchwerk buffer stack if both items are cables.
 <h2>Parameters and Cables</h2>
 
 <p><code>sndkit_param</code> is an abstraction used to deal with
-patchwerk cables, and is designed to link up with the
-sndkit stack and patchwerk nodes.
+graforge cables, and is designed to link up with the
+sndkit stack and graforge nodes.
 </p>
-<p>A sndkit parameter can either be a patchwerk cable from a
+<p>A sndkit parameter can either be a graforge cable from a
 node or a constant value. If it is cable, it will properly
-manage the buffer stack in patchwerk. If it is a constant,
+manage the buffer stack in graforge. If it is a constant,
 it will only manipulate the sndkit stack.
 </p>
 
@@ -481,7 +555,7 @@ it will only manipulate the sndkit stack.
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct {
     char type;
     union {
-        pw_cable *c;
+        gf_cable *c;
         SKFLT f;
     } data;
 } sk_param;</pre></code>
@@ -514,8 +588,8 @@ from the buffer stack.
         p-&gt;data.f = s-&gt;f;
     } else if (s-&gt;type == SK_TYPE_CABLE) {
         p-&gt;type = 1;
-        p-&gt;data.c = (pw_cable *)s-&gt;ptr;
-        pw_cable_pop(p-&gt;data.c);
+        p-&gt;data.c = (gf_cable *)s-&gt;ptr;
+        gf_cable_pop(p-&gt;data.c);
     } else {
         /* Wrong type! */
         return 1;
@@ -567,8 +641,8 @@ from the buffer stack.
 
     if (s-&gt;type == SK_TYPE_CABLE) {
         p-&gt;type = 1;
-        p-&gt;data.c = (pw_cable *)s-&gt;ptr;
-        pw_cable_pop(p-&gt;data.c);
+        p-&gt;data.c = (gf_cable *)s-&gt;ptr;
+        gf_cable_pop(p-&gt;data.c);
     } else {
         /* Wrong type! */
         return 1;
@@ -582,24 +656,24 @@ from the buffer stack.
 <p>Set a parameter with <code>sk_param_set</code>.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_param_set(sk_core *core,
-                 pw_node *node,
+                 gf_node *node,
                  sk_param *p,
                  int cid);</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_param_set(sk_core *core,
-                 pw_node *node,
+                 gf_node *node,
                  sk_param *p,
                  int cid)
 {
-    pw_cable *c;
+    gf_cable *c;
 
-    pw_node_get_cable(node, cid, &c);
+    gf_node_get_cable(node, cid, &c);
     if (p-&gt;type == 0) {
-        pw_cable_set_value(c, p-&gt;data.f);
+        gf_cable_set_value(c, p-&gt;data.f);
     } else {
         int rc;
-        rc = pw_cable_connect(p-&gt;data.c, c);
-        SK_PW_ERROR_CHECK(rc);
+        rc = gf_cable_connect(p-&gt;data.c, c);
+        SK_GF_ERROR_CHECK(rc);
     }
     return 0;
 }</pre></code>
@@ -613,11 +687,6 @@ the node cable.
 
 <h3>Pushing Constants</h3>
 
-<p>Constant values can be pushed to the stack with the
-function <code>sk_core_constant</code>.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_constant(sk_core *core, SKFLT x);</pre></code>
-<p></p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_constant(sk_core *core, SKFLT x)
 {
     int rc;
@@ -641,7 +710,7 @@ function <code>sk_core_constant</code>.
 <code>sk_param_out</code>.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_param_out(sk_core *core,
-                 pw_node *node,
+                 gf_node *node,
                  int cid);</pre></code>
 <p></p>
 <p>Cables need to be pushed in the order they are created in
@@ -651,10 +720,10 @@ this is less tricky than it sounds. If done correctly, this
 process can be mostly automated or abstracted away.
 </p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_param_out(sk_core *core,
-                 pw_node *node,
+                 gf_node *node,
                  int cid)
 {
-    pw_cable *c;
+    gf_cable *c;
     sk_stacklet *s;
     sk_stack *stk;
     int rc;
@@ -663,8 +732,8 @@ process can be mostly automated or abstracted away.
 
     rc = sk_stack_push(stk, &s);
     SK_ERROR_CHECK(rc);
-    rc = pw_node_get_cable(node, cid, &c);
-    SK_PW_ERROR_CHECK(rc);
+    rc = gf_node_get_cable(node, cid, &c);
+    SK_GF_ERROR_CHECK(rc);
 
     s-&gt;type = SK_TYPE_CABLE;
     s-&gt;ptr = c;
@@ -712,6 +781,15 @@ int sk_core_generic_pop(sk_core *core, void **ptr);</pre></code>
     if (ptr != NULL) *ptr = s-&gt;ptr;
 
     return rc;
+}</pre></code>
+
+<h3>Get Stack Position</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_stackpos(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_stackpos(sk_core *core)
+{
+    return core-&gt;stack.pos;
 }</pre></code>
 
 <h2>Registers</h2>
@@ -804,7 +882,7 @@ int sk_register_set(sk_regtbl *rt, int pos, sk_stacklet *s);</pre></code>
 }</pre></code>
 <p></p>
 <p>Things get a bit more involved the item in the register
-is a patchwerk cable. This requires pushing the buffer
+is a graforge cable. This requires pushing the buffer
 contained inside of the cable back onto the buffer stack.
 </p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_regget(sk_core *core, int pos)
@@ -819,13 +897,13 @@ contained inside of the cable back onto the buffer stack.
 
     /* also push to buffer stack if cable */
     if (s-&gt;type == SK_TYPE_CABLE) {
-        pw_cable *c;
-        pw_buffer *b;
-        pw_stack *bstack;
-        c = (pw_cable *) s-&gt;ptr;
-        b = pw_cable_get_buffer(c);
-        bstack = pw_patch_stack(core-&gt;patch);
-        pw_stack_push_buffer(bstack, b);
+        gf_cable *c;
+        gf_buffer *b;
+        gf_stack *bstack;
+        c = (gf_cable *) s-&gt;ptr;
+        b = gf_cable_get_buffer(c);
+        bstack = gf_patch_stack(core-&gt;patch);
+        gf_stack_push_buffer(bstack, b);
     }
 
     return 0;
@@ -945,7 +1023,7 @@ with the <code>SK_ERROR_CHECK</code> paradigm.
 
 <h2>Buffer Operations</h2>
 
-<p>Patchwerk works by reading and writing to fixed-size blocks
+<p>Graforge works by reading and writing to fixed-size blocks
 of samples known as buffers. Buffers are manipulated using
 a <code>stack</code>, and are managed/queried from a <code>pool</code>.
 </p>
@@ -956,7 +1034,7 @@ on in the patch. In order to do this, one must explicitely
 <code>hold</code> the buffer and then <code>unhold</code> it when it is done being
 used. If buffers are not unheld, it creates a sort of
 resource leak which will dry up the buffer pool and cause
-patchwerk to lock up.
+graforge to lock up.
 </p>
 <p>Holding and unholding buffers can be done with
 <code>sk_core_hold</code> and <code>sk_core_unhold</code>. These will peak at
@@ -981,8 +1059,8 @@ int sk_core_unhold(sk_core *core);</pre></code>
         return 2;
     }
 
-    rc = pw_patch_bhold(core-&gt;patch, NULL);
-    SK_PW_ERROR_CHECK(rc);
+    rc = gf_patch_bhold(core-&gt;patch, NULL);
+    SK_GF_ERROR_CHECK(rc);
 
     return 0;
 }</pre></code>
@@ -990,8 +1068,8 @@ int sk_core_unhold(sk_core *core);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_unhold(sk_core *core)
 {
     sk_param cable;
-    pw_buffer *buf;
-    pw_cable *c;
+    gf_buffer *buf;
+    gf_cable *c;
     int rc;
 
     rc = sk_param_get(core, &cable);
@@ -1003,9 +1081,9 @@ int sk_core_unhold(sk_core *core);</pre></code>
     }
 
     c = cable.data.c;
-    buf = pw_cable_get_buffer(c);
-    rc = pw_patch_bunhold(core-&gt;patch, buf);
-    SK_PW_ERROR_CHECK(rc);
+    buf = gf_cable_get_buffer(c);
+    rc = gf_patch_bunhold(core-&gt;patch, buf);
+    SK_GF_ERROR_CHECK(rc);
 
     return 0;
 }</pre></code>
@@ -1013,7 +1091,7 @@ int sk_core_unhold(sk_core *core);</pre></code>
 <h2>Tables</h2>
 
 <p>A small abstraction for dealing with tables that are managed
-by patchwerk.
+by graforge.
 </p>
 
 <h3>Table Struct</h3>
@@ -1031,18 +1109,19 @@ it's size.
 <h3>Creating a New Table</h3>
 
 <p>Called <code>sk_core_table_new</code>. Allocates a new table and wraps
-it around a patchwerk pointer. This table will be
+it around a graforge pointer. This table will be
 automatically freed when the patch is freed.
 </p>
 <p>The table itself is then pushed to the stack.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_table_new(sk_core *core, unsigned long sz);</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_table_new(sk_core *core, unsigned long sz);
+int sk_core_table_init(sk_core *core, SKFLT *tab, unsigned long sz);</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void free_table(pw_pointer *p)
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void free_table(gf_pointer *p)
 {
     sk_table *tab;
 
-    tab = pw_pointer_data(p);
+    tab = gf_pointer_data(p);
 
     free(tab-&gt;tab);
     free(tab);
@@ -1052,21 +1131,30 @@ int sk_core_table_new(sk_core *core, unsigned long sz)
 {
     sk_table *tab;
     int rc;
+    SKFLT *data;
 
     tab = malloc(sizeof(sk_table));
 
     if (tab == NULL) return 1;
+    data = malloc(sz * sizeof(SKFLT));
+    memset(data, 0, sz * sizeof(SKFLT));
 
-    tab-&gt;tab = malloc(sz * sizeof(SKFLT));
-    memset(tab-&gt;tab, 0, sz * sizeof(SKFLT));
-    tab-&gt;sz = sz;
+    sk_table_init(tab, data, sz);
 
-    pw_patch_append_userdata(core-&gt;patch, free_table, tab);
+    gf_patch_append_userdata(core-&gt;patch, free_table, tab);
 
     rc = sk_core_table_push(core, tab);
     SK_ERROR_CHECK(rc);
 
     return 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_table_init(sk_table *tab, SKFLT *data, unsigned long sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_table_init(sk_table *tab, SKFLT *data, unsigned long sz)
+{
+    tab-&gt;tab = data;
+    tab-&gt;sz = sz;
 }</pre></code>
 
 <h3>Getting Table Data and Size</h3>
@@ -1178,8 +1266,8 @@ check an error code and exit if it is non-zero.
 </p>
 <div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_ERROR_CHECK(rc) if (rc) return rc;</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_PW_ERROR_CHECK(rc) if(rc != PW_OK) {\
-    fprintf(stderr, "Error: %s\n", pw_error(rc));\
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define SK_GF_ERROR_CHECK(rc) if(rc != GF_OK) {\
+    fprintf(stderr, "Error: %s\n", gf_error(rc));\
     return 1;\
 }</pre></code>
 
@@ -1219,6 +1307,330 @@ on the LCG found in Soundpipe.
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_core_randf(sk_core *core)
 {
     return (SKFLT)sk_core_rand(core) / SK_CORE_RANDMAX;
+}</pre></code>
+
+<h2>Data Dictionary</h2>
+
+<p>The <code>Data Dictionary</code> is an implementation of a small
+and simple hash table for storing allocated C data such
+as structs.
+</p>
+<p>This interface is designed to make it easier to create
+bindings in high level languages. Because it's a dictionary,
+it allows objects to be referenced as strings, rather than
+trying to wrap the pointer data more directly. Also, memory
+is explicitely managed within the dictionary rather than
+at the whims of the garbage collection. Every word entry
+has a user-defined destructor callback that gets called when
+an entry is deleted.
+</p>
+<p>The kinds of data expected to be managed are expected to be
+more persistent during the runtime of the program.
+</p>
+
+<h3>Struct</h3>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_dict sk_dict;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct dict_entry {
+    char *key;
+    int sz;
+    void *val;
+    void (*del)(void*);
+    struct dict_entry *nxt;
+};
+
+struct sk_dict {
+    struct dict_entry *ent[64];
+    int sz;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>size_t sk_dict_sizeof(void);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>size_t sk_dict_sizeof(void)
+{
+    return sizeof(sk_dict);
+}</pre></code>
+
+<h3>Dictionary Hash Function</h3>
+
+<p>CJB hash function.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int hash(const char *str, int sz, int mod);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int hash(const char *str, int sz, int mod)
+{
+    unsigned long h;
+    int i;
+
+    h = 5381;
+    i = 0;
+
+    for(i = 0; i &lt; sz; i++) {
+        h = ((h &lt;&lt; 5) + h) ^ str[i];
+        h %= 0x7FFFFFFF;
+    }
+
+    return h % mod;
+}</pre></code>
+
+<h3>Initializing the Dictionary</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_dict_init(sk_dict *d);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_dict_init(sk_dict *d)
+{
+    int n;
+
+    for (n = 0; n &lt; 64; n++) {
+        d-&gt;ent[n] = NULL;
+    }
+
+    d-&gt;sz = 0;
+}</pre></code>
+
+<h3>Freeing the dictionary</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_dict_clean(sk_dict *d);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_clean(sk_dict *d)
+{
+    int e;
+
+    for (e = 0; e &lt; 64; e++) {
+        struct dict_entry *ent, *nxt;
+        ent = d-&gt;ent[e];
+
+        while (ent != NULL) {
+            nxt = ent-&gt;nxt;
+            if (ent-&gt;del != NULL) ent-&gt;del(ent-&gt;val);
+            free(ent-&gt;key);
+            free(ent);
+            ent = nxt;
+        }
+    }
+
+    return 0;
+}</pre></code>
+
+<h3>Append An Entry</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_dict_append(sk_dict *d,
+                   const char *key,
+                   int sz,
+                   void *p,
+                   void (*del)(void*));</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_append(sk_dict *d,
+                   const char *key,
+                   int sz,
+                   void *val,
+                   void (*del)(void*))
+{
+    int pos;
+    struct dict_entry *ent;
+    int i;
+
+    pos = hash(key, sz, 64);
+
+    ent = d-&gt;ent[pos];
+
+    while (ent != NULL) {
+        if (ent-&gt;sz == sz && !strcmp(key, ent-&gt;key)) {
+            return 1;
+        }
+        ent = ent-&gt;nxt;
+    }
+
+    ent = malloc(sizeof(struct dict_entry));
+    ent-&gt;key = malloc(sz + 1);
+    ent-&gt;sz = sz;
+
+    for (i = 0; i &lt; sz; i++) ent-&gt;key[i] = key[i];
+    ent-&gt;key[sz] = '\0';
+
+    ent-&gt;val = val;
+    ent-&gt;del = del;
+    ent-&gt;nxt = d-&gt;ent[pos];
+    d-&gt;ent[pos] = ent;
+    return 0;
+}</pre></code>
+<p></p>
+<p>The core interface can do this with <code>sk_core_append</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_append(sk_core *core,
+                   const char *key,
+                   int sz,
+                   void *p,
+                   void (*del)(void*));</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_append(sk_core *core,
+                   const char *key,
+                   int sz,
+                   void *p,
+                   void (*del)(void*))
+{
+    return sk_dict_append(&core-&gt;dict, key, sz, p, del);
+}</pre></code>
+
+<h3>Lookup An Entry</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_dict_lookup(sk_dict *d,
+                   const char *key,
+                   int sz,
+                   void **p);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_lookup(sk_dict *d,
+                   const char *key,
+                   int sz,
+                   void **p)
+{
+    int pos;
+    struct dict_entry *ent;
+
+    pos = hash(key, sz, 64);
+
+    ent = d-&gt;ent[pos];
+
+    while (ent != NULL) {
+        if (ent-&gt;sz == sz && !strncmp(key, ent-&gt;key, sz)) {
+            *p = ent-&gt;val;
+            return 0;
+        }
+        ent = ent-&gt;nxt;
+    }
+
+    return 1;
+}</pre></code>
+<p></p>
+<p>Do lookup on the core internal dictionary with
+<code>sk_core_lookup</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_lookup(sk_core *core,
+                   const char *key,
+                   int sz,
+                   void **p);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_lookup(sk_core *core,
+                   const char *key,
+                   int sz,
+                   void **p)
+{
+    return sk_dict_lookup(&core-&gt;dict, key, sz, p);
+}</pre></code>
+
+<h3>Remove An Entry</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_dict_remove(sk_dict *d, const char *key, int sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_remove(sk_dict *d, const char *key, int sz)
+{
+    int pos;
+    struct dict_entry *ent, *prv;
+
+    pos = hash(key, sz, 64);
+
+    ent = d-&gt;ent[pos];
+
+    prv = NULL;
+
+    while (ent != NULL) {
+        if (ent-&gt;sz == sz && !strncmp(key, ent-&gt;key, sz)) {
+
+            if (prv == NULL) {
+                d-&gt;ent[pos] = ent-&gt;nxt;
+            } else {
+                prv-&gt;nxt = ent-&gt;nxt;
+            }
+            if (ent-&gt;del) ent-&gt;del(ent-&gt;val);
+            free(ent-&gt;key);
+            free(ent);
+            return 0;
+        }
+        prv = ent;
+        ent = ent-&gt;nxt;
+    }
+    return 1;
+}</pre></code>
+<p></p>
+<p>Do lookup on the core internal dictionary with
+<code>sk_core_remove</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_remove(sk_core *core,
+                   const char *key,
+                   int sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_remove(sk_core *core,
+                   const char *key,
+                   int sz)
+{
+    return sk_dict_remove(&core-&gt;dict, key, sz);
+}</pre></code>
+
+<h3>Grab: Lookup and Push onto the Stack</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_grab(sk_core *core,
+                 const char *key,
+                 int sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_grab(sk_core *core,
+                 const char *key,
+                 int sz)
+{
+    int rc;
+    void *ptr;
+
+    rc = sk_core_lookup(core, key, sz, &ptr);
+
+    if (rc) return 1;
+
+    rc = sk_core_generic_push(core, ptr);
+
+    if (rc) return 2;
+
+    return 0;
+}</pre></code>
+
+<h3>Append a Table</h3>
+
+<p><code>sk_core_append_table</code> will allocate append a table to
+the dictionary.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_append_table(sk_core *core,
+                         const char *key,
+                         int sz,
+                         int tabsz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void deltab(void *ptr)
+{
+    sk_table *tab;
+
+    tab = ptr;
+
+    free(tab-&gt;tab);
+    free(tab);
+}
+
+int sk_core_append_table(sk_core *core,
+                         const char *key,
+                         int sz,
+                         int tabsz)
+{
+    int rc;
+    sk_table *tab;
+
+    tab = calloc(1, sizeof(sk_table));
+
+    tab-&gt;tab = calloc(tabsz, sizeof(SKFLT));
+    tab-&gt;sz = tabsz;
+
+    rc = sk_core_append(core, key, sz, tab, deltab);
+    SK_ERROR_CHECK(rc);
+
+    rc = sk_core_table_push(core, tab);
+    SK_ERROR_CHECK(rc);
+
+    return 0;
 }</pre></code>
 </div>
 </body>

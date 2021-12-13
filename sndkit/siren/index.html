@@ -19,7 +19,7 @@ succinctly shows how to work with a stack-based
 modular environment.
 </p>
 <p>I originally wrote this patch as a bridge to show the
-relationship between runt code and C + patchwerk code
+relationship between runt code and C + graforge code
 (included amongst the examples).
 Now, I have adapated a version of it that works in sndkit!
 </p>
@@ -87,7 +87,7 @@ trivial process!
 </p>
 <div><b><i>&lt;&lt;siren.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
 #include &lt;stdio.h&gt;
-#include "patchwerk.h"
+#include "graforge.h"
 #include "core.h"
 #include "sknodes.h"
 
@@ -181,7 +181,7 @@ homemade stack based language used to notate patches.
 <p>Even though sndkit uses TCL and C syntax, the thought
 process and structure I use is still in stacks.
 </p>
-<div><b><i>&lt;&lt;siren.rnt&gt;&gt;=</i></b></div><pre><code>patchwerk nodes
+<div><b><i>&lt;&lt;siren.rnt&gt;&gt;=</i></b></div><pre><code>graforge nodes
 
 0.1 1 sine bhold 0 cabset
 
@@ -265,17 +265,17 @@ dup dup
 drop 0.1 mul dcblk
 add</pre></code>
 
-<h2>Implementation 6: C and Patchwerk</h2>
+<h2>Implementation 6: C and Grafwerk</h2>
 
 <p>This comes from my original
-<a href="https://github.com/paulbatchelor/patchwerk-siren">siren patch</a>.
+<a href="https://github.com/paulbatchelor/graforge-siren">siren patch</a>.
 It's not identical to the previous patches, but
 it is in the same spirit. The corresponding runt
-code (which runs on the <code>rntpatchwerk</code> utility
-that comes with patchwerk) is included in
+code (which runs on the <code>rntgraforge</code> utility
+that comes with graforge) is included in
 the comments.
 </p>
-<p>As one can see, patchwerk has a lot of repetitive low-level
+<p>As one can see, graforge has a lot of repetitive low-level
 operations which makes for tedious to read code. Most of
 the sndkit core abstraction aims to be an abstraction on top
 of this code. For contrast, you compare this to the C and
@@ -285,14 +285,14 @@ sndkit code from above.
  * Siren
  *
  * This code will generate a simple siren patch using
- * some of the pre-made patchwerk-wrapped soundpipe dsp
- * nodes found included in the patchwerk codebase.
+ * some of the pre-made graforge-wrapped soundpipe dsp
+ * nodes found included in the graforge codebase.
  *
  * The patch is equivalent to the following runt code:
  *
  * == BEGIN RUNT CODE ==
  *
- * patchwerk nodes
+ * graforge nodes
  *
  * 0.1 1 sine 0 1 biscale bhold 0 cabset
  *
@@ -319,16 +319,16 @@ sndkit code from above.
  * Stone. Comments in the C program will break up the
  * program by Runt statements. With any luck, a reader
  * should begin to understand connection between the
- * Patchwerk C library and Runt abstraction.
+ * Grafwerk C library and Runt abstraction.
  *
  * Even with the DSP wrapper code, one can see from
- * this small program that the Patchwerk C API at this level
+ * this small program that the Grafwerk C API at this level
  * is quite repetive and redundant. In practice, it is best
  * to write abstractions on top of this and not mess with
  * these C operations directly. Otherwise, it is slow and
  * tedious work.
  *
- * When building up a patchwerk patch, the programmer must
+ * When building up a graforge patch, the programmer must
  * be able to keep track of what is on the buffer stack at
  * all times. Missing a push or pop operation can cause the
  * entire patch to break. At the C level, these can be very
@@ -341,7 +341,7 @@ sndkit code from above.
 
 #include &lt;stdlib.h&gt;
 #include &lt;soundpipe.h&gt;
-#include "patchwerk.h"
+#include "graforge.h"
 
 #include "dsp/sine.h"
 #include "dsp/wavout.h"
@@ -359,138 +359,138 @@ sndkit code from above.
 #define SR 44100
 #define BLKSIZE 64
 
-static add_d * mk_add(pw_patch *patch,
+static add_d * mk_add(gf_patch *patch,
                       sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     add_d *add;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_add(node, sp);
-    pw_node_setup(node);
-    add = pw_node_get_data(node);
+    gf_node_setup(node);
+    add = gf_node_get_data(node);
     return add;
 }
 
-static dcblock_d * mk_dcblock(pw_patch *patch,
+static dcblock_d * mk_dcblock(gf_patch *patch,
                               sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     dcblock_d *dcblock;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_dcblock(node, sp);
-    pw_node_setup(node);
-    dcblock = pw_node_get_data(node);
+    gf_node_setup(node);
+    dcblock = gf_node_get_data(node);
     return dcblock;
 }
 
-static mul_d * mk_mul(pw_patch *patch,
+static mul_d * mk_mul(gf_patch *patch,
                       sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     mul_d *mul;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_mul(node, sp);
-    pw_node_setup(node);
-    mul = pw_node_get_data(node);
+    gf_node_setup(node);
+    mul = gf_node_get_data(node);
     return mul;
 }
 
-static revsc_d * mk_revsc(pw_patch *patch,
+static revsc_d * mk_revsc(gf_patch *patch,
                           sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     revsc_d *revsc;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_revsc(node, sp);
-    pw_node_setup(node);
-    revsc = pw_node_get_data(node);
+    gf_node_setup(node);
+    revsc = gf_node_get_data(node);
     return revsc;
 }
 
-static butlp_d * mk_butlp(pw_patch *patch,
+static butlp_d * mk_butlp(gf_patch *patch,
                           sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     butlp_d *butlp;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_butlp(node, sp);
-    pw_node_setup(node);
-    butlp = pw_node_get_data(node);
+    gf_node_setup(node);
+    butlp = gf_node_get_data(node);
     return butlp;
 }
 
-static blsaw_d * mk_blsaw(pw_patch *patch,
+static blsaw_d * mk_blsaw(gf_patch *patch,
                           sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     blsaw_d *blsaw;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_blsaw(node, sp);
-    pw_node_setup(node);
-    blsaw = pw_node_get_data(node);
+    gf_node_setup(node);
+    blsaw = gf_node_get_data(node);
     return blsaw;
 }
 
-static scale_d * mk_scale(pw_patch *patch,
+static scale_d * mk_scale(gf_patch *patch,
                           sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     scale_d *scale;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_scale(node, sp);
-    pw_node_setup(node);
-    scale = pw_node_get_data(node);
+    gf_node_setup(node);
+    scale = gf_node_get_data(node);
     return scale;
 }
 
-static biscale_d * mk_biscale(pw_patch *patch,
+static biscale_d * mk_biscale(gf_patch *patch,
                               sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     biscale_d *biscale;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_biscale(node, sp);
-    pw_node_setup(node);
-    biscale = pw_node_get_data(node);
+    gf_node_setup(node);
+    biscale = gf_node_get_data(node);
     return biscale;
 }
 
-static sine_d * mk_sine(pw_patch *patch,
+static sine_d * mk_sine(gf_patch *patch,
                         sp_data *sp)
 {
-    pw_node *node;
+    gf_node *node;
     sine_d *sine;
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_sine(node, sp);
-    pw_node_setup(node);
-    sine = pw_node_get_data(node);
+    gf_node_setup(node);
+    sine = gf_node_get_data(node);
     return sine;
 }
 
-static wavout_d * mk_wavout(pw_patch *patch,
+static wavout_d * mk_wavout(gf_patch *patch,
                             sp_data *sp,
                             const char *filename)
 {
-    pw_node *node;
+    gf_node *node;
     wavout_d *wavout;
 
-    pw_patch_new_node(patch, &node);
+    gf_patch_new_node(patch, &node);
     node_wavout(sp, node, filename);
-    pw_node_setup(node);
-    wavout = pw_node_get_data(node);
+    gf_node_setup(node);
+    wavout = gf_node_get_data(node);
     return wavout;
 }
 
 int main(int argc, char *argv[])
 {
     sp_data *sp;
-    pw_patch *patch;
+    gf_patch *patch;
     sine_d *sine;
-    pw_stack *stack;
+    gf_stack *stack;
     wavout_d *wavout;
     unsigned int n;
-    pw_buffer *buf;
-    pw_cable *lfo;
+    gf_buffer *buf;
+    gf_cable *lfo;
     biscale_d *biscale;
     blsaw_d *blsaw;
     scale_d *scale;
@@ -505,131 +505,131 @@ int main(int argc, char *argv[])
 
     sp_create(&sp);
 
-    patch = calloc(1, pw_patch_size());
-    pw_patch_init(patch, BLKSIZE);
-    pw_patch_alloc(patch, NBUFS, STACKSIZE);
-    pw_patch_srate_set(patch, SR);
-    sp-&gt;sr = pw_patch_srate_get(patch);
-    pw_patch_data_set(patch, sp);
-    stack = pw_patch_stack(patch);
+    patch = calloc(1, gf_patch_size());
+    gf_patch_init(patch, BLKSIZE);
+    gf_patch_alloc(patch, NBUFS, STACKSIZE);
+    gf_patch_srate_set(patch, SR);
+    sp-&gt;sr = gf_patch_srate_get(patch);
+    gf_patch_data_set(patch, sp);
+    stack = gf_patch_stack(patch);
 
     /* 0.1 1 sine */
     sine = mk_sine(patch, sp);
-    pw_cable_set_value(sine-&gt;freq, 0.1);
-    pw_cable_set_value(sine-&gt;amp, 1);
+    gf_cable_set_value(sine-&gt;freq, 0.1);
+    gf_cable_set_value(sine-&gt;amp, 1);
 
 
     /* 0 1 biscale */
 
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
 
     biscale = mk_biscale(patch, sp);
 
-    pw_cable_connect(sine-&gt;out, biscale-&gt;in);
-    pw_cable_set_value(biscale-&gt;min, 0);
-    pw_cable_set_value(biscale-&gt;max, 1);
+    gf_cable_connect(sine-&gt;out, biscale-&gt;in);
+    gf_cable_set_value(biscale-&gt;min, 0);
+    gf_cable_set_value(biscale-&gt;max, 1);
 
     /* bhold 0 cabset */
 
-    pw_patch_bhold(patch, &buf);
-    pw_stack_pop(stack, NULL);
+    gf_patch_bhold(patch, &buf);
+    gf_stack_pop(stack, NULL);
     lfo = biscale-&gt;out;
 
     /* 0 cabget 100 600 scale */
 
-    pw_stack_push_buffer(stack, buf);
+    gf_stack_push_buffer(stack, buf);
 
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
     scale = mk_scale(patch, sp);
-    pw_cable_connect(lfo, scale-&gt;in);
-    pw_cable_set_value(scale-&gt;min, 100);
-    pw_cable_set_value(scale-&gt;max, 600);
+    gf_cable_connect(lfo, scale-&gt;in);
+    gf_cable_set_value(scale-&gt;min, 100);
+    gf_cable_set_value(scale-&gt;max, 600);
 
     /* 0.5 blsaw */
 
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
 
     blsaw = mk_blsaw(patch, sp);
-    pw_cable_set_value(blsaw-&gt;amp, 0.5);
-    pw_cable_connect(scale-&gt;out, blsaw-&gt;freq);
+    gf_cable_set_value(blsaw-&gt;amp, 0.5);
+    gf_cable_connect(scale-&gt;out, blsaw-&gt;freq);
 
     /* 0 cabget 100 2000 scale butlp */
 
-    pw_stack_push_buffer(stack, buf);
-    pw_stack_pop(stack, NULL);
+    gf_stack_push_buffer(stack, buf);
+    gf_stack_pop(stack, NULL);
 
     scale = mk_scale(patch, sp);
-    pw_cable_connect(lfo, scale-&gt;in);
-    pw_cable_set_value(scale-&gt;min, 100);
-    pw_cable_set_value(scale-&gt;max, 2000);
+    gf_cable_connect(lfo, scale-&gt;in);
+    gf_cable_set_value(scale-&gt;min, 100);
+    gf_cable_set_value(scale-&gt;max, 2000);
 
 
     /* butlp */
 
-    pw_stack_pop(stack, NULL);
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
     butlp = mk_butlp(patch, sp);
-    pw_cable_connect(scale-&gt;out, butlp-&gt;p_freq);
-    pw_cable_connect(blsaw-&gt;out, butlp-&gt;in);
+    gf_cable_connect(scale-&gt;out, butlp-&gt;p_freq);
+    gf_cable_connect(blsaw-&gt;out, butlp-&gt;in);
 
     /* bdup */
 
-    pw_stack_dup(stack);
+    gf_stack_dup(stack);
 
     /* bdup 0.97 10000 revsc */
-    pw_stack_dup(stack);
-    pw_stack_pop(stack, NULL);
-    pw_stack_pop(stack, NULL);
+    gf_stack_dup(stack);
+    gf_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
     revsc = mk_revsc(patch, sp);
-    pw_cable_connect(butlp-&gt;out, revsc-&gt;in[1]);
-    pw_cable_connect(butlp-&gt;out, revsc-&gt;in[0]);
-    pw_cable_set_constant(revsc-&gt;feedback, 0.97);
-    pw_cable_set_constant(revsc-&gt;lpfreq, 10000);
+    gf_cable_connect(butlp-&gt;out, revsc-&gt;in[1]);
+    gf_cable_connect(butlp-&gt;out, revsc-&gt;in[0]);
+    gf_cable_set_constant(revsc-&gt;feedback, 0.97);
+    gf_cable_set_constant(revsc-&gt;lpfreq, 10000);
 
     /* bdrop */
 
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
 
     /* 0.1 mul */
 
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
     mul = mk_mul(patch, sp);
-    pw_cable_set_constant(mul-&gt;in1, 0.1);
-    pw_cable_connect(revsc-&gt;out[0], mul-&gt;in2);
+    gf_cable_set_constant(mul-&gt;in1, 0.1);
+    gf_cable_connect(revsc-&gt;out[0], mul-&gt;in2);
 
     /* dcblock */
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
     dcblock = mk_dcblock(patch, sp);
-    pw_cable_connect(mul-&gt;out, dcblock-&gt;in);
+    gf_cable_connect(mul-&gt;out, dcblock-&gt;in);
 
     /* add */
 
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
     add = mk_add(patch, sp);
-    pw_cable_connect(butlp-&gt;out, add-&gt;in1);
-    pw_cable_connect(dcblock-&gt;out, add-&gt;in2);
+    gf_cable_connect(butlp-&gt;out, add-&gt;in1);
+    gf_cable_connect(dcblock-&gt;out, add-&gt;in2);
 
     /* 0 cabget bunhold */
 
-    pw_patch_bunhold(patch, buf);
+    gf_patch_bunhold(patch, buf);
 
     /* siren.wav wavout bdrop */
 
-    pw_stack_pop(stack, NULL);
+    gf_stack_pop(stack, NULL);
     wavout = mk_wavout(patch, sp, "siren.wav");
-    pw_cable_connect(add-&gt;out, wavout-&gt;in);
-    pw_stack_pop(stack, NULL);
+    gf_cable_connect(add-&gt;out, wavout-&gt;in);
+    gf_stack_pop(stack, NULL);
 
     /* sr 10 * _compute rep */
 
     for (n = 0; n &lt; 10 * SR; n++) {
-        pw_patch_tick(patch);
+        gf_patch_tick(patch);
     }
 
     /* cleanup */
 
-    pw_patch_destroy(patch);
-    pw_patch_free_nodes(patch);
+    gf_patch_destroy(patch);
+    gf_patch_free_nodes(patch);
     free(patch);
     sp_destroy(&sp);
     return 0;
