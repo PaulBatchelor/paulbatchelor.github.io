@@ -16,16 +16,13 @@ a base64 string.
 <div><b><i>&lt;&lt;pngencode.c&gt;&gt;=</i></b></div><pre><code>#include &lt;string.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;stdio.h&gt;
-#include "btprnt.h"
+#include "btprnt/btprnt.h"
 #include "lodepng/lodepng.h"
-#include "janet/janet.h"
 
-btprnt * janet2btprnt(Janet *argv, int argc);;
 char *base64_encode(const unsigned char *data,
                     size_t input_length,
                     size_t *output_length);
 char * btprnt_buf_pngencode(btprnt_buf *buf, size_t *sz);
-Janet j_pngencode(int32_t argc, Janet *argv);
 &lt;&lt;funcs&gt;&gt;</pre></code>
 <p></p>
 <p>This allocates a string with <code>malloc</code>. One must ensure
@@ -73,28 +70,6 @@ that is is freed after it is used.
     free(img);
     free(out);
     return b64;
-}</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>Janet j_pngencode(int32_t argc, Janet *argv)
-{
-    btprnt_buf *buf;
-    char *b64;
-    size_t b64_sz;
-    Janet str;
-    btprnt *bp;
-
-    janet_fixarity(argc, 1);
-    bp = janet2btprnt(argv, 0);
-
-    buf = btprnt_buf_get(bp);
-
-    b64_sz = 0;
-    b64 = NULL;
-
-    b64 = btprnt_buf_pngencode(buf, &b64_sz);
-
-    str = janet_wrap_string(janet_string(b64, b64_sz));
-    free(b64);
-    return str;
 }</pre></code>
 <p></p>
 <br>
