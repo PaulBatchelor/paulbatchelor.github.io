@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>TEnv</title>
+<h1>TEnv</h1>
+
+<h2>Overview</h2>
+
+<p>Triggerable linear envelope generator with attack, hold,
+and release. Ported from Soundpipe.
+</p>
+<p>This is a bit of a mess at the moment.
+</p>
+
+<h2>Top Files</h2>
+
+<div><b><i>&lt;&lt;tenv.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_TENV_H
+#define SK_TENV_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+
+#ifdef SK_TENV_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;tenv.c&gt;&gt;=</i></b></div><pre><code>#define SK_TENV_PRIV
+#include "tenv.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Struct and Initialization</h2>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_tenv sk_tenv;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_tenv {
+    unsigned long pos, atk_end, rel_start, totaldur;
+    SKFLT atk, rel, hold;
+    SKFLT atk_slp, rel_slp;
+    SKFLT last;
+    int sigmode;
+    SKFLT input;
+    int started;
+    int sr;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tenv_init(sk_tenv *te, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tenv_init(sk_tenv *te, int sr)
+{
+    te-&gt;pos = 0;
+    te-&gt;last = 0;
+    te-&gt;atk = 0.1;
+    te-&gt;hold = 0.3;
+    te-&gt;rel = 0.2;
+    te-&gt;sigmode = 0;
+    te-&gt;input = 0;
+
+    te-&gt;sr = sr;
+    te-&gt;atk_end = te-&gt;sr * te-&gt;atk;
+    te-&gt;rel_start = te-&gt;sr * (te-&gt;atk + te-&gt;hold);
+    te-&gt;atk_slp = 1.0 / te-&gt;atk_end;
+    te-&gt;rel_slp = -1.0 / (te-&gt;sr * te-&gt;rel);
+    te-&gt;totaldur = sr * (te-&gt;atk + te-&gt;hold + te-&gt;rel);
+
+    te-&gt;started = 0;
+}</pre></code>
+
+<h2>Compute</h2>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tenv_tick(sk_tenv *te, SKFLT trig);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;reinit&gt;&gt;
+&lt;&lt;envelope&gt;&gt;
+SKFLT sk_tenv_tick(sk_tenv *te, SKFLT trig)
+{
+    SKFLT out;
+    out = 0;
+
+    if (trig != 0) {
+        reinit(te);
+        te-&gt;started = 1;
+    }
+
+    if (te-&gt;started) out = envelope(te);
+
+    return out;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;envelope&gt;&gt;=</i></b></div><pre><code>static SKFLT envelope(sk_tenv *env)
+{
+    SKFLT sig;
+    unsigned long pos;
+    SKFLT out;
+
+    out = 0;
+    sig = 0;
+    pos = env-&gt;pos;
+
+    if (pos &lt; env-&gt;atk_end) {
+        sig = env-&gt;last + env-&gt;atk_slp;
+    } else if (pos &lt; env-&gt;rel_start) {
+        sig = 1.0;
+    } else if (pos &lt; env-&gt;totaldur) {
+        sig = env-&gt;last + env-&gt;rel_slp;
+    } else{
+        sig = 0.0;
+    }
+
+    sig = (sig &gt; 1.0) ? 1.0 : sig;
+    sig = (sig &lt; 0.0) ? 0.0 : sig;
+
+    /* Internal input signal mode */
+    if (env-&gt;sigmode) {
+        out = env-&gt;input * sig;
+    } else {
+        out = sig;
+    }
+
+    env-&gt;pos++;
+    env-&gt;last = sig;
+
+    return out;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;reinit&gt;&gt;=</i></b></div><pre><code>static void reinit(sk_tenv *te)
+{
+    te-&gt;pos = 0;
+    te-&gt;atk_end = te-&gt;sr * te-&gt;atk;
+    te-&gt;rel_start = te-&gt;sr * (te-&gt;atk + te-&gt;hold);
+    te-&gt;atk_slp = 1.0 / te-&gt;atk_end;
+    te-&gt;rel_slp = -1.0 / (te-&gt;sr * te-&gt;rel);
+    te-&gt;totaldur = te-&gt;sr * (te-&gt;atk + te-&gt;hold + te-&gt;rel);
+}</pre></code>
+
+<h2>Parameters</h2>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tenv_attack(sk_tenv *te, SKFLT atk);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tenv_attack(sk_tenv *te, SKFLT atk)
+{
+    te-&gt;atk = atk;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tenv_hold(sk_tenv *te, SKFLT hold);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tenv_hold(sk_tenv *te, SKFLT hold)
+{
+    te-&gt;hold = hold;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tenv_release(sk_tenv *te, SKFLT rel);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tenv_release(sk_tenv *te, SKFLT rel)
+{
+    te-&gt;rel = rel;
+}</pre></code>
+</div>
+</body>
+</html>
