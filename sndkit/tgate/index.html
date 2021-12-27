@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>tgate</title>
+<h1>tgate</h1>
+
+<h2>Overview</h2>
+
+<p>A triggerable gate generator. Takes in a trigger signal,
+and produces a gate whose duration is measured in seconds.
+</p>
+
+<h2>Tangled Files</h2>
+
+<div><b><i>&lt;&lt;tgate.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_TGATE_H
+#define SK_TGATE_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+
+#ifdef SK_TGATE_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;tgate.c&gt;&gt;=</i></b></div><pre><code>#define SK_TGATE_PRIV
+#include "tgate.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Struct And Initialization</h2>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_tgate sk_tgate;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_tgate {
+    SKFLT dur;
+    unsigned long timer;
+    int sr;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tgate_init(sk_tgate *tg, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tgate_init(sk_tgate *tg, int sr)
+{
+    tg-&gt;sr = sr;
+    tg-&gt;dur = 0;
+    tg-&gt;timer = 0;
+}</pre></code>
+
+<h2>Gate Time</h2>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tgate_dur(sk_tgate *tg, SKFLT dur);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tgate_dur(sk_tgate *tg, SKFLT dur)
+{
+    tg-&gt;dur = dur;
+}</pre></code>
+
+<h2>Computation</h2>
+
+<p><code>sk_tgate_tick</code> expects a trigger input signal.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tgate_tick(sk_tgate *tg, SKFLT trig);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tgate_tick(sk_tgate *tg, SKFLT trig)
+{
+    SKFLT out;
+
+    out = 0;
+
+    if (trig != 0) {
+        tg-&gt;timer = tg-&gt;dur * tg-&gt;sr;
+    }
+
+    if (tg-&gt;timer != 0) {
+        out = 1.0;
+        tg-&gt;timer--;
+    }
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>

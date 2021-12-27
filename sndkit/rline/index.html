@@ -88,8 +88,10 @@ are exposed. Otherwise, they are left as opaque.
 <h2>Constants and Variables</h2>
 
 <p>The value from the LCG is often scaled to be normalized
-between 0 and 1. The constant required for this is
-$1/(2^31 - 1$, or <code>1/((1L<<31) - 1)</code>. This value is
+between 0 and 1. The constant required for this
+is <img src="/sndkit/_fig/rline_rngscale.png" alt="1/(2^31 - 1">
+,
+or <code>1/((1L<<31) - 1)</code>. This value is
 stored in a constant.
 </p>
 <div><b><i>&lt;&lt;sk_rline&gt;&gt;=</i></b></div><pre><code>SKFLT rngscale;</pre></code>
@@ -162,17 +164,21 @@ used to generate sequences of pseudo-random numbers.
 </p>
 <p>It is the following equation
 </p>
-<p>$$
-y(n) = ((y(n - 1) * a + c) \gg 1)
-\& m
-$$
+<p><img src="/sndkit/_fig/rline_lcg.png" alt="y(n) = ((ay(n - 1) + c) \gg 1) \, \& \, m"srcset="/sndkit/_fig/rline_lcg.png 1x,/sndkit/_fig/rline_lcg2x.png 2x,">
 </p>
-<p>Where $m$ is the masking value <code>0x7ffffff</code>, $a$ is a
-<code>multiplier</code>, and $c$ is the <code>increment</code>. In this
-implementation, $a$ will be <code>0x343fd</code>, and $c$ will be
+<p>Where <img src="/sndkit/_fig/rline_m.png" alt="m">
+ is the masking value
+<code>0x7ffffff</code>, <img src="/sndkit/_fig/rline_a.png" alt="a">
+ is a
+<code>multiplier</code>, and <img src="/sndkit/_fig/rline_c.png" alt="c">
+ is the
+<code>increment</code>. In this
+implementation, <img src="/sndkit/_fig/rline_a.png">
+ will be <code>0x343fd</code>,
+and <img src="/sndkit/_fig/rline_c.png">
+ will be
 <code>0x2693ec3</code>. These constants come from the wikipedia page
-on LCGs, and originate the Microsoft Visual C/C++ standard
-library.
+on LCGs.
 </p>
 <p>The LCG here can be implemented as a stateless function or
 macro. In this case, we will go with the macro.
@@ -285,14 +291,17 @@ to wait for the next line.
 </p>
 <p>The normalized output can be computed with the expression:
 </p>
-<p>$$
-y = x_1 + pc
-$$
+<p><img src="/sndkit/_fig/rline_normalized_output.png" alt="y = x_1 + pc"srcset="/sndkit/_fig/rline_normalized_output.png 1x,/sndkit/_fig/rline_normalized_output2x.png 2x,">
 </p>
-<p>Where $x_1$ is the starting point of the line, $p$ is
+<p>Where <img src="/sndkit/_fig/rline_x1.png" alt="x_1">
+ is the starting point
+of the line, <img src="/sndkit/_fig/rline_p.png" alt="p">
+ is
 the current phase increment, represented in fixed point, and
-$c$ is the constant that normalizes and scales the phase to
-be the amount of progress to value $x_2$.
+<img src="/sndkit/_fig/rline_c.png" alt="c">
+ is the constant that normalizes
+and scales the phase to be the amount of progress to value
+<img src="/sndkit/_fig/rline_x2.png" alt="x_2">
 </p>
 <div><b><i>&lt;&lt;compute_current_sample&gt;&gt;=</i></b></div><pre><code>out = rl-&gt;start + rl-&gt;phasepos*rl-&gt;scale;
 out = out * (rl-&gt;max - rl-&gt;min) + rl-&gt;min;</pre></code>
