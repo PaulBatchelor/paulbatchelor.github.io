@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Bitlets (Work in progress)</title>
+<h1>Bitlets (Work in progress)</h1>
+
+<h2>Overview</h2>
+
+<p>An etude series that develops a symbolic language
+designed to be programmed on the monome grid.
+</p>
+
+<h2>Setup</h2>
+
+<p>For my live coding setup (when this file is an org document)h.
+</p>
+<pre><code>(chdir "/home/paul/p/tudes/bitlets")
+(lil "lua_new lua")
+(lil "lua_dofile [grab lua] run.lua")
+
+(define (mac3)
+  (display "reloading play.lua")
+  (newline)
+  (lil "lua_dofile [grab lua] play.lua"))
+
+(define (playtog)
+    (lil "hstog [grab hs]"))</pre></code>
+<p></p>
+<p>I program bitlets primitives from emacs in a pretty silly
+way.
+</p>
+<p>I leverage org-babel's ability to send things to scheme
+REPLs. But, I'm mostly programming Lua, because this scheme
+implementation can't internally evaluate itself too easily.
+But, I use scheme as a macro language. Core components are
+wrapped in a small TCL-like called lua.
+</p>
+<p>So, for those keeping score: Scheme evals LIL code,
+which loads an instance of Lua, and then calls "dofile" to
+re-evaluate a playground file called "play.lua". This then
+gets brought back into the core bitlets file.
+</p>
+
+<h2>Part 1: numbers, clock, envelope, oscillator, reverb, mul, add</h2>
+
+<p>To begin: numbers.
+</p>
+<p>Numbers will allow some sense of parametric control. At this
+abstraction layer, supporting any number takes up too much
+space on the grid.
+</p>
+<p>Instead, a few glyphs will be used to represent some small
+integer values. These will act less as numbers, and more
+as switches.
+</p>
+<p>Numbers 1-9 will be implemented. If more are needed, then so
+be it.
+</p>
+<p>Clocks. Clocks are the timing control signal primitive.
+These can get fed into sequencers and envelope generators.
+This will take in an integer parameter that will set up what
+kind of clock there will be.
+</p>
+<p>Envelope. An envelope generator. To be triggered by a clock
+signal.
+</p>
+<p>Oscillator. This will probably utilize a lot of modes in
+the future. For now, it is only a steady pitched subtractive
+sawtooth.
+</p>
+<p>Reverb. Always a good thing to have. Configured to be
+mono in/out. The default setting will be the big verb
+I like.
+</p>
+<p>Multiply will be used with the envelope and the oscillator.
+</p>
+<p>Add will be used with the reverb and dry signal.
+</p>
+
+<h2>Part 2: variation</h2>
+
+<p>Adding some variation to the core nodes.
+</p>
+<p>Clock: make the clock irregular.
+</p>
+<p>Envelope: smaller, more transient.
+</p>
+<p>Oscillator: random frequency.
+</p>
+<p>Reverb: smaller.
+</p>
+
+<h2>Part 3: gesture</h2>
+
+<p>With some initial test sounds out of the way, my focus
+now shifts to my previous explorations in Gesture.
+</p>
+<p>I have created a gesture sequencer, which conceptually
+lies in between a breakpoint line generator, a
+classic step sequencer and an automation curve editor.
+</p>
+<p>The gesture sequencer works by reading in an external
+timing signal (known as the conductor), reading a score,
+and then using the two to synthesize an audio-rate line
+segment suitable for modulating parameters of other nodes.
+</p>
+<p>Some new mechanisms will be added to our existing library:
+</p>
+<p>A conductor will need to be set up and instantiated. To save
+space, this will be read by those that need it.
+</p>
+<p>A gesture will be formed in bitrune by declaring a new
+gesture, creating the score, and then synthesizing the
+gesture.
+</p>
+<p>The challenge for gesture sequencing is to keep the notation
+terse yet expressive. Difficult, considering the overall
+throughput of the Grid.
+</p>
+<p>A decent starting point would be to consider the "page"
+in bitrune as a unit for containing a single gesture.
+One can evenly divide up the two tri-strand rows using
+two 2-width glyphs as bookends (start/end of gesture),
+and 4 groups of 2 glyph combos, consiting of a 2-width
+and 3-width glyph.
+</p>
+<p>Another helpful hint would be to consider the notation
+as not notes, but as "words" or phrases.
+</p>
+<hr>
+<a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
