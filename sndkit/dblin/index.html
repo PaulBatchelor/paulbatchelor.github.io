@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>dblin</title>
+<h1>dblin</h1>
+
+<h2>Overview</h2>
+
+<p><code>dblin</code> is a computationally efficient decibel-to-linear
+converter. Given a input value, such as -3dB, it will return
+an output value of ~0.707945, which could then be used
+to attenuate another signal.
+</p>
+<p>There are three things done to make this efficient:
+</p>
+<p>The usual conversion formula is reworked to use a base-e
+exponential (exp) instead of a base-10 power (pow).
+Traditionally, exp is a much cheaper function pow (however,
+modern optimizing compilers will make this negligble).
+</p>
+<p>The conversion removes any use of division and works those
+components into constants.
+</p>
+<p><a href="/sndkit/parameter_caching">parameter caching</a> is used,
+which prevents computation from happening if it doesn't need
+to be done.
+</p>
+
+<h2>From "pow" to "exp"</h2>
+
+<p>One of the cleverer parts of this implementation is to
+rework the conventional formula for dB to linear conversion
+to use the base-e exponent via the <code>exp</code> function instead
+of base-10 via <code>pow</code>. Traditionally, this has had
+performance gains. Admittedly, modern C compilers seem
+to optimize this if you use something like <code>-O3</code>. But,
+the approach is still pretty neat.
+</p>
+<p>The conventional way to convert a dB unit to a linear
+one is like this:
+</p>
+<p><img src="/sndkit/_fig/dblin_pow.png" alt="dblin(x) = 10^{x/20}"srcset="/sndkit/_fig/dblin_pow.png 1x,/sndkit/_fig/dblin_pow2x.png 2x,">
+</p>
+<p>This eventually gets derived to this:
+</p>
+<p><img src="/sndkit/_fig/dblin_exp.png" alt="dblin(x) = e^{cx}"srcset="/sndkit/_fig/dblin_exp.png 1x,/sndkit/_fig/dblin_exp2x.png 2x,">
+</p>
+<p>Where <img src="/sndkit/_fig/dblin_c.png" alt="c">
+ is the constant <img src="/sndkit/_fig/dblin_log10over20.png" alt="\log(10) \over 20">
+. This will be
+returned to in a moment.
+</p>
+<p>Converting between dB and linear space can be presented
+in the following way:
+</p>
+<p><img src="/sndkit/_fig/dblin_pow_conversion.png" alt="20\log_{10}(x) \Longleftrightarrow 10^{x/20}"srcset="/sndkit/_fig/dblin_pow_conversion.png 1x,/sndkit/_fig/dblin_pow_conversion2x.png 2x,">
+</p>
+<p>The <code>log10</code> function can be recreated using natural
+logs with this identity:
+</p>
+<p><img src="/sndkit/_fig/dblin_log10.png" alt="\log_{10}(x) = {\log(x) \over \log(10)}"srcset="/sndkit/_fig/dblin_log10.png 1x,/sndkit/_fig/dblin_log102x.png 2x,">
+</p>
+<p>It is also helpful to remember this relationship between
+natural logs and e exponents:
+</p>
+<p><img src="/sndkit/_fig/dblin_logexp.png" alt="\log(x) \Longleftrightarrow e^{x}"srcset="/sndkit/_fig/dblin_logexp.png 1x,/sndkit/_fig/dblin_logexp2x.png 2x,">
+</p>
+<p>In a bit of a hand-wavey way, this identity can
+be established.
+</p>
+<p><img src="/sndkit/_fig/dblin_log10exp.png" alt="\log_{10}(x) \Longleftrightarrow e^{x\log{10}}"srcset="/sndkit/_fig/dblin_log10exp.png 1x,/sndkit/_fig/dblin_log10exp2x.png 2x,">
+</p>
+<p>Which, subsituting the log10 expression from above, looks
+like this:
+</p>
+<p><img src="/sndkit/_fig/dblin_log10expv2.png" alt="{\log(x) \over \log(10)} \Longleftrightarrow e^{x\log{10}}"srcset="/sndkit/_fig/dblin_log10expv2.png 1x,/sndkit/_fig/dblin_log10expv22x.png 2x,">
+</p>
+<p>Adding in the 20
+</p>
+<p><img src="/sndkit/_fig/dblin_formula_div20.png" alt="20 {\log(x) \over \log(10)} \Longleftrightarrow e^{{x\log(10)} \over {20}}"srcset="/sndkit/_fig/dblin_formula_div20.png 1x,/sndkit/_fig/dblin_formula_div202x.png 2x,">
+</p>
+<p>log10 can be brought back in for clarity.
+</p>
+<p><img src="/sndkit/_fig/dblin_formula_div20_final.png" alt="20\log_{10}(x) \Longleftrightarrow e^{x{{\log(10)} \over {20}}}"srcset="/sndkit/_fig/dblin_formula_div20_final.png 1x,/sndkit/_fig/dblin_formula_div20_final2x.png 2x,">
+</p>
+<p>This relationship won't be formally proven, but one can
+sort of see the balance. Where there's a log, there's
+an e exponent on the other side. Where there's a multiply,
+there's a divide, etc.
+</p>
+<p>Finally, the constant parts of the expression separated,
+which gives the correspondance using the final formula:
+</p>
+<p><img src="/sndkit/_fig/dblin_formula_final.png" alt="20\log_{10}(x) \Longleftrightarrow e^{xc}"srcset="/sndkit/_fig/dblin_formula_final.png 1x,/sndkit/_fig/dblin_formula_final2x.png 2x,">
+</p>
+<p>And that's what this algorithm implements in code. That's it.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>dblin.c</code> and <code>dblin.h</code>.
+</p>
+<div><b><i>&lt;&lt;dblin.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_DBLIN_H
+#define SK_DBLIN_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+#ifdef SK_DBLIN_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;dblin.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+
+#define SK_DBLIN_PRIV
+#include "dblin.h"
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Struct Initialization</h2>
+
+<p><code>sk_dblin</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_dblin sk_dblin;</pre></code>
+<p></p>
+<p>Three values stored. The constant <code>c</code>, the previous input
+value <code>prev</code>, and a cached output value <code>out</code>.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_dblin {
+    SKFLT c;
+    SKFLT prev;
+    SKFLT out;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_dblin_init(sk_dblin *dl);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_dblin_init(sk_dblin *dl)
+{
+    dl-&gt;c = log(10) / 20.0;
+    dl-&gt;prev = 0;
+    dl-&gt;out = 1;
+}</pre></code>
+
+<h2>Computation</h2>
+
+<p>A single sample of an audio-rate
+signal is computed with with <code>sk_dblin_tick</code>,
+which expects an input signal <code>db</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_dblin_tick(sk_dblin *dl, SKFLT db);</pre></code>
+<p></p>
+<p>In this function, the current input value is checked
+against the previous to see if there has been any
+change. If there has, the cached output value is updated.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_dblin_tick(sk_dblin *dl, SKFLT db)
+{
+    SKFLT out;
+
+    out = dl-&gt;out;
+
+    if (db != dl-&gt;prev) {
+        out = exp(db * dl-&gt;c);
+        dl-&gt;out = out;
+        dl-&gt;prev = db;
+    }
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>

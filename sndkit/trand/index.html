@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>TRand</title>
+<h1>TRand</h1>
+
+<h2>Overview</h2>
+
+<p><code>Trand</code> implements triggerable random number generator.
+Every time a trigger is received, it produces a new random
+number in a given range.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>trand.c</code> and <code>trand.h</code>. <code>SK_TRAND_PRIV</code> will expose
+the struct contents for <code>sk_trand</code>.
+</p>
+<div><b><i>&lt;&lt;trand.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_TRAND_H
+#define SK_TRAND_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+#ifdef SK_TRAND_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;trand.c&gt;&gt;=</i></b></div><pre><code>#define SK_TRAND_PRIV
+#include "trand.h"
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Initialization and Struct</h2>
+
+<p>Initialize trand with <code>sk_trand_init</code>. It will need
+an initial seed value for the internal RNG.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_trand_init(sk_trand *tr, unsigned long seed);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_trand_init(sk_trand *tr, unsigned long seed)
+{
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>The struct for trand is <code>sk_trand</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_trand sk_trand;</pre></code>
+<p></p>
+<p>The <code>sk_trand</code> struct contains the RNG state, min/max
+ranges, and a random value that was generated last.
+</p>
+<p>For optimization, a <code>scale</code> variable is used to scale the
+RNG value within range. A <code>changed</code> variable is also used
+to signal if min or max have changed, and will trigger
+the <code>scale</code> value to update (this is a version of
+<a href="#">parameter caching</a>, but using one flag
+to monitor the state of two variables).
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_trand {
+    unsigned long rng;
+    SKFLT min;
+    SKFLT max;
+    SKFLT val;
+    SKFLT scale;
+    int changed;
+};</pre></code>
+<p></p>
+<p>TRand will be initialized to output values between 0 and 1,
+with it's internal seed set to the one provided by the init
+function.
+</p>
+<p><b>Note</b>: <code>val</code> will be set to be 0. This means that trand
+will return 0 until the first trigger.
+</p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>tr-&gt;rng = seed;
+tr-&gt;val = 0;
+tr-&gt;changed = 0;
+tr-&gt;min = 0;
+tr-&gt;max = 1;
+tr-&gt;scale = 1.0 / 2147483648L;</pre></code>
+
+<h2>Parameters</h2>
+
+<p>TRand takes has two parameters: min and max. These set the
+range of the random numbers, and can be set with
+<code>sk_trand_min</code> and <code>sk_trand_max</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_trand_min(sk_trand *tr, SKFLT min);
+void sk_trand_max(sk_trand *tr, SKFLT max);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_trand_min(sk_trand *tr, SKFLT min)
+{
+    if (tr-&gt;min != min) {
+        tr-&gt;min = min;
+        tr-&gt;changed = 1;
+    }
+}
+
+void sk_trand_max(sk_trand *tr, SKFLT max)
+{
+    if (tr-&gt;max != max) {
+        tr-&gt;max = max;
+        tr-&gt;changed = 1;
+    }
+}</pre></code>
+
+<h2>Compute</h2>
+
+<p>Computed with <code>sk_trand_compute</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_trand_tick(sk_trand *tr, SKFLT trig);</pre></code>
+<p></p>
+<p>If a trigger happens, update the random number. If
+the parameters change, update the scaling.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_trand_tick(sk_trand *tr, SKFLT trig)
+{
+    if (trig != 0) {
+        if (tr-&gt;changed) {
+            tr-&gt;changed = 0;
+            tr-&gt;scale = 1.0 / 2147483648L;
+            tr-&gt;scale *= (tr-&gt;max - tr-&gt;min);
+        }
+        tr-&gt;val = tr-&gt;min + (tr-&gt;rng * tr-&gt;scale);
+        tr-&gt;rng = (1103515245 * tr-&gt;rng + 12345) % 2147483648;
+    }
+    return tr-&gt;val;
+}</pre></code>
+</div>
+</body>
+</html>

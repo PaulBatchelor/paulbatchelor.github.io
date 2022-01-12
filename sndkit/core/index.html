@@ -205,6 +205,17 @@ block size (hard-coded to be 64).
     return &core-&gt;stack;
 }</pre></code>
 
+<h3>Dictionary Getter</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>sk_dict* sk_core_dict(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>sk_dict* sk_core_dict(sk_core *core)
+{
+    return &core-&gt;dict;
+}</pre></code>
+<p></p>
+</p>
+
 <h2>Stack</h2>
 
 
@@ -537,6 +548,15 @@ on the graforge buffer stack if both items are cables.
     return 0;
 }</pre></code>
 
+<h3>Get Stack Position</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_stackpos(sk_core *core);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_stackpos(sk_core *core)
+{
+    return core-&gt;stack.pos;
+}</pre></code>
+
 <h2>Parameters and Cables</h2>
 
 <p><code>sndkit_param</code> is an abstraction used to deal with
@@ -802,13 +822,23 @@ int sk_core_generic_pop(sk_core *core, void **ptr);</pre></code>
     return rc;
 }</pre></code>
 
-<h3>Get Stack Position</h3>
+<h3>Checking parameter types</h3>
 
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_core_stackpos(sk_core *core);</pre></code>
+<p><code>sk_param_isconstant</code> will check if a parameter
+is a consant. <code>sk_param_iscable</code> will check if
+a parameter is a cable.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_param_isconstant(sk_param *p);
+int sk_param_iscable(sk_param *p);</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_stackpos(sk_core *core)
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_param_isconstant(sk_param *p)
 {
-    return core-&gt;stack.pos;
+    return p-&gt;type == 0;
+}
+
+int sk_param_iscable(sk_param *p)
+{
+    return p-&gt;type == 1;
 }</pre></code>
 
 <h2>Registers</h2>
@@ -1225,8 +1255,7 @@ int sk_core_table_pop(sk_core *core, sk_table **tab);</pre></code>
     SK_ERROR_CHECK(rc);
 
     if (s-&gt;type != SK_TYPE_TABLE) {
-        printf("uh oh type is %d, %g\n", s-&gt;type, s-&gt;f);
-        printf("%d items on stack\n", core-&gt;stack.pos);
+        fprintf(stderr, "uh oh type is %d\n", s-&gt;type);
         return 1;
     }
 
@@ -1292,7 +1321,7 @@ check an error code and exit if it is non-zero.
 
 <h2>Random Number Generator</h2>
 
-<p>A simple random number generator (RNG)
+<p><a id="RNG"></a>A simple random number generator (RNG)
 is included with the core API, based
 on the LCG found in Soundpipe.
 </p>
@@ -1354,7 +1383,8 @@ more persistent during the runtime of the program.
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct dict_entry {
     char *key;
     int sz;
-    void *val;
+    /* void *val; */
+    sk_stacklet s;
     void (*del)(void*);
     struct dict_entry *nxt;
 };
@@ -1422,7 +1452,7 @@ struct sk_dict {
 
         while (ent != NULL) {
             nxt = ent-&gt;nxt;
-            if (ent-&gt;del != NULL) ent-&gt;del(ent-&gt;val);
+            if (ent-&gt;del != NULL) ent-&gt;del(ent-&gt;s.ptr);
             free(ent-&gt;key);
             free(ent);
             ent = nxt;
@@ -1434,17 +1464,33 @@ struct sk_dict {
 
 <h3>Append An Entry</h3>
 
+<p><code>sk_dict_append</code> is the main way to add pointers to the
+dictionary.
+</p>
+<p>The function <code>sk_dict_sappend</code> will do the same thing, and
+return the underlying stacklet inside of the allocated
+entry so it can be modified with typeflags or pushed onto
+the stack.
+</p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_dict_append(sk_dict *d,
                    const char *key,
                    int sz,
                    void *p,
-                   void (*del)(void*));</pre></code>
+                   void (*del)(void*));
+
+int sk_dict_sappend(sk_dict *d,
+                    const char *key,
+                    int sz,
+                    void *p,
+                    void (*del)(void*),
+                    sk_stacklet **s);</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_append(sk_dict *d,
-                   const char *key,
-                   int sz,
-                   void *val,
-                   void (*del)(void*))
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_sappend(sk_dict *d,
+                    const char *key,
+                    int sz,
+                    void *p,
+                    void (*del)(void*),
+                    sk_stacklet **s)
 {
     int pos;
     struct dict_entry *ent;
@@ -1468,11 +1514,25 @@ struct sk_dict {
     for (i = 0; i &lt; sz; i++) ent-&gt;key[i] = key[i];
     ent-&gt;key[sz] = '\0';
 
-    ent-&gt;val = val;
+    sk_stacklet_init(&ent-&gt;s);
+    ent-&gt;s.type = SK_TYPE_GENERIC;
+    ent-&gt;s.ptr = p;
     ent-&gt;del = del;
     ent-&gt;nxt = d-&gt;ent[pos];
     d-&gt;ent[pos] = ent;
+
+    if (s != NULL) *s = &ent-&gt;s;
+
     return 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_append(sk_dict *d,
+                   const char *key,
+                   int sz,
+                   void *p,
+                   void (*del)(void*))
+{
+    return sk_dict_sappend(d, key, sz, p, del, NULL);
 }</pre></code>
 <p></p>
 <p>The core interface can do this with <code>sk_core_append</code>.
@@ -1494,15 +1554,20 @@ struct sk_dict {
 
 <h3>Lookup An Entry</h3>
 
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_dict_lookup(sk_dict *d,
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int sk_dict_lookup_stacklet(sk_dict *d,
+                            const char *key,
+                            int sz,
+                            sk_stacklet **s);
+
+int sk_dict_lookup(sk_dict *d,
                    const char *key,
                    int sz,
                    void **p);</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_lookup(sk_dict *d,
-                   const char *key,
-                   int sz,
-                   void **p)
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_lookup_stacklet(sk_dict *d,
+                            const char *key,
+                            int sz,
+                            sk_stacklet **s)
 {
     int pos;
     struct dict_entry *ent;
@@ -1513,13 +1578,29 @@ struct sk_dict {
 
     while (ent != NULL) {
         if (ent-&gt;sz == sz && !strncmp(key, ent-&gt;key, sz)) {
-            *p = ent-&gt;val;
+            *s = &ent-&gt;s;
             return 0;
         }
         ent = ent-&gt;nxt;
     }
 
     return 1;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_dict_lookup(sk_dict *d,
+                   const char *key,
+                   int sz,
+                   void **p)
+{
+    int rc;
+    sk_stacklet *s;
+
+    rc = sk_dict_lookup_stacklet(d, key, sz, &s);
+
+    if (rc) return rc;
+
+    *p = s-&gt;ptr;
+    return 0;
 }</pre></code>
 <p></p>
 <p>Do lookup on the core internal dictionary with
@@ -1561,7 +1642,7 @@ struct sk_dict {
             } else {
                 prv-&gt;nxt = ent-&gt;nxt;
             }
-            if (ent-&gt;del) ent-&gt;del(ent-&gt;val);
+            if (ent-&gt;del) ent-&gt;del(ent-&gt;s.ptr);
             free(ent-&gt;key);
             free(ent);
             return 0;
@@ -1592,20 +1673,29 @@ struct sk_dict {
                  const char *key,
                  int sz);</pre></code>
 <p></p>
+<p>Entries contain their own instance of a stacklet, which
+contains a pointer value and a type flag. The stacklet
+gets copied to the stack, preserving the underlying type
+flag. (AKA if something's stored as a table, it will
+be pushed as a table).
+</p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int sk_core_grab(sk_core *core,
                  const char *key,
                  int sz)
 {
     int rc;
-    void *ptr;
+    sk_stacklet *s;
+    sk_stacklet *out;
 
-    rc = sk_core_lookup(core, key, sz, &ptr);
+    rc = sk_dict_lookup_stacklet(&core-&gt;dict, key, sz, &s);
 
     if (rc) return 1;
 
-    rc = sk_core_generic_push(core, ptr);
+    rc = sk_stack_push(&core-&gt;stack, &out);
 
     if (rc) return 2;
+
+    *out = *s;
 
     return 0;
 }</pre></code>
@@ -1637,17 +1727,26 @@ int sk_core_append_table(sk_core *core,
 {
     int rc;
     sk_table *tab;
+    sk_stacklet *s;
+    sk_stacklet *out;
 
     tab = calloc(1, sizeof(sk_table));
 
     tab-&gt;tab = calloc(tabsz, sizeof(SKFLT));
     tab-&gt;sz = tabsz;
 
-    rc = sk_core_append(core, key, sz, tab, deltab);
+    s = NULL;
+    rc = sk_dict_sappend(&core-&gt;dict, key, sz, tab, deltab, &s);
     SK_ERROR_CHECK(rc);
 
-    rc = sk_core_table_push(core, tab);
+    out = NULL;
+
+    s-&gt;type = SK_TYPE_TABLE;
+
+    rc = sk_stack_push(&core-&gt;stack, &out);
     SK_ERROR_CHECK(rc);
+
+    *out = *s;
 
     return 0;
 }</pre></code>

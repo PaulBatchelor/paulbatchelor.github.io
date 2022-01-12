@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Linear Congruent Generator</title>
+<h1>Linear Congruent Generator</h1>
+
+<h2>Overview</h2>
+
+<p>A <code>Linear Congruent Generator</code>, or <code>LCG</code>, is a
+very common algorithm used to produce a sequence of
+<code>pseudorandom</code> numbers.
+</p>
+<p>An LCG is contained in many of the algorithms here,
+including <code>rline</code> (<a href="/sndkit/rline">rline</a>), <code>bigverb</code> (<a href="/sndkit/bigverb">bigverb</a>),
+<code>sparse</code> (<a href="/sndkit/sparse">sparse</a>), and <code>trand</code> (<a href="/sndkit/trand">trand</a>).
+The <a href="/sndkit/core#RNG">core API</a> also has a global
+RNG that is an LCG.
+</p>
+<p>Wikipedia is a great resource on the subject:
+<a href="https://en.wikipedia.org/wiki/Linear_congruential_generator">https://en.wikipedia.org/wiki/Linear_congruential_generator</a>.
+</p>
+<p>LCG parameters used in the sndkit LCGs come from this page.
+</p>
+
+<h2>Definition</h2>
+
+<p>A generalized LCG can be defined using the following
+expression:
+</p>
+<p><img src="/sndkit/_fig/LCG.png" alt="X_{n + 1} = (aX_n + c) \bmod m"srcset="/sndkit/_fig/LCG.png 1x,/sndkit/_fig/LCG2x.png 2x,">
+</p>
+<p>Where <img src="/sndkit/_fig/LCG_n.png" alt="n">
+ is the sample number,
+<img src="/sndkit/_fig/LCG_c.png" alt="c">
+ is the <code>increment</code>,
+<img src="/sndkit/_fig/LCG_X.png" alt="X">
+ is the state,
+<img src="/sndkit/_fig/LCG_a.png" alt="a">
+ is the <code>multiplier</code>, and
+<img src="/sndkit/_fig/LCG_m.png" alt="m">
+ is the modulus.
+</p>
+</p>
+
+<h2>Typical Implementation in sndkit</h2>
+
+<p>Because sndkit favors self-contained algorithms, a similar
+LCG has been reimplemented many times. Fortunately, the
+algorithm itself is quite simple, and only requires a few
+lines of code with some magic numbers.
+</p>
+<p>The typical implementation is a 32-bit LCG with a
+multiplier <code>a</code> of <code>1103515245</code>, increment <code>c</code> of
+<code>12345</code>, and a modulus <code>m</code> of <code>2^31</code>.
+</p>
+<p>An LCG requires a 32-bit integer to store state. It can
+also be helpful to have a constant of <code>2^31</code>, which is
+<code>2147483648</code>.
+</p>
+<p>The C code can be reduced down to this expression;
+</p>
+<pre><code>unsigned long rng;
+rng = seed;
+rng = (1103515245 * rng + 12345) % 2147483648;</pre></code>
+<p></p>
+<p>Where <code>seed</code> is some initial seed, and <code>rng</code> is the state;
+</p>
+</div>
+</body>
+</html>
