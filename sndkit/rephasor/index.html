@@ -14,19 +14,136 @@
 
 <h2>Overview</h2>
 
-<p><code>rephasor</code> is an unusual little algorithm that is designed
-to recreate an incoming phasor signal at a slightly
-different frequency.
+<p>This algorithm implements a <code>rephasor</code>, an operation that
+dynamically resynthesizes an input <code>phasor</code> signal
+(such as <a href="/sndkit/phasor">phasor</a>) with a scaling value that
+allows the rate of the phasor to be changed proportionally
+to the input signal. This phasor also apply automatic
+correction to prevent clock drift accumulation.
 </p>
-<p>This works by examining the incremental amount of change
-happening between each phasor sample, then using a scaled
-version of that signal to produce a new phasor.
+<p>While phasors are typical signals used for table-lookup
+oscilators (<a href="/sndkit/oscf">oscf</a> is a phasor-driven oscillator),
+phasors being used with rephasors are intended
+to be used as timing signals, similar to that of
+<a href="/sndkit/metro">metro</a>.
 </p>
-<p>Why? Because I'm having a bit of a phasor a renaissance.
-I am discovering that these phasors are actually quite
-useful control signals, not just for table lookup
-oscillators. In the spirit of that, I'm looking for ways to
-explore ways to modify phasor signals.
+
+<h2>What is Drift?</h2>
+
+<p><code>clock drift</code>, or <code>drift</code>, refers to what happens when
+two independent clocks fall out of synchronization with
+eachother, despite being set to the same rate. Drift
+is most often a result of numerical errors accumulated
+over time.
+</p>
+<p>Rephasors intentionally use <code>truncation</code> to produce
+phasors with clean resets to zero, rather than using
+<code>wraparound</code>. This makes for a much cleaner timing signal,
+but can quickly introduce drift.
+</p>
+<p>Floating point operations can introduce some level of
+numerical error. It is not yet been formally tested how
+much this contributes to clock drift.
+</p>
+<p>Clock drift build-up over time in a rephasor is mitigated
+by "checking in" with the external phasor signal,
+measure how much error there is, and compensating
+with "course correction".
+</p>
+
+<h2>Theory</h2>
+
+<p>To best understand how the rephasor works, some crude
+mathematical notation is adopted. This will serve as the
+basis of the C implementation, though some aspects will be
+reworked to be more optimized.
+</p>
+<p>A <code>phasor</code> is a periodic rising ramp signal, normalized to
+be in the range 0 and 1.
+</p>
+<p>A phasor <img src="/sndkit/_fig/rephasor_theta.png" alt="\theta">
+will be defined in terms of an increment value <img src="/sndkit/_fig/rephasor_inc.png" alt="i">
+:
+</p>
+<p><img src="/sndkit/_fig/rephasor_phasordef.png" alt="\theta(i) = R(\theta_{n - 1} + i)"srcset="/sndkit/_fig/rephasor_phasordef.png 1x,/sndkit/_fig/rephasor_phasordef2x.png 2x,">
+</p>
+<p>The function <img src="/sndkit/_fig/rephasor_r.png" alt="R">
+ is used to reset the phasor back to zero every time
+it exceeds 1, discarding any numerical values that exceed 1.
+For this reason, this phasor can be referred to as
+a <code>truncated phasor</code>.
+</p>
+<p>The truncation method can be defined using the following
+C-style teritiary notation:
+</p>
+<p><img src="/sndkit/_fig/rephasor_rdef.png" alt="R(x) = (x > 1) \; ? \; 0 : x"srcset="/sndkit/_fig/rephasor_rdef.png 1x,/sndkit/_fig/rephasor_rdef2x.png 2x,">
+</p>
+<p><b>NOTE</b>: the <a href="/sndkit/phasor">sndkit phasor</a> wraps around
+values exceeding 1. One could call the sndkit phasor a
+<code>wraparound phasor</code>.
+</p>
+<p>The delta function <img src="/sndkit/_fig/rephasor_delta.png" alt="\Delta">
+ will
+return the difference the difference between the previous
+sample and current sample of a given phasor. This
+returns the increment value. When a phasor resets, the
+last valid value is returned.
+</p>
+<p>This function can be mathematically defined as a recursive
+function, though the C implementation is much more straight
+forward.
+</p>
+<p><img src="/sndkit/_fig/rephasor_deltadef.png" alt="\Delta(\theta) = \cases{\theta_n - \theta_{n - 1},&if
+$\theta_n \ge \theta_{n - 1}$;\cr
+\Delta(\theta_{n - 1}),&otherwise.\cr}"srcset="/sndkit/_fig/rephasor_deltadef.png 1x,/sndkit/_fig/rephasor_deltadef2x.png 2x,">
+</p>
+<p>A so-called <code>rephasor</code> can be defined as
+<img src="/sndkit/_fig/rephasor_thetar.png" alt="\theta_r">
+:
+</p>
+<p><img src="/sndkit/_fig/rephasor_thetardef.png" alt="\theta_r = \theta(sc\Delta(\theta_e))"srcset="/sndkit/_fig/rephasor_thetardef.png 1x,/sndkit/_fig/rephasor_thetardef2x.png 2x,">
+</p>
+<p>This works by resynthesizes an external
+phasor signal <img src="/sndkit/_fig/rephasor_thetae.png" alt="\theta_e">
+ by obtaining the increment value via
+the delta function, and using that to generate a new
+phasor. This new increment value can also scaled using
+a scaling value <img src="/sndkit/_fig/rephasor_s.png" alt="s">
+. A scaling
+value of 2 makes the phasor 2 times faster, a scaling value
+of 0.5 makes the phasor 2 times slower. Finally, there is
+a correction coefficient <img src="/sndkit/_fig/rephasor_c.png" alt="c">
+that is used for course correction, and is the key component
+that makes the rephasor stay synchronized with the external
+phasor.
+</p>
+<p>Correction works by measuring the amount of error that the
+rephasor has. To do this, a comparison phasor signal
+<img src="/sndkit/_fig/rephasor_thetac.png" alt="\theta_c">
+ is produced
+by putting the main rephasor signal into another rephasor
+that inverts the scaling value.
+</p>
+<p><img src="/sndkit/_fig/rephasor_thetacdef.png" alt="\theta_e = \theta(s^{-1}c\Delta(\theta_r))"srcset="/sndkit/_fig/rephasor_thetacdef.png 1x,/sndkit/_fig/rephasor_thetacdef2x.png 2x,">
+</p>
+<p>This should return a reconstructed version of the
+external phasor. It is important to note a rephasor adds a
+unit-sample delay. Since two rephasors are used, a delay
+of 2 samples is introduced.
+</p>
+<p>Using DSP z-notation to denote delay, the correction
+coefficient can be defined as ratio between the external
+signal and the correction signal:
+</p>
+<p><img src="/sndkit/_fig/rephasor_cdef.png" alt="c = {{\theta_e z^{-2}} \over {\theta_c z^{-2}}}"srcset="/sndkit/_fig/rephasor_cdef.png 1x,/sndkit/_fig/rephasor_cdef2x.png 2x,">
+</p>
+<p>The correction coefficient tends to be a value close to 1.
+When the value is greater than 1, it tells the rephasor to
+speed up. When it is less than one, it tells the rephasor
+to slow down.
+</p>
+<p>This mathematically defines everything required for
+the C implementation.
 </p>
 
 <h2>Tangled Files</h2>
@@ -54,45 +171,78 @@ explore ways to modify phasor signals.
 
 <h2>Struct</h2>
 
-<p>Called <code>sk_rephasor</code>.
+
+<h3>Definition</h3>
+
+<p>State is managed in a struct called <code>sk_rephasor</code>.
 </p>
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_rephasor sk_rephasor;</pre></code>
 <p></p>
+<p>The struct will adopt constants based on the mathematical
+symbols defined above. It may be helpful to review that
+section.
+</p>
+<p><code>pr</code>, <code>pc</code>, and <code>pe</code> are cached <b>p</b>hasor signals,
+representing <img src="/sndkit/_fig/rephasor_thetar.png">
+, <img src="/sndkit/_fig/rephasor_thetac.png">
+, and <img src="/sndkit/_fig/rephasor_thetae.png">
+,
+respectively. <code>pc</code> and <code>pe</code> are arrays of 2 samples because
+of the 2-sample delay needed to compute the correction
+coefficient.
+</p>
+<p>The <code>c</code> variable is the correction coefficient <img src="/sndkit/_fig/rephasor_c.png">
+.
+</p>
+<p>The variables <code>s</code> and <code>si</code> implement the scaling variables
+<img src="/sndkit/_fig/rephasor_s.png">
+ and the inverse
+<img src="/sndkit/_fig/rephasor_si.png" alt="s^{-1}">
+, which is stored
+to shave off a <code>1/x</code> division operation.
+</p>
+<p>Rephasors need to cache increment values, which are stored
+in <code>ir</code> and <code>ic</code>, for the main rephasor <img src="/sndkit/_fig/rephasor_thetar.png">
+ and the comparison phasor
+<img src="/sndkit/_fig/rephasor_thetac.png">
+.
+</p>
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_rephasor {
-    &lt;&lt;sk_rephasor&gt;&gt;
+    SKFLT pr;
+    SKFLT pc[2];
+    SKFLT pe[2];
+    SKFLT c;
+    SKFLT s;
+    SKFLT si;
+
+    SKFLT ir;
+    SKFLT ic;
 };</pre></code>
-<p></p>
+
+<h3>Initialization</h3>
+
 <p>Initialized with <code>sk_rephasor_init</code>.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rephasor_init(sk_rephasor *rp);</pre></code>
 <p></p>
+<p>Generally speaking, most things are zeroed out. The scalar
+values and correction coefficient are used as scalars,
+set to be 1 in order to be netural.
+</p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rephasor_init(sk_rephasor *rp)
 {
-    &lt;&lt;init&gt;&gt;
+    rp-&gt;pr = 0;
+    rp-&gt;pc[0] = 0;
+    rp-&gt;pc[1] = 0;
+    rp-&gt;pe[0] = 0;
+    rp-&gt;pe[1] = 0;
+    rp-&gt;c = 1.0;
+    rp-&gt;s = 1.0;
+    rp-&gt;si = 1.0;
+
+    rp-&gt;ir = 0.0;
+    rp-&gt;ic = 0.0;
 }</pre></code>
-<p></p>
-<p>The struct is needed to store stateful data. The previous
-sample of the input phasor signal (<code>extphs</code>), and the
-previous phase of the internal phasor signal is used
-(<code>phs</code>).
-</p>
-<div><b><i>&lt;&lt;sk_rephasor&gt;&gt;=</i></b></div><pre><code>SKFLT extphs;
-SKFLT phs;</pre></code>
-<p></p>
-<p>Internal and external phasor memory are both marked as
-being initialized but not set by setting them to be -1.
-</p>
-<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>rp-&gt;extphs = -1;
-rp-&gt;phs = -1;</pre></code>
-<p></p>
-<p>A value holding the scale amount is also stored here. It
-is set to a sensible of default of 1. In theory, this should
-create an identical phasor signal as the input with a
-unit delay.
-</p>
-<div><b><i>&lt;&lt;sk_rephasor&gt;&gt;=</i></b></div><pre><code>SKFLT scale;</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>sk_rephasor_scale(rp, 1.0);</pre></code>
 
 <h2>Setting the scaling value</h2>
 
@@ -100,244 +250,105 @@ unit delay.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rephasor_scale(sk_rephasor *rp, SKFLT scale);</pre></code>
 <p></p>
+<p>If this is a new scaling value, set the <code>s</code> and the <code>si</code>parameters.
+</p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rephasor_scale(sk_rephasor *rp, SKFLT scale)
 {
-    rp-&gt;scale = scale;
+    /*rp-&gt;scale = scale; */
+    if (scale != rp-&gt;s) {
+        rp-&gt;s = scale;
+        rp-&gt;si = 1.0 / scale;
+    }
 }</pre></code>
 
 <h2>Compute</h2>
 
-<p>Done with <code>sk_rephasor_tick</code>. Expects an incoming input
-phasor signal.
+<p>A sample of audio is computed with <code>sk_rephasor_tick</code>, where
+<code>ext</code> is an external phasor signal.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasor_tick(sk_rephasor *rp, SKFLT in);</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasor_tick(sk_rephasor *rp, SKFLT ext);</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasor_tick(sk_rephasor *rp, SKFLT in)
+<p>The code below is an implementation based on the
+mathematical definition defined previously. Some code
+comments have been made in an attempt to connect the points.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>/* implementation of a truncated phasor */
+
+static SKFLT phasor(SKFLT phs, SKFLT inc)
 {
-    SKFLT out;
-    SKFLT delta;
-    out = 0;
-    &lt;&lt;set_output&gt;&gt;
-    &lt;&lt;calculate_delta&gt;&gt;
-    &lt;&lt;cache_external_phasor&gt;&gt;
-    &lt;&lt;update_internal_phasor&gt;&gt;
-    return out;
-}</pre></code>
-<p></p>
-<p>The current phase of the internal phasor is set to be
-the output of the current sample. If it is negative, it
-is assumed to be initalized but not set, and the current
-phasor signal is set to be the output, and the
-internal phasor value is set to be the current external
-phasor value.
-</p>
-<div><b><i>&lt;&lt;set_output&gt;&gt;=</i></b></div><pre><code>if (rp-&gt;phs &lt; 0) {
-   rp-&gt;phs = in;
+    phs += inc;
+
+    if (phs &gt; 1.0) return 0;
+
+    return phs;
 }
 
-out = rp-&gt;phs;</pre></code>
-<p></p>
-<p>The <code>delta</code> amount is calculated next. This is the absolute
-value of the difference between the current and previous
-external phasor. The absolute value is used to compensate
-for phasor resets. If the previous phasor hasn't been
-initialized, the delta value is zero.
-</p>
-<div><b><i>&lt;&lt;calculate_delta&gt;&gt;=</i></b></div><pre><code>if (rp-&gt;extphs &lt; 0 || in &lt; rp-&gt;extphs) delta = 0;
-else delta = in - rp-&gt;extphs;</pre></code>
-<p></p>
-<p>At this point, it is safe to cache the external phasor
-signal.
-</p>
-<div><b><i>&lt;&lt;cache_external_phasor&gt;&gt;=</i></b></div><pre><code>rp-&gt;extphs = in;</pre></code>
-<p></p>
-<p>The internal phasor is updated. The increment value
-is the <code>delta</code> multiplied by the internal <code>scale</code> value.
-Wraparound is applied so that the range is within 0 and 1.
-</p>
-<div><b><i>&lt;&lt;update_internal_phasor&gt;&gt;=</i></b></div><pre><code>rp-&gt;phs += delta * rp-&gt;scale;
-while (rp-&gt;phs &gt;= 1.0) rp-&gt;phs -= 1.0;
-while (rp-&gt;phs &lt; 0.0) rp-&gt;phs += 1.0;</pre></code>
-
-<h2>Rephasorx</h2>
-
-<p><a id="rephasorx"></a>The <code>rephasorx</code> is a specialized version of <code>rephasor</code> that
-is designed to stay synchronized with the external phasor
-signal. This allows it to be used in a long-term
-contexts without having to worry about phase drift.
-</p>
-<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_rephasorx sk_rephasorx;</pre></code>
-<p></p>
-<p>Rephasorx is limited to whole-integer divisions to ensure
-that they line up with the the external phasor.
-</p>
-<p>There are two kinds of operations rephasorx operations: a
-<code>divider</code> will divide a phasor signal into <code>N</code> smaller
-sections, while a <code>multiplier</code> will stretch out that phasor
-by a factor of <code>N</code>.
-</p>
-<p>Both dividers and multipliers share the same base struct
-<code>sk_rephasorx</code>, which contains an instance of <code>sk_rephasor</code>,
-a <code>counter</code>, and counter <code>limit</code>. Counters are used to keep
-track of phasor resets. Which
-phasor resets it keeps track of (external or output)
-depends on if it is a multiplier or divider.
-</p>
-<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_rephasorx {
-   sk_rephasor rp;
-   int counter;
-   int limit;
-   SKFLT N;
-};</pre></code>
-<p></p>
-<p>Rephasorx is initialized with the function
-<code>sk_rephasorx_init</code>.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rephasorx_init(sk_rephasorx *rpx);</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rephasorx_init(sk_rephasorx *rpx)
+SKFLT sk_rephasor_tick(sk_rephasor *rp, SKFLT ext)
 {
-    sk_rephasor_init(&rpx-&gt;rp);
-    rpx-&gt;counter = -1;
-    rpx-&gt;limit = -1;
-    rpx-&gt;N = 1;
-}</pre></code>
-<p></p>
-<p>The N-factor value is set with <code>sk_rephasorx_factor</code>.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_rephasorx_factor(sk_rephasorx *rpx, SKFLT N);</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_rephasorx_factor(sk_rephasorx *rpx, SKFLT N)
-{
-    rpx-&gt;N = N;
-}</pre></code>
-<p></p>
-<p>Rephasorx has two tick functions: <code>sk_rephasorx_tick_div</code>for the divider behavior, and <code>sk_rephasorx_tick_mul</code> for
-the multiplier behavior.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasorx_tick_div(sk_rephasorx *rpx, SKFLT in);
-SKFLT sk_rephasorx_tick_mul(sk_rephasorx *rpx, SKFLT in);</pre></code>
-<p></p>
-<p>A phasor divider works by taking an external phasor signal
-and shrinking it by a factor of N.
-To be a divider, the scale of the rephasor is set to be <code>N</code>.
-The counter keeps track of how many times the internal
-rephasor resets. When it reaches N, the signal holds at 1
-until the external phasor resets. At this point, the
-internal phasor is set to be the external phasor, which
-is presumably at or very close to 0. If the external phasor
-resets before the internal phasor has a chance to hold at 1,
-it gets reset a bit earlier. The early or late arrival of
-the internal phasor should be negligible.
-</p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasorx_tick_div(sk_rephasorx *rpx, SKFLT in)
-{
+    SKFLT pr, pc;
     SKFLT out;
-    SKFLT delta;
-    out = 0;
 
-    if (rpx-&gt;counter &lt; 0) {
-        /* initialize */
-        rpx-&gt;counter = 0;
-        rpx-&gt;limit = floor(rpx-&gt;N);
-        rpx-&gt;rp.scale = rpx-&gt;limit;
+
+    /* delta function of \theta_e */
+    if (ext &gt; rp-&gt;pe[0]) {
+        rp-&gt;ir = ext - rp-&gt;pe[0];
     }
 
-    if (rpx-&gt;rp.phs &lt; 0) {
-        rpx-&gt;rp.phs = in;
+    /* compute main rephasor \theta_r */
+    pr = phasor(rp-&gt;pr, rp-&gt;s * rp-&gt;ir * rp-&gt;c);
+
+    /* delta function of \theta_r */
+    if (pr &gt; rp-&gt;pr) {
+        rp-&gt;ic = pr - rp-&gt;pr;
     }
 
-    out = rpx-&gt;rp.phs;
+    /* compute rephasor \theta_c */
+    pc = phasor(rp-&gt;pc[0], rp-&gt;si * rp-&gt;ic);
 
-    if (rpx-&gt;rp.extphs &lt; 0 || in &lt; rpx-&gt;rp.extphs) delta = 0;
-    else delta = in - rpx-&gt;rp.extphs;
-
-    if (in &lt; rpx-&gt;rp.extphs) {
-        /* hard reset */
-        rpx-&gt;rp.phs = in;
-
-        rpx-&gt;counter = 0;
-        rpx-&gt;limit = floor(rpx-&gt;N);
-        rpx-&gt;rp.scale = rpx-&gt;limit;
+    /* compute correction coefficient */
+    if (rp-&gt;pc[1] != 0) {
+        rp-&gt;c = rp-&gt;pe[1] / rp-&gt;pc[1];
     }
 
-    if (rpx-&gt;counter &lt; rpx-&gt;limit) {
-        SKFLT phs;
-        rpx-&gt;rp.extphs = in;
+    out = pr;
 
-        phs = rpx-&gt;rp.phs;
-        phs += delta * rpx-&gt;rp.scale;
-        while (phs &gt;= 1.0) phs -= 1.0;
-        while (phs &lt; 0.0) phs += 1.0;
+    /* update state */
 
-        if (phs &lt; rpx-&gt;rp.phs) {
-            rpx-&gt;counter++;
-        }
+    rp-&gt;pr = pr;
 
-        rpx-&gt;rp.phs = phs;
-    } else {
-       /* hang out at 1, wait for external phasor to reset */
-       rpx-&gt;rp.phs = 1;
-    }
+    rp-&gt;pc[1] = rp-&gt;pc[0];
+    rp-&gt;pc[0] = pc;
+
+    rp-&gt;pe[1] = rp-&gt;pe[0];
+    rp-&gt;pe[0] = ext;
 
     return out;
 }</pre></code>
-<p></p>
-<p>A phasor multiplier works by taking an external phasor
-signal and shrinking it by a factor of N. To be a
-multiplier, the scale of the rephasor is set to be <code>1/N</code>.
-The counter keeps track of how many times the external
-phasor rests. When it reaches N, it sets the internal phasor
-to be the external phasor. At this point, the internal
-phasor was producing a long ramp that was going to be
-approaching or already approaching 1 and due to loop back to
-0 anyways. Similar to the divider, the multiplier will hang
-at one and wait for the external phasor to reset. Again,
-this amount of time should be negligible.
+
+<h2>No-sync computation</h2>
+
+<p><code>sk_rephasor_tick_nosync</code> will compute a rephasor without
+any of the corrections done for synchronization. This is
+included as a way to compare implementations. By itself,
+it's probably not all that useful.
 </p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasorx_tick_mul(sk_rephasorx *rpx, SKFLT in)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasor_tick_nosync(sk_rephasor *rp, SKFLT ext);</pre></code>
+<p></p>
+<p><b>NOTE:</b> flip-flopping between <code>sk_rephasor_tick_nosync</code>and <code>sk_rephasor_tick</code> in a single instance of
+rephasor is probably not a good idea.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_rephasor_tick_nosync(sk_rephasor *rp, SKFLT ext)
 {
     SKFLT out;
-    SKFLT delta;
-    out = 0;
 
-    if (rpx-&gt;counter &lt; 0) {
-        /* initialize */
-        rpx-&gt;counter = 0;
-        rpx-&gt;limit = floor(rpx-&gt;N);
-        rpx-&gt;rp.scale = 1.0 / rpx-&gt;limit;
+    if (ext &gt; rp-&gt;pe[0]) {
+        rp-&gt;ir = ext - rp-&gt;pe[0];
     }
 
-    if (rpx-&gt;rp.phs &lt; 0) {
-        rpx-&gt;rp.phs = in;
-    }
+    rp-&gt;pr = phasor(rp-&gt;pr, rp-&gt;s * rp-&gt;ir);
+    rp-&gt;pe[0] = ext;
 
-    out = rpx-&gt;rp.phs;
-
-    if (rpx-&gt;rp.extphs &lt; 0 || in &lt; rpx-&gt;rp.extphs) delta = 0;
-    else delta = in - rpx-&gt;rp.extphs;
-
-    if (in &lt; rpx-&gt;rp.extphs) {
-        rpx-&gt;counter++;
-    }
-
-    if (rpx-&gt;counter &gt;= rpx-&gt;limit) {
-        /* hard reset */
-        rpx-&gt;rp.phs = in;
-
-        rpx-&gt;counter = 0;
-        rpx-&gt;limit = floor(rpx-&gt;N);
-        rpx-&gt;rp.scale = 1.0 / rpx-&gt;limit;
-    }
-
-
-    if (rpx-&gt;rp.extphs &lt; 0 || in &lt; rpx-&gt;rp.extphs) delta = 0;
-    else delta = in - rpx-&gt;rp.extphs;
-    rpx-&gt;rp.phs += delta * rpx-&gt;rp.scale;
-    rpx-&gt;rp.extphs = in;
-
-    /* hang at 1 and wait until external phasor resets */
-    if (rpx-&gt;rp.phs &gt; 1) rpx-&gt;rp.phs = 1;
+    out = rp-&gt;pr;
 
     return out;
 }</pre></code>

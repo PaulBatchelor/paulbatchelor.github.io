@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>TSmp</title>
+<h1>TSmp</h1>
+
+<h2>Description</h2>
+
+<p>TSmp is triggerable in-memory sample generator with playback
+speed control.
+</p>
+
+<h2>Generated Files</h2>
+
+<div><b><i>&lt;&lt;tsmp.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_TSMP_H
+#define SK_TSMP_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+#ifdef SK_TSMP_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;tsmp.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#define SK_TSMP_PRIV
+#include "tsmp.h"
+
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Data</h2>
+
+<p>Data is stored in a struct called <code>sk_tsmp</code>, and initialized
+with <code>sk_tsmp_init</code>.
+</p>
+
+<h3>Struct Declaration</h3>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_tsmp sk_tsmp;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_tsmp {
+    &lt;&lt;tsmp&gt;&gt;
+};</pre></code>
+
+<h3>Init</h3>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tsmp_init(sk_tsmp *tsmp, SKFLT *tab, unsigned long sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tsmp_init(sk_tsmp *tsmp, SKFLT *tab, unsigned long sz)
+{
+    &lt;&lt;tsmp_init&gt;&gt;
+}</pre></code>
+
+<h3>Stored playback position</h3>
+
+<p>The current playback position is stored in units of samples
+as a double to preserve fractional sample amounts.
+</p>
+<div><b><i>&lt;&lt;tsmp&gt;&gt;=</i></b></div><pre><code>double pos;</pre></code>
+<p></p>
+<p>By setting position to be negative, it prevents the sample
+from firing off in the beginning.
+</p>
+<div><b><i>&lt;&lt;tsmp_init&gt;&gt;=</i></b></div><pre><code>tsmp-&gt;pos = -1;</pre></code>
+<p></p>
+<p>A trigger signal resets the playback position to be 0.
+</p>
+<div><b><i>&lt;&lt;reset&gt;&gt;=</i></b></div><pre><code>tsmp-&gt;pos = 0;</pre></code>
+
+<h2>Parameters</h2>
+
+<p>This thing takes in 3 parameters: a trigger signal, a
+playback speed amount, and an ftable (presumably
+containing sample data).
+</p>
+
+<h3>Playback Rate</h3>
+
+<p>Playback speed happens at audio rate, and determines the
+increment amount. A value of 1 is normal, 2 double speed,
+0.5 half speed. Negative values are ignored for now. If they
+did work, they would go in reverse.
+</p>
+<div><b><i>&lt;&lt;tsmp&gt;&gt;=</i></b></div><pre><code>SKFLT play;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;tsmp_init&gt;&gt;=</i></b></div><pre><code>tsmp-&gt;play = 1.0;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tsmp_rate(sk_tsmp *ts, SKFLT play);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tsmp_rate(sk_tsmp *ts, SKFLT play)
+{
+    ts-&gt;play = play;
+}</pre></code>
+
+<h3>Table</h3>
+
+<p>The ftable is assumed to be sample data loaded from some
+audio file like <code>loadwav</code>.
+</p>
+<div><b><i>&lt;&lt;tsmp&gt;&gt;=</i></b></div><pre><code>SKFLT *tab;
+unsigned long tabsz;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;tsmp_init&gt;&gt;=</i></b></div><pre><code>tsmp-&gt;tab = tab;
+tsmp-&gt;tabsz = sz;</pre></code>
+
+<h2>Processing</h2>
+
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tsmp_tick(sk_tsmp *tsmp, SKFLT trig);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tsmp_tick(sk_tsmp *tsmp, SKFLT trig)
+{
+    SKFLT smp;
+
+    smp = 0;
+
+    if (trig != 0) {
+        &lt;&lt;reset&gt;&gt;
+    }
+
+    &lt;&lt;process&gt;&gt;
+
+    return smp;
+}</pre></code>
+<p></p>
+<p>Sampling only happens if the playback position is in bounds.
+Otherwise, it is assumed to have been completely fired.
+</p>
+<div><b><i>&lt;&lt;process&gt;&gt;=</i></b></div><pre><code>if (tsmp-&gt;pos &gt;= 0 && tsmp-&gt;pos &lt; (tsmp-&gt;tabsz - 1)) {
+    SKFLT play;
+    &lt;&lt;lerpvars&gt;&gt;
+    play = tsmp-&gt;play;
+    &lt;&lt;lerp&gt;&gt;
+    tsmp-&gt;pos += play;
+}</pre></code>
+<p></p>
+<p>Most of this interpolation code has been lifted from other
+soundpipe modules.
+</p>
+<div><b><i>&lt;&lt;lerpvars&gt;&gt;=</i></b></div><pre><code>unsigned int ipos;
+double fract;
+SKFLT v1, v2;
+SKFLT *tab;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;lerp&gt;&gt;=</i></b></div><pre><code>tab = tsmp-&gt;tab;
+ipos = floor(tsmp-&gt;pos);
+fract = tsmp-&gt;pos - ipos;
+v1 = tab[ipos];
+v2 = tab[ipos + 1];
+smp = (v1 + (v2 - v1) * fract);</pre></code>
+</div>
+</body>
+</html>
