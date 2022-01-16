@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>10. Compile</h2>
+
+<p><a id="wm_023_0266"></a>Compiles a string into bytecode.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_compile(bitlang_state *st, const char *code);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int match(const char *str1, int sz1,
+                 const char *str2, int sz2)
+{
+    int n;
+    if (sz1 != sz2) return 0;
+
+    for (n = 0; n &lt; sz1; n++)
+        if (str1[n] != str2[n]) return 0;
+
+    return 1;
+}
+
+static int isnum(const char *str) {
+    char c;
+
+    c = str[0] - '0';
+
+    if (c &gt;= 1 && c &lt;= 9) return 1;
+
+    return 0;
+}
+
+static int mknum(const char *str, int len) {
+    int x;
+    int i;
+
+    x = 0;
+
+    for (i = 0; i &lt; len; i++) {
+        int c;
+
+        c = str[i] - '0';
+
+        if (c &gt;= 0 && c &lt;= 9) {
+            x *= 10;
+            x += c;
+        }
+    }
+
+    return x;
+}
+
+static int tokenize(bitlang_state *st,
+                    const char *code,
+                    int b, int e)
+{
+    int len;
+    const char *str;
+
+    len = (e - b) + 1;
+
+    str = &code[b];
+
+    if (isnum(str)) {
+        return bitlang_num(st, mknum(str, len));
+    }
+&lt;&lt;search&gt;&gt;
+
+    return 1;
+}
+
+int bitlang_compile(bitlang_state *st, const char *code)
+{
+    int b, e;
+    int sz;
+    int n;
+    int mode;
+
+    sz = strlen(code);
+
+    b = 0;
+    e = 0;
+
+    mode = 0;
+
+    n = 0;
+
+    while (n &lt; sz) {
+        char c;
+
+        c = code[n];
+        if (mode == 0) {
+            if (c == ' ') {
+                n++;
+            } else {
+                b = n;
+                mode = 1;
+                n++;
+            }
+        } else if (mode == 1) {
+            if (c == ' ') {
+                e = n - 1;
+
+                mode = 0;
+                tokenize(st, code, b, e);
+            }
+            n++;
+        } else {
+            n++;
+        }
+    }
+
+    if (b &lt; sz) {
+        e = sz - 1;
+        tokenize(st, code, b, e);
+    }
+    return 0;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_023_0259">prev</a> | <a href="#">home</a> | next</p>
+</div>
+</body>
+</html>

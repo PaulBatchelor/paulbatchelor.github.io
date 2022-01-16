@@ -67,6 +67,8 @@
         return p_uuid(argc, argv);
     } else if (!strcmp(argv[0], "ergo")) {
         return p_ergo(argc, argv);
+    } else if (!strcmp(argv[0], "mkfile")) {
+        return p_mkfile(argc, argv);
     } else {
         fprintf(stderr, "Could not find command '%s'\n", argv[0]);
     }
@@ -1081,6 +1083,8 @@ variable CLI subprogram.
 <p><a id="wm_006_0359"></a>Usage: entry UUID
 </p>
 <p>Looks up entry UUID and prints all items with that UUID.
+Note that the timestamp is printed as localtime not UTC
+and should not be used as an exporter to TSV.
 </p>
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_entry(int argc, char *argv[]);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_entry(int argc, char *argv[])
@@ -1112,7 +1116,7 @@ variable CLI subprogram.
     }
 
     rc = sqlite3_prepare_v2(db,
-    "SELECT time, UUID, value from wikizet "
+    "SELECT datetime(time, 'localtime'), UUID, value from wikizet "
     "WHERE wikizet.UUID IS ?1;",
     -1, &stmt, NULL);
 
@@ -1288,6 +1292,36 @@ characters.
 
     fwrite(argv[1], 1, len, stdout);
     fflush(stdout);
+    return 0;
+}</pre></code>
+
+<h3>5.21. mkfile</h3>
+
+<p><a id="wm_006_0383"></a>makes a new file path link.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_mkfile(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static int p_mkfile(int argc, char *argv[])
+{
+    weewiki_d *ww;
+    wwzet_uuid uuid;
+
+    if (argc &lt; 2) {
+        fprintf(stderr, "Usage: %s file\n", argv[0]);
+        return 1;
+    }
+
+    ww = malloc(weewiki_sizeof());
+    weewiki_init(ww);
+    weewiki_open(ww, weewiki_dbname_get());
+
+    wwzet_uuid_rng_init();
+    wwzet_uuid_init(&uuid);
+
+    wwzet_file(ww, argv[1], strlen(argv[1]), &uuid);
+    printf("%s\n", uuid.str);
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    free(ww);
     return 0;
 }</pre></code>
 <p></p>

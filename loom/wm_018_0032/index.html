@@ -35,13 +35,36 @@ f. A quad can be checked with <code>kuf_quad_check</code></p>
         quad != 0xf;
 }</pre></code>
 
-<h3>4.2. Quad Generation + Operations</h3>
+<h3>4.2. Kuf Random Number Generator</h3>
 
-<p><a id="wm_018_0042"></a></p>
+<p><a id="wm_018_0042"></a>To keep generated output consistent between platforms,
+a simple 32-bit internal PRNG is implemented, requiring
+a single 32-bit integer to keep track of state.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint32_t kuf_rand(uint32_t rng);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint32_t kuf_rand(uint32_t rng)
+{
+    rng = (1103515245 * rng + 12345) % 2147483648;
+    return rng;
+}</pre></code>
+<p></p>
+<p><code>kuf_rng</code> will call <code>kuf_rand</code> and update the state in one
+call.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint32_t kuf_rng(uint32_t *rng);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint32_t kuf_rng(uint32_t *rng)
+{
+    *rng = kuf_rand(*rng);
+    return *rng;
+}</pre></code>
 
-<h4>4.2.1. Set Bit</h4>
+<h3>4.3. Quad Generation + Operations</h3>
 
-<p><a id="wm_018_0043"></a>This static function is used to set a bit in a quad.
+<p><a id="wm_018_0053"></a></p>
+
+<h4>4.3.1. Set Bit</h4>
+
+<p><a id="wm_018_0054"></a>This static function is used to set a bit in a quad.
 <div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static uint8_t set_bit(uint8_t quad,
                        uint8_t pos,
                        uint8_t bit);</pre></code>
@@ -56,50 +79,53 @@ f. A quad can be checked with <code>kuf_quad_check</code></p>
 }
 </pre></code>
 
-<h4>4.2.2. Generate a Quad</h4>
+<h4>4.3.2. Generate a Quad</h4>
 
-<p><a id="wm_018_0050"></a>A randomly generated quad can be generated with
+<p><a id="wm_018_0061"></a>A randomly generated quad can be generated with
 <code>kuf_gen_quad</code>. This can be any quad pattern, as long as it
 isn't one of the violation patterns.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_quad(void);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_quad(void)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_quad(uint32_t *rng);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_quad(uint32_t *rng)
 {
     uint8_t quad;
 
-    quad = rand() & 0xf;
+    quad = (kuf_rng(rng) &gt;&gt; 8) & 0xf;
 
-    while (!kuf_quad_check(quad)) quad = rand() & 0xf;
+    while (!kuf_quad_check(quad)) quad = (kuf_rng(rng) &gt;&gt; 8) & 0xf;
 
     return quad;
 }</pre></code>
 
-<h4>4.2.3. Generate a Tile</h4>
+<h4>4.3.3. Generate a Tile</h4>
 
-<p><a id="wm_018_0056"></a>A randomly generated tile can be generated with
+<p><a id="wm_018_0067"></a>A randomly generated tile can be generated with
 <code>kuf_gen_tile</code>. It will return a 1 or a 0.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_tile(void);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_tile(void)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_tile(uint32_t *rng);</pre></code>
+<p></p>
+<p>Get the last bit in the RNG.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_tile(uint32_t *rng)
 {
-    return rand() & 1;
+    return (kuf_rng(rng) &gt;&gt; 8) & 1;
 }</pre></code>
 
-<h4>4.2.4. Generate a Pair</h4>
+<h4>4.3.4. Generate a Pair</h4>
 
-<p><a id="wm_018_0062"></a>A randomly generated pair can be generated with
+<p><a id="wm_018_0074"></a>A randomly generated pair can be generated with
 <code>kuf_gen_pair</code>. It will store the output in the first
 2 bits.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_pair(void);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_pair(void)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_pair(uint32_t *rng);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_gen_pair(uint32_t *rng)
 {
-    return rand() & 0x3;
+    return (kuf_rng(rng) &gt;&gt; 8) & 0x3;
 }</pre></code>
 
-<h4>4.2.5. Manipulate Quad Sides</h4>
+<h4>4.3.5. Manipulate Quad Sides</h4>
 
-<p><a id="wm_018_0068"></a>Pairs can be set to a quad on one of four cardinal sides
+<p><a id="wm_018_0080"></a>Pairs can be set to a quad on one of four cardinal sides
 with <code>kuf_quad_side_set</code>, and retrieved with
 <code>kuf_quad_side_get</code>. This takes in a quad and one of the
 sides <code>KUF_NORTH</code>, <code>KUF_SOUTH</code>, <code>KUF_EAST</code>, and <code>KUF_WEST</code>.
@@ -165,9 +191,9 @@ uint8_t kuf_quad_side_get(uint8_t quad, uint8_t side);</pre></code>
     KUF_WEST
 };</pre></code>
 
-<h4>4.2.6. Manipulate Quad Tiles</h4>
+<h4>4.3.6. Manipulate Quad Tiles</h4>
 
-<p><a id="wm_018_0079"></a>Tiles in a Quad can be set with <code>kuf_quad_tile_set</code> and
+<p><a id="wm_018_0091"></a>Tiles in a Quad can be set with <code>kuf_quad_tile_set</code> and
 <code>kuf_quad_tile_get</code>. These take in the quad and the
 intercardinal directions <code>KUF_NORTHWEST</code>, <code>KUF_NORTHEAST</code>,
 <code>KUF_SOUTHWEST</code>, and <code>KUF_SOUTHEAST</code>.
@@ -231,9 +257,9 @@ uint8_t kuf_quad_tile_set(uint8_t quad,
     KUF_SOUTHEAST
 };</pre></code>
 
-<h4>4.2.7. Manipulate Quads From Squares</h4>
+<h4>4.3.7. Manipulate Quads From Squares</h4>
 
-<p><a id="wm_018_0089"></a>Quads in a square can be set and retrieved with
+<p><a id="wm_018_0101"></a>Quads in a square can be set and retrieved with
 <code>kuf_square_quad_get</code> and <code>kuf_square_quad_set</code>. In addition
 to the square, can take in a main quad like <code>KUF_QUAD_A</code>,
 <code>KUF_QUAD_B</code>, <code>KUF_QUAD_C</code>, or <code>KUF_QUAD_D</code>, or one of
@@ -494,14 +520,14 @@ becomes Southeast.
     KUF_QUAD_ABCD
 };</pre></code>
 
-<h3>4.3. Square Generation</h3>
+<h3>4.4. Square Generation</h3>
 
-<p><a id="wm_018_0145"></a>With the previously mentioned operations, a technically
+<p><a id="wm_018_0157"></a>With the previously mentioned operations, a technically
 correct kufic square can be generated. The function to
 generate a square can be done with <code>kuf_gen_square</code>.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint16_t kuf_gen_square(void);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint16_t kuf_gen_square(void)
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint16_t kuf_gen_square(uint32_t *rng);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint16_t kuf_gen_square(uint32_t *rng)
 {
     uint16_t sq;
     sq = 0;
@@ -522,7 +548,7 @@ ABCD, BD, AB, BD, B, D.
 </p>
 <p>A gets generated first. This is a random quad.
 </p>
-<div><b><i>&lt;&lt;generate_A&gt;&gt;=</i></b></div><pre><code>sq = kuf_square_quad_set(sq, KUF_QUAD_A, kuf_gen_quad());</pre></code>
+<div><b><i>&lt;&lt;generate_A&gt;&gt;=</i></b></div><pre><code>sq = kuf_square_quad_set(sq, KUF_QUAD_A, kuf_gen_quad(rng));</pre></code>
 <p></p>
 <p>AC is a constrained subquad whose north pair is
 the south pair of A. The south pair of AC is generated
@@ -539,7 +565,7 @@ of C.
     uint8_t p_n;
     uint8_t ac;
 
-    p_s = kuf_gen_pair();
+    p_s = kuf_gen_pair(rng);
     p_n =
         kuf_quad_side_get(
             kuf_square_quad_get(sq, KUF_QUAD_A),
@@ -570,7 +596,7 @@ pair of C.
     uint8_t p_n;
     uint8_t c;
 
-    p_s = kuf_gen_pair();
+    p_s = kuf_gen_pair(rng);
     p_n =
         kuf_quad_side_get(
             kuf_square_quad_get(sq, KUF_QUAD_AC),
@@ -616,7 +642,7 @@ then generated to complete the quad.
                                  kuf_square_quad_get(sq, KUF_QUAD_C),
                                  KUF_NORTHEAST));
 
-    p_e = kuf_gen_pair();
+    p_e = kuf_gen_pair(rng);
 
     abcd = kuf_quad_side_set(abcd, KUF_EAST, p_e);
 
@@ -648,7 +674,7 @@ and complete the quad.
                            KUF_WEST,
                            kuf_quad_side_get(abcd, KUF_EAST));
 
-    p_e = kuf_gen_pair();
+    p_e = kuf_gen_pair(rng);
 
     bd = kuf_quad_side_set(bd, KUF_EAST, p_e);
 
@@ -684,7 +710,7 @@ the southeast tile of D to be completed.
     ab = kuf_square_quad_get(sq, KUF_QUAD_AB);
     sq = kuf_square_quad_set(sq, KUF_QUAD_AB, ab);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     ab = kuf_quad_tile_set(ab, KUF_NORTHEAST, t);
 
     if (!kuf_quad_check(ab)) {
@@ -694,7 +720,7 @@ the southeast tile of D to be completed.
     sq = kuf_square_quad_set(sq, KUF_QUAD_AB, ab);
 
     b = kuf_square_quad_get(sq, KUF_QUAD_B);
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     b = kuf_quad_tile_set(b, KUF_NORTHEAST, t);
 
     if (!kuf_quad_check(b)) {
@@ -704,7 +730,7 @@ the southeast tile of D to be completed.
     sq = kuf_square_quad_set(sq, KUF_QUAD_B, b);
 
     cd = kuf_square_quad_get(sq, KUF_QUAD_CD);
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     cd = kuf_quad_tile_set(cd, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(cd)) {
@@ -714,7 +740,7 @@ the southeast tile of D to be completed.
     sq = kuf_square_quad_set(sq, KUF_QUAD_CD, cd);
 
     d = kuf_square_quad_get(sq, KUF_QUAD_D);
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     d = kuf_quad_tile_set(d, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(d)) {
@@ -727,9 +753,9 @@ the southeast tile of D to be completed.
 <p>And with that, a technically correct square is generated.
 </p>
 
-<h3>4.4. Building Up Squares From Quads</h3>
+<h3>4.5. Building Up Squares From Quads</h3>
 
-<p><a id="wm_018_0188"></a>The function <code>kuf_glue_square</code> glues together a square
+<p><a id="wm_018_0200"></a>The function <code>kuf_glue_square</code> glues together a square
 from quads A, B, C, D.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint16_t kuf_glue_square(uint8_t a,
@@ -752,9 +778,9 @@ from quads A, B, C, D.
     return s;
 }</pre></code>
 
-<h3>4.5. Breaking Up Squares into Quads</h3>
+<h3>4.6. Breaking Up Squares into Quads</h3>
 
-<p><a id="wm_018_0194"></a>The function <code>kuf_break_square</code> will break up a square
+<p><a id="wm_018_0206"></a>The function <code>kuf_break_square</code> will break up a square
 into core quads A, B, C, D.
 </p>
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_break_square(uint16_t s,
@@ -774,24 +800,26 @@ into core quads A, B, C, D.
     *d = kuf_square_quad_get(s, KUF_QUAD_D);
 }</pre></code>
 
-<h3>4.6. Block Generation</h3>
+<h3>4.7. Block Generation</h3>
 
-<p><a id="wm_018_0200"></a>Next up is generating a technically correct block. A block
+<p><a id="wm_018_0212"></a>Next up is generating a technically correct block. A block
 is a 2x2 arrangment of squares.
 </p>
 
-<h4>4.6.1. Top Level Function</h4>
+<h4>4.7.1. Top Level Function</h4>
 
-<p><a id="wm_018_0202"></a>A block is generated with the function <code>kuf_gen_block</code>.
+<p><a id="wm_018_0214"></a>A block is generated with the function <code>kuf_gen_block</code>.
 The output returns to 4 squares W, X, Y, and Z, which
 are meant to be arranged left-right, top-bottom in a 2x2
 formation.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_gen_block(uint16_t *pw,
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_gen_block(uint32_t *rng,
+                   uint16_t *pw,
                    uint16_t *px,
                    uint16_t *py,
                    uint16_t *pz);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void kuf_gen_block(uint16_t *pw,
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void kuf_gen_block(uint32_t *rng,
+                   uint16_t *pw,
                    uint16_t *px,
                    uint16_t *py,
                    uint16_t *pz)
@@ -821,9 +849,9 @@ formation.
     *pz = z;
 }</pre></code>
 
-<h4>4.6.2. Overview</h4>
+<h4>4.7.2. Overview</h4>
 
-<p><a id="wm_018_0226"></a>Making a block is
+<p><a id="wm_018_0238"></a>Making a block is
 similar to making a square, only one level higher. It begins
 with a technically correct square, then generating correct
 squares moving one quad at a time.
@@ -854,13 +882,13 @@ South and east are the only walls required.
 North east and south east are the only quads required.
 </p>
 
-<h4>4.6.3. Solvers</h4>
+<h4>4.7.3. Solvers</h4>
 
-<p><a id="wm_018_0228"></a></p>
+<p><a id="wm_018_0240"></a></p>
 
-<h5>4.6.3.1. Wall Solver</h5>
+<h5>4.7.3.1. Wall Solver</h5>
 
-<p><a id="wm_018_0229"></a>Generating a wall in a square is known as a "wall solver".
+<p><a id="wm_018_0241"></a>Generating a wall in a square is known as a "wall solver".
 For this block algorithm, only an east east and south
 wall solver required. It works like this: given
 two quads, generate two new quads that will complete
@@ -872,14 +900,16 @@ the square.
 quads.
 </p>
 
-<h6>4.6.3.1.1. Eastern Wall</h6>
+<h6>4.7.3.1.1. Eastern Wall</h6>
 
-<p><a id="wm_018_0231"></a>An eastern solver has knowns A and C, and creates
+<p><a id="wm_018_0243"></a>An eastern solver has knowns A and C, and creates
 a solution for b and d.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_east(uint8_t a, uint8_t c,
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_east(uint32_t *rng,
+                         uint8_t a, uint8_t c,
                          uint8_t *pb, uint8_t *pd);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_east(uint8_t a, uint8_t c,
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_east(uint32_t *rng,
+                         uint8_t a, uint8_t c,
                          uint8_t *pb, uint8_t *pd)
 {
     uint8_t b;
@@ -921,7 +951,7 @@ the east side to create a technically valid quad.
     t = kuf_quad_tile_get(c, KUF_NORTHEAST);
     abcd = kuf_quad_tile_set(abcd, KUF_SOUTHWEST, t);
 
-    t = kuf_gen_pair();
+    t = kuf_gen_pair(rng);
 
     abcd = kuf_quad_side_set(abcd, KUF_EAST, t);
 
@@ -948,7 +978,7 @@ found for the east side to create a technically valid quad.
     t = kuf_quad_tile_get(abcd, KUF_SOUTHEAST);
     bd = kuf_quad_tile_set(bd, KUF_SOUTHWEST, t);
 
-    t = kuf_gen_pair();
+    t = kuf_gen_pair(rng);
     bd = kuf_quad_side_set(bd, KUF_EAST, t);
 
     if (!kuf_quad_check(bd)) {
@@ -976,7 +1006,7 @@ A becomes West. The Northeast of ABCD becomes Southeast.
     t = kuf_quad_tile_get(abcd, KUF_NORTHEAST);
     ab = kuf_quad_tile_set(ab, KUF_SOUTHEAST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     ab = kuf_quad_tile_set(ab, KUF_NORTHEAST, t);
 
     if (!kuf_quad_check(ab)) {
@@ -1000,7 +1030,7 @@ BD to Southeast.
     t = kuf_quad_tile_get(bd, KUF_NORTHEAST);
     b = kuf_quad_tile_set(b, KUF_SOUTHEAST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     b = kuf_quad_tile_set(b, KUF_NORTHEAST, t);
 
     if (!kuf_quad_check(b)) {
@@ -1024,7 +1054,7 @@ and Southeast of C becomes Southwest.
     t = kuf_quad_tile_get(c, KUF_SOUTHEAST);
     cd = kuf_quad_tile_set(cd, KUF_SOUTHWEST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     cd = kuf_quad_tile_set(cd, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(cd)) {
@@ -1048,7 +1078,7 @@ Southeast of BD becomes Northeast.
     t = kuf_quad_tile_get(bd, KUF_SOUTHEAST);
     d = kuf_quad_tile_set(d, KUF_NORTHEAST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     d = kuf_quad_tile_set(d, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(d)) {
@@ -1056,19 +1086,21 @@ Southeast of BD becomes Northeast.
     }
 }</pre></code>
 
-<h6>4.6.3.1.2. Southern Wall</h6>
+<h6>4.7.3.1.2. Southern Wall</h6>
 
-<p><a id="wm_018_0273"></a>A southern wall solver has knowns A and B, and
+<p><a id="wm_018_0285"></a>A southern wall solver has knowns A and B, and
 creates a solution C and D.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_south(uint8_t a, uint8_t b,
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_south(uint32_t *rng,
+                          uint8_t a, uint8_t b,
                           uint8_t *pc, uint8_t *pd);</pre></code>
 <p></p>
 <p>The southern wall uses the same procedure as the eastern
 wall, just flipped on it's side. The quads are solved in
 the following order: ABCD, CD, AC, C, BD, D.
 </p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_south(uint8_t a, uint8_t b,
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void kuf_solve_wall_south(uint32_t *rng,
+                          uint8_t a, uint8_t b,
                           uint8_t *pc, uint8_t *pd)
 {
     uint8_t c, d;
@@ -1104,7 +1136,7 @@ and Southwest of B becomes Northeast.
     t = kuf_quad_tile_get(b, KUF_SOUTHWEST);
     abcd = kuf_quad_tile_set(abcd, KUF_NORTHEAST, t);
 
-    t = kuf_gen_pair();
+    t = kuf_gen_pair(rng);
 
     abcd = kuf_quad_side_set(abcd, KUF_SOUTH, t);
 
@@ -1132,7 +1164,7 @@ and Southeast of ABCD becomes Northeast.
     t = kuf_quad_tile_get(abcd, KUF_SOUTHEAST);
     cd = kuf_quad_tile_set(cd, KUF_NORTHEAST, t);
 
-    t = kuf_gen_pair();
+    t = kuf_gen_pair(rng);
     cd = kuf_quad_side_set(cd, KUF_SOUTH, t);
 
     if (!kuf_quad_check(cd)) {
@@ -1160,7 +1192,7 @@ and Southwest of A becomes Northwest.
     t = kuf_quad_tile_get(a, KUF_SOUTHWEST);
     ac = kuf_quad_tile_set(ac, KUF_NORTHWEST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     ac = kuf_quad_tile_set(ac, KUF_SOUTHWEST, t);
 
     if (!kuf_quad_check(ac)) {
@@ -1184,7 +1216,7 @@ and Southwest of CD becomes Southeast.
     t = kuf_quad_tile_get(cd, KUF_SOUTHWEST);
     c = kuf_quad_tile_set(c, KUF_SOUTHEAST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     c = kuf_quad_tile_set(c, KUF_SOUTHWEST, t);
 
     if (!kuf_quad_check(c)) {
@@ -1208,7 +1240,7 @@ and Southeast of B becomes Northeast.
     t = kuf_quad_tile_get(b, KUF_SOUTHEAST);
     bd = kuf_quad_tile_set(bd, KUF_NORTHEAST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     bd = kuf_quad_tile_set(bd, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(bd)) {
@@ -1232,7 +1264,7 @@ and Southeast of CD becomes Southwest.
     t = kuf_quad_tile_get(cd, KUF_SOUTHEAST);
     d = kuf_quad_tile_set(d, KUF_SOUTHWEST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     d = kuf_quad_tile_set(d, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(d)) {
@@ -1240,18 +1272,24 @@ and Southeast of CD becomes Southwest.
     }
 }</pre></code>
 
-<h5>4.6.3.2. Quad Solver</h5>
+<h5>4.7.3.2. Quad Solver</h5>
 
-<p><a id="wm_018_0316"></a>Generating a quad in a square is known as a "quad solver".
+<p><a id="wm_018_0328"></a>Generating a quad in a square is known as a "quad solver".
 Only southeast and northeast quads need to be implemented.
 The quad solver works in the following way: given 3 known
 quads in the square, generate the remaining quad.
 </p>
 
-<h6>4.6.3.2.1. Northeast Quad (B)</h6>
+<h6>4.7.3.2.1. Northeast Quad (B)</h6>
 
-<p><a id="wm_018_0318"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_northeast(uint8_t a, uint8_t c, uint8_t d);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_northeast(uint8_t a, uint8_t c, uint8_t d)
+<p><a id="wm_018_0330"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_northeast(uint32_t *rng,
+                                 uint8_t a,
+                                 uint8_t c,
+                                 uint8_t d);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_northeast(uint32_t *rng,
+                                 uint8_t a,
+                                 uint8_t c,
+                                 uint8_t d)
 {
     uint8_t b;
     uint8_t abcd;
@@ -1289,7 +1327,7 @@ of D to Southeast.
     t = kuf_quad_tile_get(d, KUF_NORTHWEST);
     abcd = kuf_quad_tile_set(abcd, KUF_SOUTHEAST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
 
     abcd = kuf_quad_tile_set(abcd, KUF_NORTHEAST, t);
 
@@ -1314,7 +1352,7 @@ Northeast of D to Southeast.
     t = kuf_quad_tile_get(d, KUF_NORTHEAST);
     bd = kuf_quad_tile_set(bd, KUF_SOUTHEAST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
 
     bd = kuf_quad_tile_set(bd, KUF_NORTHEAST, t);
 
@@ -1339,7 +1377,7 @@ the Northeast of A to Northwest.
     t = kuf_quad_tile_get(a, KUF_NORTHEAST);
     ab = kuf_quad_tile_set(ab, KUF_NORTHWEST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
 
     ab = kuf_quad_tile_set(ab, KUF_NORTHEAST, t);
 
@@ -1364,7 +1402,7 @@ Northeast of AB to Northwest.
     t = kuf_quad_tile_get(ab, KUF_NORTHEAST);
     b = kuf_quad_tile_set(b, KUF_NORTHWEST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
 
     b = kuf_quad_tile_set(b, KUF_NORTHEAST, t);
 
@@ -1373,10 +1411,16 @@ Northeast of AB to Northwest.
     }
 }</pre></code>
 
-<h6>4.6.3.2.2. Southeast Quad (D)</h6>
+<h6>4.7.3.2.2. Southeast Quad (D)</h6>
 
-<p><a id="wm_018_0347"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_southeast(uint8_t a, uint8_t b, uint8_t c);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_southeast(uint8_t a, uint8_t b, uint8_t c)
+<p><a id="wm_018_0359"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_southeast(uint32_t *rng,
+                                 uint8_t a,
+                                 uint8_t b,
+                                 uint8_t c);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>uint8_t kuf_solve_quad_southeast(uint32_t *rng,
+                                 uint8_t a,
+                                 uint8_t b,
+                                 uint8_t c)
 {
     uint8_t d;
     uint8_t abcd;
@@ -1416,7 +1460,7 @@ of C to southwest.
     t = kuf_quad_tile_get(c, KUF_NORTHEAST);
     abcd = kuf_quad_tile_set(abcd, KUF_SOUTHWEST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     abcd = kuf_quad_tile_set(abcd, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(abcd)) {
@@ -1440,7 +1484,7 @@ the southeast of B to northeast.
     t = kuf_quad_tile_get(b, KUF_SOUTHEAST);
     bd = kuf_quad_tile_set(bd, KUF_NORTHEAST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     bd = kuf_quad_tile_set(bd, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(bd)) {
@@ -1464,7 +1508,7 @@ the southeast of C to southwest.
     t = kuf_quad_tile_get(c, KUF_SOUTHEAST);
     cd = kuf_quad_tile_set(cd, KUF_SOUTHWEST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     cd = kuf_quad_tile_set(cd, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(cd)) {
@@ -1488,7 +1532,7 @@ the southeast of CD to southwest.
     t = kuf_quad_tile_get(cd, KUF_SOUTHEAST);
     d = kuf_quad_tile_set(d, KUF_SOUTHWEST, t);
 
-    t = kuf_gen_tile();
+    t = kuf_gen_tile(rng);
     d = kuf_quad_tile_set(d, KUF_SOUTHEAST, t);
 
     if (!kuf_quad_check(d)) {
@@ -1496,12 +1540,12 @@ the southeast of CD to southwest.
     }
 }</pre></code>
 
-<h4>4.6.4. The Algorithm</h4>
+<h4>4.7.4. The Algorithm</h4>
 
-<p><a id="wm_018_0376"></a>To begin, generate square W. This can be generated entirely
+<p><a id="wm_018_0388"></a>To begin, generate square W. This can be generated entirely
 with <code>kuf_gen_square</code>.
 </p>
-<div><b><i>&lt;&lt;generate_w&gt;&gt;=</i></b></div><pre><code>w = kuf_gen_square();</pre></code>
+<div><b><i>&lt;&lt;generate_w&gt;&gt;=</i></b></div><pre><code>w = kuf_gen_square(rng);</pre></code>
 <p></p>
 <p>Generate WY. Northern wall of WY (a,b) is the southern wall
 of W (c,d). This is fed into the southern wall solver to complete
@@ -1515,7 +1559,7 @@ WY.
 
     c = d = 0;
 
-    kuf_solve_wall_south(a, b, &c, &d);
+    kuf_solve_wall_south(rng, a, b, &c, &d);
 
     wy = kuf_glue_square(a, b, c, d);
 }</pre></code>
@@ -1531,7 +1575,7 @@ southern wall solver to complete Y.
 
     c = d = 0;
 
-    kuf_solve_wall_south(a, b, &c, &d);
+    kuf_solve_wall_south(rng, a, b, &c, &d);
 
     y = kuf_glue_square(a, b, c, d);
 }</pre></code>
@@ -1549,7 +1593,7 @@ fed into the eastern wall solver to complete WXYZ.
 
     b = d = 0;
 
-    kuf_solve_wall_east(a, c, &b, &d);
+    kuf_solve_wall_east(rng, a, c, &b, &d);
 
     wxyz = kuf_glue_square(a, b, c, d);
 }</pre></code>
@@ -1566,7 +1610,7 @@ into the east wall solver to complete XZ.
 
     b = d = 0;
 
-    kuf_solve_wall_east(a, c, &b, &d);
+    kuf_solve_wall_east(rng, a, c, &b, &d);
 
     xz = kuf_glue_square(a, b, c, d);
 }</pre></code>
@@ -1583,7 +1627,7 @@ The Northeast of WXYZ (b) becomes Southeast (d).
     c = kuf_square_quad_get(w, KUF_QUAD_D);
     d = kuf_square_quad_get(wxyz, KUF_QUAD_B);
 
-    b = kuf_solve_quad_northeast(a, c, d);
+    b = kuf_solve_quad_northeast(rng, a, c, d);
 
     wx = kuf_glue_square(a, b, c, d);
 }</pre></code>
@@ -1600,7 +1644,7 @@ The Northeast of XZ (b) becomes Southeast (d).
     c = kuf_square_quad_get(wx, KUF_QUAD_D);
     d = kuf_square_quad_get(xz, KUF_QUAD_B);
 
-    b = kuf_solve_quad_northeast(a, c, d);
+    b = kuf_solve_quad_northeast(rng, a, c, d);
 
     x = kuf_glue_square(a, b, c, d);
 }</pre></code>
@@ -1617,7 +1661,7 @@ and the Southwest of XZ (C) becomes Northeast (B).
     c = kuf_square_quad_get(y, KUF_QUAD_D);
     b = kuf_square_quad_get(xz, KUF_QUAD_C);
 
-    d = kuf_solve_quad_southeast(a, b, c);
+    d = kuf_solve_quad_southeast(rng, a, b, c);
 
     yz = kuf_glue_square(a, b, c, d);
 }</pre></code>
@@ -1634,7 +1678,7 @@ and the Southeast of XZ (D) becomes Northeast (B).
     c = kuf_square_quad_get(yz, KUF_QUAD_D);
     b = kuf_square_quad_get(xz, KUF_QUAD_D);
 
-    d = kuf_solve_quad_southeast(a, b, c);
+    d = kuf_solve_quad_southeast(rng, a, b, c);
 
     z = kuf_glue_square(a, b, c, d);
 }</pre></code>
@@ -1642,7 +1686,7 @@ and the Southeast of XZ (D) becomes Northeast (B).
 <br>
 <p><hr>
 
-<a href="/loom/wm_018_0021">prev</a> | <a href="/loom/kuf">home</a> | <a href="/loom/wm_018_0413">next</a></p>
+<a href="/loom/wm_018_0021">prev</a> | <a href="/loom/kuf">home</a> | <a href="/loom/wm_018_0425">next</a></p>
 </div>
 </body>
 </html>
