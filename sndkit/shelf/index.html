@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Shelf</title>
+<h1>Shelf</h1>
+
+<h2>Overview</h2>
+
+<p><code>shelf</code> is an implementation of the two-pole shelf filters
+described in the Audio EQ Cookbook by Robert
+Bristow-Johnson.
+</p>
+<p>The implementations include both high and low shelf, and
+have the following parametric controls: transition
+frequency, boost amount (in dB units), and slope (a value
+between 0 and 1).
+</p>
+
+<h2>S-plane Transfer Functions</h2>
+
+<p>Below are the S-plane transfer functions for the high shelf and low
+shelf. A full explanation of transfer functions beyond the
+scope of this document. Think of these as a sort of
+blueprint. Filters that
+are designed in the <code>S-plane</code> are kind of like analogue
+filters. In order for them to be implemented in code, they must
+first be "digitized", which means transferring the filter
+from the S-plane to the <code>z-plane</code>.
+The most common way this is done is using something called
+the <code>Bilinear Transform</code> (or <code>BLT</code>), which is essentially a
+mathematical subsitution done on the S-plane transfer
+function. In the Audio EQ cookbook,
+this process has already been done and the coefficients
+have been pre-derived.
+</p>
+<p>This is the highshelf transfer function in the S-Plane:
+</p>
+<p><img src="/sndkit/_fig/shelf_splane_high.png" alt="H(s) ={A (A s^2 + (\sqrt(A)/Q)s + 1)
+\over
+s^2 + (\sqrt(A)/Q)s + A}"srcset="/sndkit/_fig/shelf_splane_high.png 1x,/sndkit/_fig/shelf_splane_high2x.png 2x,">
+</p>
+<p>This is the lowshelf transfer function in the S-plane:
+</p>
+<p><img src="/sndkit/_fig/shelf_splane_low.png" alt="H(s) = A \Bigl({s^2 + {\sqrt{A} / Q}s + A \over
+As^2 + {\sqrt{A}/Q}s + 1}\Bigr)"srcset="/sndkit/_fig/shelf_splane_low.png 1x,/sndkit/_fig/shelf_splane_low2x.png 2x,">
+</p>
+<p>These are then put through the bilinear transform
+to derive digital filter coefficients.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>shelf.c</code> and <code>shelf.h</code> are the files created. If
+<code>SK_SHELF_PRIV</code> is defined, the private struct
+is exposed.
+</p>
+<div><b><i>&lt;&lt;shelf.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_SHELF_H
+#define SK_SHELF_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+#ifdef SK_SHELF_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;shelf.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define SK_SHELF_PRIV
+#include "shelf.h"
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Struct</h2>
+
+<p><code>sk_shelf</code> is the struct that can handle both
+the high shelf and the low shelf. It can be initialized
+with <code>sk_shelf_init</code>. The sampling rate must be specified.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_shelf sk_shelf;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_shelf_init(sk_shelf *shf, int sr);</pre></code>
+<p></p>
+<p>A shelf filter is a kind of <code>biquad</code>, which a generalized
+form for a 2-pole filter. A biquad has filter memory for
+previous inputs and outputs, as well as coefficients for
+these as well. The values of the coefficients determine
+whether or not the filter will behave as a high or low
+shelf filter.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_shelf {
+    int sr;
+    SKFLT a[2];
+    SKFLT b[3];
+    SKFLT x[2];
+    SKFLT y[2];
+    SKFLT gain;
+    SKFLT freq;
+    SKFLT slope;
+    int changed;
+    SKFLT T;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_shelf_init(sk_shelf *shf, int sr)
+{
+    int i;
+
+    shf-&gt;T = 1.0 / sr;
+
+    for (i = 0; i &lt; 2; i++) {
+        shf-&gt;x[i] = 0;
+        shf-&gt;y[i] = 0;
+        shf-&gt;a[i] = 0;
+        shf-&gt;b[i] = 0;
+    }
+
+    shf-&gt;b[2] = 0;
+
+    sk_shelf_frequency(shf, 1000);
+    sk_shelf_gain(shf, 6);
+    sk_shelf_slope(shf, 1.0);
+}</pre></code>
+
+<h2>Parameters</h2>
+
+<p>Parameters include cutoff frequency, gain, and slope. Setting
+any of these will cause the <code>changed</code> flag to be set.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_shelf_frequency(sk_shelf *shf, SKFLT freq);
+void sk_shelf_gain(sk_shelf *shf, SKFLT gain);
+void sk_shelf_slope(sk_shelf *shf, SKFLT slope);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_shelf_frequency(sk_shelf *shf, SKFLT freq)
+{
+
+    if (freq != shf-&gt;freq) {
+        shf-&gt;freq = freq;
+        shf-&gt;changed = 1;
+    }
+}
+
+void sk_shelf_gain(sk_shelf *shf, SKFLT gain)
+{
+    if (gain != shf-&gt;gain) {
+        shf-&gt;gain = gain;
+        shf-&gt;changed = 1;
+    }
+}
+
+void sk_shelf_slope(sk_shelf *shf, SKFLT slope)
+{
+    if (slope != shf-&gt;slope && slope &gt; 0) {
+        shf-&gt;slope = slope;
+        shf-&gt;changed = 1;
+    }
+}</pre></code>
+
+<h2>Computing The Filter</h2>
+
+<p>Both shelving filters are biquads, which means they can be
+computed the same way.
+</p>
+<p>Computation of the filter is derived from the difference
+equation, and is known
+as <a href="https://ccrma.stanford.edu/~jos/fp/Direct_Form_I.html">Direct Form 1</a>.
+</p>
+<p><img src="/sndkit/_fig/shelf_direct_form_1.png" alt="\eqalign{y[n] = (b_0/a_0)x[n]& + (b_1/a_0)x[n-1] + (b_2/a_0)x[n - 2] \cr
+\hfil & - (a_1/a_0)y[n - 1] - (a_2/a_0)y[n - 2]\cr
+}"srcset="/sndkit/_fig/shelf_direct_form_1.png 1x,/sndkit/_fig/shelf_direct_form_12x.png 2x,">
+</p>
+<p>The implementation below looks a little different than the
+equation described above. To save on divides, the
+coefficients have already been pre-divided by <img src="/sndkit/_fig/shelf_a0.png" alt="a0">
+.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT compute_filter(sk_shelf *shf, SKFLT in);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT compute_filter(sk_shelf *shf, SKFLT in)
+{
+    SKFLT out;
+    SKFLT *b, *a, *x, *y;
+
+    out = 0;
+
+    b = shf-&gt;b;
+    a = shf-&gt;a;
+    x = shf-&gt;x;
+    y = shf-&gt;y;
+
+    out =
+        b[0]*in + b[1]*x[0] + b[2]*x[1]
+        - a[0]*y[0] - a[1]*y[1];
+
+    y[1] = y[0];
+    y[0] = out;
+
+    x[1] = x[0];
+    x[0] = in;
+
+    return out;
+}</pre></code>
+
+<h2>High Shelf</h2>
+
+<p>Filter with the high shelf filter with <code>sk_shelf_high_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_shelf_high_tick(sk_shelf *shf, SKFLT in);</pre></code>
+<p></p>
+<p>Before computing a sample, the frequency/gain values are
+checked to see if they have been changed, and if so, are
+updated.
+</p>
+<p>The coefficients are the following:
+</p>
+<p><img src="/sndkit/_fig/shelf_high_coefs.png" alt="\eqalign{
+b_0 &= A \Bigl((A + 1) + (A-1)\cos(\omega_0) + 2\sqrt(A)\alpha\Bigr)\cr
+b_1 &= -2 A ((A-1) + (A+1)\cos(\omega_0))\cr
+b_2 &= A ((A+1) + (A-1)\cos(\omega_0) - 2\sqrt(A)\alpha)\cr
+a_0 &= (A + 1) - (A-1)\cos(\omega_0) + 2\sqrt(A)\alpha\cr
+a_1 &= 2((A-1) - (A+1)\cos(\omega_0))\cr
+a_2 &= (A+1) - (A-1)\cos(\omega_0) - 2\sqrt(A)\alpha\cr
+}"srcset="/sndkit/_fig/shelf_high_coefs.png 1x,/sndkit/_fig/shelf_high_coefs2x.png 2x,">
+</p>
+<p>Where <img src="/sndkit/_fig/shelf_A.png" alt="A">
+ is defined in terms
+of the filter's gain <img src="/sndkit/_fig/shelf_g.png" alt="g">
+ in dB
+units:
+</p>
+<p><img src="/sndkit/_fig/shelf_A_def.png" alt="\eqalign{
+A &= \sqrt{10^{g/20}} \cr
+&= 10^{g/40}
+}"srcset="/sndkit/_fig/shelf_A_def.png 1x,/sndkit/_fig/shelf_A_def2x.png 2x,">
+</p>
+<p>The variable <img src="/sndkit/_fig/shelf_omega.png" alt="\omega_0">
+ is the
+frequency <img src="/sndkit/_fig/shelf_f.png" alt="f">
+ converted
+to radians. The variable <img src="/sndkit/_fig/shelf_T.png" alt="T">
+ is a constant typically used to scale
+things things relative the sampling rate
+<img src="/sndkit/_fig/shelf_sr.png" alt="F_s">
+.
+</p>
+<p><img src="/sndkit/_fig/shelf_omega_def.png" alt="\eqalign{
+\omega_0 &= 2 \pi f \cr
+\omega_0 T &= {{2 \pi f} \over F_s } \cr
+}"srcset="/sndkit/_fig/shelf_omega_def.png 1x,/sndkit/_fig/shelf_omega_def2x.png 2x,">
+</p>
+<p>The variable <img src="/sndkit/_fig/shelf_alpha.png" alt="\alpha">
+ is
+derived from the slope value.
+</p>
+<p><img src="/sndkit/_fig/shelf_alpha_def.png" alt="\alpha = {\sin(\omega_0) \over 2}
+\sqrt{\Bigl(A + {1 \over A}\Bigr)\Bigl({1 \over S} - 1\Bigr) + 2}"srcset="/sndkit/_fig/shelf_alpha_def.png 1x,/sndkit/_fig/shelf_alpha_def2x.png 2x,">
+</p>
+<p>Some additional operations are done in the name of
+optimization. To save a on a few division operations
+in the difference equation, the coefficients are
+divided by <code>a0</code> ahead of time. The trig function <code>cos</code>is quite costly, so the constant <code>co</code> is used to
+store <code>cos(omegaT)</code>. <code>sqrt</code> is also reasonably
+expensive, so the expression <code>sqrt(A)*alpha*2.0</code> is
+saved to an arbitrarily named variable <code>k</code>.
+</p>
+<p>After coefficients are updated (if they needed to be),
+the filter can then be computed.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_shelf_high_tick(sk_shelf *shf, SKFLT in)
+{
+    SKFLT out;
+
+    out = 0;
+
+    if (shf-&gt;changed) {
+        SKFLT ia0;
+        SKFLT alpha;
+        SKFLT A;
+        SKFLT k; /* sqrt(A)*alpha*2.0 */
+        SKFLT omegaT;
+        SKFLT *a, *b;
+        SKFLT co; /* cos(omegaT) */
+
+        A = pow(10.0, shf-&gt;gain / 40.0);
+        omegaT = 2.0 * M_PI * shf-&gt;freq * shf-&gt;T;
+        alpha = sin(omegaT) * 0.5 *
+        sqrt((A + (1.0/A))*((1.0/shf-&gt;slope) - 1.0) + 2.0);
+        co = cos(omegaT);
+        k = sqrt(A)*alpha*2.0;
+
+        a = shf-&gt;a;
+        b = shf-&gt;b;
+
+        ia0 = (A+1.0) - (A-1.0)*co + k;
+
+        if (ia0 != 0) ia0 = 1.0 / ia0;
+        else ia0 = 0;
+
+
+        b[0] = A * ((A+1.0) + (A-1.0)*co + k);
+        b[0] *= ia0;
+        b[1] = -2.0*A*((A-1.0) + (A+1.0)*co);
+        b[1] *= ia0;
+        b[2] = A*((A+1.0) + (A-1.0)*co - k);
+        b[2] *= ia0;
+
+        a[0] = 2.0*((A-1.0) - (A+1.0)*co);
+        a[0] *= ia0;
+        a[1] = (A+1.0) - (A-1.0)*co - k;
+        a[1] *= ia0;
+
+        shf-&gt;changed = 0;
+    }
+
+
+    out = compute_filter(shf, in);
+    return out;
+}</pre></code>
+
+<h2>Low Shelf</h2>
+
+<p>Filter with the low shelf filter with <code>sk_shelf_low_tick</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_shelf_low_tick(sk_shelf *shf, SKFLT in);</pre></code>
+<p></p>
+<p>Similar to high shelf. Updates the coefficients if needed,
+then computes the filter sample.
+</p>
+<p>The coefficients are the following:
+</p>
+<p><img src="/sndkit/_fig/shelf_low_coefs.png" alt="\eqalign{
+b_0 &= A \Bigl((A + 1) - (A-1)\cos(\omega_0) + 2\sqrt{A}\alpha\Bigr)\cr
+b_1 &= 2A \Bigl((A - 1) - (A + 1)\cos(\omega_0)\Bigr)\cr
+b_2 &= A \Bigl((A + 1) - (A - 1)\cos(\omega_0) - 2\sqrt{A}\alpha\Bigr)\cr
+a_0 &= (A + 1) + (A-1)\cos(\omega_0) + 2\sqrt{A}\alpha \cr
+a_1 &= -2\Bigl((A - 1) + (A + 1)\cos(\omega_0)\Bigr)\cr
+a_2 &= (A + 1) + (A - 1)\cos(\omega_0) - 2\sqrt{A}\alpha\cr
+}"srcset="/sndkit/_fig/shelf_low_coefs.png 1x,/sndkit/_fig/shelf_low_coefs2x.png 2x,">
+</p>
+<p>More detail can be found in the high shelf section.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_shelf_low_tick(sk_shelf *shf, SKFLT in)
+{
+    SKFLT out;
+
+    out = 0;
+
+    if (shf-&gt;changed) {
+        SKFLT ia0;
+        SKFLT alpha;
+        SKFLT A;
+        SKFLT k; /* sqrt(A)*alpha*2.0 */
+        SKFLT omegaT;
+        SKFLT *a, *b;
+        SKFLT co; /* cos(omegaT) */
+
+        A = pow(10.0, shf-&gt;gain / 40.0);
+        omegaT = 2.0 * M_PI * shf-&gt;freq * shf-&gt;T;
+        alpha = sin(omegaT) * 0.5 *
+        sqrt((A + (1.0/A))*((1.0/shf-&gt;slope) - 1.0) + 2.0);
+        co = cos(omegaT);
+        k = sqrt(A)*alpha*2.0;
+
+
+        a = shf-&gt;a;
+        b = shf-&gt;b;
+
+        ia0 = (A+1.0) + (A-1.0)*co + k;
+
+        if (ia0 != 0) ia0 = 1.0 / ia0;
+        else ia0 = 0;
+
+        b[0] = A * ((A+1.0) - (A-1.0)*co + k);
+        b[0] *= ia0;
+        b[1] = 2.0*A*((A-1.0) - (A+1.0)*co);
+        b[1] *= ia0;
+        b[2] = A*((A+1.0) - (A-1.0)*co - k);
+        b[2] *= ia0;
+
+        a[0] = -2.0*((A-1.0) + (A+1.0)*co);
+        a[0] *= ia0;
+        a[1] = (A+1.0) + (A-1.0)*co - k;
+        a[1] *= ia0;
+
+        shf-&gt;changed = 0;
+    }
+
+    out = compute_filter(shf, in);
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>

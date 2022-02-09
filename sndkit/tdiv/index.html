@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>TDiv</title>
+<h1>TDiv</h1>
+
+<h2>Overview</h2>
+
+<p><code>tdiv</code> is a clock divider for tiggers. Given a trigger
+signal, it will return a trigger signal every N ticks.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p>Tangled files: <code>tdiv.h</code> and <code>tdiv.c</code>. <code>SK_TDIV_PRIV</code> will
+expose the struct.
+</p>
+<div><b><i>&lt;&lt;tdiv.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_TDIV_H
+#define SK_TDIV_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+
+#ifdef SK_TDIV_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+
+#endif</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;tdiv.c&gt;&gt;=</i></b></div><pre><code>#define SK_TDIV_PRIV
+#include "tdiv.h"
+&lt;&lt;funcs&gt;&gt;</pre></code>
+
+<h2>Struct Initialization</h2>
+
+<p>The tdiv struct <code>sk_tdiv</code> is intialized with <code>sk_tdiv_init</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_tdiv sk_tdiv;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_tdiv {
+    int cnt;
+    int div;
+    int off;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tdiv_init(sk_tdiv *tdiv);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tdiv_init(sk_tdiv *tdiv)
+{
+    tdiv-&gt;cnt = 0;
+    sk_tdiv_offset(tdiv, 0);
+    sk_tdiv_divide(tdiv, 4);
+}</pre></code>
+
+<h2>Parameters</h2>
+
+<p>There are two parameters that control <code>tdiv</code>: <code>divide</code>and <code>offset</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_tdiv_offset(sk_tdiv *tdiv, int offset);
+void sk_tdiv_divide(sk_tdiv *tdiv, int divide);</pre></code>
+<p></p>
+<br>
+<p>The <code>divide</code> parameter sets the divide amount. If set to 1,
+the clock will return a tick every time. If set to 2, every
+other time, 3 is every 3 times. Etc, etc.
+</p>
+<p>Divide parameters should be at least 1, as a value of
+1 will just output a trigger every time.
+</p>
+<p>(Historical note: The old implementation in soundpipe
+used the modulo operation which would cause this to crash
+when set to zero. This new version doesn't use modulo so
+it is now a non-issue.)
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tdiv_divide(sk_tdiv *tdiv, int divide)
+{
+    if (divide &gt; 0) tdiv-&gt;div = divide;
+}</pre></code>
+<p></p>
+<p>The <code>offset</code> parameter shifts when a trigger happens.
+A clock divider with a division of 4 would measure time
+as (0, 1, 2, 3, 0, 1, 2, 3...). When the offset is 0, it
+would trigger on 0, when it's 1, it would trigger on 1,
+etc.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_tdiv_offset(sk_tdiv *tdiv, int offset)
+{
+    tdiv-&gt;off = offset;
+}</pre></code>
+
+<h2>Computation</h2>
+
+<p>Computation of a tdiv sample is done with <code>sk_tdiv_tick</code>.
+It expects a trigger signal as input.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tdiv_tick(sk_tdiv *td, SKFLT trig);</pre></code>
+<p></p>
+<p>The code here is reasonably self-explanatory. tdiv
+uses a counter to keep track of when to return a tick.
+The counter wraps back to zero when it goes beyond
+a limit, which is the divider.
+</p>
+<p>The old implementation of tdiv in soundpipe used a modulo
+operation to do the reset instead of the if statement here.
+It turns out, not only is modulo a very expensive operation,
+it also will crash if the divider is set to be 0. So, this
+is the better way to do it, at the expense of a bit
+more code to look at.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_tdiv_tick(sk_tdiv *td, SKFLT trig)
+{
+    SKFLT out;
+
+    out = 0.0;
+
+    if (trig != 0) {
+        if (td-&gt;cnt == td-&gt;off) out = 1.0;
+        td-&gt;cnt++;
+        if (td-&gt;cnt &gt;= td-&gt;div) td-&gt;cnt = 0;
+    }
+
+    return out;
+}</pre></code>
+</div>
+</body>
+</html>
