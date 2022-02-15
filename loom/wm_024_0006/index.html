@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>3. Signal Flow</h2>
+
+<p><a id="wm_024_0006"></a></p>
+
+<h3>3.1. Overview</h3>
+
+<p><a id="wm_024_0007"></a>GestVM can be imagined as a DSP algorithm whose state
+is controlled via a virtual machine that gets periodically
+evaluated. Understanding the signal flow is the recommended
+way to understand the system.
+</p>
+<p>GestVM can be broken up into components,
+which will be presented in flow order going from the inputs
+to the outputs.
+</p>
+<p>Examined as a unit generator, GestVM takes in one input
+signal, known as a <code>conductor</code>, and produces one output
+signal, known as a <code>gesture</code>.
+</p>
+
+<h3>3.2. Temporal Weight (pre-input)</h3>
+
+<p><a id="wm_024_0009"></a>The tempo of the timing signal can be optionally
+influenced by the system it is controlling in a mechanism
+called <code>temporal weight</code>.
+</p>
+<p>Temporal weight is the means for adding tempo flucuations.
+In a typical DAW, tempo is controlled via a tempo automation
+track. This will cause the length of notes to vary depending
+region you drop them in. Temporal weight reverses this
+relationship. It is instead the notes themselves that can
+influence the tempo rather than the other way around.
+</p>
+<p>Temporal weight has two parameters: mass and inertia. As
+mass increases, overall tempo increases and things become
+faster. As mass decreases, overal tempo decreases and
+things become slower. Inertia sets how quickly the sytem
+will react to changes.
+</p>
+
+<h3>3.3. Conductor (input signal)</h3>
+
+<p><a id="wm_024_0011"></a>The Conductor is a specialized timing signal used
+to control the gesture. It is expected to be a periodic
+rising ramp normalized to be in range 0 to 1. Ideally,
+wraparound should be truncated.
+</p>
+<p>This is generated externally and not managed by GestVM.
+The advantage of this is that this signal can be used to
+control other things in a system, thus keeping things
+synchronized.
+</p>
+
+<h3>3.4. Temporal Skewer</h3>
+
+<p><a id="wm_024_0013"></a>Temporal skewing is a process that allows a section
+beats produced by the conductor to be warped locally without
+adding or removing any overall time.
+</p>
+<p>Skewing works by putting the conductor ramp through a
+process that makes it proportionally slower, putting that
+through some kind of slope function, then speeding it
+up again.
+</p>
+<p>Skewing has two main parameters: the skewing behavior type
+(such as bypass, exponential positive, exponential
+negative), and the duration (positive integer, minimum 1).
+</p>
+
+<h3>3.5. Main Rephasor</h3>
+
+<p><a id="wm_024_0015"></a>Placed after the Skewer, the Rephasor is the
+component in charge of taking the input conductor signal
+and proportionally changing the tempo.
+</p>
+<p>The rephasor is parametrically controlled with 2 values: a
+numerator, and a denominator (positive integer values, at
+least 1).
+These produce a fraction which
+set the scaling amount for the rephasor. A value of 1/2
+(N<code>1, D</code>2) will produce a phasor at half speed. A value of
+3/1 (N<code>3, D</code>1) will produce a phasor three times as fast.
+</p>
+
+<h3>3.6. Virtual Machine</h3>
+
+<p><a id="wm_024_0017"></a>The <code>Virtual Machine</code> is placed after the Rephasor, and is
+responsible for manipulating the state of the gesture
+synthesizer. Every time the Rephasor resets back to 0, it
+will make a call to the underlying machine, which will run
+until it reaches a breakpoint statement <code>BRK</code>.
+</p>
+
+<h3>3.7. Interpolator (output)</h3>
+
+<p><a id="wm_024_0019"></a>The <code>interpolator</code> takes in a rephasor as input, and uses it
+to interplate between two values, the current value, and the
+next value. Current value is set implicitly. The VM only
+is able to set the next value. Every time the VM evaluates,
+the existing next value is stored as the current value.
+</p>
+<p>The way the value is interpolated is known as
+the <code>behavior</code>. Behaviors can include: linear, step,
+exponential, etc. The interpolator can also be configured
+to return things like the phasor signal itself, which allows
+the gesture to be used for more articulation and envelope
+purposes.
+</p>
+<p>Interpolator has 2 commands: set up the next value, and
+the behavior.
+</p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_024_0004">prev</a> | <a href="/loom/gestvm">home</a> | <a href="/loom/wm_024_0021">next</a></p>
+</div>
+</body>
+</html>

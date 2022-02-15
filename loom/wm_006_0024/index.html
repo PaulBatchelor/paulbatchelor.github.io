@@ -660,11 +660,61 @@ ascii order:
 23 with empty values.
 </p>
 <div><b><i>&lt;&lt;ergohex_lookup&gt;&gt;=</i></b></div><pre><code>static const char *ergohex = "0??2a3?4d567??ef8b1?c?9";</pre></code>
+
+<h3>3.10. Check if entry exists</h3>
+
+<p><a id="wm_006_0150"></a>Usually for things like groups, you want to ensure
+that it is unique. This function will query a value
+with a symbol and report of it exists already.
+</p>
+<p><code>wwzet_entry_exists</code> will check if a string value
+<code>val</code> of size <code>sz</code> exists with a prepended symbol <code>sym</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry_exists(weewiki_d *ww,
+                       char sym,
+                       const char *val,
+                       int sz);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry_exists(weewiki_d *ww,
+                       char sym,
+                       const char *val,
+                       int sz)
+{
+    int exists;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    exists = 0;
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT EXISTS( "
+                       "SELECT value FROM wikizet WHERE "
+                       "value IS ?1 || ?2);",
+                       -1, &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, &sym, 1, NULL);
+    sqlite3_bind_text(stmt, 2, val, sz, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr, "SQLite: '%s'\n", sqlite3_errmsg(db));
+        exists = -1;
+    } else {
+        exists = sqlite3_column_int(stmt, 0);
+    }
+
+    sqlite3_finalize(stmt);
+
+    return exists;
+}</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_006_0004">prev</a> | <a href="/loom/weewiki_zet">home</a> | <a href="/loom/wm_006_0150">next</a></p>
+<a href="/loom/wm_006_0004">prev</a> | <a href="/loom/weewiki_zet">home</a> | <a href="/loom/wm_006_0156">next</a></p>
 </div>
 </body>
 </html>

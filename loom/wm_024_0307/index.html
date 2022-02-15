@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>12. Interpolator</h2>
+
+<p><a id="wm_024_0307"></a>Interpolates between two values given an input signal.
+</p>
+<div><b><i>&lt;&lt;gestvm&gt;&gt;=</i></b></div><pre><code>SKFLT cur, nxt;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>gvm-&gt;cur = 0;
+gvm-&gt;nxt = 0;</pre></code>
+<p></p>
+<p>The method of interpolation is known as behavior.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef SKFLT (*gestvm_behavior)(gestvm *, SKFLT);</pre></code>
+<div><b><i>&lt;&lt;gestvm&gt;&gt;=</i></b></div><pre><code>gestvm_behavior behavior;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>gvm-&gt;behavior = b_linear;</pre></code>
+<p></p>
+<p>Some behaviors include linear, step, and glissando.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT b_linear(gestvm *gvm, SKFLT a);
+static SKFLT b_step(gestvm *gvm, SKFLT a);
+static SKFLT b_gliss_medium(gestvm *gvm, SKFLT a);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT b_linear(gestvm *gvm, SKFLT a)
+{
+    return a;
+}
+
+static SKFLT b_step(gestvm *gvm, SKFLT a)
+{
+    return 0;
+}
+
+static SKFLT b_gliss_medium(gestvm *gvm, SKFLT a)
+{
+    if (a &lt; 0.75) {
+        a = 0;
+    } else {
+        a -= 0.75;
+        if (a &lt; 0) a = 0;
+        a /= 0.25;
+        a = a * a * a;
+    }
+    return a;
+}</pre></code>
+<p></p>
+<p>Some behaviors, such as exponential with variable slope,
+will require arguments. More thought required here. Maybe
+aux values that get tied to cur/nxt?
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT interpolate(gestvm *gvm, SKFLT phs);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT interpolate(gestvm *gvm, SKFLT phs)
+{
+    SKFLT a;
+    a = gvm-&gt;behavior(gvm, phs);
+
+    return (1.0 - a)*gvm-&gt;cur + a*gvm-&gt;nxt;
+}</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static gestvm_behavior find_behavior(int id);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static gestvm_behavior find_behavior(int id)
+{
+    gestvm_behavior b;
+
+    b = b_linear;
+
+    switch (id) {
+        case 0:
+            b = b_linear;
+            break;
+        case 1:
+            b = b_step;
+            break;
+        case 2:
+            b = b_gliss_medium;
+            break;
+        default:
+            break;
+    }
+
+    return b;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_024_0170">prev</a> | <a href="/loom/gestvm">home</a> | <a href="/loom/wm_024_0334">next</a></p>
+</div>
+</body>
+</html>

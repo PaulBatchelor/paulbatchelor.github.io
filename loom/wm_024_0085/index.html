@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>8. The General Rephasor Algorithm</h2>
+
+<p><a id="wm_024_0085"></a>(<b>NOTE</b>: This section outlines the generalized rephasor. Not
+to be confused with the <a href="/loom/wm_024_0159#wm_024_0159">10. Main Rephasor</a>.)
+</p>
+
+<h3>8.1. Overview</h3>
+
+<p><a id="wm_024_0087"></a>The flexible timing in GestVM is made possible via the
+rephasor algorithm.
+</p>
+<p>A <code>rephasor</code> creates a phasor signal that is rhythmically
+porportional to the input phasor signal.
+Auto-time correction is applied to prevent clock drift
+accumulation, at the cost of delay of 2 samples.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gestvm_rephasor gestvm_rephasor;</pre></code>
+<p></p>
+<p>Copied from the sndkit rephasor implementation.
+</p>
+<p>The terseness of the symbols comes from a math notation
+from the original sndkit algorithm. They are outlined
+here below.
+</p>
+<div><b><i>&lt;&lt;rephasor_struct&gt;&gt;=</i></b></div><pre><code>struct gestvm_rephasor {
+    SKFLT pr; /* rephasor */
+    SKFLT pc[2]; /* comparison phasor */
+    SKFLT pe[2]; /* external phasor */
+    SKFLT c; /* correction */
+    SKFLT s; /* scaling */
+    SKFLT si; /* scaling, inverted */
+
+    SKFLT ir; /* rephasor incrementor */
+    SKFLT ic; /* comparison rephasor */
+};</pre></code>
+
+<h3>8.2. Setting the scale</h3>
+
+<p><a id="wm_024_0095"></a>The scaling parameter of the rephasor is set with
+<code>gestvm_rephasor_scale</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gestvm_rephasor_scale(gestvm_rephasor *rp, SKFLT scale);</pre></code>
+<p></p>
+<p>The scaling amount determines the rate of the
+new phasor relative to the old one. A value of 1.0 is
+no change, less than one is slower (eg: 0.5 is half speed),
+and greater than one is faster (2.0 is double speed).
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gestvm_rephasor_scale(gestvm_rephasor *rp, SKFLT scale)
+{
+    if (scale != rp-&gt;s) {
+        rp-&gt;s = scale;
+        rp-&gt;si = 1.0 / scale;
+    }
+}</pre></code>
+
+<h3>8.3. Initialization</h3>
+
+<p><a id="wm_024_0102"></a>Initialized with <code>gestvm_rephasor_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gestvm_rephasor_init(gestvm_rephasor *rp);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gestvm_rephasor_init(gestvm_rephasor *rp)
+{
+    rp-&gt;pr = 0;
+    rp-&gt;pc[0] = 0;
+    rp-&gt;pc[1] = 0;
+    rp-&gt;pe[0] = 0;
+    rp-&gt;pe[1] = 0;
+    rp-&gt;c = 1.0;
+    rp-&gt;s = 1.0;
+    rp-&gt;si = 1.0;
+
+    rp-&gt;ir = 0.0;
+    rp-&gt;ic = 0.0;
+}</pre></code>
+
+<h3>8.4. The Rephasor Algorithm</h3>
+
+<p><a id="wm_024_0108"></a>A single sample of audio can be computed with
+<code>gestvm_rephasor_tick</code>. It expects an input phasor
+<code>ext</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT gestvm_rephasor_tick(gestvm_rephasor *rp, SKFLT ext);</pre></code>
+<p></p>
+<p>The core rephasor implemented here is based on the one
+described in <code>sndkit</code> that uses auto-correction.
+</p>
+<p>The main principle of a rephasor is that a phasor can
+be reconstructed by measuring the rate of change of
+incoming phasor. Applying some scaling value to this
+rate of change will proportionally change the rate of
+the phasor.
+</p>
+<p>Left unchecked, a rephasor created using this method will
+drift out of phase with the original signal. This can be
+prevented by putting the rephasor through another rephasor,
+set to be the inverse scaling value. This, in theory,
+should reproduce the original phasor signal. This new
+rephasor value is compared with the orignal, and the
+measured difference is applied as correction in the
+next iteration.
+</p>
+<p>Due to the analysis step, a rephasor introduces one
+sample of delay. Both rephasors therefore introduce
+a total of 2 samples of delay. This is accounted for
+when computing the correction amount.
+</p>
+<p>The correction value is clamped to be between 2.0 and
+0.5. Anything out of these bounds is mostly likely an
+invalid value.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT phasor(SKFLT phs, SKFLT inc)
+{
+    phs += inc;
+
+    if (phs &gt; 1.0) return 0;
+
+    return phs;
+}
+
+SKFLT gestvm_rephasor_tick(gestvm_rephasor *rp, SKFLT ext)
+{
+    SKFLT pr, pc;
+    SKFLT out;
+
+
+    /* delta function of \theta_e */
+    if (ext &gt; rp-&gt;pe[0]) {
+        rp-&gt;ir = ext - rp-&gt;pe[0];
+    }
+
+    /* compute main rephasor \theta_r */
+    pr = phasor(rp-&gt;pr, rp-&gt;s * rp-&gt;ir * rp-&gt;c);
+
+    /* delta function of \theta_r */
+    if (pr &gt; rp-&gt;pr) {
+        rp-&gt;ic = pr - rp-&gt;pr;
+    }
+
+    /* compute rephasor \theta_c */
+    pc = phasor(rp-&gt;pc[0], rp-&gt;si * rp-&gt;ic);
+
+    /* compute correction coefficient */
+    if (rp-&gt;pc[1] != 0) {
+        rp-&gt;c = rp-&gt;pe[1] / rp-&gt;pc[1];
+    }
+
+    /* clamping the correction */
+    if (rp-&gt;c &gt; 2.0) rp-&gt;c = 2.0;
+    if (rp-&gt;c &lt; 0.5) rp-&gt;c = 0.5;
+
+    out = pr;
+
+    /* update state */
+
+    rp-&gt;pr = pr;
+
+    rp-&gt;pc[1] = rp-&gt;pc[0];
+    rp-&gt;pc[0] = pc;
+
+    rp-&gt;pe[1] = rp-&gt;pe[0];
+    rp-&gt;pe[0] = ext;
+
+    return out;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_024_0078">prev</a> | <a href="/loom/gestvm">home</a> | <a href="/loom/wm_024_0115">next</a></p>
+</div>
+</body>
+</html>
