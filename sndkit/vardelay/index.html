@@ -14,7 +14,7 @@
 
 <h2>Overview</h2>
 
-<p>Vardelay is an implementation of a variable-length delay
+<p><code>Vardelay</code> is an implementation of a variable-length delay
 line, using third order <a href="https://ccrma.stanford.edu/~jos/pasp/Lagrange_Interpolation.html">Langrange Interpolation</a>.
 This delay time of this delay line can be adjusted over
 time. Because it uses interpolation, any adjustments can
@@ -24,6 +24,10 @@ like flanging and chorusing.
 </p>
 <p>In addition to delay time, a feedback parameter will also be
 supplied, as it is so often used with delay lines.
+</p>
+<p>A variation of vardelay is also constructed called
+<code>clkdel</code>. which builds on top of vardelay to build a
+tempo-synced delay line.
 </p>
 
 <h2>Tangled Files</h2>
@@ -65,6 +69,7 @@ allocation is required.
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_init(sk_vardelay *vd, int sr,
                       SKFLT *buf, unsigned long sz)
 {
+    vd-&gt;sr = sr;
     &lt;&lt;init&gt;&gt;
 }</pre></code>
 <p></p>
@@ -72,13 +77,26 @@ allocation is required.
 to do third-order interpolation, so it returns an error.
 </p>
 
-<h2>Struct</h2>
+<h2>Struct Code Blocks Declaration</h2>
+
+<p>Some worgle-related structure to follow.
+</p>
+<p>Below outlines the <code>structs</code> code block, which contains
+the named code blocks for both vardelay and clkdel,
+named <code>vardelay_struct</code> and <code>clkdel_struct</code>. Because
+clkdel depends on vardelay, the order which they
+are defined matters.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;vardelay_struct&gt;&gt;
+&lt;&lt;clkdel_struct&gt;&gt;</pre></code>
+
+<h2>Main Struct</h2>
 
 <p>Called <code>sk_vardelay</code>.
 </p>
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_vardelay sk_vardelay;</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_vardelay {
+<div><b><i>&lt;&lt;vardelay_struct&gt;&gt;=</i></b></div><pre><code>struct sk_vardelay {
     &lt;&lt;sk_vardelay&gt;&gt;
 };</pre></code>
 
@@ -91,8 +109,6 @@ to do third-order interpolation, so it returns an error.
 It is used to convert delay time seconds to samples.
 </p>
 <div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>int sr;</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>vd-&gt;sr = sr;</pre></code>
 
 <h3>Buffer, Buffer Size</h3>
 
@@ -153,14 +169,23 @@ stuff back in time.
 
 <p>Set with <code>sk_vardelay_delay</code>, In units of seconds.
 </p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_delay(sk_vardelay *vd, SKFLT delay);</pre></code>
+<p>The delay can also be set in units of samples, via
+<code>sk_vardelay_delays</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_delay(sk_vardelay *vd, SKFLT delay);
+void sk_vardelay_delays(sk_vardelay *vd, SKFLT delay);</pre></code>
 <p></p>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_vardelay_delay(sk_vardelay *vd, SKFLT delay)
 {
-    vd-&gt;delay = delay;
+    vd-&gt;dels = delay * vd-&gt;sr;
+}
+
+void sk_vardelay_delays(sk_vardelay *vd, SKFLT delay)
+{
+    vd-&gt;dels = delay;
 }</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>SKFLT delay;</pre></code>
+<div><b><i>&lt;&lt;sk_vardelay&gt;&gt;=</i></b></div><pre><code>SKFLT dels;</pre></code>
 <p></p>
 <p>The initial delay time is set to be half the delay time, in
 units of seconds.
@@ -231,7 +256,7 @@ The delay time position is set to be the write position
 <code>dels</code> samples in the past, where <code>dels</code> is the delay time
 in samples.
 </p>
-<div><b><i>&lt;&lt;calculate_read_position&gt;&gt;=</i></b></div><pre><code>dels = vd-&gt;delay * vd-&gt;sr;
+<div><b><i>&lt;&lt;calculate_read_position&gt;&gt;=</i></b></div><pre><code>dels = vd-&gt;dels;
 i = floor(dels);
 f = i - dels;
 i = vd-&gt;writepos - i;</pre></code>
@@ -314,6 +339,86 @@ if (vd-&gt;writepos == vd-&gt;sz) vd-&gt;writepos = 0;</pre></code>
 <p>Update feedback. The current output is set to be the <code>prev</code>value in the delay line.
 </p>
 <div><b><i>&lt;&lt;update_feedback&gt;&gt;=</i></b></div><pre><code>vd-&gt;prev = out;</pre></code>
+
+<h2>Tempo-Synced Delay Line (clkdel)</h2>
+
+<p><a id="clkdel"></a>With some additional components, a variable delay line
+such as <code>vardelay</code> can be used as a tempo-synced delay
+line. This is achieved by controlling the delay time
+using some kind of external clock signal. Since it is a
+delay controlled by an external clock, it shall be called
+<code>clkdel</code>.
+</p>
+<p>For a external clock signal, a <a href="/sndkit/phasor">phasor</a> signal
+is expected. When used with a <a href="/sndkit/rephasor">rephasor</a>, it can
+make for a very flexible system for rhythmic control. This
+pairing is ultimately why a phasor signal was chosen
+instead of a simpler impulse-based clock signal
+such as <a href="/sndkit/metro">metro</a>.
+</p>
+<p>The struct for clkdel is called <code>sk_clkdel</code>. This wraps
+an instance of <code>sk_vardelay</code>, along with a few other
+variables. Mainly, a timer, and a variable that
+keeps track of the phasor value, used for checking
+resets.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_clkdel sk_clkdel;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;clkdel_struct&gt;&gt;=</i></b></div><pre><code>struct sk_clkdel {
+    sk_vardelay vd;
+    SKFLT phs;
+    unsigned long timer;
+    SKFLT isr;
+};</pre></code>
+<p></p>
+<p>clkdel is initialized with <code>sk_clkdel_init</code>, which passes
+in the same arguments as vardelay. A max delay time is
+still required, so a large enough value must be picked
+ahead of time.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_clkdel_init(sk_clkdel *cd, int sr,
+                    SKFLT *buf,
+                    unsigned long sz);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_clkdel_init(sk_clkdel *cd, int sr,
+                    SKFLT *buf,
+                    unsigned long sz)
+{
+    sk_vardelay_init(&cd-&gt;vd, sr, buf, sz);
+    cd-&gt;phs = -1;
+    cd-&gt;timer = 0;
+    cd-&gt;isr = 1.0 / (SKFLT) sr;
+    sk_vardelay_delays(&cd-&gt;vd, sz - 1);
+}</pre></code>
+<p></p>
+<p>A sample of audio is computed with <code>sk_clkdel_tick</code>,
+which takes in an input signal <code>in</code> and a phasor timing
+control signal <code>phs</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_clkdel_tick(sk_clkdel *cd, SKFLT in, SKFLT phs);</pre></code>
+<p></p>
+<p>Before the instance of vardelay is computed, the phasor
+is checked to see if it has been reset. If it has, the
+period is measured.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_clkdel_tick(sk_clkdel *cd, SKFLT in, SKFLT phs)
+{
+    if (phs &lt; 0) {
+        cd-&gt;phs = 0;
+        cd-&gt;timer = 0;
+        return sk_vardelay_tick(&cd-&gt;vd, in);
+    }
+
+    if (phs &lt; cd-&gt;phs) {
+        sk_vardelay_delay(&cd-&gt;vd, cd-&gt;timer * cd-&gt;isr);
+        cd-&gt;timer = 0;
+    }
+
+    cd-&gt;phs = phs;
+    cd-&gt;timer++;
+
+    return sk_vardelay_tick(&cd-&gt;vd, in);
+}</pre></code>
 </div>
 </body>
 </html>
