@@ -81,14 +81,9 @@ are exposed. Otherwise, they are left as opaque.
 </p>
 <div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_rline sk_rline;</pre></code>
 <p></p>
-<p><b>NOTE</b>: the <code>jitseg_struct</code> block is explicitly
-delcared after the <code>sk_rline</code> struct because of
-dependencies. See: <a href="/sndkit/rline#jitseg">jitseg</a>.
-</p>
 <div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct sk_rline {
     &lt;&lt;sk_rline&gt;&gt;
-};
-&lt;&lt;jitseg_struct&gt;&gt;</pre></code>
+};</pre></code>
 
 <h2>Constants and Variables</h2>
 
@@ -342,104 +337,6 @@ computatoin compared to a multiply.
     rl-&gt;rng = LCG(rl-&gt;rng);
     rl-&gt;end = RNG(rl-&gt;rng) * rl-&gt;rngscale;
     rl-&gt;scale = (rl-&gt;end - rl-&gt;start) / SK_RLINE_PHSLEN;
-}</pre></code>
-
-<h2>Variation: Jitseg</h2>
-
-<p><a id="jitseg"></a><code>jitseg</code> is a variation of <code>rline</code> that uses another
-instances of <code>rline</code> to modulate the frequency. Typically,
-a signal generator like this is added to anotherwise
-steady signal to add small deviations and detail to the
-sound. This kind of low-level low-frequency is often known
-as <code>jitter</code>.
-</p>
-<p>It is equivalent to the following LIL pseudo-code
-</p>
-<pre><code>rline vmin vmax [rline rmin rmax rrate]</pre></code>
-<p></p>
-<p>Where <code>vmin</code> and <code>vmax</code> are the min/max values,
-<code>rmin</code> and <code>rmax</code> values determine the range of
-rate, and <code>rrate</code> determines the rate of change
-controling the main rline rate.
-</p>
-
-<h3>typedef and struct (sk_jitseg)</h3>
-
-<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_jitseg sk_jitseg;</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;jitseg_struct&gt;&gt;=</i></b></div><pre><code>struct sk_jitseg {
-    sk_rline main;
-    sk_rline rate;
-};</pre></code>
-
-<h3>Initialization</h3>
-
-<p><code>sk_jitseg_init</code> initializes both rlines with separate
-seeds. <code>s1</code> is main. <code>s2</code> is rate.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_jitseg_init(sk_jitseg *js, int sr, int s1, int s2);</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_jitseg_init(sk_jitseg *js, int sr, int s1, int s2)
-{
-    sk_rline_init(&js-&gt;main, sr, s1);
-    sk_rline_init(&js-&gt;rate, sr, s2);
-}</pre></code>
-
-<h3>Parameters</h3>
-
-<p>Two rlines combined yields two separate min/max pairs.
-One pair for the output value range, and one pair
-for the range of rate of which these values change. The
-rate at which value rate changes can be set as well.
-</p>
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_jitseg_min(sk_jitseg *js, SKFLT min);
-void sk_jitseg_max(sk_jitseg *js, SKFLT max);
-void sk_jitseg_rate_min(sk_jitseg *js, SKFLT min);
-void sk_jitseg_rate_max(sk_jitseg *js, SKFLT min);
-void sk_jitseg_rate_rate(sk_jitseg *js, SKFLT rate);
-SKFLT sk_jitseg_tick(sk_jitseg *js);</pre></code>
-
-<h4>Min/Max Values</h4>
-
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_jitseg_min(sk_jitseg *js, SKFLT min)
-{
-    sk_rline_min(&js-&gt;main, min);
-}
-
-void sk_jitseg_max(sk_jitseg *js, SKFLT max)
-{
-    sk_rline_max(&js-&gt;main, max);
-}</pre></code>
-
-<h4>Min/Max Rates</h4>
-
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_jitseg_rate_min(sk_jitseg *js, SKFLT min)
-{
-    sk_rline_min(&js-&gt;rate, min);
-}
-
-void sk_jitseg_rate_max(sk_jitseg *js, SKFLT max)
-{
-    sk_rline_max(&js-&gt;rate, max);
-}</pre></code>
-
-<h4>Rate of Rate Modulator</h4>
-
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_jitseg_rate_rate(sk_jitseg *js, SKFLT rate)
-{
-    sk_rline_rate(&js-&gt;rate, rate);
-}</pre></code>
-<p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_jitseg_tick(sk_jitseg *js)
-{
-    SKFLT out;
-
-    out = 0;
-
-    sk_rline_rate(&js-&gt;main, sk_rline_tick(&js-&gt;rate));
-
-    out = sk_rline_tick(&js-&gt;main);
-    return out;
 }</pre></code>
 </div>
 </body>
