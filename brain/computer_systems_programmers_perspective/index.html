@@ -41,14 +41,203 @@ Files. Networks. Parallelism. SIMD.
 
 <h2>Chapter 2: Representing and manipulating information</h2>
 
-<p>Hex, Binary, how integers are represented.
+<p>Hex, Binary, how integers are represented. Also
+floating point.
 </p>
-<p>More to come.
+<p>There's a lot of nitty-gritty details here that are worth
+going back to at some point.
+</p>
+
+<h2>Chapter 3: Machine-Level Represenation of Programs</h2>
+
+
+<h3>3.1: A historical Perspective</h3>
+
+<p>This is just a big list of the processors from Intel. x86
+carries a lot of historical baggage, and you can see
+where things come from.
+</p>
+
+<h3>3.2: Program Encodings</h3>
+
+<p>Outlines some of the differences between C and
+machine representations of programs. C abstracts
+away things like <code>program counter</code>, <code>register</code>,
+<code>condition code</code>, and <code>vector registers</code>. C offers more
+constructs of data, that get translated to continugous
+bytes in machine code.
+</p>
+<p>Some words on tooling here. How to view machine code from
+C code using <code>disassemblers</code>. OBJDUMP is mentioned, GDB
+is mentioned.
+</p>
+<p>ATT vs Intel assembly code formats discussed as an aside.
+This book opts for ATT.
+</p>
+
+<h3>3.3: Data Formats</h3>
+
+<p>Defining a Word as 16 bits. A byte is 8 bits. Long is 32
+bits (or double words). Quads are 64 bits. etc. etc.
+</p>
+<p>Assembly uses single-character suffixes denoting the size
+of the operand (table 3.1). 'l' can mean either 'long'
+or float, depending on context.
+</p>
+
+<h3>3.4: Accessing Information</h3>
+
+<p>x86-64 contains 16 general purpose 64-bit registers.
+</p>
+<p>History dictates the naming of these registers. Originally
+<code>%ax</code> through <code>%bp</code>, then expanded to 32-bit with <code>%eax</code>through <code>%ebp</code>, then expanded to 64 bits with <code>%rax</code>through <code>%rbp</code>. 8 registers were added as well: <code>%r8</code>through <code>%r15</code>.
+</p>
+<p>Instructions can operate on registers using different sizes.
+1 or 2 byte: leave remaing bytes unchagned. 4 bytes:
+set upper 4 bytes to 0.
+</p>
+<p>The <code>%rsp</code> register is the end position in the runtime
+stack, and it is the most specialized register.
+</p>
+<p>Instructions have operands, which specify the source
+and destination values. x86 has many <code>operand forms</code>.
+</p>
+<p>Immediate values are constants, written <code>$</code> followed
+by a value.
+</p>
+<p>Register values denote the contents of register. Denoted
+<code>r_a</code> is a register and <code>R[r_a]</code> is the value in that
+register.
+</p>
+<p>Memory references access a memory location, using
+the notation <code>M_b[Addr]</code>, though the subscript b
+is usually dropped.
+</p>
+<p>There are many <code>addressing modes</code> to get at a memory
+location. There's 9 of 'em in this table on pg 474
+(figure 3.3).
+</p>
+<p><code>lmm</code> is an absolute reference.
+</p>
+<p><code>(r_a)</code> is an indirect reference <code>M[R[r_a]]</code>.
+</p>
+<p><code>lmm(r_b)</code> is base + displacement <code>M[lmm + R[r_b]]</code>.
+</p>
+<p><code>(rb, ri)</code> is indexed <code>M[R[rb] + R[ri]]</code>.
+</p>
+<p><code>lmm(rb, ri)</code> is indexed <code>M[lmm + R[rb] + R[ri]]</code>.
+</p>
+<p><code>(,ri,s)</code> is scaled indexed <code>M[R[ri] * s]</code>.
+</p>
+<p><code>lmm(,ri, s)</code> is scaled indexed <code>M[lmm + R[ri]*s]</code>.
+</p>
+<p><code>(rb,ri,s)</code> is scaled indexed <code>M[R[rb] + R[ri]*s]</code>.
+</p>
+<p><code>lmm(rb,ri,s)</code> is scaled index <code>M[lmm + R[rb] + R[ri]*s]</code>.
+this is the most general form.
+</p>
+<p><code>mov(S,D)</code> copies from data from one place (<b>S</b>ource) to another
+(<b>D</b>estination). <code>movb</code>, <code>movw</code>, <code>movl</code>, <code>moivq</code>,
+<code>movabsq</code>. Source is a value (immediate, register, memory)
+the destination (register, memory address).
+Source/destination can't both be memory addresses.
+</p>
+<p><code>movz(S,D)</code> does a move and pads the remaining bytes with
+zeros. <code>movz</code>, <code>movzbw</code>, <code>movzbl</code>, <code>movzwl</code>, <code>movzbq</code>,
+<code>movzwq</code>. <code>movzlq</code> does not exist because <code>movl</code> will
+automatically zero out the upper 4 bytes.
+</p>
+<p><code>movs(S, D)</code> does a move with sign extension. <code>movsbw</code>,
+<code>movsbl</code>, <code>movswl</code>, <code>movsbq</code>, <code>movswq</code>, <code>movslq</code>, <code>cltq</code>.
+</p>
+<p>The program stack can be a way to move data around. It's
+a LIFO.
+</p>
+<p><code>pushq(S)</code> has the effect:
+</p>
+<pre><code>R[%rsp] = R[%rsp] - 8;
+M[R[%rsp]] = S</pre></code>
+<p></p>
+<p><code>popq(S)</code> has the effect:
+</p>
+<pre><code>D = M[R[%rsp]];
+R[%rsp] = R[%rsp] + 8;</pre></code>
+<p></p>
+<p>Stack grows downward: top element has the lowest
+stack element.
+</p>
+
+<h3>3.5: Arithmetic and Logical Operations</h3>
+
+<p>Operations are divided into 4 groups:
+<code>Load Effective Address</code>, <code>unary</code> (one operand),
+<code>binary</code> (two operands), and <code>shifts</code>.
+</p>
+<p>The Load Effective Address command <code>leaq</code> takes the address
+of a source and loads it into the destination. This
+gets abused for simple arithmetic operations.
+</p>
+<p>unary operations: <code>inc</code>, <code>dec</code>, <code>neg</code>, <code>not</code>.
+</p>
+<p>binary operations: <code>add</code>, <code>sub</code>, <code>mul</code>, <code>xor</code>, <code>or</code>,
+<code>and</code>. Note that the ordering goes <b>S</b>ource, then
+<b>D</b>estination.
+</p>
+<p>Shift operations: <code>sal</code>, <code>shl</code>, <code>sar</code>, <code>shr</code>. Follow
+the arguments (k, D). Where <code>k</code> is a byte that
+determines the amount to shift. Low order bits are used.
+</p>
+<p>x86-64 has limited support for 128-bit arithmetic
+operations: <code>imulq</code>, <code>mulq</code>, <code>cqto</code>, <code>idivq</code>, <code>divq</code>.
+</p>
+
+<h3>3.6: Control</h3>
+
+<p>Condition codes: single-bit registers that the CPU
+maintains, which describe attributes of the most
+recent arithmetic or logical operation. These include
+<code>carry flag</code> (CF), <code>zero flag</code> (ZF), <code>sign flag</code> (SF), and
+<code>overflow flag</code> (OF).
+</p>
+<p>There are two instruction classes that can set condition
+codes without touching the registers. <code>cmp</code> works like
+<code>sub</code> but only changing the condition codes. <code>test</code>behaves like <code>and</code> without updating the registers.
+</p>
+<p>Condition codes get indirectly read 3 wasy: setting
+a byte to 1 or 0, conditionally jumping based on state,
+or conditionally transferring data.
+</p>
+
+<h3>3.7: Procedures</h3>
+
+
+<h3>3.8: Array Allocation and Access</h3>
+
+<p>TBD.
+</p>
+
+<h3>3.9: Heterogeneous Data Structures</h3>
+
+<p>TBD.
+</p>
+
+<h3>3.10: Combining Control and Data in Machine-Level Programs</h3>
+
+<p>TBD.
+</p>
+
+<h3>3.11: Floating-point Code</h3>
+
+<p>TBD.
 </p>
 
 <h2>Messages</h2>
 
 <p><a id="messages"></a>Any messages tagged with the group <code>CSAPP</code>.
+</p>
+<p><b>[15b43c72] 2022-03-22-12-49</b>: this oracle doc page on operands in x86 feels more helpful than this book <a href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/ennby/index.html">https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/ennby/index.html</a>.
+</p>
+<p><b>[8f3d6ee6] 2022-03-22-12-46</b>: in 3.4, it's unclear to me if the notation system used lines up with actual assembly or if it's just a convention in the textbook. Also, there seems to be 9 friggin ways to address memory?
 </p>
 <p><b>[3d02e1f9] 2022-03-21-10-37</b>: My reading approach isn't working. I think I need to be a bit more granular. I've been grouping things by chapter, when it should be subsections.
 </p>

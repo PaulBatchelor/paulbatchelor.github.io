@@ -192,12 +192,98 @@ workspaces. Installing binaries with "cargo install".
 
 <h2>Chapter 15: Smart Pointers</h2>
 
-<p>TBD.
+<p>Smart Pointers: pointers with extra capabilities.
+</p>
+<p>This chapter was quite challenging to read through! I
+actually typed out and ran some of the example programs
+in this chapter.
+</p>
+<p>Most common smart pointers:
+</p>
+<p>Box: the most basic smart pointer for heap allocation.
+</p>
+<p>Rc: Reference counting (enables multiple ownership).
+</p>
+<p>Ref and RefMut (via RefCell): runtime borrowing instead
+of compile-time borrowing.
+</p>
+<p>Box types enable <code>recursive types</code>, suchs as the Cons
+list (linked list I guess?) from LISP. Recursive types,
+size can't be known.
+</p>
+<p>Dereference operator using the <code>deref</code> trait. Makes
+smart pointers act like regular references. deref
+traits can be implemented on user-defined types.
+</p>
+<p>Deref coercion: basically syntactic sugar that works
+with stuff using deref.
+</p>
+<p>DerefMut is Deref on mutable references. Mutable can
+always go to immutable, not the other way around.
+</p>
+<p>Drop Trait: basically destructor. Can be explicitely
+called with <code>std::mem::drop</code>.
+</p>
+<p>Rc only works for multiple immutable references. To be
+mutable, use RefCell.
+</p>
+<p>Interior Mutability: design pattern that allows mutability
+even when there are mutable references to that data.
+</p>
+<p>RefCell checks borrowing rules at runtime, which means
+there is a possibility that a program could panic.
+</p>
+<p>Memory Safety does not prevent memory leaks. Reference
+Cycles (cyclical references?) can cause leaks. This
+is demonstrated with the Cons list used in this chapter.
+</p>
+<p>Weak counting is a way to prevent reference cycles.
+The strong count and weak count of a value can be
+explicitly retrieved with <code>weak_count</code> and <code>strong_count</code>functions.
+</p>
+<p><code>upgrade</code> converts a weak pointer to a reference that
+can be used (it can be None too). <code>downgrade</code> will take
+a reference and convert it to a weak pointer.
 </p>
 
 <h2>Chapter 16: Different Models of Concurrency</h2>
 
-<p>TBD.
+<p>Fearless concurrency! <code>std::thread</code></p>
+<p><code>thread::spawn</code> creates a new thread and saves the handle.
+</p>
+<p><code>handle.join()</code> joins the threads.
+</p>
+<p>The move keyword: transfers ownership of values that
+a closure in a thread uses. Otherwise it's a Rust error.
+</p>
+<p>Message passing via channels. Rubber duckies down the
+river. <code>mpsc</code> is multiple producer, single consumer.
+</p>
+<p>Sending values over channels transfers ownership.
+</p>
+<p>When there are multiple values/producers, using an iterator
+abstracts away the need to call <code>recv</code>, and will stop
+iterating when the channel has closed. Producers across
+multiple threads will cause the order of values received
+to vary.
+</p>
+<p>Shared-state concurrency. "do not communicate by sharing
+memory. share memory by communicating".
+</p>
+<p>Mutex, or mutual exclusion, allow access to data one
+thread at a time.
+</p>
+<p>The Mutex type in Rust is a smart pointer. MutexGuard
+gets returned with a call <code>lock</code>, and the reference
+is then returned with <code>unwrap</code>.
+</p>
+<p>When using multiple threads, ownership can't be
+moved between them with <code>lock</code>. multiple-ownership must be
+used.
+</p>
+<p>Rc (typically used for multiple-ownership scenarios) is
+<b>not</b> thread-safe. So something else must be used...
+</p>
 </p>
 
 <h2>Chapter 17: Object Oriented Programming</h2>
@@ -223,6 +309,44 @@ workspaces. Installing binaries with "cargo install".
 <h2>Messages</h2>
 
 <p>Any messages tagged with the group <code>rustbook</code>.
+</p>
+<p><b>[39b71fdf] 2022-03-22-09-24</b>: Mutex, like the Cell family of types, uses interior mutability. That's how the counter in this example was able to be changed.
+</p>
+<p><b>[73d8b2e8] 2022-03-22-09-23</b>: atomics aren't the default because they impose a performance penalty
+</p>
+<p><b>[7272b373] 2022-03-22-09-22</b>: The Arc is similar to the Rc type, but it's atomic so it can be used in multithreaded scenarios. In other words, Arc is an atomically reference counted type.
+</p>
+<p><b>[ba5b316d] 2022-03-22-09-21</b>: Rc<T> is not thread-safe.
+</p>
+<p><b>[10a3753e] 2022-03-22-06-30</b>: writing the (<a href="#">page</a>) page as I go. no more or minimal backtracking.
+</p>
+<p><b>[00538a39] 2022-03-22-06-26</b>: apparently "you can't get unlocking and locking wrong" with Rust's ownership rules.
+</p>
+<p><b>[7027165b] 2022-03-22-06-25</b>: mutex: an abbreviation for mutal exclusion. allows only one thread to access some data at any given time.
+</p>
+<p><b>[24520f46] 2022-03-22-06-23</b>: "do not communicate by sharing memory. share memory by communicating". this is a go motto, quoted in the rust book.
+</p>
+<p><b>[6818ea05] 2022-03-22-06-20</b>: multiple producers looks very similar to multiple values. multiple threads spawned, one receiver in an iterator like before. the order varies.
+</p>
+<p><b>[bba0cade] 2022-03-22-06-18</b>: these values were sent on one thread. I think the idea is that producers work across multiple threads?
+</p>
+<p><b>[1f3f363f] 2022-03-22-06-17</b>: woops, they actually call these 'values', not 'producers'. getting my semantics wrong.
+</p>
+<p><b>[207b81b1] 2022-03-22-06-15</b>: It seems like using an iterator abstracts away the need for recv in the context of multiple producers.
+</p>
+<p><b>[2b23d8e1] 2022-03-22-06-08</b>: I see a <code>recv</code>. Looks like they are borrowing classic networking C function naming conventions.
+</p>
+<p><b>[d826c372] 2022-03-22-06-05</b>: multiple producer, single consumer (mpsc): a channel in Rust. It can have multiple sending ends that produce values but only one receiving end that consumes those values.
+</p>
+<p><b>[851f52bd] 2022-03-22-06-01</b>: channel: a programming concept used to accomplish message-sending concurrency.
+</p>
+<p><b>[d2e55acb] 2022-03-22-05-57</b>: the <code>move</code> keyword forces the closure to take ownership of the values it is using.
+</p>
+<p><b>[cbe06043] 2022-03-22-05-55</b>: so far, it seems all threads in Rust are closures.
+</p>
+<p><b>[3477e401] 2022-03-22-05-50</b>: calling join on the handle blocks the thread curerntly running until the thread represented by the handle terminates.
+</p>
+<p><b>[85899c5a] 2022-03-22-05-47</b>: MN Model: A threading model (green threads), where there are M green thread per N operating system threads. M and N are not necessarily the same number.
 </p>
 <p><b>[50199a21] 2022-03-21-09-43</b>: runtime (rust): code that is included by the language in every binary.
 </p>
