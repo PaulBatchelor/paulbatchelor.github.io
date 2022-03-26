@@ -262,12 +262,71 @@ start filling things over again. This incurs a performance
 penalty.
 </p>
 <p>Not all conditional expressions can be expressed as
-conditional moves. Sine both
+conditional moves. Since both
 sides are evaluated, they could introduce side effects.
+</p>
+<p>Conditional moves aren't always the most efficient option,
+especially if the <code>then-expr</code> or <code>else-expr</code> requires
+significant computation. A compiler like GCC will cleverly
+know when to use them.
+</p>
+<p>Loops in C like do-while, while, and for, boil down to
+combintations of conditional tests and jumps in assembly.
+</p>
+<p><code>do-while</code>: repeat body statment, evaluate test expression,
+and continue if non-zero. The body statement is executed
+at least once.
+</p>
+<p><code>while</code>: like <code>do-while</code>, except the test statement is
+executed before the body. This means the loop can be
+terminated before the first iteration (stopped before
+it even starts).
+</p>
+<p><code>for loop</code>: has <code>init-expr</code>, <code>test-expr</code>, <code>update-expr</code>,
+can <b>mostly</b> be written as an equivalent while loop.
+</p>
+<p><code>switch</code> statement in C: provides multiway branching
+capabilities based on the value of an index. Can be
+efficiently implemented using a <code>jump table</code>. The compiler
+automatically implements these.
+</p>
+<p>Switch cases that <code>fall through</code> don't have a break
+statement.
 </p>
 
 <h3>3.7: Procedures</h3>
 
+<p>Machine-level support for procedures need to do the
+following: pass control, pass data, and allocate/deallocate
+memory for local variables.
+</p>
+<p>Run-time stack: a LIFO stack used to manage memory. When
+a procedure runs out of space in registers, it allocates
+memory on the stack. Known as a <code>stack frame</code>.
+</p>
+<p>Return address: an address that gets pushed onto the stack
+that indicates where to return to when the procedure is
+done.
+</p>
+<p>Procedure Control transfer involves updating program
+counter. <code>call</code> is the instruction that that calls
+a procedure, and the return address is the address that
+follows right after it. <code>ret</code> is used to go back to the
+return address (popping it off the stack and setting
+it to the PC).
+</p>
+<p>Most data transfer between procedures is done via
+registers. In x86-64, up to six integral (integer, pointer)
+arguments can be passed via registers.
+</p>
+<p>Registers are used in a specified order (these names
+change based on the sized value being used). 64-bit
+register order is: <code>%rdi</code>, <code>%rsi</code>, %rdx=, <code>%rc</code>, <code>%r8</code>,
+<code>%r9</code>.
+</p>
+<p>More than 6 integral arguments, and the extras get passed
+on the stack.
+</p>
 
 <h3>3.8: Array Allocation and Access</h3>
 
@@ -292,6 +351,14 @@ sides are evaluated, they could introduce side effects.
 <h2>Messages</h2>
 
 <p><a id="messages"></a>Any messages tagged with the group <code>CSAPP</code>.
+</p>
+<p><b>[a2b56a73] 2022-03-25-13-12</b>: finally done with 3.6. wow that felt like forever.
+</p>
+<p><b>[c38e3679] 2022-03-25-13-07</b>: jump table: data structure used to efficiently implement switches. It is an array of addresses to jump to, using the index as a lookup.
+</p>
+<p><b>[34ad4a46] 2022-03-25-13-00</b>: there's a "jump to middle" strategy. now there's a "guarded-do" strategy.
+</p>
+<p><b>[c101f2d8] 2022-03-25-12-55</b>: <code>jump to middle</code> isn't cleanly defined, but it seems like a term I should become familiar with.
 </p>
 <p><b>[dd40a2e2] 2022-03-24-13-48</b>: branch prediction logic: a mechanism in modern processors use to try and guess whether or not each jump instruction will be followed.
 </p>
