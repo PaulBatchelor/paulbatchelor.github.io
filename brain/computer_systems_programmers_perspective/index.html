@@ -327,15 +327,64 @@ register order is: <code>%rdi</code>, <code>%rsi</code>, %rdx=, <code>%rc</code>
 <p>More than 6 integral arguments, and the extras get passed
 on the stack.
 </p>
+<p>When a procedure needs to allocate space on the stack,
+this is done by decrementing the stack pointer, resulting
+in a "local variables" portion of the stack.
+</p>
+<p>Registers are a single resource shared by all procedures.
+How do procedures not overwrite registers?
+</p>
+<p><code>callee-saved registers</code>: When a procedure is called, the
+information in these registers must be the same when it
+returns to the previous procedure. These registers are
+<code>%rbx</code>, <code>%rbp</code>, and <code>%r12-%r15</code>. This is accomplished
+by not touching them at all, or storing their values
+on to the stack and popping them back before
+returning. A dedicated portion of the stack frame is
+reserved for this, called "saved registers".
+</p>
+<p>The convention of saving registers allows for procedures
+to be called recursively.
+</p>
 
 <h3>3.8: Array Allocation and Access</h3>
 
-<p>TBD.
+<p>Arrays are a construct in C, which are reasonably straight
+forward to translate to machine code. Pointer arithmetic
+in C gets translated into address computations in machine
+code. Optimizing compilers can simplify address
+computations quite a fair bit, and this can sometimes
+obfuscate things.
+</p>
+<p>Basic access to an array: <code>A + L*i</code>, where <code>A</code> is the
+initial address of the first element, <code>L</code> is the length
+of the type (in bytes), and <code>i</code> is the index.
+</p>
+<p>Pointer arithmetic: computed value is scaled
+according to the size of the data type referenced by the
+pointer.
+</p>
+<p>Nested arrays: <code>A[5][3]</code> can be thought of as a 2d array
+with 5 rows 3 columns. Known as <code>row-major</code> order.
+</p>
+<p>Access array element in D at i,j: <code>A+L(C*i+j)</code>, where <code>A</code>is the address, <code>L</code> is the length of the type, and <code>C</code>is the column size.
+</p>
+<p>Fixed-size multi-dimensional arrays in C can be heavily
+optimized by C compilers.
+</p>
+<p>Variable-sized arrays were introduced in C99.
 </p>
 
 <h3>3.9: Heterogeneous Data Structures</h3>
 
-<p>TBD.
+<p>C has two mechanisms for combining objects of different
+types. <code>structures</code> (<code>struct</code>) aggregate multiple objects
+into a single unit. <code>unions</code> (<code>union</code>), allow an object
+to be referenced using several types.
+</p>
+<p>Unions are useful in situations when the use of two
+different fields in a structure will be mutually exclusive.
+Using a union will reduce space.
 </p>
 
 <h3>3.10: Combining Control and Data in Machine-Level Programs</h3>
@@ -351,6 +400,18 @@ on the stack.
 <h2>Messages</h2>
 
 <p><a id="messages"></a>Any messages tagged with the group <code>CSAPP</code>.
+</p>
+<p><b>[53bf8444] 2022-03-26-16-46</b>: it's really funny to see the phrase "safety provided by the C type system" after reading about (<a href="/brain/rust">rust</a>) in the (<a href="/brain/rustbook">rustbook</a>).
+</p>
+<p><b>[2c45d13d] 2022-03-26-16-40</b>: apparently fixed-sized multi-dimensional arrays have some "clever optimizations". I'll take their word for it. Skimming. This aspect of looking at what the compiler does feels too black-boxy to me.
+</p>
+<p><b>[c1792475] 2022-03-26-16-26</b>: it's very cool to see recursion at this level. the stack smashing risk is quite clear here.
+</p>
+<p><b>[ee0e4c3a] 2022-03-26-16-14</b>: this example is very subtle. I gave it a once-over, but I think I'd like to glance at it again at some point. the code readability is poor on the RM, so I might type it up./
+</p>
+<p><b>[f0fe7eea] 2022-03-26-16-07</b>: what I'm curious about is, is this "x86-64 stack discipline" transferrable knowledge to other ISAs?
+</p>
+<p><b>[c1aa89ad] 2022-03-26-16-07</b>: the <code>call_proc</code> example apparently showcases "many aspects of the stack discipline", and they say "it is worth studying carefully".
 </p>
 <p><b>[a2b56a73] 2022-03-25-13-12</b>: finally done with 3.6. wow that felt like forever.
 </p>

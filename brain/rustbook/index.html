@@ -414,20 +414,203 @@ in a <code>match</code> arm.
 before match guards. In other words <code>4 | 5 | 6 if y</code> is
 equivalent to <code>(4 | 5 | 6) if y</code>.
 </p>
+<p>Using the <code>@</code> operator can bind a value in a pattern
+while also testing it. Using <code>@</code> tests a value and save
+it in a variable with one pattern.
+</p>
 
 <h2>Chapter 19: Advanced Topics</h2>
 
-<p>TBD.
+<p>These are topics you'll occasionally run into in the wild,
+and useful in very specific situations.
+</p>
+<p>Topics: unsafe Rust, advanced traits, advanced types,
+advanced functions, and macros.
+</p>
+<p>Unsafe Rust: rust that does not enforce memory safety.
+</p>
+<p>Why unsafe? Rust compiler is conservative, can reject
+valid programs. Underlying computer hardware is inherently
+unsafe, and Rust is designed to be a systems language.
+</p>
+<p>Unsafe block starts with the <code>unsafe</code> keyword. Grants
+<code>unsafe superpowers</code>: dereference a raw pointer, call
+an unsafe function or method, access or modify mutable static
+variable, implement unsafe trait, access fields of
+unions.
+</p>
+<p>Raw pointers: similar to references, written as
+<code>*const T</code> (immutable)
+and <code>*mut T</code> (mutable). Immutable raw pointers can't
+be assigned after being dereferenced.
+</p>
+<p>Raw pointers ignore borrowing rules, have no guarantee
+of pointing to valid memory, can be null, and don't
+implement any automatic cleanup.
+</p>
+<p>One major use-case for raw poitners is interfacing
+with C code. Another is building safe abstractions that
+the compiler doesn't understand.
+</p>
+<p>Unsafe functions look like regular functions, just with
+an unsafe added to it. Using an unsafe function means
+you've taken full responsibility for making sure it
+behaves correctly.
+</p>
+<p>Calling unsafe blocks inside of a safe function is a common
+abstraction. Ex: <code>split_at_mut</code>, which splits up a mutable
+vector into two parts. The Rust compiler isn't smart
+enough to understand that this is safe, so part
+of the operation is done inside <code>unsafe</code>.
+</p>
+<p><code>extern</code> is used to create and use the Foreign Function
+Interface (FFI). It can do things like call C code.
+</p>
+<p><code>extern</code> can also be used to call Rust code from C. The
+<code>no_mangle</code> annotation has to be turned on to keep the
+naming consistent.
+</p>
+<p>Global variables in Rust are known as <code>static</code> variables.
+They are similar to constants, but they have a fixed
+address in memory, and can be mutable.
+</p>
+<p>Static values can only store references with the 'static
+lifetime.
+</p>
+<p>A trait is considered unsafe when at least one of its
+methods has some invariant that the compiler can't
+verify.
+</p>
+<p>Unions in Rust are primarily used to interact with C
+code. They are inherently unsafe because Rust can't
+guarantee the type of one at any given time.
+</p>
+<p>Associated types: a "placeholder" used in traits that
+gets "filled in" later. Similar to generics. Except
+with generics, a trait for a particular type can
+be implemented multiple times.
+</p>
+<p>In generics, there can be default "concrete" types. A type
+doesn't need to be explicitely defined if the default
+works.
+</p>
+<p>Operator overloading in Rust: doesn't allow to make new
+operators, but it does allow overloading the existing
+operators and corresponding traits in <code>std::ops</code>.
+</p>
+<p>If traits being implemented share methods with the same
+name, one may have to explicitely
+distinguish which method you are talking about. If the
+type itself has a method with that name, it will call
+that one by default.
+</p>
+<p>For method name ambiguities in associated functions,
+Fully Qualified Syntax is utilized.
+</p>
+<p>Supertrait: used to require one traits functionality
+within another trait.
+</p>
+<p>Newtype: pattern
+that implements external traits on external types. Normally
+this wouldn't be doable because of the orphan rule.
+</p>
+<p>Orphan Rule: traits can be implemented on a type as long
+as either the trait or the type are local
+to the crate.
+</p>
+<p>Newtype inolves creating a new type in a tuple struct,
+which acts as a thin wrapper around the type we want
+to implement.
+</p>
+<p>Type alias: gives an existing type a new name. Creates
+a synonym.
+</p>
+<p>The <code>!</code> operator is known as the <code>empty type</code> or
+<code>never type</code>. It's the return type of a function that
+will never return, which are referred to
+as <code>diverging functions</code>.
+</p>
+<p>Dynamially sized types, or DSTsx, or unsized types, are
+types whose size can only be known at runtime.
+</p>
+<p>Function pointers: allow regular functions to be passed
+as arguments using the <code>fn</code> type. Function pointers can
+always be passed off in places that expect closures.
+</p>
+<p>Returning a Closure? This chapter shows you how!
+</p>
+<p>Macros: used for <code>metaprogramming</code> in Rust, or writing
+code that writes code.
+</p>
+<p>Declarative Macros: most widely used form of macro. Very
+similar conceptually to <code>match</code>. Implemented using
+<code>macro_rules!</code>, but this may be eventually be deprecated
+in favor of something else that addresses the weird edge
+cases.
+</p>
+<p>Procedural macros: macros that act more like functions.
+Take some code as input, operate on that code, and
+produce some code as output. Implementing these currently
+have a lot of weird technical restrictions, which may
+change in the future.
+</p>
+<p>Derive macros are ???.
+</p>
+<p>Attribute-like macros: like derive macros, but instead of
+generating code for the derive attribute, they allow you to
+create new attributes.
+</p>
+<p>Funtion-like macros: macros that look like functions.
+similar to declative macros. these take a <code>TokenStream</code>parameter and then manipulate it using Rust code.
 </p>
 
 <h2>Chapter 20: A multi-threaded webserver</h2>
 
-<p>TBD.
+<p>This was basically a tutorial that managed to cover a lot
+of topics encountered in the previous chapters.
 </p>
 
 <h2>Messages</h2>
 
 <p>Any messages tagged with the group <code>rustbook</code>.
+</p>
+<p><b>[0a4a708e] 2022-03-28-13-10</b>: completed final chapter.
+</p>
+<p><b>[e2fbc0b9] 2022-03-27-09-26</b>: I just hobbled through the advanced chapter. Now onto the final chapter! huzzah!
+</p>
+<p><b>[21d5bb17] 2022-03-27-09-21</b>: oops, I missed something about derive macros
+</p>
+<p><b>[ee14f391] 2022-03-27-09-19</b>: procedural macros come with a mini-tutorial. skimming, may return back to this if I need to use procedural macros.
+</p>
+<p><b>[160060bc] 2022-03-27-09-13</b>: macros section seems to be the at the fringes of Rust. Lots of language like "may be deprecated later" and "we hope to eliminate in the future".
+</p>
+<p><b>[e6ad3452] 2022-03-27-09-01</b>: metacode: code that writes other code.
+</p>
+<p><b>[24d57e41] 2022-03-27-07-24</b>: my initial impression of type aliasing in rust is that it's similar to typedef in C. But I'm sure there's a little more to it.
+</p>
+<p><b>[22a59432] 2022-03-27-07-20</b>: this advanced features chapter did say in the beginning that it is more of a reference chapter. The writing would certainly seem like it, because there are far more references to previous chapters here.
+</p>
+<p><b>[e6683ca4] 2022-03-27-07-16</b>: orphan rule: in Rust, a rule that states that a trait can be implemented on a type as long as either the trait or the type are local to the crate.
+</p>
+<p><b>[9e58b0c2] 2022-03-27-07-10</b>: I have no recollection of the orphan rule.
+</p>
+<p><b>[a02386de] 2022-03-27-07-06</b>: supertraits are confusing.
+</p>
+<p><b>[368b16d7] 2022-03-26-19-13</b>: If there's ambiguity with method names and traits, and the type has a method with that name, it will call that one by default. But what happens when there isn't method with that name in the type? Is that a compiler error?
+</p>
+<p><b>[97f024eb] 2022-03-26-19-03</b>: default concrete types. is "concrete" a special term?
+</p>
+<p><b>[3c1c4235] 2022-03-26-19-01</b>: in generics, the types must be annotated in each implementation.
+</p>
+<p><b>[13a1e1b9] 2022-03-26-19-00</b>: the big difference seems to be that with generics, an interface with a certain type can be implemented multiple times.
+</p>
+<p><b>[e71693e8] 2022-03-26-18-57</b>: lol. next paragraph addresses when to use associated types vs generics. okay. I'm glad I'm asking appropriate questions.
+</p>
+<p><b>[74aaa029] 2022-03-26-18-56</b>: associated types, from what I can understand so far, sound a bit like generics because they both have the concept of a placeholder that gets "filled in" later on.
+</p>
+<p><b>[f46b2864] 2022-03-26-18-43</b>: Foreign Function Interface (FFI): a way for a programming language to define functions and enable different (foreign) programming languages to call those functions.
+</p>
+<p><b>[f0f2e87f] 2022-03-26-05-46</b>: unsafe superpowers: possible actions in unsafe Rust. Dereferencing a raw pointer, calling an unsafe functin, Access/modify a mutable static variable, implement an unsafe trait, and access fields of unions.
 </p>
 <p><b>[8490025e] 2022-03-25-10-54</b>: match guard: an additional if condition specified after the pattern in a match arm that must also match, along with the pattern matching, for that arm to be chosen.
 </p>
