@@ -386,16 +386,230 @@ to be referenced using several types.
 different fields in a structure will be mutually exclusive.
 Using a union will reduce space.
 </p>
+<p>Alignment Restrictions: allowable memory addresses must
+be some multiple of either 2, 4, or 8. This simplifies
+hardware between the processor and memory system.
+</p>
+<p>Alignment can be enforced in x86 using something like
+".align 8".
+</p>
+<p>Structs can add space in between fields to meet the
+alignment requirements.
+</p>
 
 <h3>3.10: Combining Control and Data in Machine-Level Programs</h3>
 
-<p>TBD.
+<p>Pointers. And a bit how they work in C.
+</p>
+<p>Some introductions to GDB.
+</p>
+<p>Buffer Overflow example, attempts to reach for values out
+of bounds.
+</p>
+<p>Exploit code: malicious code inside input to a function
+(such a string). The code then overrides the return to
+point to the new program subroutine.
+</p>
+<p>Stack randomization: randomizes stack position from one
+program to another. Used to thwart stack exploits.
+</p>
+<p>stack randomization is part of address-space layout
+randomization (ASLR), which generally concerns itself
+with loding parts of a computer program (program
+code, library code, stack, global variables, heap data),
+into different addresses spaces every time it is run.
+</p>
+<p><code>stack protection</code> is a way of checking for stack
+corruption checking to see if a <code>canary value</code> has changed.
+this is enabled by default in recent versions of GCC.
+</p>
+<p>Limiting executable regions of code is another means
+to make things more secure. Memory is divided into chunks
+called pages, where the kind of access can be controlled
+(<code>memory protection</code>) at the hardware level.
+</p>
+<p><code>alloca</code>: standard function that allocates arbitrary bytes
+onto the stack.
+</p>
+<p>Variable size stack frames are managed using a special
+pointer to store the base pointer (called <code>%rbp</code>), and
+then addresses things relative to that.
 </p>
 
 <h3>3.11: Floating-point Code</h3>
 
+<p>Floating point architecture has evolved "media"
+instructions inteded for for computer graphics.
+</p>
+<p>Focused on parallel computation (single instruction,
+multiple data, or SIMD).
+</p>
+<p>SSE: Streaming SIMD extensions.
+</p>
+<p>AVX: Advanced Vector Extensions.
+</p>
+<p>Data in these special instructions uses special registers:
+<code>MM</code> for MMX, <code>XMM</code> for SSE, and <code>YMM</code> for AVX.
+</p>
+<p>AVX2: instructions introduced to the core i7 in 2013.
+Second version of AVX. Primary focus.
+</p>
+<p>Floating point movement instructions: <code>vmovss</code> (single)
+<code>vmovsd</code> (double) <code>vmoaps</code> (aligned, packed single)
+<code>vmovapd</code> (aligned, packed double).
+</p>
+<p>Floating point conversions (float to int, int to float),
+on scalar values: <code>vcvttss2si</code>, <code>vcvttsd2si</code>,
+<code>vcvttss2siq</code>, <code>vcvttsd2siq</code>.
+</p>
+<p>Floating point to integer conversion performs truncation,
+rounding values towards zero.
+</p>
+<br>
+<p>These instructions convert from integer to float:
+<code>vcvtsi2ss</code>, <code>vcvtsi2sd</code>, <code>vcvtsi2ssq</code>, <code>vcvtsi2sdq</code>. They
+take 2 sources, and a destintation. (The second source
+can be ignored for now, and are commonly identical).
+</p>
+<p><code>vunpcklps</code> followed by <code>vcvtps2pd</code> is what GCC uses to
+convert between single to double precision. <code>vunpcklps</code>performs some interleaving operation, <code>vcvtps2pd</code> uses
+that that intermediate value to be a double. From the book:
+"it is unclear why GCC generates this code".
+</p>
+<p><code>vmovddup</code> and <code>vcvtpd2psx</code> are used to convert from double
+to single precision. <code>vmovddup</code> will replicate first vector
+element, and the <code>vcvtpd2psx</code> will use that to produce
+the single precision element in the destination.
+</p>
+<p>The XMM registers are used for passing floating point
+arguments to and from functions. Up to 8, <code>%xmm0</code> is
+return, and caller saved (calle can overwrite without
+first saving it).
+</p>
+<p>Floating point arithmetic operations: <code>vaddss</code>, <code>vaddsd</code>,
+<code>vsubss</code>, <code>vsubsd</code>, <code>vmulss</code>, <code>vmulsd</code>, <code>vdivss</code>, <code>vdivsd</code>,
+<code>vmaxss</code>, <code>vmaxsd</code>, <code>vminss</code>, <code>vminsd</code>, <code>sqrtss</code>, <code>sqrtsd</code>.
+</p>
+<p>Constant floating point values must be stored and
+read from memory. Can't be passed in directly as an
+immediate value.
+</p>
+<p>Bitwise operations on floats: performed on entire XMM
+register (128 bits): <code>vxorps</code>, <code>xorpd</code>, <code>vandps</code>, <code>andps</code>.
+</p>
+<p>Floating point comparison operators are: <code>ucomiss</code> and
+<code>comisd</code>. They set the zero flag (ZF), carry flag (CF),
+and this thing called the parity flag (PF), which is
+set when the least significant byte has an even number
+of bits turned on (even parity).
+</p>
+
+<h2>Chapter 4: Processor Architecture</h2>
+
+
+<h3>4.1 The Y86-64 Instruction Set Architecutre</h3>
+
+<p>We're defining our own processor called Y86-64!
+</p>
+<p>Program Visible State: the stuff that programs can
+read and modify.
+</p>
+<p>State layout does not need to directly line up with ISA.
+</p>
+<p>Components: registers, program counter, memory, status
+code.
+</p>
+<p>8-bit integer operations only. 8-bit word.
+</p>
+<p>Byte-level encoding of instructions: ranges from 1-10
+bytes. Initial byte identifies the instruction.
+</p>
+<p>Byte is split into two nibbles: code (high-order), and
+function (low-order).
+</p>
+<p>Register-specifier byte: byte that can specify one or
+two registers.
+</p>
+<p>Constant word: 8 bytes. used for immediate data in
+<code>irmovq</code>, displacement in <code>rmmovq</code> and <code>mrmovq</code>.
+</p>
+<p>Status codes: AOK (all good), HLT (halted), ADR
+(invalid address), INS (invalid instruction).
+</p>
+<p>pushq/popq quirks: <code>pushq %rsp</code> and <code>popq %rsp</code> are
+ambiguous. When in doubt, read the manual.
+</p>
+
+<h3>4.2 Logic Design and the Hardware Control Language</h3>
+
+<p>Logic gates: the basic computing elements for digital
+circuits. Takes in bit values as inputs, peforms boolean
+operation, and outputs a bit. Examples: AND, OR, and NOT.
+</p>
+<p>Combinatorial Circuit: logic gates that form a network.
+</p>
+<p>HCL: syntax for outlining combinatorial circuits in a
+C-like expression.
+</p>
+<p>Combinatorial logic doesn't have any partial evaluation rules
+like C. Things are always getting evaluated in logical
+statemes like AND.
+</p>
+<p>Combinational circuits tend to work on groups of bits known
+as words.
+</p>
+<p>Multiplexors can work on a word level by selecting a word
+from a source using some control condition.
+</p>
+<p>Multiplexing functions are expressed in HCL using case
+expressions.
+</p>
+<p>Logic synthesis: a technique to create an optimal circuit
+from some higher-level logic written in something like HCL.
+</p>
+<p>Hardware registers (directly connected to circuit with
+wires) are slightly different from program
+registers (addressable words).
+</p>
+<p>Hardware register kind of acts like a sample-and-hold.
+It takes in a signal and a clock signal, and holds the
+value when the clock goes up.
+</p>
+<p>Clocked registers: hardware register that whose values
+can be loaded using a clock signal.
+</p>
+<p>A register file is an abstraction that holds words and
+addresses, and is used at the machine-language level.
+</p>
+<p>Register file: two read ports, and one write port. This
+means it is <code>multiported</code>, allowing for multiple read/write
+operations to happen simultaneously.
+</p>
+<p>Memory: address input, data input, data output. Address
+as input, write control to 0, add delay, and the value will
+appear on data output.
+</p>
+
+<h3>4.3 Sequational Y86-64 Implementations</h3>
+
 <p>TBD.
 </p>
+
+<h3>4.4 General Principles of Pipelining</h3>
+
+<p>TBD.
+</p>
+
+<h3>4.5 Pipelined Y86-64 Implementations</h3>
+
+<p>TBD.
+</p>
+
+<h2>Chapter 5: Optimizing Program Performance</h2>
+
+
+<h2>Chapter 6: The Memory Hierarchy</h2>
+
 
 <h2>Messages</h2>
 
