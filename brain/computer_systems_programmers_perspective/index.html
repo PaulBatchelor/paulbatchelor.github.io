@@ -699,10 +699,111 @@ a difficult challenge.
 stages eventually doesn't add gains to throughput, due
 to the small delay introduced from the pipeline registers.
 </p>
+<p>Data Dependency: sequentional instructions share data.
+</p>
+<p>Control Dependency: outcome of a instruction determines
+what the next instruction will be.
+</p>
+<p>Feedback in the pipeline handles control and data
+dependencies.
+</p>
+<p>When introducing feedback, the effects must be handled so
+that the resulting behavior matches the model defined by
+the ISA.
+</p>
 
 <h3>4.5 Pipelined Y86-64 Implementations</h3>
 
-<p>TBD.
+<p>SEQ must be changed so that PC update happens at beginning
+of the cycle instead of the end. This will be called SEQ+.
+</p>
+<p>PC now computes address of current instruction.
+</p>
+<p>Next, insert pipeline registers between each state: <b>F</b>holds a predicted value of PC, <b>D</b> (btwn fetch and decode),
+holds information about most recent fetched instruction,
+<b>E</b> (btwn decode and execute) holds information about
+recently decoded instruction, <b>M</b> (btwn execute and memory)
+holds results of last executed instruciton, <b>W</b> (btwn
+memory and feedback paths) supply computed results to
+register file for writing and return address to PC selection
+logic.
+</p>
+<p>Sequential SEQ/SEQ+ only process one instruction at a time.
+Pipelined has to have multiple versions of the value
+kept through the system.
+</p>
+<p>With measures added to handle control dependencies, now
+make it so that a new instruction can be issued on every
+clock cycle, and an instruction can be executed as well.
+This would yield a throughput of 1 instruction/cycle.
+</p>
+<p>To achieve this, the next instruction must be fetched after
+the current one.
+</p>
+<p>With branches, one doesn't know which instruction will
+be chosen until the instruction gets executed down the
+line. A return instruction will also be ambiguous until
+it reaches the memory stage.
+</p>
+<p><code>branch prediction</code>: guessing a branch direction and
+fetching instructions based on that guess.
+</p>
+<p>Return addresses will not be predicted, as it's virtually
+unbounded. When a return instruction happens, hold off
+other instructions until it has passed.
+</p>
+<p>Branch prediction strategies. Always taken (what will
+be used here). ~60% sucess rate. Never taken (NT):
+opposite of Always Taken. ~40% success rate. Backward
+Taken, Forward Not Taken: slightly more involved strategy
+that predicts branches to lower addresses will be taken,
+high addresses will not be taken. ~65% success rate. Works
+because loops are are closed by backward branches and happen
+multiple times, forward branches are conditional operations
+and are less likely to happen.
+</p>
+<p>Pipeline hazards: pipelining with feedback can cause
+problems with data and control dependencies, known as data
+hazards and control hazards.
+</p>
+<p>Data hazards in the current pipeline occur when one of its
+operands is updated by any of the three preceding
+instructions. Occurs because it reads operands for
+an instruction from the register file in the decode
+stage, does not write instruction to the register file
+until three cycles later, after instruction passes
+through the write-back stage.
+</p>
+<p>Stalling: processor holds back one or more instructions in
+the pipeline until the hazard condition no longer exists.
+</p>
+<p>Stalling is a way to avoid data hazards.
+</p>
+<p>Holding an instruction back in the pipeline involves
+injecting a <code>bubble</code>, a dynamically created NOP
+instruction.
+</p>
+<p>Data Forwarding: The technique of passing a result value
+directly from one pipeline stage to another.
+</p>
+<p>Data forwarding is a way to avoid data hazards.
+</p>
+<p>Data forwarding can be used when there is a pending
+write to a register in the memory stage and can be done
+to avoid stalling.
+</p>
+<p>Data forwarding can also pass newly computed values from
+execute stage to decode stage.
+</p>
+<p>Five different forwarding sources, and two different
+forwarding destinations.
+</p>
+<p>Load/use hazard: one instruction reads a value from memory
+while the next instruction needs this value as a source
+operand.
+</p>
+<p>Load/use hazards are solved with a combination of stalling
+and forwarding. Known as a <code>load interlock</code>.
 </p>
 
 <h2>Chapter 5: Optimizing Program Performance</h2>
@@ -714,6 +815,10 @@ to the small delay introduced from the pipeline registers.
 <h2>Messages</h2>
 
 <p><a id="messages"></a>Any messages tagged with the group <code>CSAPP</code>.
+</p>
+<p><b>[00f9964e] 2022-04-04-13-37</b>: it's pretty amazing. anytime this book tries to sequentially explain things in a paragraph, my brain just shuts down and refuses to process it. I think I'll have to rewrite those paragraphs in a more terse form in order to get my brain to grok it.
+</p>
+<p><b>[2f58f984] 2022-04-04-13-25</b>: there's a lot of examples I should study more clearly in 4.5 with how pipelining works. Again, if I had more time and energy I would. I think I'm getting the broad strokes of it.
 </p>
 <p><b>[a5d0d462] 2022-04-03-07-41</b>: circuits feel really well suited for structuring generative music events
 </p>
