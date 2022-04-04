@@ -592,12 +592,112 @@ appear on data output.
 
 <h3>4.3 Sequational Y86-64 Implementations</h3>
 
-<p>TBD.
+<p>Processor will be called SEQ.
+</p>
+<p>Instruction processing stages: fetch, decode, execute,
+memory, write back, PC update.
+</p>
+<p>Fetch: grabs bytes from memory.
+</p>
+<p>Decode: reads up to two operands from register file.
+</p>
+<p>Execute: Executes the instruction.
+</p>
+<p>Memory: may read/write memory.
+</p>
+<p>Write back: writes up to two results to register file.
+</p>
+<p>PC update: sets PC to address of next instruction.
+</p>
+<p>addq, subq, andq, xorq: same icode portion (same steps),
+different ifun portion (different ALU computation).
+</p>
+<p>memory write/read: like integer operations, but ALU
+is used to compute valC and valB to get effective
+address. Memory stage will write register value valA
+to memory, or read valM.
+</p>
+<p>pushq: use <code>%rsp</code> as second identifier for operand. ALU
+decrements stack pointer by 8.
+</p>
+<p>popq: like pushq, only read 2 copies of stack pointer
+in decode stage. redundant, but more uniform with other
+instructions. ALU increments by 8. write-back: update
+stack pointer and register rA.
+</p>
+<p>Jumps: fetch like before, but does not require register
+specifier byte. Execute: check condition codes and
+jump condition, determine whether or not to take branch,
+yield 1-bit signal Cnd. PC update: test Cnd flag, update
+PC to valC (jump target) if Cnd is 1, valP (following
+address) if flag is 0.
+</p>
+<p>Hardware structure of SEQ: operates with a single
+clock transition triggering a flow in combinational logic
+to execute an instruction.
+</p>
+<p>Combinational Logic does not require sequencing or control,
+values propogate through the network. The forms of memory
+used (clock registers and random access memories), have
+similar behavior to combinational logic.
+</p>
+<p>Four hardware units that require explicit control over
+their sequencing: program counter, condition code register,
+data memory, regster file. Conrolled via single clock.
+</p>
+<p>Clocking of registers/memories is all that is required
+to control sequencing in the processor, and the sequential
+events in the different instructions will happen.
+</p>
+<p>Why does the execution work? This principle: No Reading
+Back. The processor never needs to read back the state
+updated by an instruciton in order to complete the
+processing of this instruction.
+</p>
+<p>An overview of the HCL requried to build y86-64 is
+included.
+</p>
+<p>Problem: SEQ is too slow. The clock needs to run slowly
+enough to run through all the stages within a single cycle.
+</p>
+<p>Inefficient: each hardware unit is on for a fraction of
+a clock cycle.
+</p>
+<p>Solution to fix SEQ performance: pipelineing.
 </p>
 
 <h3>4.4 General Principles of Pipelining</h3>
 
-<p>TBD.
+<p>Pipelining is something a processor does to address the
+slow performance of instruction sequencing with the clock.
+</p>
+<p>Analogy: cafeteria. instead of having one person at a time
+go through one at a time to get food (salad, main
+dish, dessert, etc), line them up.
+</p>
+<p>Pipelining works by breaking computation into components,
+and allowing instructions to pass through the system
+one component at at time.
+</p>
+<p>Pipelining increases the throughput of a system, but it
+may slightly increase latency (someone going for dessert
+has to wait in line).
+</p>
+<p>Pipeline registers store the state at each pipeline.
+</p>
+<p>Circuit delays are measured in picoseconds.
+</p>
+<p>Pipelining charts are ways to analyze the latency of
+a circuit.
+</p>
+<p>Nonuniform partitioning: when delays in each
+stage are different. pipelinig is only as fast as
+it's slowest component. designing with uniform delay is
+a difficult challenge.
+</p>
+<p>Diminishing returns of pipelining: adding pipelining
+stages eventually doesn't add gains to throughput, due
+to the small delay introduced from the pipeline registers.
 </p>
 
 <h3>4.5 Pipelined Y86-64 Implementations</h3>
@@ -614,6 +714,26 @@ appear on data output.
 <h2>Messages</h2>
 
 <p><a id="messages"></a>Any messages tagged with the group <code>CSAPP</code>.
+</p>
+<p><b>[a5d0d462] 2022-04-03-07-41</b>: circuits feel really well suited for structuring generative music events
+</p>
+<p><b>[63c5a4eb] 2022-04-03-07-21</b>: pipelining diagrams look like DSP charts. I bet you could measure DSP performance as a pipelining diagram.
+</p>
+<p><b>[2896b802] 2022-04-03-07-05</b>: I think learning about simpler 8-bit CPU chips would be much more educational than attempting to figure out x86-64 stuff.
+</p>
+<p><b>[b3fa2d25] 2022-04-03-07-04</b>: Skimming 4.3.4 SEQ Stage Implementations, which devises HCL descriptions for the control logic blocks to implement SEQ. I don't know if it's worth the time to study fully, and it seems massively complex (they don't even show the full HCL description).
+</p>
+<p><b>[03706078] 2022-04-03-06-55</b>: I think this book was a thankless task because they decided to stick to x86-64, which seems really hard to teach in a classroom setting.
+</p>
+<p><b>[145fc095] 2022-04-03-06-53</b>: the machine instruction tables in 4.18-4.21 make more sense after reading onwards. I think they were trying to go top-down with machine instructions to combinational logic. I would have done bottoms-up with the combinational logic, working up to instructions. The nand2tetris concept sounds a bit more appealing now.
+</p>
+<p><b>[75a7d4a7] 2022-04-01-16-03</b>: 4.3.2: SEQ hardware structure packs a lot, and may be worth revisiting. The charts do not work well in grayscale on my RM, so that may not work so well.
+</p>
+<p><b>[86e99092] 2022-04-01-15-57</b>: there is definitely a difference in writing between chapters and even sections. really inconsistent.
+</p>
+<p><b>[68980f65] 2022-04-01-15-55</b>: 4.3.2 should absolutely have come first before 4.3.1. Defining the sections as hardware, then the instructions makes things a lot clearer. Not to mention the variables in the tables (and the writing) make more sense.
+</p>
+<p><b>[f512527b] 2022-04-01-15-09</b>: note to self: maybe study the tables 4.18-4.21 in more detail. these describe how Y86-64 instructions proceed through the processing stages.
 </p>
 <p><b>[be3d02c7] 2022-04-01-13-13</b>: the register <b>file</b> is more at the machine-language level, and can store words and addresses.
 </p>
