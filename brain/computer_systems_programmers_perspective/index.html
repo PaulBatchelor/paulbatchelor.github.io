@@ -975,24 +975,238 @@ each time.
 
 <h3>5.7 Understanding Modern Processors</h3>
 
+<p>Exploiting the microarchitecutre of the processor to
+optimize a program.
+</p>
+<p>Instruction-level parallelism: instructions being executed
+in parallel at the processor level, which may appear
+to be sequential at the code level.
+</p>
+<p>Two lower bounds characterize maximum performance of
+a program: latency bound and throughput bound.
+</p>
+<p>Latency bound: encounterted when a series of operations must
+be performed in strict sequence, because the result of one
+operation is required before the next.
+</p>
+<p>Throughput Bound: raw computing capacity of the processor's
+functional units. Becomes ultimate limit on program
+performance.
+</p>
+<p>This processor is a superscalar processor, meaning it
+processes multiple instructions on every clock cycle
+and not necessarily in sequential order (out of order).
+</p>
+<p>Two main parts: Instruction Control Unit (ICU) and
+Execution Unit (EU).
+</p>
+<p>ICU reads from instruction cache, usually ahead of time
+before the EU. Uses Branch Prediction to load instructions,
+and speculative execution, which executes instructions
+even before it is the correct branch, and resets state if
+it isn't.
+</p>
+<p>Instruction decoding: takes program instructions and
+converts them into primitive operations known
+as micro-operations. Different instructions can have
+a variable number of operations.
+</p>
+<p>Misprediction in branching incurs a significant performance
+penalty.
+</p>
+<p>Processor has different functional units designed to carry
+out various operations (integer/float
+arithmetic, store, load, address computation, etc). Units
+are typically designed to be multifunctional.
+</p>
+<p>Retirement Unit: keeps track of ongoing processing, makes
+sure it obeys sequential semantics of the
+machine-level program.
+</p>
+<p>Instruction that are correctly predicted can be <code>retired</code>,
+with any udpates to the program registers being made.
+Instructions that are mispredicted are <code>flushed</code>, being
+discarded without altering program state.
+</p>
+<p>register renaming: most common mechanism for controlling
+the communication of operands among the execution units.
+</p>
+<p>Register renaming allows entire sequences of operations
+to be performed speculatively. The registers are actually
+updated when the processor is certain of the branch
+outcome.
+</p>
+<p>Timings for machine instructions are determined by
+<code>latency</code>, <code>issue time</code>, and <code>capacity</code>.
+</p>
+<p>Latency: total time to perform operation. Issue time:
+minimum number of clock cycles between two independent
+operations of the same type. Capacity: inidicates number
+of functional units performing that operation.
+</p>
+<p>Fully pipelined: Functional units with issues times of 1
+that can start a new operation every clock cycle.
+</p>
+<p>Throughput is a more common way of expressing issue time,
+which is the reciprocol. Capacity / Issue Time.
+</p>
+<p>Latency Bound: minimum value for the CPE for any function
+that must perform the combining operation in a strict
+sequence.
+</p>
+<p>Throughput Bound: a mimimum bound for the CPE based on the
+maximum rate at which the functional units can
+produce results.
+</p>
+<p>Data-flow representation: graphical notation showing how
+the data dependencies between different operations constrain
+the order which they are executed. Constraints cause
+critical paths in the graph, thus putting a lower bound
+on the number of clock cycles required to execute a
+set of machine instructions.
+</p>
+<p>Code segments forming a loop can have registers classified
+into 4 types: read-only, write-only, local (updated, but no
+dependency from one iteration to the next), loop (used
+as both source values and destinations for loop).
+</p>
+<p>Analyzed performance of combine4, and found latency bounds.
+Next task: restructure the operations to enhance
+instruction-level parallelism. Goal: transform the program
+in such a way that only limitation becomes throughput
+bound.
+</p>
 
 <h3>5.8 Loop Unrolling</h3>
 
+<p>Loop unrolling: program transformation that increases
+the number of elements computed for each iteration, thus
+reducing the number of iterations for a loop.
+</p>
+<p>LU reduces the overhead operations in a loop such as
+indexing, and exposes ways to further reduce operations.
+</p>
+<p><code>K by 1 loop unrolling</code>: make a loop go through <code>k</code>elements at a time.
+</p>
+<p>Optimizig Compilers will often attempt to try loop
+unrolling, especially at higher optimization settings.
+</p>
 
 <h3>5.9 Enhancing Parallelism</h3>
 
+<p><code>2 by 2 Loop Unrolling</code>: iterate over two values,
+accumulate results in two places.
+</p>
+<p>This breaks through the barrier imposed by the latency
+bound.
+</p>
+<p>Reassociation Transformation: reduces number of
+operations along the critical path for computation,
+resulting in better performance by better utilizing the
+multiple function units.
+</p>
+<p>Optimizing compilers will usually not try to do
+reassocation transformations because it is not
+often guaranteed that operations are associative.
+</p>
 
 <h3>5.10 Summary of Results for Optimizing Combining Code</h3>
 
+<p>Optimizations done with scalar code, not taking advantage
+of AVX vector instructions.
+</p>
+<p>Combined optimizations achieve close to the throughput
+bounds of 0.5 and 1.0. A 10-20x improvement over the
+original code.
+</p>
+<p>Modern processors have considerable processing power,
+but may need to be coaxed into using this power through
+the use of writing programs in stylized ways.
+</p>
 
 <h3>5.11 Some Limitng Factors</h3>
 
+<p>Register Spilling: when a program using some degree of
+parallelism exceeds the number of available registers.
+The compiler will have to resort to "spilling" temporary
+values in memory.
+</p>
+<p>Mispredection penalties for branches.
+</p>
+<p>DO NOT BE OVERLY CONCERNED ABOUT PREDICABLE BRANCHES (their
+big text, not mine, though the emphasis using CAPS is
+mine).
+</p>
 
 <h3>5.12 Understanding Memory Performance</h3>
 
+<p>This chapter investigates performance of load/store.
+</p>
+<p>Write/read depdency: outcome of memory read depends on
+a memory write.
+</p>
+
+<h3>5.13 Performance Improvement Techniques</h3>
+
+<p>Already outlined previously.
+</p>
+
+<h3>5.14 Identifying and Eliminating Performance Bottlenecks</h3>
+
+<p>Code Profiler: Analysis tool that collect performance
+data about a program as it executes.
+</p>
+<p>Profilers can be used to guide optimization.
+</p>
 
 <h2>Chapter 6: The Memory Hierarchy</h2>
 
+<p>If you understand how data moves up/down the memory
+hierarchy, then you can write programs with data that
+is quickly accesible by placing them  higher in the
+hierarchy.
+</p>
+
+<h3>6.1 Storage Technologies</h3>
+
+<p>RAM comes in two types: static and dynamic.
+</p>
+<p>Static RAM (SRAM): used cache memories, both on/off the
+CPU chip. Significantly faster and more expensive than
+dynamic RAM.
+</p>
+<p>Dynamic RAM (DRAM): Used for the main memory plus the
+framebuffer of the graphics system.
+</p>
+<p>SRAM stores each bit in a <code>bistable</code> memory cell inside
+of a six transistor circuit. It can stably be in one
+of two states.
+</p>
+
+<h3>6.2 Locality</h3>
+
+<p>TBD.
+</p>
+
+<h3>6.3 The Memory Hierarchy</h3>
+
+<p>TBD.
+</p>
+
+<h3>6.4 Cache Memories</h3>
+
+<p>TBD.
+</p>
+
+<h3>6.5 Writing Cache Friendly Code</h3>
+
+<p>TBD.
+</p>
+
+<h3>6.6 Putting It Together: The Impact of Caches On Program Performance</h3>
+
+<p>TBD.
+</p>
 
 <h2>Messages</h2>
 
