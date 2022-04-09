@@ -805,8 +805,190 @@ operand.
 <p>Load/use hazards are solved with a combination of stalling
 and forwarding. Known as a <code>load interlock</code>.
 </p>
+<p>Instruction Cancelling is used to mitigate control hazards
+(branch mispredict) by inserting bubbles into the pipeline.
+Since the fetched instructions didn't reach the execution,
+it doesn't effect program state.
+</p>
+<p>Exceptional control flow: activities in a processor that
+lead to a break in the normal chain of program execution.
+</p>
+<p>Exceptions can happen internally by the program, or
+externally by some outside signal.
+</p>
+<p>Internal exceptions: halt, invalid instruction, invalid
+address.
+</p>
+<p>Exception Instruction: "virtual" instruction that causes
+exception.
+</p>
+<p>Exception handling in pipelined systems has subtleties.
+1: It is possible to have exceptions triggered by multiple
+instructions simultaneously. 2: A fetched instruction
+that begins execution, causes an exception, and then
+is canceled due to branch misprediction. 3: Because
+the pipelined processor updates different parts
+in stages, it is possible for an instruction following
+one causing an exception to alter
+some part of the state before the instruction completes.
+</p>
+<p>Transition look-aside buffer (TLB): a type of cache memory
+that provides a fast translation from virtual to physical
+addresses.
+</p>
+<p>Cache Miss: some reference is made to a location not
+in the cache.
+</p>
+<p>Page Fault Exception: memory location being referenced
+is actually stored in the disk or non-volatile memory.
+</p>
 
 <h2>Chapter 5: Optimizing Program Performance</h2>
+
+
+<h3>Introduction</h3>
+
+<p>The primary objective in writing a program must be to make
+it work correctly under all possible conditions. Making
+the program run fast is also an important consideration
+sometimes.
+</p>
+<p>Writing an efficient program requires selecting an
+appropriate set of data structures, and then writing
+source code that the compiler can effectively optimize into
+executable code (which varies on the language/compiler).
+Efficient code can also be realized by splitting up the
+task into portions that can be run in parallel.
+</p>
+<p>Common Trade-off: how easy it is to maintain vs. how fast
+the program is.
+</p>
+<p>Modern compilers do a good job optimizing code, but sometimes
+programmers need to help by writing code that can be
+trivially optimized.
+</p>
+<p>Optimizig a program first requires eliminating all
+unncesary work: unnecessary function calls, conditional
+tests, memory references, etc.
+</p>
+<p>Programmer and compiler must be aware of the model of
+the target machine to maximise performance.
+</p>
+<p>Understanding processor operation, one can provide
+instruction-level parallelism.
+</p>
+<p>Problems in optimizing large programs, code profilers,
+etc.
+</p>
+<p>Optimization is not a linear problem and requires a lot
+of trial and error.
+</p>
+<p>Studying the assembly code is the most effective means
+for gaining an understanding of the compiler and
+how the generated code will run.
+</p>
+<p>Practical approach: rewrite the program to the point where
+the compiler can generate optimal code that has measurable
+performance increases.
+</p>
+
+<h3>5.1 Capabilities and Limitations of Optimizing Computers</h3>
+
+<p>Modern compilers employ sophisticated program analysis
+techniques that find opportunities to simplify, as well
+as re-use and reduce computations.
+</p>
+<p>GCC has different levels of optmization: <code>-O1</code> through
+<code>-O3</code>. Some clever C code that generates better code
+at <code>-O1</code> than less clever code compiled with <code>-O3</code>.
+</p>
+<p>Compilers apply only safe optimizations to code, so that
+the program behaves the same way at each optimization
+level. (Exception is undefined C behavior).
+</p>
+<p>Memory Aliasing: the case where two pointers may
+designate the same memory location. A safe compiler
+must assume that different pointers may be aliased.
+</p>
+<p>Optmization Blocker: aspects of a program that can
+severely limit the opportunities for a compiler
+to generate optimized code.
+</p>
+<p>Function calls can be an optimization blocker because
+functions can modify global state, causing a side effect.
+</p>
+
+<h3>5.2 Expressing Program Performance</h3>
+
+<p>Cycles Per Element (CPE): metric used to express
+program performance.
+</p>
+<p>Clock provides regular timing, usually measured in
+gigahertz. Expressing measurements in terms of "cycles"
+(rather than in nanoseconds or picoseconds) is more
+intuitive for programmers.
+</p>
+<p>Least squares fit can be used to find the run times
+for programs, expressed in units of cycles as a constant
+plus a factor proportional to the number of elements
+processed.
+</p>
+
+<h3>5.3 Program Example</h3>
+
+<p>This outlines the sample program used in the next sections
+below.
+</p>
+
+<h3>5.4 Eliminating Loop Inefficiences</h3>
+
+<p>Code motion: a general class of optmizations. Identify
+computations performed multiple times where the result
+doesn't change, and move it to an earlier part of
+code where it doesn't execute as often.
+</p>
+<p>Optimizing compilers will try to apply code motion, but
+they are careful about decisions and sometimes won't
+do it.
+</p>
+
+<h3>5.5 Reducing Procedure Calls</h3>
+
+<p>Replaced a function call in the inner loop with direct
+memory access to the vector. Little to noperformance
+benefit.
+</p>
+
+<h3>5.6 Eliminating Unneeded Memory References</h3>
+
+<p>Assembly is analyzed for the <code>combine3</code> procedure,
+and there is a wasteful read/write operation. This gets
+fixed by adding an accumulator variable. This reduces
+memory operations from two reads and one write per iteration
+to just one write and one read.
+</p>
+<p>The compiler is unable to optimize this code because
+of memory aliasing. When using memory addresses, it does
+the conservative approach and reads/writes from memory
+each time.
+</p>
+
+<h3>5.7 Understanding Modern Processors</h3>
+
+
+<h3>5.8 Loop Unrolling</h3>
+
+
+<h3>5.9 Enhancing Parallelism</h3>
+
+
+<h3>5.10 Summary of Results for Optimizing Combining Code</h3>
+
+
+<h3>5.11 Some Limitng Factors</h3>
+
+
+<h3>5.12 Understanding Memory Performance</h3>
 
 
 <h2>Chapter 6: The Memory Hierarchy</h2>
@@ -815,6 +997,46 @@ and forwarding. Known as a <code>load interlock</code>.
 <h2>Messages</h2>
 
 <p><a id="messages"></a>Any messages tagged with the group <code>CSAPP</code>.
+</p>
+<p><b>[7b798ebe] 2022-04-09-10-47</b>: done reading chapter 5. onto chapter 6 now.
+</p>
+<p><b>[4461d57b] 2022-04-09-06-30</b>: does shakespeare really have exactly 23,706 words? Is that like a known number?
+</p>
+<p><b>[2362a6a9] 2022-04-09-06-08</b>: there's a lot of casual observations in this chapter on optimizations. "we have found that GCC...". This in itself is interesting.
+</p>
+<p><b>[f0872386] 2022-04-08-06-32</b>: the text formatting in this book is very quirky sometimes. looks like a programmer was trying to use microsoft word. In this section, there's this phrase in big text: "Do Not Be Overly Concerned about Predictable Branches". Is this big text for emphasis ever used again? Nope. This book is very dry and humorless, so this quirk is very out of place.
+</p>
+<p><b>[323f8425] 2022-04-08-05-47</b>: onto loop unrolling
+</p>
+<p><b>[4a81a784] 2022-04-07-05-56</b>: I have now hit the longer sections of chapter 5 it seems.
+</p>
+<p><b>[5bc48383] 2022-04-06-06-29</b>: chapter 5 is a much smaller chapter, with much more digestible subsections.
+</p>
+<p><b>[fb36423b] 2022-04-06-05-50</b>: I'm beginning to form an opinion: code is overrated. Using text as a notation is convenient, but may not be the most ideal way of expressing something. Writing something in code as a way to make it seem familiar has diminishing returns, because some things just aren't clearly explained this way.
+</p>
+<p><b>[f97f7bb3] 2022-04-05-15-38</b>: add more CSAPP keywords to glossary page
+</p>
+<p><b>[a969e7b1] 2022-04-05-09-52</b>: chapter 4 I didn't add many words to the glossary, I may get back to that.
+</p>
+<p><b>[97739041] 2022-04-05-09-27</b>: a strategy I seem to be taking, for better or worse, is to extract the big ideas, superficially look at examples, and skip the problem sets entirely. It certainly will minimize retention and intuition, but I think that's about all I can do at the brisk pace I am going at.
+</p>
+<p><b>[513aba37] 2022-04-05-09-23</b>: onto chapter 5: optimizing program performance
+</p>
+<p><b>[c4805400] 2022-04-05-06-24</b>: Shriver and Smith give a thorough presentation of an Intel compatible x86-64 processor manufactured by AMD.
+</p>
+<p><b>[54a42dd3] 2022-04-05-06-23</b>: Hennessy and Patterson have a computer architecture textbook, and provides extensive coverage of architecture design.
+</p>
+<p><b>[a96d1c5d] 2022-04-05-06-23</b>: Katz and Borriello have a standard textbook for logic design, emphasizing the use of hardware languages.
+</p>
+<p><b>[27ff571a] 2022-04-05-06-22</b>: the end of chapter mentions a few books for further reading on this topic.
+</p>
+<p><b>[073bac3c] 2022-04-05-06-17</b>: ugh. they are telling me now that y86-64 is "simplified". Still seems plenty complex to me.
+</p>
+<p><b>[749901bd] 2022-04-05-06-08</b>: I do appreciate that this is going over x86, and just how massively complex it is. I wonder how the RISC-V chip compares?
+</p>
+<p><b>[223e9b12] 2022-04-05-06-07</b>: I'm totally glossing over the bits where the actual y86-64 processor is getting stitched together using HCL. It just seems too overwhelming, and the presentation in this PDF leaves a lot to be desired. I get the feeling like there could be whole books on what this chapter is attempting to cover.
+</p>
+<p><b>[be781514] 2022-04-05-05-45</b>: TIL "canceled" and "cancelled" both are correct.
 </p>
 <p><b>[00f9964e] 2022-04-04-13-37</b>: it's pretty amazing. anytime this book tries to sequentially explain things in a paragraph, my brain just shuts down and refuses to process it. I think I'll have to rewrite those paragraphs in a more terse form in order to get my brain to grok it.
 </p>
