@@ -516,12 +516,463 @@ Bubble down to ensure that the heap property is
 satisfied (the value dominates its children). This bubbling
 down is also known as <code>heapify</code>.
 </p>
+<p>Faster heap construction is possible, using N/2 calls
+to bubble down. It quickly converges to linear time
+instead of O(n*log(n)).
+</p>
+<p>Stop and think: where in the heap?
+</p>
+<p>Insertion sort: O(n^2) time. simplest example of
+incremental insertion.
+</p>
+<p>Incremental insertion: for n items, build on (n - 1)
+items, then make changes to add last item.
+</p>
+<p>Faster incremental-insertion based sorting algorithms
+utilize more efficient data structures, such as a balanced
+search tree.
+</p>
+
+<h3>4.5 Mergesort: sorting by divide and conquer</h3>
+
+<p>Mergesort: Break a list into two parts, sort, then merge
+them together.
+</p>
+<p>Mergesort efficiency: dependent on how well one can combine
+the two sorted halves into a single sorted list.
+</p>
+<p>Total runtime of mergesort: n / 2^k, where n is the number
+of items (and a power of 2), and k is the level it is
+being processed on.
+</p>
+<p>Linear work is done merging the elements at each level.
+</p>
+<p>Divide-and-conquer mergesort implementation closely
+resembles pseudo-code.
+</p>
+<p>Merging is more challening: where to put the merged
+array? Solution is to copy subarray to avoid overwrite,
+then merge back into array.
+</p>
+
+<h3>4.6 Quicksort: Sorting by Randomization</h3>
+
+<p>Quicksort: take an item from set (pivot), and
+split (parition) remaining items into two piles: those
+greater and those lesser. Pivot item ends up in exactly
+the position it is supposed to be in. Go into each pile,
+pivot and repeat.
+</p>
+<p>Quicksort is a recursive sorting algorithm.
+</p>
+<p>Quicksort runs in O(n*h) time, where <code>h</code> is the height
+of the recursion tree.
+</p>
+<p>The height of the quicksort recursion tree can vary,
+depending on where the pivot ends up.
+</p>
+<p>Best case is it
+picks the median every time, where each level is half
+the size of the previous level (h = log(n)).
+</p>
+<p>Worst case is picking the most uneven pivot point in
+subarray (biggests or smallest value). This gives a
+worst case time of n^2. This worst case time is
+worst than heapsort or mergesort.
+</p>
+<p>Expected performance of quicksort is O(n * log(n)) time.
+</p>
+<p>On average, random quicksort trees perform well. The odds
+of running into a worst case of quadratic time are very
+small.
+</p>
+<p>By scrambling the order of a list before applying
+quicksort (adds an addition O(n) time), it guarantees
+that any input will have a high probability of running
+in O(n*log(n)) time.
+</p>
+<p>In general, the use of randomization can help to improve
+algorithms with bad worst-case, but good worst-case
+complexity.
+</p>
+<p>Randomization techniques: random sampling, randomized
+hashing, randomized search.
+</p>
+<p>Stop and think: nuts and bolts.
+</p>
+
+<h3>4.7 Distribution Sort: Sorting via Bucketting</h3>
+
+<p>Example: organizing names in a phonebook. Break names
+into sections by letter, with sections arrangement in
+alphabetical order. In each section (bucket), do the same
+with the second letter. Repeat until each bucket has
+one letter.
+</p>
+<p>Bucketting works when data is expected to be roughly
+uniform.
+</p>
+<p>Sorting algorithms based on comparison cannot work in
+linear time.
+</p>
+<p>Sorting can be used to illusrate many design paradigms,
+such as data structure techniques, divide and conquer,
+randomization, and incremental construction.
+</p>
 
 <h2>Chapter 5: Divide and Conquer</h2>
 
+<p>Divide and conquer: divide a problem up into two smaller
+subproblems, recursively solve, then meld them together.
+</p>
+<p>When merging is more efficient than the problem solving,
+it is an efficient algorithm.
+</p>
 
-<h2>Chapter 6: Hasing and Randomized Algorithms</h2>
+<h3>5.1 Binary search and related algorithms</h3>
 
+<p>Binary Search: fast algorithm for searching in a sorted
+array of S. Key can be located in O(log(n)) time.
+</p>
+<p>One sided binary search: search algorithm on an
+array that divides it into segments of increasing size.
+Is able to find the transition point p in 2*log(p)
+comparisions. Useful when trying to find item that is
+close to current position.
+</p>
+<p>Bisectional Method: method used to find the square root
+of a number. Can also be generalized means of finding
+roots to an equation. Finds a midpoint, tests the function,
+the updates the midpoint again and repeats until an
+answer is found.
+</p>
+
+<h3>5.2 War story: finding the bug in the bug</h3>
+
+<p>Using binary search to figure out what was causing a
+sequenced (biological) virus to die rather than be
+weakened (for use in synthetic vaccine).
+</p>
+<p>Binary search can be done in parallel, provided that
+queries are arbitrary subsets rather than connected
+halves.
+</p>
+
+<h3>5.3 Recurrence Relations</h3>
+
+<p>Recurrence Relation: an equation in which a function is
+defined in terms of itself.
+</p>
+<p>Recurrence relations are related to recursion in
+programming, and enable one to formally analyze recursive
+functions.
+</p>
+<p>Divide-and-conquer can be represented in the following
+recurrence relation T(n) = a*T(n/b) + f(n). Where
+a task <code>T</code> is broken up in <code>a</code> problems, each being of
+size <code>n/b</code>, and then merged in time <code>f(n)</code>.
+</p>
+<p>Solving a recurrence: finding a nice closed form
+describing or bounding the result.
+</p>
+
+<h3>5.4 solving divide-and-conquer recurrances</h3>
+
+<p>Divide-and-conquer form usually falls into three distinct
+cases, described mathematically (presented in book). Known
+as the <code>master theorem</code>.
+</p>
+<p>Three cases of master thereom correspond to three different
+costs, each of which would be dominant as a function of
+a, b, and f(n): too many lives (case 1), equal work per
+level (case 2), too expensive a root (case 3).
+</p>
+<p>If you accept the master theorem, you can easily any
+divide-and-conquer algorithm given only the recurrence
+associated with it.
+</p>
+
+<h3>5.5 Fast multiplication</h3>
+
+<p>Faster multiplication algorithms can be obtained by
+defining a recurrence that uses fewer multiplications
+but more additions.
+</p>
+
+<h3>5.6 Largest Subrange and Closest Pair</h3>
+
+<p>Largest subrange: given a set of integers, which range
+yields the largest sum? Using divide and conquer, one
+can do it in O(n * log(n)) time.
+</p>
+<p>Broad strokes approach: find the best on each side, then
+check what is straddling in the middle.
+</p>
+<p>If the largest subregion is somewhere in the middle: it's
+the union of two subregions in the left and right, left
+subregion ends on <code>m</code>, right subregion starts on <code>m + 1</code>.
+</p>
+<p>Dividing into two halves and sweeping does linear work
+with a recurrence of $T(n)=2*T(n/2) + \theta(n)$. Case
+2 of the master theorem yields $T(n) = \theta(n \log(n)).
+</p>
+<p>The problem of finding the smallest distance between two
+points can be reworked from a linear sweep
+with n*log(n) time into into a divide-and-conquer with
+linear time, and proven by defining the recurrence and
+applying the master theorem. Using a similar process,
+it can be shown that the case for 2d points can be found
+in n*log(n) time.
+</p>
+
+<h3>5.7 Parallel Algorithms</h3>
+
+<p>Divide and conquer is the most suitable algorithm for
+parallel computation.
+</p>
+<p>Parition a problem of size <code>n</code> into <code>p</code> equal parts,
+thus yielding a time of <code>T(n/p)</code>.
+</p>
+<p>Most parallel tasks aim to exploit <code>data parallelism</code>:
+multiple tasks each process separate data.
+</p>
+<p>Most parallel algorithms are simple yet effective.
+</p>
+<p>Pitfalls of parallelism: there is a small uper bound
+on the potential win, speedup mean snothing, parallel
+algorithms are tough to debug.
+</p>
+
+<h3>5.8 War Story: Going Nowhere Fast</h3>
+
+<p>Parallelizing the Waring's conjector algorithm from
+the previous chapter for use on a supercomputer. Lots
+of problems ensue.
+</p>
+<p>Moral of the story: there are subtleties to consider
+when adapting an algorithm to be parallel. Taking the
+time to do proper load balancing is important.
+</p>
+
+<h3>5.8 Convolution</h3>
+
+<p>There is a divide-and-conquer strategy for sorting that
+can prevent it from being a quadratic time operation.
+</p>
+<p>Important operations of convolution: integer
+multiplicatioin, cross-correlation, moving average filters,
+string matching.
+</p>
+
+<h2>Chapter 6: Hashing and Randomized Algorithms</h2>
+
+<p>Why Randomize? Yields new classes of efficient algorithms
+that relax the requirement of always correct or always
+efficient.
+</p>
+<p>Two main types of randomized algorithms: Las Vegas
+algorithms and Monte Carlo algorithms.
+</p>
+<p>Las Vegas Algorithm: guarantee correctness, but not
+always efficient. Ex: quicksort.
+</p>
+<p>Monte Carlo Algorithm: Probably efficient, but not always
+correct. Ex: random sampling methods.
+</p>
+<p>While often easy to implement, randomized algorithms can
+be difficult to analyze rigorously.
+</p>
+<p>Randomized algorithms are formally analyzed using
+probability theory.
+</p>
+
+<h3>6.1 Probability Review</h3>
+
+<p>Probability Theory: formal framework for reasoning about
+the likelihood of events.
+</p>
+<p>Experiment: a procedure that yields one of a set of
+possible outcomes.
+</p>
+<p>Sample space: set of possible outcomes of an experiment.
+</p>
+<p>Event: a specified subset of the outcomes of an experiment.
+</p>
+<p>Set Difference: A - B. Operation that produces
+outcomes of event A that are not outcomes of event B.
+</p>
+<p>Intersection: Outcomes between both event A and event B.
+</p>
+<p>Union: outcomes that appear in either A or B.
+</p>
+<p>Events A and B are said to be independent if there is
+no special structure of shared outcomes between events.
+</p>
+<p>Indpendent events are ideal in probability theory because
+they simpilify calculations.
+</p>
+<p>Conditional Probability: the probability of A, given B.
+</p>
+<p>Conditional probability is only interesting when the events
+are depedent on eachother.
+</p>
+<p>Baye's Theorem: reverses the direction of dependencies.
+</p>
+<p>Probability Density Function: a way of representing random
+variabnles. Known as PDF.
+</p>
+<p>Two main types of summary statistics: central tendency
+measures, and variation or variability measures.
+</p>
+<p>Central tendency measures: capture the center around
+which datum is distributed.
+</p>
+<p>Variability measures: spread or how far datum lies from
+the center.
+</p>
+<p>Primary centrality measure is the mean.
+</p>
+<p>Most common measure of variability is the standard
+deviation.
+</p>
+<p>Variance is the square of the standard deviation.
+</p>
+<p>Stop and Think: Random Walks on a Path.
+</p>
+
+<h3>6.2 Understanding Balls and Bins</h3>
+
+<p>Balls and bins are a classic probability model: X balls
+to toss in Y random bins. Interest is in the distribution
+of the balls.
+</p>
+<p>Precise analysis of random process requires formal
+probability theory, algebraic skills, and careful
+asymptotics.
+</p>
+
+<h3>6.3 Why is Hashing a Randomized Algorithm</h3>
+
+<p>Randomized algorithms make the worst-case scenarios go
+away.
+</p>
+<p>Hashing functions are deterministic. In theory one could
+exploit a particular hash function with a edge-case.
+</p>
+<p>Constructing a hash function at random prevents worst-case
+intentional inputs from happening.
+</p>
+
+<h3>6.4 Bloom Filters</h3>
+
+<p>Bloom Filter: Bit-vector hash table. When a bit is set,
+it means there's something in the bucket. Takes an
+item, hashes it in K different ways, then puts each result
+into a bucket.
+</p>
+<p>An already false positive collision in the bloom filter
+would need to set the bits for all the hash functions used.
+The probability of this happening is calculated in the
+book.
+</p>
+
+<h3>6.5 The Birthday Paradox and Perfect Hashing</h3>
+
+<p>Perfect Hashing: a guaranteed
+worst-case constant time search that works for static
+dictionaries.
+</p>
+<p>Calculate: how large a hash table do you need before you
+get zero collisions?
+</p>
+<p>Relates to the Birthday Paradox: how many people do you
+need in a room before it is likely that at least two
+of them share the same birthday?
+</p>
+<p>Perfect hashing utilizes a 2-level hash table.
+</p>
+<p>Perfect hashing is ideal for when you are making a large
+number of queries in a static dictionary.
+</p>
+<p>Minimum perfect hasing: guarantees constant time access
+with zero empty hash table slots, resulting in an n-element
+second hash table for n keys.
+</p>
+
+<h3>6.6 Minwise hashing</h3>
+
+<p>Jaccard Similarity: means of measuing similarity between
+two items. The similarity measure outputs 0-1, which
+can be thought of as a probability that the documents
+are similar. See equation in book.
+</p>
+<p>How to compare similarity of two documents without looking
+at every word? Minwise hashing.
+</p>
+<p>Minwise hashing: compute the hash value of one document,
+get word with the smallest hash value. Then do the same
+with the other document using the same function.
+</p>
+<p>The probabability that the minhash word appears in both
+documents depends on the words in common, as well as
+the total size of the documents.
+</p>
+<p>Minhash value: building indexes for similarity search and
+clustering over a collection of documents.
+</p>
+
+<h3>6.7 Efficient String Matching</h3>
+
+<p>String primary data structure: array of characters, which
+allows constant-time access to parts of the string
+via indexes.
+</p>
+<p>Substring search: fundamental operation on text strings.
+Does an input text string contain a pattern inside of it,
+and if so, where?
+</p>
+<p>Rabin-Karp Algorithm: general-purpose substring matching
+algorithm based on hashing with linear expected time.
+</p>
+<p>When a test substring is moved by one character, the hash
+of the current substring and the previous is different
+by one character, and thus can be computed from the
+previous hash using two multiplications, one addition,
+and one subtraction.
+</p>
+
+<h3>6.8 Primality Testing</h3>
+
+<p>Primality: is the number a prime number?
+</p>
+<p>Randomized algorithms can be used for primality testing,
+and turn out to be faster than the factoring approach.
+</p>
+<p>Fermat's little theorem: $a^{n-1} = 1(\mod n)$ for all
+a not divisible by n.
+</p>
+<p>The mod of this big power is always 1 if n is prime. The
+odds of it being 1 by chance is very small.
+</p>
+<p>Pick 100 random integers between 1 and (n - 1). If all
+random numbers come out to be 1, it is probably prime,
+and the chances of it <b>not</b> being prime are very small.
+This is a monte-carlo type of randomized algorithm.
+</p>
+<p>Carmichael Numbers: Numbers that aren't prime, but fit
+the Fermat congruence for all "a". These will act as
+false positives in the randomized primality algorithm
+described above.
+</p>
+
+<h3>6.9 Giving Knuth the Middle Initial</h3>
+
+<p>Author finds a problem in TAOCP suggestive of Fermats
+little theorem, and writes a mathematica program that
+refutes the conjecture. Contacts Knuth, and Knuth tells
+him that next edition will use his name. Asks for middle
+initial.
+</p>
 
 <h2>Chapter 7: Graph Traversal</h2>
 
