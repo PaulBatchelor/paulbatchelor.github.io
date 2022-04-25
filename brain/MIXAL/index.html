@@ -186,6 +186,53 @@ CHANGEM ENT2  0,2
         DEC3  1
         J3P   LOOP
 EXIT    JMP   *</pre></code>
+<p></p>
+<p>Here it is converted to C code below. The function
+<code>findmax</code> preserves the original MIXAl control flow using
+goto statements,
+while the second version <code>findmaxv2</code> converts it into
+more conventional C control flow.
+</p>
+<div><b><i>&lt;&lt;find_max.c&gt;&gt;=</i></b></div><pre><code>void findmax(int *x, int n, int *mp, int *jp)
+{
+    int k, j, m;
+
+    k = n;
+
+    goto CHANGEM;
+
+    LOOP:
+
+    /* original program uses relative
+     * instruction jumping not available in C. */
+    if (m &gt;= x[k - 1]) goto M5;
+
+    CHANGEM:
+    j = k;
+    m = x[k - 1]; /* zero indexed */
+
+    M5:
+    k--;
+    if (k) goto LOOP;
+
+    *mp = m;
+    *jp = j--; /* zero indexed */
+}
+
+void findmaxv2(int *x, int n, int *mp, int *jp)
+{
+    int k, j, m;
+
+    for (k = n, j = n; k &gt; 0; k--) {
+        if (m &lt; x[k - 1]) {
+            j = k;
+            m = x[k - 1];
+        }
+    }
+
+    *mp = m;
+    *jp = j--;
+}</pre></code>
 
 <h2>Sample: Print 500 Primes</h2>
 
@@ -243,6 +290,44 @@ TITLE   ALF FIRST
         ORIG BUF1+24
         CON BUF0+10
         END</pre></code>
+<p></p>
+<p>The prime number finder bits of algorithm has been
+converted to C code, as seen below (printing bits
+are ignored for now). Like
+<code>findmax</code>, the control flow
+has been written to closely match that of the original
+MIX program, with a few tweaks (instead of indexing
+towards zero, zero-indexing is used).
+</p>
+<div><b><i>&lt;&lt;primes500.c&gt;&gt;=</i></b></div><pre><code>void primes500(int *prime)
+{
+    int n; /* rI2 */
+    int k; /* rI3 */
+    int j; /* rI1 */
+
+    n = 3;
+
+    j = 0;
+    prime[j] = 2;
+P2: /* N is prime. J &lt;- J + 1 */
+    j++;
+    prime[j] = n;
+P3: /* 500 found? */
+    if (j &gt; 500) return;
+P4: /* Advance N by 2 */
+    n+=2;
+P5: /* k &lt;- 2 */
+    k = 1;
+P6: /* PRIME[k]\N? */
+    if ((n % prime[k]) == 0) goto P4;
+P7: /* PRIME[k] too large? */
+    if ((n / prime[k]) &gt; prime[k]) {
+        k++;
+        goto P6;
+    } else {
+        goto P2;
+    }
+}</pre></code>
 </div>
 </body>
 </html>
