@@ -1269,8 +1269,202 @@ one vertex and grows the tree one edge at a time until
 all vertices are included.
 </p>
 <p>Kruskal's Algorithm: another algorithm for
-MST finding that uses greey heuristics. Unlike Prim's
-algorithm, it doesn't start with a particular vertex.
+MST finding that uses greey heuristics. Builds up
+connected components of verticices, culminating in MST.
+Repeatedly considers lightest edge. If two endpoints end
+up in same component, discard. Otherwise, merge components
+into one.
+</p>
+<p>Performance of Kruskals Algorithm: <code>O(m*lg(m))</code> time for
+sorting <code>m</code> edges, <code>O(m*n)</code> algorithm total.
+</p>
+<p>Union-find can be used to speed up component test, making
+Kruskal's algorithm run in <code>O(m*lg(m))</code> time. Faster
+than Prim's algorithm for sparse graphs.
+</p>
+<p>Set Partition: Itemizes the elements of some universal
+set (ex: 1 to n) into a collection of disjoint subsets,
+where each element is in exactly one subset.
+</p>
+<p>Connected components in a graph can be represented as
+a set partition.
+</p>
+<p>To perform well, Kruskals algorithm needs these
+operations to be efficient: Same Component Test, and
+a Merge of two components.
+</p>
+<p>Union Find: data structure that represents each subset
+as a "backwards" tree, with pointers from a node
+to its parent.
+</p>
+<p>Previous operations (same component test and merge) can
+be simplified into operations find and union,
+respecitvely.
+</p>
+<p>Maximum Spanning Tree: Opposite of minimum spanning tree.
+Can be obtained by negating weights and running Kruskal's
+or Prim's algorithm.
+</p>
+<p>Minimum Product Spanning Tree: Spanning tree that minimizes
+the product of edge weights (assuming all positive).
+Replacing weights with their logarithms and then finding
+the MST will accomplish this. Reasoning: logarithm identity
+is the log of two multiplied values is equal to the sum
+of the log values processed individually.
+</p>
+<p>Minimum Bottleneck Spanning Tree: Spanning tree that
+minimizes the maximum edge weight over all possible trees.
+</p>
+
+<h3>8.2 War Story: Nothing but Nets</h3>
+
+<p>Finding the Traveling Salesman problem in moving robot
+arms and minimizing distance. Applying the problem to
+graph algorithms to find reasonable solutions.
+</p>
+<p>Take home lesson: Most applications of graphs can be reduced
+to standard graph properties where well known graphs can
+be used, such as MSTs and shortest paths.
+</p>
+
+<h3>8.3 Shortest Paths</h3>
+
+<p>Path: sequences of edges connecting two vertices.
+</p>
+<p>Shortest Path: Path that minimizes the sum of edge weights.
+</p>
+<p>Shorteset path between two vertices in
+<b>unweighted</b> graph can be found using
+a BFS starting from one of the points. Search tree
+records the minimum-link path, which is therefore the
+shortest path.
+</p>
+<p>Dijkstra's Algorithm: Preferred method for finding the
+shortest path in weighted graph. Finds the shortest path
+from starting point to all other destinations, including
+the target destination.
+</p>
+<p>Dijkstra's algorithm is very similar to Prim's algorithm,
+with the difference being the way the measure the
+desirability of each vertex.
+</p>
+<p>Dijsktra's algorithm can be realized by only slightly
+modifying the implementation for Prim's algorithm done
+previously.
+</p>
+<p>Performance of Dijstra's algorithm: <code>O(n^2)</code>, just like
+Prim's algorithm.
+</p>
+<p>Try to design graphs, not algorithms.
+</p>
+<p>Graph Diameter: the largest shortest-path over all pairs
+of vertices.
+</p>
+<p>Floyd's algorithm: can be used to find the all-pairs
+shortest path, using a graph stored in an adjacency
+matrix.
+</p>
+<p>The performance of Floyd's algorithm is O(n^3), but
+the implementation has very tight loops so it
+performs well.
+</p>
+<p>Another application of Floyd's algorithm is that of
+computing transitive closure.
+</p>
+
+<h3>8.4 War Story: Dialing For Documents</h3>
+
+<p>Using weighted graphs to type in
+words for phone dialing services.
+</p>
+<p>Lesson: the constraints for many pattern recogonition
+problems can be naturally formulated as shortest-path
+problems in graphs.
+</p>
+
+<h3>8.5 Network Flows and Bipartite Matching</h3>
+
+<p>Network Flow Problem: asks for the maximum amount of flow
+that can be sent from one vertice to another, while
+respecting max capacities of each pipe.
+</p>
+<p>Matching: Subset of edges such that no two vertices share
+a vertex. Pairs off vertices such that a vertice is in
+at most one pair.
+</p>
+<p>Bipartite or  two-colorable: vertices can be devided into
+two sets, L and R, such that all edges in G have
+one vertex L and one vertex in R.
+</p>
+<p>Augmenting Paths: finding a path of positive
+capacity from s to t, adding it to the flow.
+</p>
+<p>Flow through network is optimal if and only if there
+is no augmenting path.
+</p>
+<p>Repeatedly applying path augmentation increases flow until
+no such path remains, which produces the global maximum.
+</p>
+<p>Residual Flow Graph: defined as a weighted Graph G, where
+weights represent capacity, and f is an array of flows
+through G.
+</p>
+<p>Max flow from s to t always equal the weight of the minimum
+s-t cut.
+</p>
+<p>Edmonds and Karp proved that always selecting the shortest
+unweighted augmented path guarantees $O(n^3)$. Their
+algorthm is what is implemented in this textbook.
+</p>
+
+<h3>Randomized Min-Cut</h3>
+
+<p>Minimum-Cut Problem: aims to partition the vertices of
+a graph into two sets, such that the smallest possible
+number of edges apan across these two sets.
+</p>
+<p>Minimum-Cut in Network Reliability: what is the smallest
+failure set whose deletion will disconnect the graph?
+</p>
+<p>If it takes K edge deletions to disconnect a graph, each
+vertex must be connected to at least K other vertices.
+This also impliies that for n vertices,
+there are kn/2 edges.
+</p>
+<p>Contraction Operation: collapses vertices X and Y into
+a single vertice XY. Any edge (X,Z) or (Y,Z) becomes
+(XY, Z), and if both exist, two copies are made. An edge
+(X, Y) gets replaced by a self loop (XY, XY).
+</p>
+<p>Contraction and Minimum Cut Size: size is unchanged unless
+one we contract one of the K edges of the optimal cut,
+in which case the min-cut size might grow because the
+best partition is no longer available.
+</p>
+<p>Randomized algorithm: pick an edge and contract it, and
+repeat this $n - 2$ times until there is a 2-vertex
+graph with multiple parallel edges between them. Repeat
+this procedure many times and report the smallest
+cut as the minimum cut.
+</p>
+<p>The probability of this algorithm succeeding can be
+calculated. The equation is presented in the book.
+</p>
+<p>It turns out that running the process $n^2log(n)$ times
+returns a high probability of finding the minimum cut
+at least once.
+</p>
+<p>The key to success in a randomized algorithm is setting
+up a problem where the probabilities can be bounded and
+formally analyzed.
+</p>
+
+<h3>8.7 Design Graphs, not algorithms</h3>
+
+<p>Previous examples where designing graphs is better than
+designing algorithms: maximum spanning tree as a minimum
+spanning tree of a negative graph, and bipartite matching
+using a special network flow graph.
 </p>
 
 <h2>Chapter 9: Combinatorial Search</h2>
