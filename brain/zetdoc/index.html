@@ -62,20 +62,28 @@ create a new one.
 message. These get set with the <code>@gtags</code> command, which
 behaves the same way as <code>@tags</code>.
 </p>
+
+<h2>Tasks</h2>
+
+<p>To make a task, write a message and use the "@task"
+command. This will make the message a part of the zetdo
+task system.
 </p>
-
-<h2>Implementation</h2>
-
-<p>The <code>zetdoc</code> commandline utility is written in Janet,
+<pre><code>TODO implement the task feature in zetdo.
+@task
+#+END_SRc
+* Implementation
+The =zetdoc= commandline utility is written in Janet,
 using the version shipped with Weewiki. It cannot
 be run using vanilla Janet, as it contains several
 functions defined by WeeWiki.
-</p>
-<p>This script is intended to be run from the top-level
+
+This script is intended to be run from the top-level
 directory of the Brain Zettelkasten, and is typically
 invoked like this:
-</p>
-<pre><code>u/zetdoc z.txt</pre></code>
+
+#+BEGIN_SRC sh
+u/zetdoc z.txt</pre></code>
 <p></p>
 <p>Where <code>z.txt</code> is the name of the zetdoc file to be imported.
 </p>
@@ -124,14 +132,16 @@ VALUES('-', '%s', '%s');
 
 # create a new message and return its UUID
 
-(defn mkmessage [db msg]
- (def uuid (gen-uuid4))
+(defn mkmessage-uuid [db msg uuid]
  (sqlite3/eval db (string/format `
 INSERT INTO
 wikizet(time, UUID, value)
 VALUES(datetime(), '%s', '%s');
 ` uuid (string/replace-all "'" "''" msg)))
  uuid)
+
+(defn mkmessage [db msg]
+ (mkmessage-uuid db msg (gen-uuid4)))
 
 # make a new tag and return the UUID.
 
@@ -207,18 +217,24 @@ VALUES(datetime(), '%s', '%s');
     (array/push msgids uuid)
     (each tag (keys ltags) (tie db uuid tag))
     (each tag (keys gtags) (tie db uuid tag))
-)
+    uuid)
+
+(defn mkstate [db mid TODO-id]
+ (mkmessage-uuid db (string "$state:#" TODO-id) mid))
 
 # process structure created from parsed file
 (defn parse-structure [db p]
  (var gtags @{})
  (var msgids @[])
  (def label-group (get-label-id db))
+ (var zetdo-id nil)
+ (var TODO-id nil)
  (each chunk p
   # process commands, if any
   # gtags populates global tags
   # tags creates local tags
   (var ltags @{})
+  (var mktask false)
   (if (not (nil? (chunk "cmds")))
       (each cmd (chunk "cmds")
        (cond
@@ -228,19 +244,30 @@ VALUES(datetime(), '%s', '%s');
         (= (cmd 0) "@tags")
         (push-tags
          db (array/slice cmd 1 -1) ltags label-group)
-        )))
+        (= (cmd 0) "@task")
+        (set mktask true)
+        )
+         ))
 
   # if there is a message, add it to the zet,
   # replace newlines with spaces, and tag it
   #(print "Message:")
-  (if (not (nil? (chunk "msg")))
-      (link-message
-        db
-        (string/replace-all "\n" " " (chunk "msg"))
-        gtags
-        ltags
-        msgids
-        )))
+  (if-not (nil? (chunk "msg"))
+   (do
+    (def mid (link-message
+              db
+              (string/replace-all "\n" " " (chunk "msg"))
+              gtags
+              ltags
+              msgids))
+    (if mktask
+     (do
+      (if (nil? zetdo-id)
+          (set zetdo-id (get-tag db "zetdo" label-group)))
+      (if (nil? TODO-id)
+          (set TODO-id (get-tag db "TODO" label-group)))
+      (tie db mid zetdo-id)
+      (mkstate db mid TODO-id))))))
  (def zetdoc-uuid
   (mkmessage
    db (string "$zetdoc:" (string/join msgids " "))))
