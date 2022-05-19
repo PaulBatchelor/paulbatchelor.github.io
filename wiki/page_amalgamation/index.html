@@ -11,13 +11,34 @@
 <div id="main">
 <title>Page Amalgamation</title>
 <h1>Page Amalgamation</h1>
-<p>A <code>page amalgamation</code> is a way to use the <a href="/wiki/zet">zet</a>to generate a list of page links with summaries. An
-example of such a pages include <a href="/wiki/food">food</a> and <a href="#">proj</a>.
+<p>A <code>page amalgamation</code> is a way to use the <a href="/wiki/zet">zet</a> to generate a list of page links with summaries.
+An example of such pages include <a href="/wiki/food">food</a> and <a href="/wiki/projects">projects</a>.
 </p>
 <p>A wiki page <code>foo</code> must have an entry created in the zet
 via:
 </p>
 <pre><code>weewiki zet mkpage foo</pre></code>
+<p></p>
+<p>A page can have a summary tied to it, which will
+get printed next to the page link in the amalgamation.
+This is done by creating a variable called "blurb" tied
+to the page's UUID.
+</p>
+<p>The shell script I use to add blurbs to things is shown
+below:
+</p>
+<pre><code>#!/bin/sh
+
+if [[ "$#" -eq 0 ]]
+then
+    echo "Usage: $0 page"
+fi
+
+PAGE="!$1"
+
+# var new won't do anything if it exists already
+weewiki zet var new $PAGE blurb
+weewiki zet var set $PAGE blurb</pre></code>
 <p></p>
 <p>Then, this page must be tied to a particular amalgamation
 group bar using:
