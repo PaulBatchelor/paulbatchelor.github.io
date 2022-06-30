@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>EnvAR</title>
+<h1>EnvAR</h1>
+
+<h2>Overview</h2>
+
+<p>EnvAR implements an envelope generator, whose shape is
+determined by attack and release parameters, and timing
+controlled via a gate signal, such as <a href="/sndkit/tgate">tgate</a>.
+</p>
+<p>Similar to other envelope generators such as <a href="/sndkit/env">env</a>,
+this envelope is constructed using a 1-pole lowpass filter.
+A filtered gate signal can elegantly produce a nice-sounding
+exponential envelope, featuring a concave attack and convex
+release.
+</p>
+
+<h2>Tangled Files</h2>
+
+<p><code>envar.c</code> and <code>envar.h</code>. these follow the typical sndkit
+conventions.
+</p>
+<div><b><i>&lt;&lt;envar.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include &lt;stddef.h&gt;
+
+#define SK_ENVAR_PRIV
+#include "envar.h"
+
+&lt;&lt;enums&gt;&gt;
+&lt;&lt;static_funcdefs&gt;&gt;
+&lt;&lt;funcs&gt;&gt;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;envar.h&gt;&gt;=</i></b></div><pre><code>#ifndef SK_ENVAR_H
+#define SK_ENVAR_H
+
+#ifndef SKFLT
+#define SKFLT float
+#endif
+
+&lt;&lt;typedefs&gt;&gt;
+
+#ifdef SK_ENVAR_PRIV
+&lt;&lt;structs&gt;&gt;
+#endif
+
+&lt;&lt;funcdefs&gt;&gt;
+#endif</pre></code>
+
+<h2>Initialization</h2>
+
+<p>envar is initalized with <code>sk_envar_init</code>. The sampling
+rate <code>sr</code> must be provided here.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_envar_init(sk_envar *env, int sr);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_envar_init(sk_envar *env, int sr)
+{
+    env-&gt;sr = sr;
+    &lt;&lt;init&gt;&gt;
+}</pre></code>
+
+<h2>Struct Definition</h2>
+
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct sk_envar sk_envar;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;envar_timing_param&gt;&gt;
+struct sk_envar {
+    int sr;
+    &lt;&lt;envar&gt;&gt;
+};</pre></code>
+
+<h2>One Pole Low-Pass Filter</h2>
+
+<p>At the core of this envelope generator, is a one-pole
+IIR lowpass filter. Such
+a filter is recursive, and requires one sample of
+filter memory <code>y</code>, which stores output of the previous
+computation.
+</p>
+<div><b><i>&lt;&lt;envar&gt;&gt;=</i></b></div><pre><code>SKFLT y;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>env-&gt;y = 0;</pre></code>
+<p></p>
+<p>The filter uses two filter coefficients, known
+as <code>a1</code> and <code>b0</code>. <code>b0</code> can be defined in terms of <code>a1</code> as
+<code>1 - a1</code>, so there is effectively only one coefficient that
+is needed to be considered.
+</p>
+<div><b><i>&lt;&lt;envar&gt;&gt;=</i></b></div><pre><code>SKFLT a1;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>env-&gt;a1 = 0;</pre></code>
+<p></p>
+<p>The negated coefficient provides the location of
+the filter's <code>pole</code>. This pole value determines the
+slope of the envelope, or how fast it moves in the attack
+or release states.
+</p>
+</p>
+
+<h2>T60 to Pole Conversion</h2>
+
+<p>Poles don't make a lot of sense to
+work with directly. Instead so-called <code>T60</code> timing
+parameters are used. These are units, defined in units of
+seconds, that define the time it takes for a normalized
+signal to decay by 60 dB (or, in other words, go from
+values 1 to 0.001).
+Typically, this is used in the context of
+acoustics used to measure the size of a reverb tail, but
+this use case is very similar.
+</p>
+<p>In order to be converted to a pole, the T60 value
+must be defined in terms of tau units. One Tau unit is
+the amount of time it takes for a normalized exponential
+to decay to $(smallfig "envar_einv", "1 \\over e")$. In
+a mathematical context, the Tau time constant "fits"
+better with the tau to pole equation, defined as:
+</p>
+<p><img src="/sndkit/_fig/envar_tau2pole.png" alt="t2p(\tau) = e^{-1/\tau F_s}"srcset="/sndkit/_fig/envar_tau2pole.png 1x,/sndkit/_fig/envar_tau2pole2x.png 2x,">
+</p>
+<p>While one could use Tau as a parameter directly,
+T60 is used instead of tau because it makes more sense
+perceptually (and therefore, musically).
+</p>
+<p>To convert to tau units from T60, divide by the natural
+log of 1000. This is found using the normalized exponential
+equation in terms of tau, finding $t$ when it reaches
+<img src="/sndkit/_fig/envar_t60val.png" alt="10^{-20/60}">
+,
+or 0.001.
+</p>
+<p><img src="/sndkit/_fig/envar_t60_derivation.png" alt="\eqalign{
+a(t_{60}) &= e^{-t_{60}/\tau} \cr
+0.001 &= e^{-t_{60}/\tau} \cr
+(0.001)^{-1} &= (e^{-t_{60}/\tau})^{-1} \cr
+1000 &= e^{t/\tau} \cr
+\log(1000) &= t / \tau \cr
+\log(1000)\tau &= t \cr
+\tau &= t / \log(1000) \cr
+}"srcset="/sndkit/_fig/envar_t60_derivation.png 1x,/sndkit/_fig/envar_t60_derivation2x.png 2x,">
+</p>
+
+<h2>Threshold Generator and State</h2>
+
+<p>After computing the pole, the next concern is determining
+which timing parameter to use. There are two timing
+parameters: attack and release. Which one to use at any given
+time is determined using a <code>threshold generator</code>, fed by
+the gate signal.
+</p>
+<p>The threshold generator works by comparing the previous
+input with the current input. If in that time the input
+crosses a specified threshold, the parameter changes. The
+direction the threshold is crosses determines the state.
+The attack parameter is used when the crossing happens
+from below, and release happens when it occurs from above.
+</p>
+<p>The threshold value is set to be 0.5, the expected midpoint
+between the gate range 0 and 1.
+</p>
+<p>To make the threshold generator work, the struct will
+need a variable storing the previous gate, as well
+as variable managing the state of the envelope.
+</p>
+<div><b><i>&lt;&lt;envar&gt;&gt;=</i></b></div><pre><code>SKFLT pgate;
+int state;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>env-&gt;pgate = 0;
+env-&gt;state = ATTACK;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;enums&gt;&gt;=</i></b></div><pre><code>enum {ATTACK, RELEASE};</pre></code>
+
+<h2>Setting Attack and Release Parameters</h2>
+
+<p>The parameters for attack and release can be set using
+<code>sk_envar_attack</code> and <code>sk_envar_release</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_envar_attack(sk_envar *env, SKFLT atk);
+void sk_envar_release(sk_envar *env, SKFLT rel);</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_envar_attack(sk_envar *env, SKFLT atk)
+{
+    env-&gt;atk.cur = atk;
+}
+
+void sk_envar_release(sk_envar *env, SKFLT rel)
+{
+    env-&gt;rel.cur = rel;
+}</pre></code>
+
+<h2>Parameter Caching</h2>
+
+<p>Computing poles is an potentially expensive task, requiring
+calls to math functions. It'd be better to avoid computing
+values needlessly. In order to do this, <a href="/sndkit/parameter_caching">parameter caching</a>,
+sometimes known as <code>memoization</code> in computer science, is
+employed.
+</p>
+<p>Attack and release have essentially identical computation
+steps. To save on redudancies, a struct will defined to
+store parameter states, containing the previous/current
+T60 parameter value, as well as a cache value used to
+store a computed filter pole coefficient.
+</p>
+<div><b><i>&lt;&lt;envar_timing_param&gt;&gt;=</i></b></div><pre><code>struct envar_timing_param {
+    SKFLT cur;
+    SKFLT prev;
+    SKFLT cached;
+};</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void init_param(struct envar_timing_param *p, SKFLT t);</pre></code>
+<p></p>
+<p>The previous and current values are negated, in order
+to deliberately force updating the cached variable.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void init_param(struct envar_timing_param *p, SKFLT t)
+{
+    p-&gt;cur = t;
+    p-&gt;prev = -t;
+    p-&gt;cached = 0;
+}</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;envar&gt;&gt;=</i></b></div><pre><code>struct envar_timing_param atk;
+struct envar_timing_param rel;</pre></code>
+<p></p>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>init_param(&env-&gt;atk, 0.01);
+init_param(&env-&gt;rel, 0.01);</pre></code>
+<p></p>
+<p>Caching logic is fairly straight forward: at each computation,
+check to see if the previous/current values are different.
+If they are, update the cached and previous values.
+</p>
+
+<h2>Computation</h2>
+
+<p>With all the components described in the previous sections,
+it is now possible to outline what happens during the
+computation of a single sample of the EnvAR signal, via
+the function <code>sk_envar_tick</code>. It takes as input a variable
+<code>gate</code>, the gate signal used for timing.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_envar_tick(sk_envar *env, SKFLT gate);</pre></code>
+<p></p>
+<p>The
+process can be divided up into four parts: state updates,
+parameter updates, difference equation computation, and
+filter memory updates.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT sk_envar_tick(sk_envar *env, SKFLT gate)
+{
+    SKFLT out;
+    struct envar_timing_param *p;
+    out = 0;
+    p = NULL;
+    &lt;&lt;update_state&gt;&gt;
+    &lt;&lt;update_parameters&gt;&gt;
+    &lt;&lt;difference_equation&gt;&gt;
+    &lt;&lt;update_filter_memory&gt;&gt;
+    return out;
+}</pre></code>
+<p></p>
+<p>Before anything else can happen, the overall
+state must be updated if necessary. The incoming gate signal
+is analyzed using the threshold generator, which
+looks for any change from the previous sample. This
+will determine if the overall state is attack or release.
+</p>
+<div><b><i>&lt;&lt;update_state&gt;&gt;=</i></b></div><pre><code>if (gate &gt; 0.5 && env-&gt;pgate &lt;= 0.5) {
+    env-&gt;state = ATTACK;
+} else if (gate &lt; 0.5 && env-&gt;pgate &gt;= 0.5) {
+    env-&gt;state = RELEASE;
+}
+env-&gt;pgate = gate;</pre></code>
+<p></p>
+<p>The timing parameter for the current state is updated,
+if needed. This uses the parameter caching logic described
+previously.
+</p>
+<div><b><i>&lt;&lt;update_parameters&gt;&gt;=</i></b></div><pre><code>if (env-&gt;state == ATTACK) p = &env-&gt;atk;
+else p = &env-&gt;rel;
+
+if (p-&gt;cur != p-&gt;prev) {
+    SKFLT tau;
+    p-&gt;prev = p-&gt;cur;
+    tau = p-&gt;cur / log(1000.0);
+    tau *= env-&gt;sr;
+
+    if (tau &gt; 0) p-&gt;cached = exp(-1.0/tau);
+}</pre></code>
+<p></p>
+<p>The filter itself is computed using the difference
+equation for a one-pole lowpass filter, which utilizes the
+computed filter coefficients from the timing parameter.
+</p>
+<p>A careful reader would notice that while the cannonical
+definition of the difference equation uses subtraction,
+this one uses addition. The detail here is that the
+cached value stores the <b>pole</b> of the filter, which
+is negated to get the alpha filter coefficient. The
+beta parameter is defined as $1 - |\alpha_1|$, so it
+makes sense to store the cached value as a positive
+value, rather than a negative one.
+</p>
+<div><b><i>&lt;&lt;difference_equation&gt;&gt;=</i></b></div><pre><code>{
+    SKFLT a1;
+    SKFLT b0;
+    SKFLT y;
+
+    a1 = p-&gt;cached;
+    b0 = 1 - a1;
+    y = env-&gt;y;
+
+    out = b0*gate + a1*y;
+}</pre></code>
+<p></p>
+<p>Once the filter is computed, the filter memory is updated
+for the next sample.
+</p>
+<div><b><i>&lt;&lt;update_filter_memory&gt;&gt;=</i></b></div><pre><code>env-&gt;y = out;</pre></code>
+</div>
+</body>
+</html>
