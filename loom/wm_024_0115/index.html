@@ -20,7 +20,10 @@
 skewing. It can be computed with <code>skewer_tick</code>.
 </p>
 <div><b><i>&lt;&lt;gestvm&gt;&gt;=</i></b></div><pre><code>gestvm_rephasor skew;</pre></code>
-<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT skewer_tick(gestvm *gvm, SKFLT phs);</pre></code>
+
+<h3>9.2. Compute Function</h3>
+
+<p><a id="wm_024_0121"></a><div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT skewer_tick(gestvm *gvm, SKFLT phs);</pre></code>
 <div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT skewer_tick(gestvm *gvm, SKFLT phs)
 {
     SKFLT out;
@@ -41,14 +44,18 @@ skewing. It can be computed with <code>skewer_tick</code>.
 
     return out;
 }</pre></code>
-<p></p>
-<p>When first initialized, this works as a pass-thru signal,
+
+<h3>9.3. Initialization</h3>
+
+<p><a id="wm_024_0127"></a>When first initialized, this works as a pass-thru signal,
 which is a rephasor with a scale of 1.
 </p>
 <div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>gestvm_rephasor_init(&gvm-&gt;skew);
 gestvm_rephasor_scale(&gvm-&gt;skew, 1.0);</pre></code>
-<p></p>
-<p>Since the Skewer only produces slower values, rephasor
+
+<h3>9.4. Skewdur</h3>
+
+<p><a id="wm_024_0132"></a>Since the Skewer only produces slower values, rephasor
 scaling values are always less than 1. This value is
 represented as an inverse value called <code>skewdur</code>.
 So, 1/2 scale would be 2, 1/3 would be 3, etc.
@@ -64,34 +71,10 @@ rephasor scaling value is also updated (as the inverse).
 amount. It will scale the Main Rephasor's numerator value.
 This will invert the rephasor of the skewer.
 </p>
-<p>The actual "skewing" is done using a stateless function via
-a behavior callback called <code>skewer</code>.
-</p>
-<div><b><i>&lt;&lt;gestvm&gt;&gt;=</i></b></div><pre><code>gestvm_behavior skewer;</pre></code>
-<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>gvm-&gt;skewer = s_passthru;</pre></code>
-<p></p>
-<p>Pass-thru will disable any skewing. Exponential will apply
-either positive or negative exponential skewing. This
-is applied after the rephasor.
-</p>
-<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT s_passthru(gestvm *gvm, SKFLT a);
-static SKFLT s_exp_pos(gestvm *gvm, SKFLT a);
-static SKFLT s_exp_neg(gestvm *gvm, SKFLT a);</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT s_passthru(gestvm *gvm, SKFLT a)
-{
-    return a;
-}</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT s_exp_pos(gestvm *gvm, SKFLT a)
-{
-    return (1.0 - exp(1.5*a)) / (1.0 - exp(1.5));
-}</pre></code>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT s_exp_neg(gestvm *gvm, SKFLT a)
-{
-    return (1.0 - exp(-1.5*a)) / (1.0 - exp(-1.5));
-}</pre></code>
-<div><b><i>&lt;&lt;gestvm&gt;&gt;=</i></b></div><pre><code>int update_skewer;</pre></code>
-<p></p>
-<p>The <code>update_skewer</code> flag is set every time the VM changes
+
+<h3>9.5. Update Skewer Flag</h3>
+
+<p><a id="wm_024_0139"></a>The <code>update_skewer</code> flag is set every time the VM changes
 the <code>skewdur</code> value is updated. This will tell the skewer
 to update the rephasor scaling value.
 </p>
@@ -123,11 +106,42 @@ can be found in the callback <code>find_skewer</code>.
 
     return s;
 }</pre></code>
+
+<h3>9.6. Skewing Behavior</h3>
+
+<p><a id="wm_024_0148"></a>The actual "skewing" is done using a stateless function via
+a behavior callback called <code>skewer</code>.
+</p>
+<div><b><i>&lt;&lt;gestvm&gt;&gt;=</i></b></div><pre><code>gestvm_behavior skewer;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>gvm-&gt;skewer = s_passthru;</pre></code>
+
+<h3>9.7. Some Skewing Behavior Functions</h3>
+
+<p><a id="wm_024_0154"></a>Pass-thru will disable any skewing. Exponential will apply
+either positive or negative exponential skewing. This
+is applied after the rephasor.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT s_passthru(gestvm *gvm, SKFLT a);
+static SKFLT s_exp_pos(gestvm *gvm, SKFLT a);
+static SKFLT s_exp_neg(gestvm *gvm, SKFLT a);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT s_passthru(gestvm *gvm, SKFLT a)
+{
+    return a;
+}</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT s_exp_pos(gestvm *gvm, SKFLT a)
+{
+    return (1.0 - exp(1.5*a)) / (1.0 - exp(1.5));
+}</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT s_exp_neg(gestvm *gvm, SKFLT a)
+{
+    return (1.0 - exp(-1.5*a)) / (1.0 - exp(-1.5));
+}</pre></code>
+<div><b><i>&lt;&lt;gestvm&gt;&gt;=</i></b></div><pre><code>int update_skewer;</pre></code>
 <p></p>
 <br>
 <p><hr>
 
-<a href="/loom/wm_024_0085">prev</a> | <a href="/loom/gestvm">home</a> | <a href="/loom/wm_024_0159">next</a></p>
+<a href="/loom/wm_024_0085">prev</a> | <a href="/loom/gestvm">home</a> | <a href="/loom/wm_024_0166">next</a></p>
 </div>
 </body>
 </html>

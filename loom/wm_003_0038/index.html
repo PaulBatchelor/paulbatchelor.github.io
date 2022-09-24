@@ -34,6 +34,7 @@ for the janet standalone in <code>janet_main</code>.
 <div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_cfuns(JanetTable *env);</pre></code>
 <div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;janet_funcs&gt;&gt;
 void weewiki_janet_sqlite(JanetTable *env);
+void weewiki_janet_btprnt(JanetTable *env);
 void weewiki_janet_cfuns(JanetTable *env)
 {
     janet_def(env,
@@ -82,6 +83,7 @@ void weewiki_janet_cfuns(JanetTable *env)
               NULL);
 &lt;&lt;janet_defs&gt;&gt;
     weewiki_janet_sqlite(env);
+    weewiki_janet_btprnt(env);
     janet_dostring(env,
                     "(defn html-header () ())"
                     "(defn html-footer () ())"
@@ -338,6 +340,36 @@ If no ID is found, an error is thrown.
     }
 
     return janet_wrap_string(janet_string((const unsigned char *)uuid.str, 36));
+}</pre></code>
+
+<h3>6.16. UUID Generator</h3>
+
+<p><a id="wm_003_0134"></a>Bindings to the internal uuidv4 generator used by
+weewiki.
+</p>
+<div><b><i>&lt;&lt;janet_defs&gt;&gt;=</i></b></div><pre><code>janet_def(env,
+          "ww-zet-uuid-init",
+          janet_wrap_cfunction(cfun_zet_uuid_init),
+          NULL);
+janet_def(env,
+          "ww-zet-uuid-gen",
+          janet_wrap_cfunction(cfun_zet_uuid_gen),
+          NULL);</pre></code>
+<div><b><i>&lt;&lt;janet_funcs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_zet_uuid_gen(int32_t argc, Janet *argv)
+{
+    wwzet_uuid uuid;
+
+    janet_fixarity(argc, 0);
+
+    wwzet_uuid_init(&uuid);
+    wwzet_uuid_generate(&uuid);
+
+    return janet_wrap_string(janet_string((const unsigned char *)uuid.str, 36));
+}</pre></code>
+<div><b><i>&lt;&lt;janet_funcs&gt;&gt;=</i></b></div><pre><code>static Janet cfun_zet_uuid_init(int32_t argc, Janet *argv)
+{
+    wwzet_uuid_rng_init();
+    return janet_wrap_nil();
 }</pre></code>
 <p></p>
 <br>
