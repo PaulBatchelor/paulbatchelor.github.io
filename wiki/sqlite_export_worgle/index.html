@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>SQLite Export in Worgle</title>
+<h1>SQLite Export in Worgle</h1>
+<p>In addition to tangling org code, Worgle is capable of
+exporting lots of metadata to the SQLite format. This
+metadata can be used to create more dynamic structures
+for navigating program structure. SQLite metadata, for
+example is used by the <a href="/wiki/loom">loom</a> to dynamically
+split up sections into pages and produce a table of
+contents (via <a href="/wiki/worgmap">worgmap</a>).
+</p>
+<p>Database export can be done in the following way:
+</p>
+<pre><code>worgle -n -p 0 -d a.db foo.org</pre></code>
+<p></p>
+<p>Where: "-n" disables tangling, "-p 0" sets the program
+id used in the database to be 0, "-d a.db" writes the
+database output to "a.db" and "foo.org" is the name of the
+file.
+</p>
+<p>The follow tables in the sqlite database are created:
+</p>
+<p>The file <code>files</code> table keeps track of all tangled files
+a particular literate program <code>program</code> produces. The
+<code>top</code> value points to the top-level codeblock;
+</p>
+<p><code>next-file</code> will point to the next file in the file-list,
+if there is one. Otherwise, this value is set to the
+<code>id</code> value.
+</p>
+<pre><code>CREATE TABLE files(
+program INTEGER,
+id INTEGER,
+filename TEXT,
+top INTEGER,
+next_file INTEGER
+);</pre></code>
+<p></p>
+<p><code>headers</code> lists all the org headers. The <code>section</code> is
+a generated string that displays the section number
+in a "1.2.3" format.
+</p>
+<p>The <code>top_level</code> is an integer value for the top-level
+section (in the example above, it would be 1), and
+the <code>level</code> value shows the number of nest sections deep
+the current section is in (in this case, 3).
+</p>
+<p><code>name</code> stores the title of the header.
+</p>
+<p><code>filename</code> and <code>linum</code> store the file name and line number
+where the header is located is the original org file.
+</p>
+<p><code>next</code> is a value that points to the next resource in
+the org file. Typically, this is a content block.
+</p>
+<pre><code>CREATE TABLE headers(
+program INTEGER,
+id INTEGER,
+section TEXT,
+level INTEGER,
+top_level INTEGER,
+name TEXT,
+filename TEXT,
+linum INTEGER,
+next INTEGER
+);</pre></code>
+<p></p>
+<p><code>blkref</code>.
+</p>
+<pre><code>CREATE TABLE blkref(
+program INTEGER,
+id INTEGER,
+ref INTEGER,
+pos INTEGER,
+segoff INTEGER,
+prev_lastseg INTEGER,
+section TEXT,
+filename TEXT,
+linum INTEGER,
+next INTEGER
+);</pre></code>
+<p></p>
+<p><code>content</code>.
+</p>
+<pre><code>CREATE TABLE content(
+program INTEGER,
+id INTEGER,
+section TEXT,
+filename TEXT,
+linum INTEGER,
+content TEXT,
+next INTEGER
+);</pre></code>
+<p></p>
+<p><code>pglist</code> is a view that only shows the top-level headers.
+</p>
+<p>Anything that gets parsed as a unit of data has a
+reference that is placed in the <code>resources</code> table. Each
+entry has a <code>id</code> value that is unique relative to the
+<code>program</code> id value. The <code>type</code> value determines which
+table the data is stored in.
+</p>
+<p><code>reslist</code> is a table view that uses human readable names
+types instead of integers from the <code>resources</code> table.
+</p>
+<br>
+<pre><code>CREATE TABLE resources(
+program INTEGER,
+id INTEGER,
+type INTEGER
+);</pre></code>
+<p></p>
+<p><code>blocks</code>.
+</p>
+<pre><code>CREATE TABLE blocks(program INTEGER,
+id INTEGER,
+head_segment INTEGER,
+name TEXT,
+nblocks INTEGER,
+nsegs INTEGER
+);</pre></code>
+<p></p>
+<p><code>orglist</code> is another view. probably only selects org
+components and not code componens? Yes: header, content,
+block reference.
+</p>
+<br>
+<pre><code>CREATE TABLE segments(
+program INTEGER,
+id INTEGER,
+type INTEGER,
+str TEXT,
+linum INTEGER,
+filename TEXT,
+next_segment INTEGER
+);</pre></code>
+<hr>
+<p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
+</body>
+</html>
