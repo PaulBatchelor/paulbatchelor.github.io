@@ -75,7 +75,29 @@ linum INTEGER,
 next INTEGER
 );</pre></code>
 <p></p>
-<p><code>blkref</code>.
+<p>The <code>blkref</code> table stores references to code blocks, and
+their relative position in the org document.
+</p>
+<p><code>segoff</code> stores the starting segment position relative
+to the block. Subtracting the segoff value from the
+next subblock (with id <code>next</code>) will obtain the number
+of segments in the current subblock. I do not recall
+what makes a segment a "segment", but I believe it has
+to do with the way a block strings together strings
+and embedded name code blocks together.
+</p>
+<p>The <code>pos</code> value is a relative position id in the block.
+In Org, if a named block is created that already
+exists, it is appended to the end of that code block.
+</p>
+<p>The <code>section</code> value is the numerical section that the
+block is located in using a 1.2.3 format
+(this value automatically created).
+</p>
+<p>The <code>prev_lastseg</code> value is the id of the last segment
+of the previous block, and it is negative if it doesn't
+exist. Peaking at the next id of this segment gets the
+first segment of the subblock.
 </p>
 <pre><code>CREATE TABLE blkref(
 program INTEGER,
@@ -130,11 +152,10 @@ nblocks INTEGER,
 nsegs INTEGER
 );</pre></code>
 <p></p>
-<p><code>orglist</code> is another view. probably only selects org
-components and not code componens? Yes: header, content,
+<p><code>orglist</code> is another view. This only selects org
+components and not code componens: header, content,
 block reference.
 </p>
-<br>
 <pre><code>CREATE TABLE segments(
 program INTEGER,
 id INTEGER,
