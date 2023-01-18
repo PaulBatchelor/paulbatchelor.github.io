@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Gesture Morphemes</title>
+<h1>Gesture Morphemes</h1>
+</p>
+
+<h2>1. Overview</h2>
+
+<p>A <code>morpheme</code>, in the context of gesture, is a construct
+that's used to construct Coordinated Gesture Paths (CGP).
+CGP are gesture paths that run parallel to one another, and
+are tightly related somehow, to the point where modifying
+one path could require modifying all the other paths. Using
+morphemes, CGPs can be constructed simultaneously, one
+slice at a time.
+</p>
+<p>The term "morpheme" is a term borrowed from linguistics
+used to describe an atomic unit in language. It's pretty
+close to what is being done in this context, and of all
+the common "phemes" used in linguistics (phoneme, grapheme,
+morpheme), the best fit for Gesture.
+</p>
+
+<h2>2. Structure</h2>
+
+<p>A morpheme is made up of a set of gesture paths, where
+every path has an identical duration. Keeping the duration
+the same is important to the design of the morpheme, as
+it is what allows morphemes to be put together in a
+sequence without having to worry about the underlying
+gestures going out of sync.
+</p>
+
+<h2>3. Proportional Duration</h2>
+
+<p>To ensure that paths encapsulated in a morpheme
+always have the same duration, a proportional duration
+system is used. Rather than use the rate multiplier
+fractional value represented as two integer values, a
+proportional duration is represented as a single positive
+non-zero integer. This unit indicates how long a particular
+segment is relative to the path. So, if a gesture path
+had a segment with value of 1, a segment with a value of 3
+would be 3 times longer.
+</p>
+<p>Proportional durations are only relative to the path they
+belong to. Different paths can have different proportions,
+allowing for interesting polyrhythms to occur.
+</p>
+
+<h2>4. Timescaling</h2>
+
+<p>By default, a morpheme takes up one beat, however its
+duration can be stretched and squashed to fit inside beats
+bars, or units smaller than beats.
+</p>
+
+<h2>5. Implementation</h2>
+
+<p>The Morpheme structure is implemented in lua code, using
+lua tables as it's structure.
+</p>
+
+<h3>5.1. Description of Morpheme Function</h3>
+
+<p>The <code>morpheme(m, r)</code> function is used to convert morpheme
+structures into gesture paths.
+</p>
+<p>The morpheme structure <code>m</code> should be a table key-value
+pairs, where the key is the name of the gesture, and the
+value is a <a href="/gestlings/path">gesture path</a> using
+proportional notation.
+</p>
+<p>The <code>r</code> parameter is the time rescaling factor, expressed
+as a fractional value using a lua
+table <code>{numerator, denominator}</code>. A value of
+<code>{2, 1}</code> compresses the entire morpheme to be half of
+a beat (2x speed). A value of <code>{1,2}</code> will stretch
+the morpheme to take up 2 beats (0.5x speed).
+</p>
+<p>As an example:
+</p>
+<pre><code>morpheme({
+    a={{60, 3, 3}, {67, 1, 3}, {58, 2, 3}},
+    b={{63, 1, 3}, {65, 1, 3}, {63, 1, 3}, {62, 1, 3}}
+}, {1, 3})</pre></code>
+<p></p>
+<p>Should yield:
+</p>
+<pre><code>{
+    a={
+        {60, {2, 3}, 3},
+        {67, {2, 1}}, 3},
+        {58, {1, 1}, 3}
+    },
+    b={
+        {63, {4,3}, 3},
+        {65, {4,3}, 3},
+        {63, {4,3}, 3},
+        {62, {4,3}, 3}
+    }
+}</pre></code>
+
+<h3>5.2. Converting Proportional Durations to Rate Multipliers</h3>
+
+<p>To convert proportional durations to actual durations
+(expressed,as rate multipliers in Gesture), find the
+least common multiple for all the path lengths, rescale
+the paths so their lengths match, then convert to rate
+multiplier values using the LCM and the morpheme scaling
+factor. Note that <b>duration</b> is a unit describes the overall
+time, while <b>length</b> describes the sum of all the ratio
+units for a path when duration is expressed in proportional
+terms.
+</p>
+
+<h3>5.3. Lua Code for Morpheme Function</h3>
+
+<div><b><i>&lt;&lt;morpheme.lua&gt;&gt;=</i></b></div><pre><code>local M = {}
+
+&lt;&lt;lcm&gt;&gt;
+function M.morpheme(m, r)
+    -- Get lengths of each gesture path
+    local lengths = {}
+
+    for k, v in pairs(m) do
+        lengths[k] = 0
+        for _,x in pairs(v) do
+            lengths[k] = lengths[k] + x[2]
+        end
+    end
+
+    -- Find LCM of path lengths
+
+    length_lcm = 0
+
+    for _, v in pairs(lengths) do
+        if length_lcm ~= 0 then
+            length_lcm = lcm(length_lcm, v)
+        else
+            length_lcm = v
+        end
+
+    end
+
+    out = {}
+
+    -- rescale paths
+
+    for k, v in pairs(m) do
+        local s = length_lcm / lengths[k]
+        local row = {}
+        for i=1,#v do
+            row[i] = {v[i][1], v[i][2]*s, v[i][3]}
+        end
+        out[k] = row
+    end
+
+    -- convert to rate multiplier
+
+    for k,v in pairs(out) do
+        -- out[k][2] = {length_lcm, out[k][2]}
+        for i=1,#v do
+            -- apply scaling value r and obtain multipler
+
+            local num = length_lcm * r[1]
+            local den = v[i][2] * r[2]
+
+            -- simplify multiplier fractions, if possible
+
+            local div = gcd(num, den)
+            if div == 0 then div = 1 end
+
+            num = num / div
+            den = den / div
+
+            -- make sure multiplier values are in range
+
+            if (num &gt; 255 or den &gt; 255) then
+                error(string.format(
+                    "%s[%d]: multiplier (%d, %d) out of range",
+                    k, i, num, den))
+            end
+            v[i][2] = {num, den}
+        end
+    end
+
+
+    return out
+end
+
+
+&lt;&lt;helpers&gt;&gt;
+
+return M</pre></code>
+
+<h3>5.4. LCM and GCD algorithms</h3>
+
+<p>Least common multiple algorithm, taken from Rosetta Code.
+</p>
+<div><b><i>&lt;&lt;lcm&gt;&gt;=</i></b></div><pre><code>function gcd(m, n)
+    while n ~= 0 do
+        local q = m
+        m = n
+        n = q % n
+    end
+    return m
+end
+
+function lcm(m, n)
+    return (m ~= 0 and n ~= 0) and
+        m * n / gcd(m, n) or 0
+end</pre></code>
+
+<h2>6. Morpheme Helpers</h2>
+
+
+<h3>6.1. Append</h3>
+
+<p>The <code>append(path, mp, r, m)</code> function converts
+a morpheme to a set of gesture path structures and
+appends that structure to
+a table. <code>path</code> is the object
+containing the loaded <a href="/gestlings/path">path</a> library.
+<code>mp</code> is the table of morphemes (converted to paths), which
+can be initialized to be an empty table.
+</p>
+<p>The <code>r</code> value is the rate scaling factor, and <code>m</code> is the
+morpheme structure itself.
+</p>
+<p>The idea with this utility
+is that a structure composed of morphemes is built up
+using this append operation.
+</p>
+<p>The <code>appender</code> function returns a function that
+abstracts away the path variable, which should make
+for more readable code.
+</p>
+<p>The core of the append function is the append operation
+itself.
+</p>
+<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function append_op(path, m, mp)
+    for pname, p in pairs(m) do
+        if mp[pname] == nil then
+            mp[pname] = {}
+        end
+        for k, v in pairs(p) do
+            table.insert(mp[pname], path.vertex(v))
+        end
+    end
+end
+
+function M.append(path, mp, r, m)
+    append_op(path, M.morpheme(m, r), mp)
+end
+
+function M.appender(path)
+    return function(mp, r, m)
+        M.append(path, mp, r, m)
+    end
+end</pre></code>
+
+<h3>6.2. Compile</h3>
+
+<p>The <code>compile</code> function will compile a set of paths into
+a table of Uxntal words. <code>tal</code> and <code>path</code> are lua objects
+from the <a href="/gestlings/tal">tal</a> and <a href="/gestlings/path">path</a> libraries,
+respectively. words should be a table to put the Uxntal
+words (before they are compiled into Uxn
+bytecode). <code>mp</code> contains the table of gesture paths,
+presumably populated by the append operation defined
+previously.
+</p>
+<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.compile(tal, path, words, mp)
+    for label, p in pairs(mp) do
+        tal.label(words, label)
+        path.path(tal, words, p)
+        tal.jump(words, label)
+    end
+end</pre></code>
+
+<h3>6.3. Articulate</h3>
+
+<p>The <code>articulate</code> function takes in a sequence of morphemes
+and duration scaling factors, and then returns a table
+of words that could be compiled using the <code>compile_words</code>function in
+</p>
+<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.articulate(path, tal, words, seq)
+    local mp = {}
+
+    for _,s in pairs(seq) do
+        M.append(path, mp, s[2], s[1])
+    end
+
+
+    morpheme.compile(tal, path, words, mp)
+end</pre></code>
+</div>
+</body>
+</html>

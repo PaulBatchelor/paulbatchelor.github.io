@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Gest</title>
+<h1>Gest</h1>
+Some lua abstractions for creating gestures with gestvm.
+</p>
+<div><b><i>&lt;&lt;gest.lua&gt;&gt;=</i></b></div><pre><code>Gest = {}
+
+function Gest:new(o)
+    o = o or {}
+    o.name = o.name or "glive"
+    o.bufname = o.bufname or "mem"
+    o.tal = o.tal or tal
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function Gest:create()
+    lil("glnew " .. self.name)
+    self.tal.membuf(self.bufname)
+end
+
+function Gest:compile(words)
+    tal.compile_words(words,
+        self.bufname,
+        string.format("[glget [grab %s]]", self.name))
+end
+
+function Gest:swapper()
+    lil(string.format("glswapper [grab %s]", self.name))
+end
+
+function Gest:done()
+    lil(string.format("gldone [grab %s]", self.name))
+end
+
+function Gest:get()
+    return string.format("[glget [grab %s]]", self.name)
+end
+
+function Gest:node_old(program, conductor)
+    local cnd = conductor or self.conductor
+    if cnd == nil then
+        error("conductor signal not defined")
+    end
+
+    lil(string.format(
+        "gestvmnode %s [gmemsym [grab %s] %s] %s",
+        self.get(self), self.bufname, program, cnd))
+end
+
+function Gest:node()
+	local glive = self.get(self)
+	local mem = self.bufname
+
+    return function(n, p)
+        local name = p.name or "gst"
+        local program = 
+            string.format("[gmemsym [grab %s] %s]", mem, name)
+
+        n.glive = n:param(glive)
+        n.conductor = n:param(p.conductor or 0)
+        n:lil("gestvmnode zz " .. program .. " zz")
+        n:label("gesture: " .. name)
+    end
+end
+
+return Gest</pre></code>
+</div>
+</body>
+</html>

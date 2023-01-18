@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>MSeq</title>
+<h1>MSeq</h1>
+</p>
+
+<h2>1. Overview</h2>
+
+<p>A sequencing language for morphemes, inspired by Prop,
+a rhythmic notation language based on proportions.
+</p>
+<p>A <a href="/gestlings/morpheme">morpheme</a> is a slice of time that contains
+a set of <a href="/gestlings/path">gesture paths</a> with proportional
+durations. The duration of a morpheme can be scaled using
+a fractional value similar to the rate scaler used
+in a (regular, not proportional) gesture path.
+A <code>morpheme sequence</code> is a list of morphemes and their
+rate multiplier.
+</p>
+<p>In lua, a morpheme sequence can be represented as a table
+like so:
+</p>
+<pre><code>seq = {
+    {A, {1, 1}},
+    {B, {2, 1}},
+    {C, {2, 1}},
+}</pre></code>
+<p></p>
+<p>In mseq, this can more succicintly be represented as:
+</p>
+<pre><code>A2(BC)</pre></code>
+<p></p>
+<p>Patterns are typically single alphabetic letters.
+</p>
+<p>A positive integer N followed by a
+parentheses () with a pattern inside of it
+will <b>shrink</b> that pattern by a factor of N.
+</p>
+<p>A positive integer N followed by a
+brackets [] with a pattern inside of it
+will <b>grow</b> that pattern by a factor of N.
+</p>
+
+<h2>2. Tangled File</h2>
+
+<p>Called <code>mseq.lua</code>.
+</p>
+<div><b><i>&lt;&lt;mseq.lua&gt;&gt;=</i></b></div><pre><code>Mseq = {}
+
+&lt;&lt;grammar&gt;&gt;
+&lt;&lt;tree_traversal&gt;&gt;
+&lt;&lt;parsing&gt;&gt;
+return Mseq</pre></code>
+
+<h2>3. lpeg grammar</h2>
+
+<p>LPeg is used to define the grammar of the parser.
+It is set up below.
+</p>
+<div><b><i>&lt;&lt;grammar&gt;&gt;=</i></b></div><pre><code>local Space = lpeg.S(" \t\n")^0
+local Morpheme = lpeg.R("AZ")*lpeg.R("az")^0*Space
+local Exp, Pat, S = lpeg.V"Exp", lpeg.V"Pat", lpeg.V"S"
+local Mul = lpeg.V"Mul"
+local Div = lpeg.V"Div"
+local Seq = lpeg.V"Seq"
+local Num = lpeg.R("09")^1
+local LParen = lpeg.P("(")
+local RParen = lpeg.P(")")
+local LBrack = lpeg.P("[")
+local RBrack = lpeg.P("]")
+
+local G = lpeg.P {
+	Exp,
+	-- Exp = lpeg.Ct(Mul) + lpeg.Ct(Pat);
+	Exp = lpeg.Ct((Space*Seq*Space)^0);
+	--Pat = lpeg.Cg(Morpheme)^0 + lpeg.Cg(Mul)^0;
+	Pat = Mul;
+	Seq = lpeg.Cg(Morpheme) + lpeg.Ct(Mul) + lpeg.Ct(Div);
+	Mul =
+		lpeg.Cg(Num, "mul") *
+		LParen * lpeg.Cg(lpeg.Ct(Seq^1), "seq") *
+		RParen;
+	Div =
+		lpeg.Cg(Num, "div") *
+		LBrack * lpeg.Cg(lpeg.Ct(Seq^1), "seq") *
+		RBrack
+
+}</pre></code>
+
+<h2>4. Parsing</h2>
+
+<p><code>parse</code> is the thing that parses a MSeq string. It
+gets passed into the generated lpeg grammar, which
+then produces a capture table that resembles a tree-like
+structure (the tree-like structure comes from the nested
+aspects of mseq).
+</p>
+<p><code>str</code> is the string to be parsed.
+</p>
+<p><code>lookup</code> is a lookup table for morpheme values. It is
+assumed that each morpheme contains the same set of paths.
+This isn't checked.
+</p>
+<p><code>r</code> is an optional rate multipler that can be applied
+to the overall sequence. By default, it is set to be
+(1, 1), which will cause a morpheme to take up a duration
+of 1 beat.
+</p>
+<div><b><i>&lt;&lt;parsing&gt;&gt;=</i></b></div><pre><code>function Mseq.parse(str, lookup, r)
+    local S = {}
+    local t = lpeg.match(G, str)
+	r = r or {1, 1}
+
+    if t == nil then
+        error("mseq: invalid string")
+    end
+
+    iterate(t, lookup, r, S)
+
+    return S
+end</pre></code>
+
+<h2>5. Tree Traversal</h2>
+
+<div><b><i>&lt;&lt;tree_traversal&gt;&gt;=</i></b></div><pre><code>function iterate(x, m, r, out)
+	for _, v in pairs(x) do
+		if type(v) == "string" then
+			table.insert(out, {m[v], {r[1], r[2]}})
+		else
+			r_new = {r[1], r[2]}
+			if v.div ~= nil then
+				r_new[2] = r_new[2] * v.div
+			elseif v.mul ~= nil then
+				r_new[1] = r_new[1] * v.mul
+			end
+			iterate(v.seq, m, r_new, out)
+		end
+	end
+end</pre></code>
+</div>
+</body>
+</html>

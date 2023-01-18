@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>The Gesture Path</title>
+<h1>The Gesture Path</h1>
+</p>
+
+<h2>1. Overview</h2>
+
+<p>This document implements a Lua interface for create Gesture
+Paths for Gesture VM. Paths constructed in Lua eventually
+get generated into <a href="/gestlings/tal">tal</a> code.
+</p>
+
+<h2>2. What's a "Path"?</h2>
+
+<p>A <b>path</b> is a construct used to describe Gestures. This
+is a term borrowed from computer science and graph
+theory. A path
+can be described as a sequential set of vertices,
+connected together by edges. In this context,
+a vertice can be thought of as a set of state parameters
+for the Gesture Signal Generator: value, behavior, and
+rate multiplier. Alternatively, one could also imagine
+edges as being weighted by the rate multiplier, but at
+the time of writing there hasn't been any usecase for
+doing it this way.
+</p>
+<p>A path is said to be <b>linear</b> if the vertices flow in
+one single direction. A path becomes <b>non-linear</b> when this
+flow is interrupted somehow, such as with branching.
+</p>
+
+<h2>3. Tangled Code</h2>
+
+<div><b><i>&lt;&lt;path.lua&gt;&gt;=</i></b></div><pre><code>local Path = {}
+
+function Path.path(tal, words, path)
+    for _, v in pairs(path)
+    do
+        if v.val ~= nil then
+            tal.val(words, v.val)
+        end
+
+        if v.dur ~= nil then
+            tal.dur(words, v.dur[1], v.dur[2])
+        end
+
+        if v.bhvr ~= nil then
+            tal.behavior(words, v.bhvr)
+        end
+    end
+end
+
+function Path.vertex(v)
+    x = {}
+
+    x.val = v[1]
+    x.dur = v[2]
+    x.bhvr = v[3]
+
+    return x
+end
+
+return Path</pre></code>
+</p>
+</div>
+</body>
+</html>

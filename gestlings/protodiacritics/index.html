@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Protodiacritics</title>
+<h1>Protodiacritics</h1>
+</p>
+
+<h2>1. Some Initial Words and Prethoughts</h2>
+
+<p>In the (proposed) gesture notation system, diacritics,
+or ornamentation above the glyph, will serve
+to denote the <code>behavior</code> of the gesture at that point
+in time.
+</p>
+<p>Gesture algorithms such as the
+<code>Gesture Signal Generator</code> can be thought of as a
+specialized kind of breakpoint line generator, similar
+to automation curves found in a DAW. Both take in
+points spaced out by durations, and then
+they fill out those areas in between
+those points to produce a continuous line segment.
+This "filling out" method is often discussed using terms
+like "interpolation" or "interpolation method". In this
+context, the term "behavior" is used to describe the way
+one point transitions to the next point.
+</p>
+<p>The term "behavior" was chosen because it felt more
+musically relevant. The way a melody travels from one
+note to the next indeed can say a lot about the underlying
+mood or behavior of the particular phrase, oftentimes more
+so than the notes (pitches) themselves.
+</p>
+<p>The proposed gesture notation specification reserves the
+entire overbar region for diacritical marks, as well as the
+left and right "flaps" underneath it.
+</p>
+<p>The overbar is long and skinny. It has a thickness of
+4 pixels, and length of 24 pixels.
+</p>
+<p>The overbar can be broken in to 4x4 pixel squares,
+similar to <a href="/gestlings/curated_lglyphs">L-glyphs</a>. There
+are 6 of these squares instead of just 4, which can lead
+to subdivisions and groupings of 6, 3, and 2. The flaps
+are each 2 4x4 squares, yielding an additional 4 squares.
+</p>
+<p>At the moment, there are 4 actively used behaviors: step,
+linear, exponential, and gliss. Gliss has at least 3 modes:
+small medium large. Exponential has those modes as well,
+with an additional mode inidicating positive or negative
+slope.
+</p>
+<p>4x4 squares can be arranged in two ways on the overbar.
+One way is to lay 6 of them out so that bar is evenly
+divided into four sections. The second way is to treat
+the ends of the bar as margins 2 pixels wide, and to
+divide the remaining space into 5 4x4 squares. The latter
+gives some things that are aesthetically pleasing: a center
+square, and some padding.
+</p>
+
+<h2>2. The Proto-Diacritics</h2>
+
+<p>Here are some imagined diacritical marks. Perhaps some
+of these will end up being used to notate behavior in
+a gesture:
+</p>
+<p><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQAAAAB0CZXLAAABwElEQVR4Ae3XsU7CQBgH8BISXcSbSYgsvgGLJkf6Nrr4ABiGa+Lg5uLUYOgruJo0UcLA5CsAxsSuEAZqqNTvDtNgaHuFqy3C1yO9kP5S7jva/nuaL9k0BDsF5prYDhdd0RBd4WXxVYCFnDLRzZ5F9zUQ3Xxj4NX7VX78JDEgABpiVE1bdPW+6LIE6lVETJR7sBZocOE2l8HnR8ZAvYp0r6jUxrANVSBAgGBzIAs1yfZ/gpVAWwUGSww0Ap8pu/WhAfCoLkA7S6BexepEjUqSmYwDNrwJ+JPXfIEuG2Qi4NVVAB/kKF8g/ixPGeBzEgECZbBfwfqzGAyAwQyWFGiEQOpdi3Py5SSF5eQAQq+dIfg1SFuH5OXPyagqQkFKV1TIcjJzgHc3AgQIthLsTbB6RQ5c5rtsZkNkUZ5Zb9ASA20kMou3ZgCGWmEz8MiP09Ka4KhIgsQJwHKZUpBW6lVhP8wZKFehfmeJn8gZ4FMOAYItA5kEq+6bEFyOHgMs2DsRZ7i5P67Qcrd32j0bhwLz7vLcNJ9aFad2EQ7aHHQs6tTeY4DJwVgG3DjQAnAVXoVFHmi506OTiCos2UxKgf/X4BtJhrYicCwMCQAAAABJRU5ErkJggg==
+" alt="protodiacritics">
+</p>
+
+<h2>3. The Code</h2>
+
+<p>The image above was procedurally generated using Janet code
+to produce an inline PNG image.
+</p>
+<p>It's probably not worth the time to break this down into
+smaller codeblocks and talk about. I will leave the mess as
+is.
+</p>
+<p>The gist of this program is similar to those that have
+preceded it like <a href="/gestlings/curated_lglyphs">curated_lglyphs</a> and
+<a href="/gestlings/protosigils">protosigils</a>: a handful of pre-made tiles
+are loaded up into memory via <a href="/gestlings/loadtiles">loadtiles</a>, and
+then these are arranged to produce the diacritics you see
+on the page. Some abstractions have been made to make it
+easier to explore new combinations.
+</p>
+<div><b><i>&lt;&lt;protodiacritics.janet&gt;&gt;=</i></b></div><pre><code>(do
+  (def loadtiles-file (dofile "loadtiles/loadtiles.janet"))
+  (def gen-tilemap ((loadtiles-file 'gen-tilemap) :value))
+  (def tmap
+    (gen-tilemap "protodiacritics/dsquares.txt" 4 4 6 6))
+
+  (def stripe @[5 0])
+  (def lcap @[3 1])
+  (def rcap @[4 1])
+  (def dot @[1 0])
+  (def empty @[0 0])
+  (def rtee @[3 0])
+  (def ltee @[4 0])
+  (def box @[0 1])
+  (def pipe @[5 1])
+  (def lbrack @[1 1])
+  (def rbrack @[2 1])
+  (def tlknee @[0 2])
+  (def trknee @[1 2])
+  (def blknee @[2 2])
+  (def brknee @[3 2])
+  (def topline @[4 2])
+  (def squig1 @[5 2])
+  (def squig2 @[0 3])
+
+  (def bp (btprnt/new 256 256))
+  (def canvas @[0 0 256 256])
+  (def zoom 2)
+  (def padding 1)
+  (def main (btprnt/border bp canvas 14))
+
+  (def glyphbox
+    (btprnt/centerbox
+      bp main (* 32 zoom) (* 32 zoom)))
+
+  (def center
+    (btprnt/centerbox
+      bp glyphbox
+      (* (+ 24 (* 2 padding)) zoom)
+      (* (+ 24 (* 2 padding)) zoom)))
+
+  (defn draw-radical [bp reg rad pos &opt centerpad]
+    (default centerpad 2)
+    (btprnt/tile
+      bp tmap
+      reg
+      (* (+ (* pos 4) padding centerpad) zoom) (* padding zoom)
+      (rad 0) (rad 1)
+      4 4
+      zoom 1))
+
+  (defn draw-side-radical [bp reg rad pos]
+    (btprnt/tile
+      bp tmap
+      reg
+      (* (+ padding (* (pos 0) 20)) zoom)
+      (* (+ padding (* (+ (pos 1) 1) 4)) zoom)
+      (rad 0) (rad 1)
+      4 4
+      zoom 1))
+
+  (defn draw-diacritic [bp glyph rads &opt side-rads]
+    (default side-rads nil)
+    (def centerpad (if (= (length rads) 5) 2 0))
+    (for i 0 (length rads)
+      (draw-radical bp glyph (rads i) i centerpad))
+
+    (if-not (nil? side-rads)
+      (do
+        (if-not (nil? (side-rads 0))
+          (draw-side-radical bp glyph (side-rads 0) @[0 0]))
+        (if-not (nil? (side-rads 1))
+          (draw-side-radical bp glyph (side-rads 1) @[0 1]))
+        (if-not (nil? (side-rads 2))
+          (draw-side-radical bp glyph (side-rads 2) @[1 0]))
+        (if-not (nil? (side-rads 3))
+          (draw-side-radical bp glyph (side-rads 3) @[1 1])))))
+
+  (def diacritics
+    (array
+      @[empty empty dot empty empty]
+      @[lcap stripe stripe stripe stripe rcap]
+      @[lcap stripe stripe stripe stripe rtee]
+      @[ltee stripe stripe stripe stripe rtee]
+      @[lcap rtee empty ltee rcap]
+      @[dot empty dot empty dot]
+      @[empty empty dot dot empty empty]
+      @[empty empty box empty empty]
+      @[lcap rtee dot ltee rcap]
+      @[lbrack pipe pipe pipe pipe rbrack]
+      @[tlknee stripe trknee tlknee stripe trknee]
+      @[empty box empty box empty]
+      @[empty tlknee box trknee empty]
+      @[tlknee brknee lcap rcap blknee trknee]
+      @[squig1 squig2 squig1 squig2 squig1 squig2]
+      @[empty blknee stripe brknee empty]))
+
+  (defn draw-dbox [d x y &opt side-rads]
+    (default side-rads nil)
+    (def dbox
+      (btprnt/centerbox
+        bp
+        (btprnt/grid bp main 4 4 x y)
+        (* (+ 24 (* padding 2)) zoom)
+        (* (+ 24 (* padding 2)) zoom)
+        ))
+
+
+    (draw-diacritic
+      bp dbox (diacritics d) side-rads)
+
+    (btprnt/outline bp dbox 1))
+
+  (draw-dbox 0 0 0)
+  (draw-dbox 1 1 0 @[dot nil dot nil])
+  (draw-dbox 2 2 0)
+  (draw-dbox 3 3 0 @[nil nil box stripe])
+  (draw-dbox 4 0 1)
+  (draw-dbox 5 1 1)
+  (draw-dbox 6 2 1 @[tlknee blknee box rtee])
+  (draw-dbox 7 3 1)
+  (draw-dbox 8 0 2)
+  (draw-dbox 9 1 2 @[dot nil dot nil])
+  (draw-dbox 10 2 2)
+  (draw-dbox 11 3 2)
+  (draw-dbox 12 0 3)
+  (draw-dbox 13 1 3 @[ltee dot rtee nil])
+  (draw-dbox 14 2 3)
+  (draw-dbox 15 3 3)
+
+  (def chicago_12 (btprnt/macfont-load "fonts/chicago_12"))
+
+  (btprnt/macfont-textbox
+    bp chicago_12
+    canvas 
+    8 (- 256 17) "protodiacritics" 1)
+
+  (bpimg bp "protodiacritics")
+
+  (btprnt/del bp)
+  (btprnt/del tmap))</pre></code>
+
+<h2>4. Final words and post-thoughts</h2>
+
+<p>This is my third, and most likely final prototyping design,
+as behavior diacritics are the last point of consideration
+for my overall system.
+</p>
+<p>One of the subtle things I discovered while making things
+was the importance of alignment between the overbar and
+the "flaps". In the course of making these, I made slight
+adjustments to some of the core tilesets to make them line
+up better.
+</p>
+<p>With all the main components made, I've begun to string
+things all together to see what it looks like. For the
+most part, I am pleased, though I find myself thinking
+about line thickness. For the most part, black "lines"
+are 2 pixels thick, but occasionally you'll find radicals
+that are 1 pixel thick. It can sometimes look a little
+uneven.
+</p>
+<p>The radicals chosen for the "flaps" need to be chosen
+carefully. There's an aesthetic I'm going for that I can't
+fully articulate, but some of these combinations look
+better than others. Placement and contrext matters.
+</p>
+</div>
+</body>
+</html>
