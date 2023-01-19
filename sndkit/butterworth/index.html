@@ -43,25 +43,30 @@ typedef struct sk_butterworth sk_butterworth;
 
 void sk_butterworth_init(sk_butterworth *bw, int sr);
 void sk_butterworth_freq(sk_butterworth *bw, SKFLT freq);
+void sk_butterworth_bandwidth(sk_butterworth *but, SKFLT bw);
 
 SKFLT sk_butlp_tick(sk_butterworth *bw, SKFLT in);
 SKFLT sk_buthp_tick(sk_butterworth *bw, SKFLT in);
+SKFLT sk_butbp_tick(sk_butterworth *bw, SKFLT in);
 
 #ifdef SK_BUTTERWORTH_PRIV
 struct sk_butterworth {
     SKFLT freq, lfreq;
+    SKFLT bw, lbw; /* for bandpass filter only */
     SKFLT a[7];
-    SKFLT pidsr;
+    SKFLT pidsr, tpidsr;
 };
 #endif
 
 #endif</pre></code>
 <p></p>
-<p>Below is mostly a verbatim copy of the soundpipe code that
-has been slightly reworked to not use <code>malloc</code>.
+<p>This code is based off the soundpipe implementation,
+slightly reworked to make it so that <code>malloc</code> is not used.
 </p>
-<p>Explanations will follow, someday.
 </p>
+
+<h2>Tangled Code</h2>
+
 <div><b><i>&lt;&lt;butterworth.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
 #include &lt;stdint.h&gt;
 #include &lt;stdlib.h&gt;
@@ -74,8 +79,27 @@ has been slightly reworked to not use <code>malloc</code>.
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+&lt;&lt;common&gt;&gt;
+&lt;&lt;filters&gt;&gt;</pre></code>
 
-static SKFLT filter(SKFLT in, SKFLT *a)
+<h2>Common</h2>
+
+<p>The butterworth filters share some common code, defined
+below.
+</p>
+<p>The <code>filter</code> function performs the difference equation
+to compute one sample of audio. <code>in</code> is the input
+signal, and <code>a</code> refers to the entire filter state:
+indices 0-4 hold filter coefficients, and 5-6 hold
+previously computed values. This has been reworked from
+the cannonical difference equation to be more optimized.
+</p>
+<br>
+<p><code>sk_butterworth_init</code> initializes the filter data for
+all butterworth filters.
+</p>
+<p><code>sk_butterworth_freq</code> sets the frequency.
+<div><b><i>&lt;&lt;common&gt;&gt;=</i></b></div><pre><code>static SKFLT filter(SKFLT in, SKFLT *a)
 {
     SKFLT t, y;
     /* a5 = t(n - 1); a6 = t(n - 2) */
@@ -90,7 +114,9 @@ void sk_butterworth_init(sk_butterworth *bw, int sr)
 {
     int i;
     sk_butterworth_freq(bw, 1000.0);
+    sk_butterworth_bandwidth(bw, 1000.0);
     bw-&gt;lfreq = -1;
+    bw-&gt;lbw = -1;
     bw-&gt;pidsr = M_PI / (SKFLT)sr;
     for (i = 0; i &lt; 7; i++) bw-&gt;a[i] = 0.0;
 }
@@ -100,7 +126,17 @@ void sk_butterworth_freq(sk_butterworth *bw, SKFLT freq)
     bw-&gt;freq = freq;
 }
 
-SKFLT sk_butlp_tick(sk_butterworth *bw, SKFLT in)
+void sk_butterworth_bandwidth(sk_butterworth *but, SKFLT bw)
+{
+    but-&gt;bw = bw;
+}</pre></code>
+
+<h2>Filters</h2>
+
+
+<h3>Lowpass</h3>
+
+<div><b><i>&lt;&lt;filters&gt;&gt;=</i></b></div><pre><code>SKFLT sk_butlp_tick(sk_butterworth *bw, SKFLT in)
 {
     if (bw-&gt;freq != bw-&gt;lfreq) {
         SKFLT *a, c;
@@ -118,9 +154,11 @@ SKFLT sk_butlp_tick(sk_butterworth *bw, SKFLT in)
     }
 
     return filter(in, bw-&gt;a);
-}
+}</pre></code>
 
-SKFLT sk_buthp_tick(sk_butterworth *bw, SKFLT in)
+<h3>Highpass</h3>
+
+<div><b><i>&lt;&lt;filters&gt;&gt;=</i></b></div><pre><code>SKFLT sk_buthp_tick(sk_butterworth *bw, SKFLT in)
 {
     if (bw-&gt;freq != bw-&gt;lfreq) {
         SKFLT *a, c;
@@ -135,6 +173,29 @@ SKFLT sk_buthp_tick(sk_butterworth *bw, SKFLT in)
         a[2] = a[0];
         a[3] = 2.0 * (c*c - 1.0) * a[0];
         a[4] = (1.0 - c*ROOT2 + c*c) * a[0];
+    }
+
+    return filter(in, bw-&gt;a);
+}</pre></code>
+
+<h3>Bandpass</h3>
+
+<div><b><i>&lt;&lt;filters&gt;&gt;=</i></b></div><pre><code>SKFLT sk_butbp_tick(sk_butterworth *bw, SKFLT in)
+{
+    if (bw-&gt;bw != bw-&gt;lbw || bw-&gt;freq != bw-&gt;lfreq) {
+        SKFLT *a, c, d;
+        a = bw-&gt;a;
+        bw-&gt;lfreq = bw-&gt;freq;
+        bw-&gt;lbw = bw-&gt;bw;
+
+        /* Perform BLT and store components */
+        c = 1.0 / tan((SKFLT)(bw-&gt;pidsr * bw-&gt;bw));
+        d = 2.0 * cos((SKFLT)(2.0*bw-&gt;pidsr * bw-&gt;freq));
+        a[0] = 1.0 / (1.0 + c);
+        a[1] = 0.0;
+        a[2] = -a[0];
+        a[3] = - c * d * a[0];
+        a[4] = (c - 1.0) * a[0];
     }
 
     return filter(in, bw-&gt;a);
