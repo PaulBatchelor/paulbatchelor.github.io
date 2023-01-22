@@ -237,7 +237,7 @@ end
 
 -- instead of using a sigrune node in a graph, evaluate it
 -- by itself in-place
-function S.lilnode(n, p)
+function S.node(n, p)
     p = p or {}
     return function (p)
         n(dummy, p)
@@ -256,7 +256,7 @@ function S.paramnode(n, p)
     end
 end
 
-function S.lilnode_debug(debug)
+function S.node_debug(debug)
     if debug then
         dummy.eval = print
     else
@@ -271,6 +271,10 @@ return Sigrunes</pre></code>
     n:lil(string.format("phasor zz %g", n.iphs))
     n:label("phasor")
 end</pre></code>
+<p></p>
+<p>TODO: gesture nodes might not be needed anymore...
+use gest module instead
+</p>
 <div><b><i>&lt;&lt;nodes&gt;&gt;=</i></b></div><pre><code>function gestvmnode(glive, membuf, program, conductor)
     return string.format(
         "%s; [gmemsym [grab %s] %s]; %s; gestvmnode zz zz zz",
@@ -288,6 +292,31 @@ function S.gesture(n, p)
     n.conductor = n:param(p.conductor or 0)
     n:lil("gestvmnode zz " .. program .. " zz")
     n:label("gesture: " .. name)
+end</pre></code>
+<div><b><i>&lt;&lt;nodes&gt;&gt;=</i></b></div><pre><code>function S.fmpair(n, p)
+    n.tab = n:param(p.tab)
+    n.freq = n:param(p.freq or 440)
+    n.car = n:param(p.car or 1)
+    n.mod = n:param(p.mod or 1)
+    n.mi = n:param(p.mi or 1)
+    n.fdbk = n:param(p.fdbk or 0)
+    n:lil("fmpair zz zz zz zz zz zz")
+    n:label("fmpair")
+end</pre></code>
+<div><b><i>&lt;&lt;nodes&gt;&gt;=</i></b></div><pre><code>function S.envar(n, p)
+    n.gate = n:param(p.gate or 0)
+    n.atk = n:param(p.atk or 0.1)
+    n.rel = n:param(p.rel or 0.1)
+    n:lil("envar zz zz zz")
+    n:label("envar")
+end</pre></code>
+<div><b><i>&lt;&lt;nodes&gt;&gt;=</i></b></div><pre><code>function S.osc(n, p)
+    n.tab = n:param(p.tab)
+    n.iphs = p.iphs or 0
+    n.freq = n:param(p.freq or 440)
+    n.amp = n:param(p.amp or 0.5)
+    n:lil(string.format("osc zz zz zz %g", n.iphs))
+    n:label("osc")
 end</pre></code>
 </div>
 </body>

@@ -891,9 +891,16 @@ print the generated code rather than evaluating it.
     end
 end</pre></code>
 
-<h3>4.12. Graphviz Code Generation (Dot) (TODO: words)</h3>
+<h3>4.12. Graphviz Code Generation (Dot)</h3>
 
-<p>TODO: words. Explain how this works.
+<p>Dot code generation in Graphviz can be generated with
+the <code>dot</code> method. This can be helpful for debugging any
+issues with the graph.
+</p>
+<p>Dot uses the edges/vertices representation of the Graph,
+and is therefore more likely to be intended representation
+of the structure in cases where things do not go as
+expected.
 </p>
 <div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:dot(outfile)
     local printer = print
@@ -962,9 +969,6 @@ end</pre></code>
             end
 
             if n1:disabled() == false and loud == true then
-                if outgoing == 60 then
-                    print(n2.data.id)
-                end
                 printer(string.format("%d -&gt; %d", incoming, outgoing))
             end
         end
@@ -1129,7 +1133,13 @@ end</pre></code>
     local g = self.data.g
     local params = self.data.params
     local p = Node:new(g)
-    p:constant(val)
+
+    if type(val) == "number" then
+        p:constant(val)
+    else
+        p.data.gen = val
+        p.data.constant = false
+    end
     table.insert(params, p)
     p.data.param_id = #params
 
