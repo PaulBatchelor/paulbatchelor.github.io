@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Warble</title>
+<h1>Warble</h1>
+</p>
+
+<h2>1. Overview</h2>
+
+<p>Successor to <a href="/gestlings/whistle">whistle</a>. A slightly
+more complex sonic mechanism with a bit more points of
+articulation.
+</p>
+<p>This mechanism features a classic FM pair oscillator with
+feedback at its core, aspiration noise with enveloped
+articulation, an amplitude envelope, and vibrato control.
+</p>
+<p>The goal of Warble is to provide a variety of behavorial
+timbres: chiffs, hisses, singing, and chitters.
+</p>
+
+<h2>2. Tangled file</h2>
+
+<p>Tangles to <code>warble/warble.lua</code>.
+</p>
+<div><b><i>&lt;&lt;warble.lua&gt;&gt;=</i></b></div><pre><code>Warble = {}
+
+&lt;&lt;warble&gt;&gt;
+return Warble</pre></code>
+
+<h2>3. Graph Generator</h2>
+
+<p><code>Warble.graph</code> will return a graph constructed with <a href="/gestlings/diagraf">diagraf</a>.
+</p>
+<div><b><i>&lt;&lt;warble&gt;&gt;=</i></b></div><pre><code>function Warble.graph(params)
+    local core = params.core or core
+    local sr = params.sr or sigrunes
+    local diagraf = params.diagraf or diagraf
+    local sig = params.sig or sig
+
+    local nd = sr.node
+    local ln = core.liln
+    local lf = core.lilf
+    local plf = core.plilf
+
+    local g = diagraf.Graph:new{sig=sig}
+
+    g.init = function(grf)
+        lil("gensine [tabnew 8192]")
+        lil("param [regnxt 0]")
+        local tab = pop()
+        lil(string.format("regset zz %d; regmrk %d", tab, tab))
+        grf.data = {}
+        grf.data.tab = tab
+    end
+
+    local sintab = function(node, eval)
+        eval = eval or lil
+        local grf = node.data.g
+        local tab = grf.data.tab
+        eval(string.format("regget %d", tab))
+    end
+
+    ng  = core.nodegen(diagraf.Node, g)
+    pg  = core.paramgen(ng)
+    con = g:connector()
+    prmf = core.paramf
+    local p = params
+
+    local pitch = pg(p.pitch or prmf(60), "pitch")
+    local amp = pg(p.amp.val or prmf(1), "amp")
+    local mi = pg(p.mi or prmf(1), "mod index")
+    local car = pg(p.car or prmf(1), "car")
+    local mod = pg(p.mod or prmf(1), "mod")
+    local fdbk = pg(p.fdbk or prmf(0), "feedback")
+
+    local pasp = p.asp or {}
+    local asp = pg(pasp.val or prmf(0), "aspiration")
+    local asp_gt = pg(pasp.gate or prmf(0), "aspiration gate")
+    local asp_atk = pg(pasp.atk or prmf(0.1), "aspiration attack")
+    local asp_rel = pg(pasp.rel or prmf(0.1), "aspiration release")
+
+    local pamp = p.amp or {}
+    local a_gt = pg(pamp.gate or prmf(0), "amp gate")
+    local a_atk = pg(pamp.atk or prmf(0.1), "amp attack")
+    local a_rel = pg(pamp.rel or prmf(0.1), "amp release")
+
+    local pvib = p.vib or {}
+    local vib_rate = pg(pvib.rate or prmf(6), "vibrato rate")
+    local vib_depth = pg(pvib.depth or prmf(0.2), "vibrato depth")
+
+    local fm = ng(sr.fmpair) {tab = sintab}
+
+    con(mi, fm.mi)
+    con(car, fm.car)
+    con(mod, fm.mod)
+    con(fdbk, fm.fdbk)
+
+    local scaler = ng(sr.scale)
+
+    local mul = ng(sr.mul)
+    local add = ng(sr.add)
+    local nz = ng(sr.noise)()
+    local lpf = ng(sr.butlp)()
+    local hpf = ng(sr.buthp){cutoff=300}
+    con(nz, hpf.input)
+    con(hpf, lpf.input)
+    local freqmul = add{b = 12.0}
+    con(pitch, freqmul.a)
+    local mtof = ng(sr.mtof)
+    local lpf_freq = mtof()
+    con(freqmul, lpf_freq.input)
+    con(lpf_freq, lpf.cutoff)
+
+    local envar = ng(sr.envar)
+
+    local cf = ng(sr.crossfade) {}
+
+    local cfenv = envar {}
+
+    local sclcf = scaler {max = 1.0}
+
+    con(asp_rel, cfenv.rel)
+    con(asp_atk, cfenv.atk)
+    con(asp_gt, cfenv.gate)
+    con(asp, sclcf.min)
+    con(cfenv, sclcf.input)
+    con(sclcf, cf.pos)
+
+    con(fm, cf.a)
+    con(lpf, cf.b)
+
+    local generator = cf
+
+    lfo = ng(sr.osc) {
+        tab = sintab
+    }
+
+    con(vib_rate, lfo.freq)
+    con(vib_depth, lfo.amp)
+
+    vib = add()
+    fm_freq = mtof()
+    con(pitch, vib.a)
+    con(lfo, vib.b)
+    con(vib, fm_freq.input)
+    con(fm_freq, fm.freq)
+
+    sclamp = scaler {
+        max = 1.0
+    }
+
+    con(amp, sclamp.min)
+
+    ampenv = envar {}
+
+    con(a_atk, ampenv.atk)
+    con(a_rel, ampenv.rel)
+
+    con(a_gt, ampenv.gate)
+    con(ampenv, sclamp.input)
+
+    local ascl_mul = mul()
+    con(generator, ascl_mul.a)
+    con(sclamp, ascl_mul.b)
+
+    g.cleanup = function(grf)
+        local tab = grf.data.tab
+        grf.eval(string.format("regclr %d", tab))
+    end
+    return g
+    end</pre></code>
+
+<h2>4. Compute</h2>
+
+<p>Computes-in-place an instance of Warble.
+</p>
+
+<h2>5. Node (WIP)</h2>
+
+<p>Encapsulates Warble inside of a Node, to be compatible
+with <a href="/gestlings/diagraf">diagraf</a>. It follows an interface similar
+to the nodes found in <a href="/gestlings/sigrunes">sigrunes</a></p>
+<p>NOTE: this needs some thought, as embedding a graph inside
+of a node inside of another graph hasn't been done before.
+</p>
+<div><b><i>&lt;&lt;warble&gt;&gt;=</i></b></div><pre><code>function Warble.node(n, p)
+    error("TODO: still thinking how this will work.")
+end</pre></code>
+</div>
+</body>
+</html>
