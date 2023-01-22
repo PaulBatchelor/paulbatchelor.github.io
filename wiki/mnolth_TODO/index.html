@@ -57,42 +57,6 @@
 </blockquote>
 </p>
 
-<h2>make it possible to hotswap Uxn programs for gestvm in realtime</h2>
-
-<a id="e215f7b0"></a><p>UUID: <a href="#e215f7b0">#e215f7b0</a>.
-</p>
-<blockquote>
-<p><b>2022-12-07 05:37:17</b>: hoping to get a proof of concept going in the next day or two. Think I am on to something. Knock on wood. There have been lots of bad ideas here.
-</p>
-<p><b>2022-12-05 06:17:57</b>: Actually, I think this works out okay. <code>gestvm_uxn</code> structure contains instance of uxn and pointer to gestvm. Making two instances of gestvm_uxn would work. It would be limited to gestvm in scope, but that's okay.
-</p>
-<p><b>2022-12-05 06:10:26</b>: more drafting/sketching yesterday. An interface is close, but there is an issue with the design. The way the Uxn struct is stored in gestVM makes it very difficult to swap between instances.
-</p>
-<p><b>2022-11-30 06:48:45</b>: I think I may have thought up a working solution, though it's a bit more brute-force than I initially expected: pre-allocate two Uxn instances, and transparently swap between them. Will be maintained inside mnolth.
-</p>
-<p><b>2022-11-27 15:23:42</b>: I think with some modification, hotswap-synced Uxn reloading should be doable. With crossfade enabled, most discontinuities should go away.
-</p>
-<p><b>2022-11-27 15:02:19</b>: the bruteforce solution here involves simply creating a brand new Uxn VM in the new patch. I'm tempted to explore this option.
-</p>
-<p><b>2022-11-27 14:51:18</b>: musically, a hard reset is like ripping a way a score from a performer mid-performance, and giving them a new one. this is to say nothing about any changes to performers themselves, which can happen when the patch itself changes.
-</p>
-<p><b>2022-11-27 14:46:49</b>: a hard reset "makes sense", but it's going to cause discontinuities. It could never be used in a live performance.
-</p>
-<p><b>2022-11-27 14:45:14</b>: It would, however, be very cool to set things up so that concurrent programs only change on their next downbeat. but that would be confusing.
-</p>
-<p><b>2022-11-27 14:43:44</b>: I don't think I fully thought out timing. I think I assumed that hotswapping could be done at the start of a beat, but gestures subdivide. there's no great way to cleanly hotswap a set of gestures. if it waited for the downbeat of every program, they'd never be synchronized. hard reset is the only way to ensure it's all synchronized.
-</p>
-<p><b>2022-10-06 05:57:10</b>: note to self: make sure to reset stack when VM is re-evaluated.
-</p>
-<p><b>2022-10-06 05:56:45</b>: trying to think about the implications of hotswapping the patch and uxn at the same time. practically speaking, you'd probably just run the uxn and patch swap commands in one go (in that order probably). It wouldn't be thread safe, but that should be fine? Worst case is an incorrect program for a brief moment in time. I don't know how much harm that could be in this context.
-</p>
-<p><b>2022-10-04 06:24:08</b>: with that in place, hotswapping in theory shouldn't be too terrible. nodes would need to store a string label instead of a hard coded memory address. it would be assumed that those labels would be persistent. you'd only be able to add new gestures by recompiling the patch, not uxn.
-</p>
-<p><b>2022-10-04 06:21:18</b>: some restructuring was done last week of gestvm, which more or less removes the explicit need to call 'init'. This means every gesture subroutine needs only one entry point now.
-</p>
-</blockquote>
-</p>
-
 <h2>make it possible to download tangled code snippets in mnolth docs</h2>
 
 <a id="70454694"></a><p>UUID: <a href="#70454694">#70454694</a>.
