@@ -11,12 +11,7 @@
 <div id="main">
 <p><title>Diagraf</title>
 <h1>Diagraf</h1>
-<title>Diagraf</title>
-<h1>Diagraf</h1>
 </p>
-
-<h2>1. Intro</h2>
-
 
 <h2>1. Intro</h2>
 
@@ -24,19 +19,9 @@
 added in for artistic flair). Diagraf is a lua module
 that can generate Directed Acyclic Graphs into sndkit with
 automated <a href="/gestlings/sig">signal management</a>.
-Diagraf is short for DIrected Acyclic Graph (with the "f"
-added in for artistic flair). Diagraf is a lua module
-that can generate Directed Acyclic Graphs into sndkit with
-automated <a href="/gestlings/sig">signal management</a>.
 </p>
 
 <h2>2. Concepts</h2>
-
-
-<h2>2. Concepts</h2>
-
-
-<h3>2.1. Directed Acyclic Graphs and Post-order Tree Structures</h3>
 
 
 <h3>2.1. Directed Acyclic Graphs and Post-order Tree Structures</h3>
@@ -68,37 +53,7 @@ when using a stack-based approach to building up sounds).
 <p>Most of the work that Diagraf does is this process of
 converting this DAG into a post-order tree structure.
 When this tree is built, sndkit code falls out from it.
-Diagraf is a tale of two data structures: Directed Acyclic
-Graphs, and Trees traversed in post-order.
 </p>
-<p>Often abbreviated as DAG,
-the Directed Acyclic Graph is a common data structure used
-in the context of audio programming and DSP. A DAG is
-a specific kind of graph; it is directed, meaning an
-edge between two vertices has a specific orientation or
-direction, and it is acyclic, meaning there are no
-"feedback loops" in the topology of the graph.
-</p>
-<p>A "patch" in a modular synthesis environment is a graph,
-usually a DAG (if there's feedback anywhere, then it isn't
-acylic, so a DG instead of a DAG).
-</p>
-<p>A patch in sndkit is not in fact a DAG structure, though
-an equivalent DAG can be made for one. Instead, sndkit
-uses a much more rigid tree structure, whose nodes are
-stored as a post-order traversal, meaning child nodes
-left-to-right come before the parent node. (At
-the time of making it, I didn't actually realize sndkit
-had this structure. It's just one that naturally formed
-when using a stack-based approach to building up sounds).
-</p>
-<p>Most of the work that Diagraf does is this process of
-converting this DAG into a post-order tree structure.
-When this tree is built, sndkit code falls out from it.
-</p>
-
-<h3>2.2. Signal Management</h3>
-
 
 <h3>2.2. Signal Management</h3>
 
@@ -117,25 +72,7 @@ is being used.
 the <a href="/gestlings/sig">sig</a> module. However, it is the responsibility
 of Diagraf to figure out the lifetime of a signal, and
 determine when to safely free up the resources.
-Other than conversion from graph to tree, Diagraf is also
-tasked with a bit of resource management. This is a sndkit
-quirk. Buffers, blocks of signal that unit generator
-nodes can read/write to, are finite, and managed in
-a pre-allocated resource pool. Any time a signal is used
-more than once in a patch, special care must be put into
-ensuring that the underyling buffer the signal is in is
-marked as in use throughout the lifetime of the
-signal, then returned back to the pool when the signal
-is being used.
 </p>
-<p>Most aspects of signal management are handled by
-the <a href="/gestlings/sig">sig</a> module. However, it is the responsibility
-of Diagraf to figure out the lifetime of a signal, and
-determine when to safely free up the resources.
-</p>
-
-<h3>2.3. Nodes and Cables vs Vertices and Edges</h3>
-
 
 <h3>2.3. Nodes and Cables vs Vertices and Edges</h3>
 
@@ -163,34 +100,7 @@ connections needed to make a Patch, there can also be extra
 relations added used to make the initial sort closer
 to postorder. This additional edges are not considered to
 be cables, and are ignored.
-In Diagraf, there is a difference between a Node and Vertice,
-and a Cable and an Edge, despite them being conceptually
-being similar.
 </p>
-<p>A <code>Node</code> is some kind of unit generator for signal
-processing, whose connections are defined as signals
-coming in, and signals going out. It's connections are
-managed by <code>Cables</code>. Nodes and Cables are used together
-to form a Patch. These are terms borrowed from sndkit.
-When the graph is fullly completed and processed, the
-underlying nodes will from a tree structure, with the
-root node being the final node that produces the output
-signal.
-</p>
-<p>Vertices and Edges are more general Graph components. These
-provide a fundamental layer for which Nodes and Cables
-are built on top of. Vertices are just
-postive integer values, and edges are essentially just tuples
-containing two vertices: an incoming vertice, and and
-outgoing vertice. In addition to containing all the
-connections needed to make a Patch, there can also be extra
-relations added used to make the initial sort closer
-to postorder. This additional edges are not considered to
-be cables, and are ignored.
-</p>
-
-<h2>3. Tangled Code</h2>
-
 
 <h2>3. Tangled Code</h2>
 
@@ -198,13 +108,6 @@ be cables, and are ignored.
 
 &lt;&lt;diagraf&gt;&gt;
 return Diagraf</pre></code>
-<div><b><i>&lt;&lt;diagraf.lua&gt;&gt;=</i></b></div><pre><code>Diagraf = {}
-
-&lt;&lt;diagraf&gt;&gt;
-return Diagraf</pre></code>
-
-<h2>4. Graphs</h2>
-
 
 <h2>4. Graphs</h2>
 
@@ -214,33 +117,9 @@ Graph = Diagraf.Graph
 &lt;&lt;topsort&gt;&gt;
 &lt;&lt;graph&gt;&gt;
 </pre></code>
-<div><b><i>&lt;&lt;diagraf&gt;&gt;=</i></b></div><pre><code>Diagraf.Graph = {}
-Graph = Diagraf.Graph
-
-&lt;&lt;topsort&gt;&gt;
-&lt;&lt;graph&gt;&gt;
-</pre></code>
 
 <h3>4.1. Creating a New Graph</h3>
 
-
-<h3>4.1. Creating a New Graph</h3>
-
-<p><code>Graph:new()</code> will initialize a new graph with
-a few core variables.
-</p>
-<p><code>nverts</code> is the number of vertices. This is used to
-determine ID numbers.
-</p>
-<p><code>edges</code> contains the list of edges that define a graph.
-</p>
-<p><code>sig</code> should point to the <a href="/gestlings/sig">sig</a> component. This
-can be passed in on initialization, or taken globally.
-</p>
-<p><code>eval</code> is the function that evaluates LIL code. If
-the <code>debug</code> flag is set, the code will print to standard
-output instead.
-</p>
 <p><code>Graph:new()</code> will initialize a new graph with
 a few core variables.
 </p>
@@ -271,24 +150,6 @@ output instead.
     self.__index = self
     return o
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:new(o)
-    o = o or {}
-    o.nverts = 0
-    o.edges = {}
-    o.nodes = {}
-    o.sig = o.sig or sig
-    if o.debug then
-        o.eval = print
-    else
-        o.eval = lil
-    end
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end</pre></code>
-
-<h3>4.2. Vertices and Edges</h3>
-
 
 <h3>4.2. Vertices and Edges</h3>
 
@@ -297,15 +158,6 @@ a vertice is just unique positive integer, this simply is
 a matter of incrementing <code>nverts</code> and using the new value
 as the ID.
 </p>
-<p>A new vertice is created with <code>Graph:vert()</code>. Since
-a vertice is just unique positive integer, this simply is
-a matter of incrementing <code>nverts</code> and using the new value
-as the ID.
-</p>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:vert()
-    self.nverts = self.nverts + 1
-    return self.nverts
-end</pre></code>
 <div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:vert()
     self.nverts = self.nverts + 1
     return self.nverts
@@ -326,33 +178,10 @@ postorder sort. Dot output uses the graph to produce
 the output rather than the tree, so <code>edgetype</code> is
 used to help make a cleaner looking result.
 </p>
-<br>
-<p><code>Graph:edge()</code> will create a new oriented edge that
-connects vertice <code>v1</code> (incoming) to <code>v2</code> (output). In
-other words, <code>v1</code> becomes an input to <code>v2</code>.
-</p>
-<p><code>edgetype</code> is an optional value that can be used to
-make the edge a cable connection. By default, it is only
-set to be an edge.
-</p>
-<p>The <code>edgetype</code> is used here because
-sometimes edges are only "helpers", in an to attempt to
-make the topological sort more closely resemble the
-postorder sort. Dot output uses the graph to produce
-the output rather than the tree, so <code>edgetype</code> is
-used to help make a cleaner looking result.
-</p>
 <div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:edge(v1, v2, edgetype)
     edgetype = edgetype or 0
     table.insert(self.edges, {v1, v2, edgetype})
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:edge(v1, v2, edgetype)
-    edgetype = edgetype or 0
-    table.insert(self.edges, {v1, v2, edgetype})
-end</pre></code>
-
-<h3>4.3. Connecting Nodes (TODO: change input args?)</h3>
-
 
 <h3>4.3. Connecting Nodes (TODO: change input args?)</h3>
 
@@ -379,40 +208,6 @@ is disabled internally.
 </p>
 <p>TODO: fail if connection has already been made. eventually
 implement a way to disconnect.
-<code>Graph:connect</code> will connect the output of one node
-to the input parameter of another node.
-</p>
-<p>The input parameter is the id, the node is the actual
-data type.
-</p>
-<p>TODO: This might change?
-I like working with just ID values
-and not tables, as it a more "portable" way of thinking
-between languages.
-</p>
-<p>A connection between two nodes manipulates both the tree
-and the graph. An edge is created between both nodes
-using their ID values. The outgoing node then links
-to the incoming node. The outgoing node is presumably
-a parameter node for another node. When the link is set,
-it indicates that the parameter is now being modulated
-by a signal instead of being a constant. The
-parameter node no longer generates any code, so it
-is disabled internally.
-</p>
-<p>TODO: fail if connection has already been made. eventually
-implement a way to disconnect.
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:connect(node, input_id)
-    local input = self.nodes[input_id]
-
-    self.edge(self, node.data.id, input_id, 1)
-
-    -- this input doesn't actually compute anything anymore
-    input:disable()
-
-    -- a linking node symlinks the node to be the input
-    input.data.link = node.data.id
-end</pre></code>
 <div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:connect(node, input_id)
     local input = self.nodes[input_id]
 
@@ -429,14 +224,6 @@ end</pre></code>
         self.connect(self, node, input_id)
     end
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:connector()
-    return function(node, input_id)
-        self.connect(self, node, input_id)
-    end
-end</pre></code>
-
-<h3>4.4. Topological Sort</h3>
-
 
 <h3>4.4. Topological Sort</h3>
 
@@ -463,98 +250,6 @@ removing edges of the graph. If the algorithm ends and
 there are still edges, it means there is a loop and
 the graph is not a DAG.
 </p>
-<p>Done using Kahn's algorithm, adapated from pseudocode
-on wikipedia.
-</p>
-<p>A topological sort will take in an acyclic graph
-(represented as a set of edges), and produce a list
-of vertices, arranged in an order such that for every
-vertice A, every incoming vertice to A comes before it.
-</p>
-<p>This resulting list of vertices is the beginning
-of the structure that eventually gets used
-to generate sndkit code. However, some additional
-list processing needs to occur before it is ready for this.
-</p>
-<p>The two most important things that the topological sort
-does is produce the final output node (the last item
-on the list), as well as determine if the graph has
-any loops in it.
-</p>
-<p>The topological sorting algorithm works by systematically
-removing edges of the graph. If the algorithm ends and
-there are still edges, it means there is a loop and
-the graph is not a DAG.
-</p>
-<div><b><i>&lt;&lt;topsort&gt;&gt;=</i></b></div><pre><code>-- Kahn's Algorithm, from pseudocode taken from wikipedia
-function topsort(edges)
-    local nodes = {}
-
-    local s = {}
-
-    local l = {}
-
-    -- TODO: simplify to only use e[2]
-    for _,e in pairs(edges) do
-        if nodes[e[1]] == nil then
-            nodes[e[1]] = {1, 0}
-        else
-            nodes[e[1]][1] = nodes[e[1]][1] + 1
-        end
-
-        if nodes[e[2]] == nil then
-            nodes[e[2]] = {0, 1}
-        else
-            nodes[e[2]][2] = nodes[e[2]][2] + 1
-        end
-    end
-
-    for k, v in pairs(nodes) do
-        if v[2] == 0 then
-            table.insert(s, k)
-        end
-    end
-
-    -- table.remove(), does funny things, so
-    -- keep track of which edges have been removed in
-    -- a separate table
-    local removed = {}
-    while #s &gt; 0 do
-        local n = table.remove(s)
-        table.insert(l, n)
-        local incoming_nodes = {}
-        for i,e in pairs(edges) do
-            if removed[i] == nil then
-                if e[1] == n then
-                    table.insert(incoming_nodes, e[2])
-                    removed[i] = true
-                end
-            end
-        end
-
-        for _,m in pairs(incoming_nodes) do
-            local no_incoming_edges = true
-            for i, e in pairs(edges) do
-                if removed[i] == nil then
-                    if e[2] == m then
-                        no_incoming_edges = false
-                    end
-                end
-            end
-
-            if no_incoming_edges == true then
-                table.insert(s, m)
-            end
-        end
-    end
-
-    if #removed ~= #edges then
-        -- graph is not a DAG
-        return removed, true
-    end
-
-    return l
-end</pre></code>
 <div><b><i>&lt;&lt;topsort&gt;&gt;=</i></b></div><pre><code>-- Kahn's Algorithm, from pseudocode taken from wikipedia
 function topsort(edges)
     local nodes = {}
@@ -628,52 +323,6 @@ end</pre></code>
 <p>The topsort method in the Graph will perform a 
 topsort on the internal edges, and then provide an
 informative 
-</p>
-<p>The topsort method in the Graph will perform a 
-topsort on the internal edges, and then provide an
-informative 
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:topsort()
-    local l, err = topsort(self.edges)
-
-    if err then
-        local remaining_nodes = {}
-        local removed = l
-        local c = 0
-
-        for i,e in pairs(self.edges) do
-            if removed[i] ~= true then
-                local outgoing = self.nodes[e[2]]
-                if
-                    outgoing:disabled() ~= true and
-                    outgoing:isconstant() ~= true and
-                    outgoing.data.typestr ~= "setter" and
-                    outgoing.data.typestr ~= "getter"
-                then
-
-                    if remaining_nodes[outgoing.data.id] == nil then
-                        c = c + 1
-                        remaining_nodes[outgoing.data.id] = true
-                    end
-                end
-            end
-        end
-
-        local remaining_node_names = {}
-
-        for rn,_ in pairs(remaining_nodes) do
-            local outgoing = self.nodes[rn]
-            local label = outgoing.data.label or
-                "node" .. outgoing.data.id
-            table.insert(remaining_node_names, label)
-        end
-
-        error("graph is not a DAG\n"..
-        "remaining nodes: " ..
-        table.concat(remaining_node_names, ", "))
-    end
-
-    return l
-end</pre></code>
 <div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:topsort()
     local l, err = topsort(self.edges)
 
@@ -719,25 +368,6 @@ end</pre></code>
 
 <h3>4.5. Adding Setters and Getters (TODO: rename)</h3>
 
-
-<h3>4.5. Adding Setters and Getters (TODO: rename)</h3>
-
-<p>Before being sent to the topological sort, the graph must
-be analyzed and checked for cables that are used
-as an input for more than one node. The way
-resources are managed in sndkit, signals from nodes can
-not be directly used more than once. Signals that wish
-to be used more than once must do so
-using a set of abstractions called <code>setters</code> and <code>getters</code>.
-The original generated signal is fed into on instance of a
-setter. A corresponding getter is used to retrieve the signal
-from the setter. An arbitrary number of getters can be used.
-</p>
-<p>TODO: better naming convention for nodes/nodeetc, rename
-stuff, etc.
-</p>
-<p>TODO: explain how this works.
-</p>
 <p>Before being sent to the topological sort, the graph must
 be analyzed and checked for cables that are used
 as an input for more than one node. The way
@@ -861,129 +491,9 @@ function Graph:process()
         end
     end
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function n_getter(n, p)
-    n.cab = p.cab
-    n.data.gen = function(self)
-        return self.cab:getstr()
-    end
-    n.data.constant = false
-    n.data.typestr = "getter"
-    n:label("getter")
-end
-
-function n_setter(n, p)
-    n.input = n:param(0)
-    local sig = p.sig
-    n.cab = sig:new()
-
-    n.data.gen = function(self)
-        return self.cab:hold(self.data.g.eval)
-    end
-
-    n.data.constant = false
-    n.data.typestr = "setter"
-    n:label("setter")
-end
-
-function n_releaser(n, p)
-    n.cab = p.cab
-
-    n.data.gen = function(self)
-        return self.cab:unhold(self.data.g.eval)
-    end
-
-    n.data.constant = false
-    n.data.typestr = "releaser"
-    n:label("releaser")
-end
-
-function Graph:process()
-    local hm = {}
-    local multi = {}
-
-    for _,e in pairs(self.edges) do
-        if e[3] == 1 then
-            if hm[e[1]] == nil then
-                --hm[e[1]] = {1, 0}
-                hm[e[1]] = 1
-            else
-                --hm[e[1]][1] = hm[e[1]][1] + 1
-                hm[e[1]] = hm[e[1]] + 1
-            end
-
-            -- if hm[e[2]] == nil then
-            --     hm[e[2]] = {0, 1}
-            -- else
-            --     hm[e[2]][2] = hm[e[2]][2] + 1
-            -- end
-        end
-    end
-
-    for index, ninputs in pairs(hm) do
-        if ninputs ~= nil then
-            if ninputs &gt; 1 then
-                local node = self.nodes[index]
-
-                -- TODO better naming
-                -- node, nodes, etc... too confusing
-                local setter_node = Node:generator(self, n_setter)
-                local getter_node = Node:generator(self, n_getter)
-
-                local node_id = node.data.id
-                node.data.children = {}
-                local setter = setter_node{sig=self.sig}
-                local setter_id = setter.data.id
-
-                for _, e in pairs(self.edges) do
-                    if e[1] == node_id and e[3] == 1 then
-                        local getter = getter_node {
-                            cab=setter.cab
-                        }
-                        e[1] = getter.data.id
-                        -- create edge to make sure setter
-                        -- comes before the getter
-                        self.edge(self, setter_id, getter.data.id)
-
-                        -- create parent/child
-                        table.insert(node.data.children,
-                            getter.data.id)
-                        getter.data.getter_parent = node.data.id
-
-                        -- add additional label information
-                        getter:label("getter(" .. node.data.label .. ")")
-
-                        -- update link
-                        self.nodes[e[2]].data.link = getter.data.id
-                    end
-                end
-                -- connect original node to setter
-                self.connect(self, node, setter.input)
-
-                -- create reference to setter in node
-                node.data.setter = setter.data.id
-
-                -- add additional label information
-                setter:label("setter(" .. node.data.label .. ")")
-            end
-        end
-    end
-end</pre></code>
 
 <h3>4.6. Node Sort</h3>
 
-
-<h3>4.6. Node Sort</h3>
-
-<p>The node sort is a recursive algorithm that looks at
-the underyling node tree structure, and sorts items
-in the list until they are in the correct order.
-</p>
-<p>For this to work properly, the root node must be known.
-This can be found by performing a topological sort on
-the graph.
-</p>
-<p>TODO: explain how algorithm works.
-</p>
 <p>The node sort is a recursive algorithm that looks at
 the underyling node tree structure, and sorts items
 in the list until they are in the correct order.
@@ -1039,80 +549,9 @@ the graph.
 
     return i
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:nsort_rec(l, n, i, lvl)
-    lvl = lvl or 0
-    if i &lt;= 0 then
-        return i
-    end
-    -- print(string.format("l[%d]: expecting: node(%d)", i, n.data.id))
-    if n.data.id ~= l[i] then
-        -- print(string.format("l[%d] (%d) is not %d", i, l[i], n.data.id))
-        for k = i, 1, -1 do
-            local m = l[k]
-            if m == n.data.id then
-                local nk = self.nodes[l[k]]
-                local ni = self.nodes[l[i]]
-                local lk = nk.data.label or ""
-                local li = ni.data.label or ""
-
-                -- print(string.format(
-                --     "swapping l[%d] %d (%s) and l[%d] %d (%s)\n",
-                --         k, nk.data.id, lk, i, ni.data.id, li))
-                local t = l[k]
-                l[k] = l[i]
-                l[i] = t
-                break
-            end
-        end
-    end
-
-    i = i - 1
-
-    if n.data.link ~= nil then
-        i = self.nsort_rec(self,
-            l, self.nodes[n.data.link], i, lvl + 1)
-        return i
-    end
-
-    -- process params list in reverse, because sndkit
-    -- uses LIFO stack and pops parameters in reverse
-    -- syntactically, this makes stack syntax look like
-    -- parameters are in "correct" order
-    for p=#n.data.params, 1, -1 do
-        i = self.nsort_rec(self, l, n.data.params[p], i, lvl + 1)
-    end
-
-    return i
-end</pre></code>
 
 <h3>4.7. Sorting the Setters</h3>
 
-
-<h3>4.7. Sorting the Setters</h3>
-
-<p>The first pass of the node sort is an incomplete one, as
-the setters are not yet connected to the underlying tree,
-making them invisible to the tree traversing that happens.
-What ends up happening is that the node list is bisected
-into to unsorted/sorted divisions.
-</p>
-<p>The unsorted section contains all the unconnected setters,
-as well as the child nodes of those setters. If any of
-those children are getters, this will break the step
-of connecting setters to the tree. The setters find
-the first getter in the tree (farthest and leftmost from root),
-using the node list, with the assumption that getters
-are in the correct order.
-</p>
-<p>In order to fix this, this "unsorted" portion must be
-pre-sorted somehow before they get sent into setters
-to first getters, so that the getters line up in the
-correct order.
-</p>
-<p>The approach done for this is to perform a small topological
-sort on the setters, and then sort the setters in-place
-using the node sort.
-</p>
 <p>The first pass of the node sort is an incomplete one, as
 the setters are not yet connected to the underlying tree,
 making them invisible to the tree traversing that happens.
@@ -1243,144 +682,9 @@ function Graph:sort_the_setters(lst, start)
         self.nsort_rec(self, lst, self.nodes[root], #lst)
     end
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:populate_setter_table(st, setter, n, G)
-    -- order doesn't matter here
-    for _,param in pairs(n.data.params) do
-        p = param
-        if p.data.link ~= nil then
-            p = self.nodes[p.data.link]
-        end
-
-        if p.data.typestr == "getter" then
-            if type(st[setter] ~= "table") then
-                st[setter] = {}
-            end
-            st[setter][p.data.id] = true
-            G[p.data.id] = true
-        end
-        self.populate_setter_table(self, st, setter, p, G)
-    end
-end
-
-function Graph:sort_the_setters(lst, start)
-    -- print("start: " .. start)
-
-    -- setter table structure
-    local st = {}
-
-    -- C: counts number of getters in each setter
-
-    local C = {}
-
-    -- list A: will contain setters in topological order
-    local A = {}
-
-    -- list G: contains set of getters
-
-    local G = {}
-
-    -- E that represents a DAG for setter connection order
-
-    local E = {}
-
-    for i=start,#lst do
-        local n = self.nodes[i]
-        local nid = n.data.id
-        if n.data.typestr == "setter" then
-            st[nid] = {}
-            C[nid] = 0
-        end
-    end
-
-    for setter,_ in pairs(st) do
-        self.populate_setter_table(self,
-            st, setter, self.nodes[setter], G)
-    end
-    for s,_ in pairs(st) do
-        for _,_ in pairs(st[s]) do
-            C[s] = C[s] + 1
-        end
-    end
-
-    -- -- connect setters to graph (root)
-    local root = 0
-    for s, _ in pairs(st) do
-        table.insert(E, {s, root})
-    end
-
-    -- iterate through setter table "getter" sets (gs)
-    -- if a getter to another setter exists, make
-    -- an edge in the Graph
-
-    for s, gs in pairs(st) do
-        for g, _ in pairs(gs) do
-            -- dereference getter node
-            local gn = self.nodes[g]
-            -- find parent id
-            local parid = gn.data.getter_parent
-            -- parent stores the signal node itself, get
-            -- the setter for that node
-            -- TODO: less indirection
-            local par = self.nodes[parid]
-            local setterid = par.data.setter
-
-            -- add edge
-
-            if parid ~= s and parid ~= nil then
-                table.insert(E, {setterid, s})
-            end
-        end
-    end
-
-    A = topsort(E)
-    local tail = table.remove(A)
-
-    if tail ~= 0 then
-        error("something is wrong with the setters")
-    end
-
-    pos = start
-
-    local root = lst[#lst]
-    for _, a in pairs(A) do
-        self.connect_setter_to_tree(self, lst, self.nodes[a])
-        -- TODO: limit nsorts, these slow things way down
-        -- HINT: nsort only needs to be called if a getter
-        -- has been connected
-        self.nsort_rec(self, lst, self.nodes[root], #lst)
-    end
-end</pre></code>
 
 <h3>4.8. Setters to First Getters</h3>
 
-
-<h3>4.8. Setters to First Getters</h3>
-
-<p>The process of adding setters and getters to the graph
-does not fully satisfy the constraints of the node tree,
-as it is unable to determine at that point where the
-setter should be placed. As a result of this, the
-setter is not added to the node tree, and the first
-pass of the node sort produces a only a partially sorted
-list, with all the setters aimlessly
-floating around somewhere in there.
-</p>
-<p>The setter should be placed
-somewhere before the first getter, and this is information
-that is obtained from the first pass of the node sort.
-</p>
-<p>The <code>Graph:setters_to_first_getters()</code> function will
-make an explicit connection from the setter to the
-first getter. It's treated like a node parameter, even
-though it isn't actually used (setters don't produce
-any output). Doing it this way adds the setter
-to the node tree, which will make it
-"visible" in the eyes of the node sort.
-</p>
-<p>After this function is called, the list will have to be
-sorted again, as new connections have been to the node
-tree, as well as new nodes in the node list.
-</p>
 <p>The process of adding setters and getters to the graph
 does not fully satisfy the constraints of the node tree,
 as it is unable to determine at that point where the
@@ -1464,141 +768,10 @@ function Graph:setters_to_first_getters(lst)
     --     table.insert(lst, v)
     -- end
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>-- TODO: refactor
--- the operation needs to be to connect one specified
--- setter to the tree (first getter)
--- that way, the brute force solution will work
-function Graph:connect_setter_to_tree(lst, setter)
-    local n = self.nodes[setter.input]
-    local n = self.nodes[n.data.link]
-    -- pprint(n.data.children)
-    local first_child_id = n:first_child(lst)
-    -- print("first child of " .. n.data.id .. " is " .. first_child_id)
-    local first_child = self.nodes[first_child_id]
-    first_child.unused_input = first_child:param(0)
-    self.nodes[first_child.unused_input]:label("unused input")
-    -- local setter = self.nodes[n.data.setter]
-    self.connect(self, setter, first_child.unused_input)
-    -- this overwrites the root, make sure
-    -- it was stored before calling
-    local new_id =
-        self.nodes[first_child.unused_input].data.id
-    table.insert(lst, new_id)
-    -- table.insert(appended_ids, new_id)
-end
-function Graph:setters_to_first_getters(lst)
-    -- find which nodes have children
-    -- for k, v in pairs(lst) do
-    --     print(k, v)
-    -- end
-    --for _,n in pairs(self.nodes) do
-    local appended_ids = {}
-    for i = 1,#lst do
-        nid = lst[i]
-        n = self.nodes[nid]
-        if n.data.typestr == "setter" then
-            local setter = n
-            self.connect_setter_to_tree(self, lst, setter)
-            -- n = self.nodes[n.input]
-            -- n = self.nodes[n.data.link]
-            -- pprint(n.data.children)
-            -- local first_child_id = n:first_child(lst, i)
-            -- print("first child of " .. n.data.id .. " is " .. first_child_id)
-            -- local first_child = self.nodes[first_child_id]
-            -- first_child.unused_input = first_child:param(0)
-            -- self.nodes[first_child.unused_input]:label("unused input")
-            -- -- local setter = self.nodes[n.data.setter]
-            -- self.connect(self, setter, first_child.unused_input)
-            -- -- this overwrites the root, make sure
-            -- -- it was stored before calling
-            -- local new_id =
-            --     self.nodes[first_child.unused_input].data.id
-            -- table.insert(lst, new_id)
-            -- -- table.insert(appended_ids, new_id)
-        end
-    end
-
-    -- for _,v in pairs(appended_ids) do
-    --     table.insert(lst, v)
-    -- end
-end</pre></code>
-
-<h3>4.9. Adding Releasers (TODO: rename function)</h3>
-
 
 <h3>4.9. Adding Releasers (TODO: rename function)</h3>
 
 <p>TODO: words
-TODO: words
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:postprocess(lst)
-    -- find which nodes have children
-    for _,n in pairs(self.nodes) do
-        if n.data.children ~= nil then
-            local last_child_id = n:last_child(lst)
-            -- print("last child: " .. last_child_id)
-
-            if (last_child_id &lt; 0) then
-                error("could not find any children")
-            end
-
-            -- find node that takes this as a signal input
-            -- at this point, it is assumed that the graph
-            -- has been processed so there is exactly one
-
-            local input_node_id = -1
-
-            for _,e in pairs(self.edges) do
-                if e[3] == 1 then
-                    if e[1] == last_child_id then
-                        input_node_id = e[2]
-                        -- print(string.format("%d -&gt; %d\n", e[1], e[2]))
-                        break
-                    end
-                end
-            end
-
-            if input_node_id &lt; 0 then
-                error("could not find input node")
-            end
-
-            local input_node = self.nodes[input_node_id]
-
-            -- input_node is a parameter input, we want
-            -- the processor, which is the parent
-
-            if input_node.data.parent == nil then
-                error("no parents (" ..
-                    input_node_id ..
-                    ") " .. 
-                    input_node.data.label)
-            end
-
-            input_node = self.nodes[input_node.data.parent]
-
-            -- create releaser node
-            -- and place it after the input node
-            -- TODO shave off some time if we start at
-            -- last child node list position? it should always
-            -- come after it
-            for i = 1, #lst do
-                local node = self.nodes[lst[i]]
-                if node.data.id == input_node.data.id then
-                    -- create releaser node
-                    local relnodegen =
-                        Node:generator(self, n_releaser)
-                    local cab = self.nodes[last_child_id].cab
-                    local rel = relnodegen {cab = cab}
-                    -- insert id at position i + 1 in lst
-                    table.insert(lst, i + 1, rel.data.id)
-                    -- add edge to ensure it appears in the right
-                    -- place after another sort
-                    self.edge(self, node.data.id, rel.data.id)
-                    break
-                end
-            end
-        end
-    end
-end</pre></code>
 <div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:postprocess(lst)
     -- find which nodes have children
     for _,n in pairs(self.nodes) do
@@ -1671,14 +844,6 @@ end</pre></code>
 
 <h3>4.10. Generate Nodelist</h3>
 
-
-<h3>4.10. Generate Nodelist</h3>
-
-<p><code>generate_nodelist</code> will process the graph and
-produce a list of node ID numbers which are sorted
-in postorder from the underlying tree. It is a combination
-of the methods described above.
-</p>
 <p><code>generate_nodelist</code> will process the graph and
 produce a list of node ID numbers which are sorted
 in postorder from the underlying tree. It is a combination
@@ -1712,44 +877,9 @@ of the methods described above.
 
     return l
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:generate_nodelist()
-    self.process(self)
-    local l = self.topsort(self)
-    local root = l[#l]
-    local pos = self.nsort_rec(self, l, self.nodes[root], #l)
-
-    if pos &gt; 0 then
-        self.sort_the_setters(self, l, pos)
-    end
-    local nodepos = self.nsort_rec(self, l, self.nodes[root], #l)
-
-    if nodepos ~= 0 then
-        local unused_nodes = {}
-        for i=1,nodepos do
-            local nid = l[i]
-            local node = self.nodes[nid]
-            if node:isconstant() ~= true then
-                local label = node.data.label or
-                    "node" .. nid
-                table.insert(unused_nodes, label) 
-            end
-        end
-        error("unused nodes: " .. table.concat(unused_nodes, ","))
-    end
-    self.postprocess(self, l)
-
-    return l
-end</pre></code>
 
 <h3>4.11. Sndkit Code Generation/Evaluation</h3>
 
-
-<h3>4.11. Sndkit Code Generation/Evaluation</h3>
-
-<p>Given a node list generated from <code>generate_nodelist</code>,
-compute the nodes. If set to debug mode, this will
-print the generated code rather than evaluating it.
-</p>
 <p>Given a node list generated from <code>generate_nodelist</code>,
 compute the nodes. If set to debug mode, this will
 print the generated code rather than evaluating it.
@@ -1769,36 +899,9 @@ print the generated code rather than evaluating it.
         self.cleanup(self)
     end
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:compute(lst)
-    if type(self.init) == "function" then
-        self.init(self)
-    end
-
-    for _, i in pairs(lst) do
-        local n = self.nodes[i]
-        n:compute()
-    end
-
-    -- User-defined cleanup after computation
-    if type(self.cleanup) == "function" then
-        self.cleanup(self)
-    end
-end</pre></code>
 
 <h3>4.12. Graphviz Code Generation (Dot)</h3>
 
-
-<h3>4.12. Graphviz Code Generation (Dot)</h3>
-
-<p>Dot code generation in Graphviz can be generated with
-the <code>dot</code> method. This can be helpful for debugging any
-issues with the graph.
-</p>
-<p>Dot uses the edges/vertices representation of the Graph,
-and is therefore more likely to be intended representation
-of the structure in cases where things do not go as
-expected.
-</p>
 <p>Dot code generation in Graphviz can be generated with
 the <code>dot</code> method. This can be helpful for debugging any
 issues with the graph.
@@ -1884,85 +987,6 @@ expected.
         fp:close()
     end
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:dot(outfile)
-    local printer = print
-    local fp = nil
-
-    if outfile ~= nil then
-        fp = io.open(outfile, "w")
-        printer = function(str)
-            fp:write(str .. "\n")
-        end
-    end
-
-    printer("digraph G {")
-    printer("rankdir=LR")
-    printer("layout=dot")
-
-    for _,n in pairs(self.nodes) do
-        if 
-            n:disabled() == false and
-            n.data.typestr ~= "releaser" and
-            n.data.typestr ~= "getter" and
-            n.data.typestr ~= "setter"
-        then
-            if n:isconstant() then
-                printer(string.format("%d [label=%s]",
-                    n.data.id, n.data.val))
-            else
-                if n.data.label ~= nil then
-                    printer(string.format("%d [label=\"%s (%d)\"]",
-                        n.data.id, n.data.label, n.data.id))
-                else
-                    printer(string.format("%d [label=\"N%d\"]",
-                        n.data.id, n.data.id))
-                end
-            end
-        end
-    end
-    for _, e in pairs(self.edges) do
-        if e[3] == 1 then
-            local n2 = self.nodes[e[2]]
-            local n1 = self.nodes[e[1]]
-            local loud = true
-
-            if
-                n1.data.typestr == "setter" or
-                n2.data.typestr == "setter"
-            then
-                loud = false
-            end
-
-            local incoming = e[1]
-            local outgoing = e[2]
-
-            if n2:disabled() then
-                outgoing = n2.data.parent
-
-                n2 = self.nodes[outgoing]
-
-                if n2.data.typestr == "setter" then
-                    loud = false
-                end
-            end
-
-            if n1.data.typestr == "getter" then
-                incoming = n1.data.getter_parent
-            end
-
-            if n1:disabled() == false and loud == true then
-                printer(string.format("%d -&gt; %d", incoming, outgoing))
-            end
-        end
-    end
-    printer("}")
-    if outfile ~= nil then
-        fp:close()
-    end
-end</pre></code>
-
-<h3>4.13. Print Node Tree (TODO: words)</h3>
-
 
 <h3>4.13. Print Node Tree (TODO: words)</h3>
 
@@ -2009,52 +1033,6 @@ end</pre></code>
 
     return i
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:print_tree(l, n, i, lvl, printer)
-    lvl = lvl or 0
-
-    printer = printer or print
-
-    if i &lt;= 0 then
-        return i
-    end
-
-    if n:disabled() == false then
-        local spaces = ""
-        for i=1, lvl+1 do
-            spaces = spaces .. "*"
-        end
-
-        local label = n.data.label or "node"
-
-        if n:isconstant() then
-            label = string.format("constant(%g)", n.data.val)
-        end
-
-        local msg = string.format("%s %s[%d](%d params)",
-            spaces, label, n.data.id, #n.data.params)
-
-        printer(msg)
-
-        i = i - 1
-    else
-        lvl = lvl - 1
-    end
-
-    if n.data.link ~= nil then
-        i = self.print_tree(self,
-            l, self.nodes[n.data.link], i, lvl + 1, printer)
-        return i
-    end
-
-    for p=#n.data.params, 1, -1 do
-        i = self.print_tree(self, l, n.data.params[p], i, lvl + 1, printer)
-    end
-
-    return i
-end</pre></code>
-
-<h3>4.14. Print Node List</h3>
-
 
 <h3>4.14. Print Node List</h3>
 
@@ -2078,80 +1056,16 @@ end</pre></code>
 
     fp:close()
 end</pre></code>
-<div><b><i>&lt;&lt;graph&gt;&gt;=</i></b></div><pre><code>function Graph:print_node_list(lst, filename)
-    local fp = io.open(filename, "w")
-
-    for _,l in pairs(lst) do
-        n = self.nodes[l]
-        local label = n.data.label
-
-        if n:isconstant() then
-            label = string.format("constant(%g)", n.data.val)
-        end
-
-        if n:disabled() == false then
-            local msg =
-                string.format("%s (%d)\n", label, n.data.id)
-            fp:write(msg)
-        end
-    end
-
-    fp:close()
-end</pre></code>
-
-<h2>5. Nodes</h2>
-
 
 <h2>5. Nodes</h2>
 
 <p>Graphs are constructed by connecting <code>Nodes</code> together.
 Any time a node is connected to another node, both the
 graph and the tree structure get updated.
-Graphs are constructed by connecting <code>Nodes</code> together.
-Any time a node is connected to another node, both the
-graph and the tree structure get updated.
 </p>
 
 <h3>5.1. Creating a New Node</h3>
 
-
-<h3>5.1. Creating a New Node</h3>
-
-<p>A new node can be creatd with <code>Graph.Node:new()</code>. It
-takes in as an argument an instance of a graph <code>g</code>.
-</p>
-<p>A Node is a Vertice on the graph, with some extra stuff
-piled, which information needed to construct a sndkit
-patch. All core data is stored in the <code>data</code> table contained
-inside the Node.
-</p>
-<p>The data has the following parameters:
-</p>
-<p>The <code>g</code> variable holds a reference to the graph the
-node belongs to.
-</p>
-<p><code>id</code> is the ID number of the corresponding vertice associated
-with the graph.
-</p>
-<p><code>val</code> holds a constant value. All nodes start out as
-constant values when they are initialized. Later, they
-can be turned into signal generators and processors.
-</p>
-<p><code>params</code> holds an ordered list of input parameters for
-the node. This is initialized as an empty list, but
-gets populated when the node gets configured as a unit
-generator. Items in the <code>params</code> list are instances of
-other nodes belonging to the same graph. Traversing these
-nodes produces the tree structure needed for the sndkit
-patch.
-</p>
-<p><code>gen</code> is a callback function that produces a string of LIL
-code. By default, it is set up to generate the constant
-value stored in <code>val</code>.
-</p>
-<p><code>constant</code> is a boolean used to indicate if the node is
-a constant or not. By default, it is set to be <code>true</code>.
-</p>
 <p>A new node can be creatd with <code>Graph.Node:new()</code>. It
 takes in as an argument an instance of a graph <code>g</code>.
 </p>
@@ -2208,35 +1122,9 @@ end
 
 &lt;&lt;node&gt;&gt;
 </pre></code>
-<div><b><i>&lt;&lt;diagraf&gt;&gt;=</i></b></div><pre><code>Diagraf.Node = {}
-Node = Diagraf.Node
-function Node:new(g)
-    o = {}
-    o.data = {}
-    o.data.g = g
-    o.data.id = g:vert()
-    o.data.val = 1.0
-    o.data.params = {}
-    o.data.gen = function(self)
-        return string.format("param %g", self.data.val)
-    end
-    o.data.constant = true
-    table.insert(g.nodes, o)
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
-
-&lt;&lt;node&gt;&gt;
-</pre></code>
 
 <h3>5.2. Setting Constants (TODO: words)</h3>
 
-
-<h3>5.2. Setting Constants (TODO: words)</h3>
-
-<p>TODO: words.
-</p>
 <p>TODO: words.
 </p>
 <div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:constant(val)
@@ -2247,17 +1135,6 @@ end
 function Node:isconstant()
     return self.data.constant
 end</pre></code>
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:constant(val)
-    self.data.val = val
-    self.data.constant = true
-end
-
-function Node:isconstant()
-    return self.data.constant
-end</pre></code>
-
-<h3>5.3. Cables and Parameters (TODO: words)</h3>
-
 
 <h3>5.3. Cables and Parameters (TODO: words)</h3>
 
@@ -2285,33 +1162,6 @@ end</pre></code>
     p.data.parent = self.data.id
     return p.data.id
 end</pre></code>
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:param(val)
-    local g = self.data.g
-    local params = self.data.params
-    local p = Node:new(g)
-
-    if type(val) == "number" then
-        p:constant(val)
-    else
-        p.data.gen = val
-        p.data.constant = false
-    end
-    table.insert(params, p)
-    p.data.param_id = #params
-
-    if #params &gt; 1 then
-        pp = params[#params - 1]
-        g:edge(pp.data.id, p.data.id)
-    end
-
-    g:edge(p.data.id, self.data.id, 1)
-    -- TODO: is parent being overloaded in process()?
-    p.data.parent = self.data.id
-    return p.data.id
-end</pre></code>
-
-<h3>5.4. Silent Nodes (TODO: words)</h3>
-
 
 <h3>5.4. Silent Nodes (TODO: words)</h3>
 
@@ -2319,31 +1169,15 @@ end</pre></code>
     self.data.gen = nil
     self.data.constant = false
 end</pre></code>
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:disable()
-    self.data.gen = nil
-    self.data.constant = false
-end</pre></code>
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:disabled()
-    return self.data.gen == nil
-end</pre></code>
 <div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:disabled()
     return self.data.gen == nil
 end</pre></code>
 
 <h3>5.5. Labels (TODO: words)</h3>
 
-
-<h3>5.5. Labels (TODO: words)</h3>
-
 <div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:label(label)
     self.data.label = label
 end</pre></code>
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:label(label)
-    self.data.label = label
-end</pre></code>
-
-<h3>5.6. Generator (TODO: words)</h3>
-
 
 <h3>5.6. Generator (TODO: words)</h3>
 
@@ -2358,20 +1192,6 @@ end</pre></code>
         return n
     end
 end</pre></code>
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:generator(g, f)
-    if type(f) ~= "function" then
-        error("Nodegen: invalid generator function") 
-    end
-    return function(p)
-        local n = self.new(self, g)
-        p = p or {}
-        f(n, p)
-        return n
-    end
-end</pre></code>
-
-<h3>5.7. Compute (TODO: words)</h3>
-
 
 <h3>5.7. Compute (TODO: words)</h3>
 
@@ -2385,34 +1205,9 @@ end</pre></code>
         end
     end
 end</pre></code>
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:compute()
-    if self.data.gen ~= nil then
-        -- TODO functions that return strings is kinda
-        -- messy. sig breaks this. maybe fix?
-        local str = self.data.gen(self)
-        if str ~= nil then
-            self.data.g.eval(str)
-        end
-    end
-end</pre></code>
 
 <h3>5.8. Finding First/Last children (TODO: words)</h3>
 
-
-<h3>5.8. Finding First/Last children (TODO: words)</h3>
-
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:last_child(lst)
-        local g = self.data.g
-        local last_child_id = -1
-        for i=#lst,1,-1 do
-            local curnode = g.nodes[lst[i]]
-            if curnode.data.getter_parent == self.data.id then
-                last_child_id = curnode.data.id
-                break
-            end
-        end
-        return last_child_id
-end</pre></code>
 <div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:last_child(lst)
         local g = self.data.g
         local last_child_id = -1
@@ -2442,33 +1237,9 @@ end</pre></code>
 
     return first_child_id
 end</pre></code>
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:first_child(lst, start)
-    local first_child_id = -1
-    local g = self.data.g
-    start = start or 1
-
-    for i=start,#lst do
-        local curnode = g.nodes[lst[i]]
-        if curnode.data.getter_parent == self.data.id then
-            first_child_id = curnode.data.id
-            break
-        end
-    end
-
-    -- print("# first child is " .. first_child_id)
-
-    return first_child_id
-end</pre></code>
 
 <h3>5.9. LIL (TODO: words)</h3>
 
-
-<h3>5.9. LIL (TODO: words)</h3>
-
-<div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:lil(str)
-    self.data.gen = function(self) return str end
-    self.data.constant = false
-end</pre></code>
 <div><b><i>&lt;&lt;node&gt;&gt;=</i></b></div><pre><code>function Node:lil(str)
     self.data.gen = function(self) return str end
     self.data.constant = false

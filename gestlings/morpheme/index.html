@@ -280,9 +280,13 @@ bytecode). <code>mp</code> contains the table of gesture paths,
 presumably populated by the append operation defined
 previously.
 </p>
-<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.compile(tal, path, words, mp)
+<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.compile(tal, path, words, mp, head)
+    head = head or {}
     for label, p in pairs(mp) do
         tal.label(words, label)
+        if head[label] ~= nil then
+            head[label](words)
+        end
         path.path(tal, words, p)
         tal.jump(words, label)
     end
@@ -294,7 +298,7 @@ end</pre></code>
 and duration scaling factors, and then returns a table
 of words that could be compiled using the <code>compile_words</code>function in
 </p>
-<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.articulate(path, tal, words, seq)
+<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.articulate(path, tal, words, seq, head)
     local mp = {}
 
     for _,s in pairs(seq) do
@@ -302,7 +306,7 @@ of words that could be compiled using the <code>compile_words</code>function in
     end
 
 
-    M.compile(tal, path, words, mp)
+    M.compile(tal, path, words, mp, head)
 end</pre></code>
 </div>
 </body>
