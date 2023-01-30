@@ -43,7 +43,40 @@ flow is interrupted somehow, such as with branching.
 
 <div><b><i>&lt;&lt;path.lua&gt;&gt;=</i></b></div><pre><code>local Path = {}
 
-function Path.path(tal, words, path)
+&lt;&lt;path&gt;&gt;
+return Path</pre></code>
+
+<h2>4. Creating a Vertex</h2>
+
+<p>The <code>vertex</code> function creates a gesture vertex, represented
+as a lua table. The input is an array of 3 values: value,
+duration, and behavior.
+</p>
+<p>Duration is itself a 2-element array containing the numerator
+and denominator values for the rate multiplier.
+</p>
+<p>Behavior is an integer value indicating the type of behavior
+to be used. See the <a href="/gestlings/gest#behavior_constants">gest behavior constants</a> for some human-friendly variable
+names to use instead of just numbers.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.vertex(v)
+    x = {}
+
+    x.val = v[1]
+    x.dur = v[2]
+    x.bhvr = v[3]
+
+    return x
+end</pre></code>
+
+<h2>5. Compiling a Path</h2>
+
+<p>A Path, represented as an array of Gesture vertices in
+Lua, can be compiled into TAL code using the <code>path</code>function. In addition to the path to be compiled,
+the <a href="/gestlings/tal">tal</a> library will need to be passed in,
+along with a table to place the words that get generated.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.path(tal, words, path)
     for _, v in pairs(path)
     do
         if v.val ~= nil then
@@ -59,19 +92,7 @@ function Path.path(tal, words, path)
         end
     end
 end
-
-function Path.vertex(v)
-    x = {}
-
-    x.val = v[1]
-    x.dur = v[2]
-    x.bhvr = v[3]
-
-    return x
-end
-
-return Path</pre></code>
-</p>
+</pre></code>
 </div>
 </body>
 </html>
