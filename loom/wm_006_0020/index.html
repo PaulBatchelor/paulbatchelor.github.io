@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>3. Low Level Operations</h2>
+
+<p><a id="wm_006_0020"></a></p>
+
+<h3>3.1. UUIDs</h3>
+
+<p><a id="wm_006_0021"></a>A universally unique identifer (UUID) is used to label
+every item in the zet. The UUIDs are generated courtesy
+of the <code>uuid4</code> library by <code>rxi</code>, included inside of
+the weewiki project.
+</p>
+
+<h4>3.1.1. UUID struct</h4>
+
+<p><a id="wm_006_0023"></a>A full UUID contained inside of a struct called
+<code>wwzet_uuid</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wwzet_uuid wwzet_uuid;</pre></code>
+<p></p>
+<p>This UUID contains a char of 37 bytes:
+36 for the UUID (including dashes) plus the null terminator.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wwzet_uuid {
+    char str[37];
+};</pre></code>
+
+<h4>3.1.2. (re)-initializing a UUID</h4>
+
+<p><a id="wm_006_0032"></a>The UUID is initialized with the function
+<code>wwzet_uuid_init</code>. This will set the UUID to be
+<code>00000000-0000-4000-8000-000000000000</code>, a valid
+but zeroed UUID4.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_init(wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_init(wwzet_uuid *uuid)
+{
+    int i;
+    static const char *zero =
+        "00000000-0000-4000-8000-000000000000";
+
+    for (i = 0; i &lt; 36; i++) uuid-&gt;str[i] = zero[i];
+    uuid-&gt;str[36] = 0;
+}</pre></code>
+
+<h4>3.1.3. Initializing the uuid4 RNG</h4>
+
+<p><a id="wm_006_0040"></a>Before generating a new UUID, the RNG must be
+initialized with <code>wwzet_uuid_rng_init</code>.
+</p>
+<p>This makes a call to <code>uuid4_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_rng_init(void);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_rng_init(void)
+{
+    uuid4_init();
+}</pre></code>
+
+<h4>3.1.4. UUID generation</h4>
+
+<p><a id="wm_006_0046"></a>Create a new UUID with <code>wwzet_uuid_generate</code>. This uses
+the uuid version 4 protocol, which means it is randomly
+generated. This assumes the RNG has been initialized
+already.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_generate(wwzet_uuid *uuid);</pre></code>
+<p></p>
+<p>This function calls <code>uuid4_generate</code> under the hood, and
+then stores the output to the <code>wwzet_uuid</code> variable
+<code>uuid</code>.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_uuid_generate(wwzet_uuid *uuid)
+{
+    uuid4_generate(uuid-&gt;str);
+}</pre></code>
+
+<h4>3.1.5. UUID expansion/validation</h4>
+
+<p><a id="wm_006_0053"></a><code>wwzet_uuid_expand</code> will check if a partial UUID exists in
+the zettelkasten table, and expand to full UUID value.
+The partial value is provided as a null-terminated C string.
+</p>
+<p>The number of matches is returned. Anything not equal to
+1 is considered an error.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_expand(weewiki_d *ww,
+                      const char *partial,
+                      int sz,
+                      wwzet_uuid *uuid);</pre></code>
+<p></p>
+<p>The following SQLite3 statement is used:
+</p>
+<pre><code>SELECT UUID, COUNT(DISTINCT UUID) from wikizet where UUID LIKE(?1);</pre></code>
+<p></p>
+<p>Where "?1" is the partial match.
+</p>
+<p>This query will return a single row with the first found
+wikizet, and the number of matches.
+</p>
+<p>Actions will only happen when there is exactly 1 match.
+This involves copying over the UUID value into the
+variable.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_expand(weewiki_d *ww,
+                      const char *partial,
+                      int sz,
+                      wwzet_uuid *uuid)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    char *matchstr;
+    int nmatches;
+
+    matchstr = calloc(1, sz + 2);
+
+    strcpy(matchstr, partial);
+    matchstr[sz] = '%';
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT UUID, COUNT(DISTINCT UUID) FROM wikizet "
+                       "WHERE UUID LIKE(?1);",
+                       -1, &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, matchstr, sz + 1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        free(matchstr);
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    nmatches = sqlite3_column_int(stmt, 1);
+
+    if (nmatches == 1) {
+        int i;
+        const char *str;
+        str = (const char *)sqlite3_column_text(stmt, 0);
+
+        for (i = 0; i &lt; 36; i++) uuid-&gt;str[i] = str[i];
+    }
+
+    free(matchstr);
+    sqlite3_finalize(stmt);
+    return nmatches;
+}</pre></code>
+
+<h4>3.1.6. Get UUID from value</h4>
+
+<p><a id="wm_006_0060"></a><code>wwzet_uuid_fromval</code>.
+</p>
+<p>Given a value (presumably, a group), return the UUID.
+non-zero value is an error.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_fromval(weewiki_d *ww,
+                       const char *val,
+                       int sz,
+                       wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_fromval(weewiki_d *ww,
+                       const char *val,
+                       int sz,
+                       wwzet_uuid *uuid)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int err;
+
+    db = weewiki_db(ww);
+    err = 0;
+
+    sqlite3_prepare_v2(db,
+                       "SELECT UUID FROM wikizet "
+                       "WHERE value LIKE ?1;", -1,
+                       &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, val, sz, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        err = 1;
+    } else {
+        int i;
+        const char *id;
+
+        wwzet_uuid_init(uuid);
+        id = (const char *)sqlite3_column_text(stmt, 0);
+
+        for (i = 0; i &lt; 36; i++) {
+            uuid-&gt;str[i] = id[i];
+        }
+    }
+
+    sqlite3_finalize(stmt);
+
+    return err;
+}</pre></code>
+
+<h4>3.1.7. Get UUID from value and prefix character</h4>
+
+<p><a id="wm_006_0066"></a><code>wwzet_uuid_fromval_prefix</code></p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_fromval_prefix(weewiki_d *ww,
+                              const char *val,
+                              int sz,
+                              char prefix,
+                              wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_fromval_prefix(weewiki_d *ww,
+                              const char *val,
+                              int sz,
+                              char prefix,
+                              wwzet_uuid *uuid)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int err;
+    const char *p;
+
+    db = weewiki_db(ww);
+    err = 0;
+
+    sqlite3_prepare_v2(db,
+                       "SELECT UUID FROM wikizet "
+                       "WHERE value LIKE ?2 || ?1;", -1,
+                       &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, val, sz, NULL);
+    p = &prefix;
+    sqlite3_bind_text(stmt, 2, p, 1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        err = 1;
+    } else {
+        int i;
+        const char *id;
+
+        wwzet_uuid_init(uuid);
+        id = (const char *)sqlite3_column_text(stmt, 0);
+
+        for (i = 0; i &lt; 36; i++) {
+            uuid-&gt;str[i] = id[i];
+        }
+    }
+
+    sqlite3_finalize(stmt);
+
+    return err;
+}</pre></code>
+
+<h4>3.1.8. Get UUID from ergo ID</h4>
+
+<p><a id="wm_006_0072"></a><code>wwzet_uuid_fromergo</code> will expand a UUID expressed in
+ergo format.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_fromergo(weewiki_d *ww,
+                        const char *ergo,
+                        int sz,
+                        wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_fromergo(weewiki_d *ww,
+                        const char *ergo,
+                        int sz,
+                        wwzet_uuid *uuid)
+{
+    char *partial;
+    int rc;
+
+    partial = calloc(1, sz + 1);
+
+    wwzet_ergo_to_hex(ergo, sz, partial);
+
+    rc = wwzet_uuid_expand(ww, partial, sz, uuid);
+
+    free(partial);
+
+    return rc;
+}</pre></code>
+
+<h4>3.1.9. Resolve a UUID</h4>
+
+<p><a id="wm_006_0078"></a><code>wwzet_uuid_resolve</code> smartly resolves a UUID from
+a string value. Will return a non-zero value on error.
+</p>
+<p>The default behavior of resolve is to expand a partial UUID.
+However, certain prefixes in the string will cause it to be
+treated as a value lookup.
+</p>
+<p>Currently, valid prefixes are <code>@</code> (groups), <code>!</code> (pages),
+and <code>/</code> (<code>crate</code> filepaths). Message (<code>></code>) and
+addresses (<code>#</code>) are to be ignored because they have less
+of a chance of being unique.
+</p>
+<p>It turns out that '!' is rather annoying to type in bash,
+as it seems to be a reserved character and must be escaped.
+To mitigate this, the '!' page prefix
+is also aliased to 'P' using the
+function <code>wwzet_uuid_fromval_prefix</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_resolve(weewiki_d *ww,
+                       const char *val,
+                       int sz,
+                       wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_uuid_resolve(weewiki_d *ww,
+                       const char *val,
+                       int sz,
+                       wwzet_uuid *uuid)
+{
+    int err;
+    int rc;
+    int special_prefix;
+    err = 0;
+
+    wwzet_uuid_init(uuid);
+
+    special_prefix =
+        val[0] == '@' ||
+        val[0] == '!' ||
+        val[0] == '/';
+
+    if (special_prefix) {
+        rc = wwzet_uuid_fromval(ww, val, sz, uuid);
+        if (rc) err = 1;
+    } else if (val[0] == 'g') {
+        rc = wwzet_uuid_fromergo(ww, val + 1, sz - 1, uuid);
+        if (rc != 1) err = 1;
+    } else if (val[0] == 'P') {
+        rc = wwzet_uuid_fromval_prefix(ww, val + 1, sz - 1, '!', uuid);
+        if (rc) err = 1;
+    } else {
+        rc = wwzet_uuid_expand(ww, val, sz, uuid);
+        if (rc != 1) err = 1;
+    }
+
+    return err;
+}</pre></code>
+
+<h3>3.2. Create Zet Entry</h3>
+
+<p><a id="wm_006_0084"></a><code>wwzet_entry</code> creates a generic zet entry given a message
+and timestamps it based on the current system time.
+</p>
+<p>If <code>uuid</code> is not NULL, the generated UUID is saved here.
+It is assumed the uuid RNG is initialized already before
+calling this function.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry(weewiki_d *ww,
+                const char *msg,
+                int sz,
+                wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry(weewiki_d *ww,
+                const char *msg,
+                int sz,
+                wwzet_uuid *uuid)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    wwzet_uuid id;
+    int rc;
+
+    wwzet_uuid_init(&id);
+    db = weewiki_db(ww);
+    wwzet_uuid_generate(&id);
+
+    sqlite3_prepare_v2(db,
+                       "INSERT INTO "
+                       "wikizet(time, UUID, value)"
+                       "VALUES(datetime(), ?1, ?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+
+    sqlite3_bind_text(stmt, 1, id.str, -1, NULL);
+    sqlite3_bind_text(stmt, 2, msg, sz, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        return 1;
+    }
+
+    if (uuid != NULL) *uuid = id;
+
+    sqlite3_finalize(stmt);
+    return 0;
+}</pre></code>
+
+<h3>3.3. Create Zet Entry (With Symbol)</h3>
+
+<p><a id="wm_006_0090"></a>The function <code>wwzet_entry_withsymbol</code> wraps around
+<code>wwzet_entry</code> to create a new timestamped entry and
+prepends it with a single-character symbol.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry_withsymbol(weewiki_d *ww,
+                           char c,
+                           const char *msg,
+                           int sz,
+                           wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry_withsymbol(weewiki_d *ww,
+                           char c,
+                           const char *msg,
+                           int sz,
+                           wwzet_uuid *uuid)
+{
+    char *val;
+    int rc;
+
+    val = malloc(sz + 2);
+    val[0] = c;
+
+    strncpy(&val[1], msg, sz);
+
+    val[sz + 1] = '\0';
+
+    rc = wwzet_entry(ww, val, sz + 1, uuid);
+
+    free(val);
+    return rc;
+}</pre></code>
+
+<h3>3.4. Insert an Entry</h3>
+
+<p><a id="wm_006_0096"></a>The function <code>wwzet_insert</code> will perform a low-level
+insert command into the wikizet table. The timestamp,
+uuid, and value should already be generated or known.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_insert(weewiki_d *ww,
+                  const char *timestamp, int tlen,
+                  const char *uuid, int ulen,
+                  const char *value, int vlen);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_insert(weewiki_d *ww,
+                  const char *timestamp, int tlen,
+                  const char *uuid, int ilen,
+                  const char *value, int vlen)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "INSERT into wikizet(time,uuid,value) "
+                       "VALUES(?1,?2,?3);",
+                       -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, timestamp, tlen, NULL);
+    sqlite3_bind_text(stmt, 2, uuid, ilen, NULL);
+    sqlite3_bind_text(stmt, 3, value, vlen, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+    }
+
+    sqlite3_finalize(stmt);
+}</pre></code>
+
+<h3>3.5. Create Zet Message</h3>
+
+<p><a id="wm_006_0102"></a>The function <code>wwzet_message</code> will create a
+timestamped entry with a message in the zet table
+with a new UUID.
+</p>
+<p>What is required is the main weewiki data, message, as well
+as the message length. The resulting UUID will get placed in
+the supplied UUID pointer if it is not NULL.
+</p>
+<p>Be sure to open the database and initialize the UUID4 RNG
+before calling this.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_message(weewiki_d *ww,
+                  const char *msg,
+                  int sz,
+                  wwzet_uuid *uuid);</pre></code>
+<p></p>
+<p>Under the hood, this will generate a UUID and create an
+insert SQLite statement using the SQLite API.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_message(weewiki_d *ww,
+                  const char *msg,
+                  int sz,
+                  wwzet_uuid *uuid)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    wwzet_uuid id;
+    int rc;
+    char *val;
+
+    val = malloc(sz + 2);
+
+    val[0] = '&gt;';
+
+    strcpy(&val[1], msg);
+    wwzet_uuid_init(&id);
+    db = weewiki_db(ww);
+    wwzet_uuid_generate(&id);
+
+    sqlite3_prepare_v2(db,
+                       "INSERT INTO "
+                       "wikizet(time, UUID, value)"
+                       "VALUES(datetime(), ?1, ?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+
+    sqlite3_bind_text(stmt, 1, id.str, -1, NULL);
+    sqlite3_bind_text(stmt, 2, val, sz + 1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        free(val);
+        return 1;
+    }
+
+    if (uuid != NULL) *uuid = id;
+
+    free(val);
+    sqlite3_finalize(stmt);
+    return 0;
+}</pre></code>
+
+<h3>3.6. Create Zet Link</h3>
+
+<p><a id="wm_006_0109"></a>The function <code>wwzet_link</code> will link UUID A to
+UUID B.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_link(weewiki_d *ww, wwzet_uuid *a, wwzet_uuid *b);</pre></code>
+<p></p>
+<p>A link is created by creating a new entry using A's UUID,
+and having the value be the UUID of B. A UUID is prepended
+with a '#'.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void wwzet_link(weewiki_d *ww, wwzet_uuid *a, wwzet_uuid *b)
+{
+    char *addr;
+
+    addr = calloc(1, 38);
+    addr[0] = '#';
+    strcpy(&addr[1], b-&gt;str);
+    wwzet_insert(ww, NULL, 0, a-&gt;str, 36, addr, 37);
+    free(addr);
+}</pre></code>
+
+<h3>3.7. Create Zet File</h3>
+
+<p><a id="wm_006_0116"></a>A file entry is created with <code>wwzet_file</code>.
+</p>
+<p>An inserted file is not actually the file, but just
+a file path, prepended with a forward slash <code>/</code>.
+Presumably, this would link to an entry in the SQLar table
+(which do not have leading slashes). Thus, an entry
+<code>/test/foo.txt</code> would have a corresponding SQLar file
+<code>test/foo.txt</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_file(weewiki_d *ww,
+               const char *filename,
+               int sz,
+               wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_file(weewiki_d *ww,
+               const char *filename,
+               int sz,
+               wwzet_uuid *uuid)
+{
+    return wwzet_entry_withsymbol(ww, '/', filename, sz, uuid);
+}</pre></code>
+
+<h3>3.8. Create Zet Group</h3>
+
+<p><a id="wm_006_0122"></a>A group entry is created with <code>wwzet_group</code>.
+</p>
+<p>Groups are used with the crate interface, and are used
+to link files to specific sqlar archives.
+</p>
+<p>Groups are prefixed with '@'.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_group(weewiki_d *ww,
+               const char *group,
+               int sz,
+               wwzet_uuid *uuid);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_group(weewiki_d *ww,
+               const char *filename,
+               int sz,
+               wwzet_uuid *uuid)
+{
+    return wwzet_entry_withsymbol(ww, '@', filename, sz, uuid);
+}</pre></code>
+
+<h3>3.9. Ergo IDs</h3>
+
+<p><a id="wm_006_0128"></a>Ergonomic IDs, or Ergo IDs are a way of of representing
+UUIDs in a more typist-friendly QWERTY format. traditional
+representations of hex values are replaced by easy to
+access characters in the QWERTY format.
+</p>
+<p>So. What are the easy characters?
+</p>
+<p>The home row is easiest: asdfghjkl;
+</p>
+<p>The top row comes next: qwertyuiop
+</p>
+<p>The keys that do not require any extensions are the most
+ergonomically efficient. These include:
+</p>
+<p>home: asdfjkl;
+</p>
+<p>top: qweruiop
+</p>
+<p>The semi-colon ';' is a bit of an outlier. To limit things
+to only the alphabet, one could use 'h', which is familiar
+enough for vi-inclined individuals used to hjkl.
+</p>
+<p>So that leaves us with:
+</p>
+<p>home: asdfhjkl
+</p>
+<p>top: qweruoip
+</p>
+<p>treating the number system as left-to-right, home-to-top,
+we get:
+</p>
+<p>asdfhjklqweruiop
+</p>
+<p>0123456789abcdef
+</p>
+<p>Convert from a hex string to ergo ID with
+<code>wwzet_hex_to_ergo</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_hex_to_ergo(const char *hex, int sz, char *ergo);</pre></code>
+<p></p>
+<p>Converting to this ergo-id format is a pretty
+straightforward process. convert the ascii hex value to a
+number and send it to a lookup table which is just an array.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;hexergo_lookup&gt;&gt;
+void wwzet_hex_to_ergo(const char *hex, int sz, char *ergo)
+{
+    int i;
+
+    for (i = 0; i &lt; sz; i++) {
+        int pos;
+
+        pos = -1;
+        if (hex[i] &gt;= '0' && hex[i] &lt;= '9') {
+            pos = hex[i] - '0';
+        } else if (hex[i] &gt;= 'a' && hex[i] &lt;= 'f') {
+            pos = (hex[i] - 'a') + 10;
+        }
+
+        if (pos &gt;= 0) {
+            ergo[i] = hexergo[pos];
+        } else {
+            ergo[i] = hex[i];
+        }
+    }
+
+    ergo[sz] = '\0';
+}</pre></code>
+<div><b><i>&lt;&lt;hexergo_lookup&gt;&gt;=</i></b></div><pre><code>static const char *hexergo = "asdfhjklqweruiop";</pre></code>
+<p></p>
+<p>Convert from ergo to hex string with <code>wwzet_ergo_to_hex</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void wwzet_ergo_to_hex(const char *ergo, int sz, char *hex);</pre></code>
+<p></p>
+<p>Converting from the ergo-id to the hex value is a little
+less straightforward.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;ergohex_lookup&gt;&gt;
+void wwzet_ergo_to_hex(const char *ergo, int sz, char *hex)
+{
+    int i;
+    for (i = 0; i &lt; sz; i++) {
+        if (ergo[i] &gt;= 'a' && ergo[i] &lt;= 'w') {
+            int pos = ergo[i] - 'a';
+            hex[i] = ergohex[pos];
+        } else {
+            hex[i] = ergo[i];
+        }
+    }
+}</pre></code>
+<p></p>
+<p>A lookup table will be produced by sorting the values in
+ascii order:
+</p>
+<p>adefhijklopqrsuw
+</p>
+<p>with the corresponding hex values:
+</p>
+<p>02a34d567ef8b1c9
+</p>
+<p>With '?' as filler:
+</p>
+<p>a??def?hijkl??opqrs?u?w
+</p>
+<p>or
+</p>
+<p>0??2a3?4d567??ef8b1?c?9
+</p>
+<br>
+<p>or ascii values 97-112. which means a lookup table of size
+23 with empty values.
+</p>
+<div><b><i>&lt;&lt;ergohex_lookup&gt;&gt;=</i></b></div><pre><code>static const char *ergohex = "0??2a3?4d567??ef8b1?c?9";</pre></code>
+
+<h3>3.10. Check if entry exists</h3>
+
+<p><a id="wm_006_0150"></a>Usually for things like groups, you want to ensure
+that it is unique. This function will query a value
+with a symbol and report of it exists already.
+</p>
+<p><code>wwzet_entry_exists</code> will check if a string value
+<code>val</code> of size <code>sz</code> exists with a prepended symbol <code>sym</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry_exists(weewiki_d *ww,
+                       char sym,
+                       const char *val,
+                       int sz);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int wwzet_entry_exists(weewiki_d *ww,
+                       char sym,
+                       const char *val,
+                       int sz)
+{
+    int exists;
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    exists = 0;
+
+    db = weewiki_db(ww);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT EXISTS( "
+                       "SELECT value FROM wikizet WHERE "
+                       "value IS ?1 || ?2);",
+                       -1, &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, &sym, 1, NULL);
+    sqlite3_bind_text(stmt, 2, val, sz, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_ROW) {
+        fprintf(stderr, "SQLite: '%s'\n", sqlite3_errmsg(db));
+        exists = -1;
+    } else {
+        exists = sqlite3_column_int(stmt, 0);
+    }
+
+    sqlite3_finalize(stmt);
+
+    return exists;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_006_0004">prev</a> | <a href="/loom/weewiki_zet">home</a> | <a href="/loom/wm_006_0156">next</a></p>
+</div>
+</body>
+</html>

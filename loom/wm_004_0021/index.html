@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>3. Top Level Function (weewiki_server)</h2>
+
+<p><a id="wm_004_0021"></a>The top-level function for this is <code>weewiki_server</code>. Since
+this is a command line program, it takes in <code>argc</code> and
+<code>argv</code> as arguments.
+</p>
+<p><code>weewiki server</code> will run the server with all the default
+values. It will read the default a.db and weewiki.janet
+configuration file. This will be the only thing implemented
+for now.
+</p>
+<p>Later, the hope is to be able to pass in a weewiki database
+and have everything be served via that file (including
+an embedded config file).
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int weewiki_server(weewiki_d *ww, int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int running = 1;
+
+static void quit(int sig)
+{
+    running = 0;
+    printf("Signal Interrupt\n");
+}
+
+int weewiki_server(weewiki_d *ww, int argc, char *argv[])
+{
+    wwserver_d wws;
+    wws.ww = ww;
+    weewiki_init(ww);
+    weewiki_set(ww);
+    weewiki_parse_set(ww, parse_org);
+    weewiki_print_set(ww, printer);
+    weewiki_ud_set(ww, NULL);
+    weewiki_is_server_set(ww, 1);
+
+    if (argc &gt;= 3) {
+        wwserver_init(&wws, atoi(argv[2]));
+    } else {
+        wwserver_init(&wws, 8080);
+    }
+
+    if (argc &gt;= 2) {
+        if (argv[1][0] == '-') {
+            /* '-' effectively skips this argument */
+            /* needed if one wants to set the port only */
+            weewiki_open(ww, "a.db");
+            wws.use_sqlar = 0;
+        } else {
+            weewiki_open(ww, argv[1]);
+            wws.use_sqlar = 1;
+        }
+    } else {
+        weewiki_open(ww, "a.db");
+        wws.use_sqlar = 0;
+    }
+
+    if (wws.use_sqlar) {
+        weewiki_janet_loadconfig_internal(wws.env, wws.ww);
+    } else {
+        weewiki_janet_loadconfig(wws.env);
+
+    }
+
+    wwserver_global_set(&wws);
+
+    if (wws.server != NULL) {
+        signal(SIGINT, quit);
+        http_server_listen_poll(wws.server);
+        while (running) {
+            http_server_poll(wws.server);
+            usleep(80);
+        }
+    }
+    wwserver_clean(&wws);
+    weewiki_close(ww);
+    weewiki_clean(ww);
+    return 1;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_004_0004">prev</a> | <a href="/loom/weewiki_server">home</a> | <a href="/loom/wm_004_0029">next</a></p>
+</div>
+</body>
+</html>

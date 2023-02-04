@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>6. Step</h2>
+
+<p><a id="wm_017_0184"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void trig_vm_step(trig_vm *vm);</pre></code>
+<p></p>
+<p>When a VM step happens, it will run through the program
+until it reaches a pattern cell or an empty cell. Some
+protection is done to ensure that an infinite loop doesn't
+happen.
+</p>
+<p>This now wraps around <code>trig_vm_step_state</code> using the
+internal state file. See that function for more detail.s
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void trig_vm_step(trig_vm *vm)
+{
+    trig_vm_step_state(vm, &vm-&gt;istate);
+}</pre></code>
+<p></p>
+<p>This <code>trig_vm_step_state</code> steps with an external state. This
+can be used to allow multiple readers to happen
+concurrently.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void trig_vm_step_state(trig_vm *vm, trig_state *ts);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void trig_vm_step_state(trig_vm *vm, trig_state *ts)
+{
+    int count;
+    vm-&gt;running = 1;
+
+    count = 0;
+    vm-&gt;state = ts;
+    while (vm-&gt;running) {
+        trig_cell *c;
+
+        count++;
+
+        if (count &gt;= 64) {
+            fprintf(stderr,
+            "trig: max count of 64 reached. "
+            "breaking.\n");
+            vm-&gt;running = 0;
+            break;
+        }
+
+        if (ts-&gt;pos &lt; 0 || ts-&gt;pos &gt;= 32) {
+            fprintf(stderr,
+                    "trig: invalid position %d\n",
+                    ts-&gt;pos);
+            vm-&gt;running = 0;
+            break;
+        }
+        c = &vm-&gt;cell[ts-&gt;pos];
+        ts-&gt;pos = trig_vm_ex(vm, ts-&gt;pos, c-&gt;cmd, c-&gt;data);
+    }
+
+    vm-&gt;state = &vm-&gt;istate;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_017_0177">prev</a> | <a href="/loom/trigvm">home</a> | <a href="/loom/wm_017_0195">next</a></p>
+</div>
+</body>
+</html>

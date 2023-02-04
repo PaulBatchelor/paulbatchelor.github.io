@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>5. Load Janet config internally</h2>
+
+<p><a id="wm_003_0029"></a>When the server is served from a file, the main config
+file is loaded from the SQLite database rather than
+from the file. It will attempt to look for the config
+file under the keyword <code>@config</code>.
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_loadconfig_internal(JanetTable *env,
+                                       weewiki_d *ww);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void weewiki_janet_loadconfig_internal(JanetTable *env,
+                                       weewiki_d *ww)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    db = weewiki_db(ww);
+    sqlite3_prepare_v2(db,
+                       "SELECT value FROM wiki WHERE(key==?1);",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_text(stmt, 1, "@config", -1, NULL);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc == SQLITE_ROW) {
+        janet_dostring(env,
+                       (const char *)sqlite3_column_text(stmt, 0),
+                       NULL, NULL);
+    }
+
+    sqlite3_finalize(stmt);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_003_0024">prev</a> | <a href="/loom/weewiki_janet">home</a> | <a href="/loom/wm_003_0036">next</a></p>
+</div>
+</body>
+</html>

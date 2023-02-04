@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>8. Block Ref</h2>
+
+<p><a id="wm_012_0198"></a></p>
+
+<h3>8.1. Struct</h3>
+
+<p><a id="wm_012_0199"></a>Known as <code>wmp_blkref</code>.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wmp_blkref wmp_blkref;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wmp_blkref {
+    unsigned int id;
+    int ref;
+    int pos;
+    char *section;
+    char *filename;
+    int linum;
+    int next;
+    int prog;
+    int segoff;
+    int prev_lastseg;
+};</pre></code>
+
+<h3>8.2. init</h3>
+
+<p><a id="wm_012_0205"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_blkref_init(wmp_blkref *br);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_blkref_init(wmp_blkref *br)
+{
+    br-&gt;id = -1;
+    br-&gt;ref = -1;
+    br-&gt;section = NULL;
+    br-&gt;filename = NULL;
+    br-&gt;linum = -1;
+    br-&gt;next = -1;
+    br-&gt;prog = -1;
+    br-&gt;segoff = -1;
+    br-&gt;prev_lastseg = -1;
+    br-&gt;pos = -1;
+}</pre></code>
+
+<h3>8.3. Free</h3>
+
+<p><a id="wm_012_0210"></a>It is freed using <code>wmp_blkref_free</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_blkref_free(wmp_blkref *br);</pre></code>
+<p></p>
+<p>After freeing the strings, the blkref is re-initialized for
+re-use.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_blkref_free(wmp_blkref *br)
+{
+    if (br-&gt;filename != NULL) free(br-&gt;filename);
+    if (br-&gt;section != NULL) free(br-&gt;section);
+
+    /* re-initialize */
+    wmp_blkref_init(br);
+}</pre></code>
+
+<h3>8.4. Find</h3>
+
+<p><a id="wm_012_0217"></a>Just get the blkref data, given an id and program number.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int wmp_blkref_find(wmp_core *c,
+                    unsigned int id,
+                    wmp_blkref *br,
+                    int prog);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_blkref_find(wmp_core *c,
+                    unsigned int id,
+                    wmp_blkref *br,
+                    int prog)
+{
+    sqlite3 *db;
+    int rc;
+    sqlite3_stmt *stmt;
+
+    rc = 0;
+
+    db = wmp_core_db(c);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT "
+                         "id, "
+                         "ref, "
+                         "section, "
+                         "filename, "
+                         "linum, "
+                         "next, "
+                         "program, "
+                         "segoff, "
+                         "prev_lastseg, "
+                         "pos "
+                       "FROM blkref "
+                       "WHERE(id== ?1) AND "
+                       "(program == ?2);"
+                       ,
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_int(stmt, 1, id);
+    sqlite3_bind_int(stmt, 2, prog);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc == SQLITE_ROW) {
+        int nbytes;
+        const char *sec;
+        const char *fname;
+        br-&gt;id = sqlite3_column_int(stmt, 0);
+        br-&gt;ref = sqlite3_column_int(stmt, 1);
+
+        nbytes = sqlite3_column_bytes(stmt, 2);
+        br-&gt;section = calloc(1, nbytes + 1);
+        sec = (const char *)sqlite3_column_text(stmt, 2);
+        strncpy(br-&gt;section, sec, nbytes);
+
+        nbytes = sqlite3_column_bytes(stmt, 3);
+        br-&gt;filename = calloc(1, nbytes + 1);
+        fname = (const char *)sqlite3_column_text(stmt, 3);
+        strncpy(br-&gt;filename, fname, nbytes);
+
+        br-&gt;linum = sqlite3_column_int(stmt, 4);
+
+        br-&gt;next = sqlite3_column_int(stmt, 5);
+
+        br-&gt;prog = sqlite3_column_int(stmt, 6);
+
+        br-&gt;segoff = sqlite3_column_int(stmt, 7);
+
+        br-&gt;prev_lastseg = sqlite3_column_int(stmt, 8);
+
+        br-&gt;pos = sqlite3_column_int(stmt, 9);
+
+        rc = WMP_OK;
+    } else {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        rc = WMP_NOT_OK;
+    }
+
+    sqlite3_finalize(stmt);
+    return rc;
+}</pre></code>
+
+<h3>8.5. Lookup</h3>
+
+<p><a id="wm_012_0223"></a>This function is interesting because it is only possible to
+do with a SQL query; Worgle has no way of doing this
+internally in C.
+</p>
+<p>Due to the SQL-yness of this operation, this functionality
+needs to be broken up into 2 parts.
+</p>
+<p>The first part sets up the SQLite query. This creats a
+<code>sqlite3_stmt</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>#ifdef SQLITE3_H
+&lt;&lt;blkref_funcdefs&gt;&gt;
+#endif</pre></code>
+<div><b><i>&lt;&lt;blkref_funcdefs&gt;&gt;=</i></b></div><pre><code>int wmp_blkref_lookup_setup(wmp_core *core,
+                            const char *name,
+                            int prog,
+                            sqlite3_stmt **pstmt);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_blkref_lookup_setup(wmp_core *core,
+                            const char *name,
+                            int prog,
+                            sqlite3_stmt **pstmt)
+{
+    sqlite3 *db;
+    int rc;
+    wmp_block b;
+
+    wmp_block_init(&b);
+    rc = wmp_lookup_block(core, name, &b, prog);
+
+    if (!rc) return rc;
+
+    db = wmp_core_db(core);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT "
+                         "id, "
+                         "ref, "
+                         "section, "
+                         "filename, "
+                         "linum, "
+                         "next, "
+                         "program, "
+                         "segoff, "
+                         "prev_lastseg, "
+                         "pos "
+                       "FROM blkref "
+                       "WHERE(program == ?1) AND "
+                       "(ref == ?2);"
+                       ,
+                       -1,
+                       pstmt,
+                       NULL);
+    sqlite3_bind_int(*pstmt, 1, prog);
+    sqlite3_bind_int(*pstmt, 2, b.id);
+    wmp_block_free(&b);
+
+    return 1;
+}</pre></code>
+<p></p>
+<p>The second part steps through the query and gets called
+until there are no more values to return.
+</p>
+<div><b><i>&lt;&lt;blkref_funcdefs&gt;&gt;=</i></b></div><pre><code>int wmp_blkref_lookup_step(wmp_core *core,
+                           sqlite3_stmt *stmt,
+                           wmp_blkref *br);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_blkref_lookup_step(wmp_core *core,
+                           sqlite3_stmt *stmt,
+                           wmp_blkref *br)
+{
+    int rc;
+
+    rc = sqlite3_step(stmt);
+
+    if (rc == SQLITE_DONE) {
+        wmp_blkref_free(br);
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+
+    if (rc == SQLITE_ROW) {
+        int nbytes;
+        const char *sec;
+        const char *fname;
+
+        /* clear/free the blkref */
+        wmp_blkref_free(br);
+
+        br-&gt;id = sqlite3_column_int(stmt, 0);
+        br-&gt;ref = sqlite3_column_int(stmt, 1);
+
+        nbytes = sqlite3_column_bytes(stmt, 2);
+        br-&gt;section = calloc(1, nbytes + 1);
+        sec = (const char *)sqlite3_column_text(stmt, 2);
+        strncpy(br-&gt;section, sec, nbytes);
+
+        nbytes = sqlite3_column_bytes(stmt, 3);
+        br-&gt;filename = calloc(1, nbytes + 1);
+        fname = (const char *)sqlite3_column_text(stmt, 3);
+        strncpy(br-&gt;filename, fname, nbytes);
+
+        br-&gt;linum = sqlite3_column_int(stmt, 4);
+
+        br-&gt;next = sqlite3_column_int(stmt, 5);
+
+        br-&gt;prog = sqlite3_column_int(stmt, 6);
+
+        br-&gt;segoff = sqlite3_column_int(stmt, 7);
+
+        br-&gt;prev_lastseg = sqlite3_column_int(stmt, 8);
+
+        br-&gt;pos = sqlite3_column_int(stmt, 9);
+    } else {
+        sqlite3 *db;
+
+        db = wmp_core_db(core);
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return WMP_NOT_OK;
+    }
+
+    return WMP_OK;
+}</pre></code>
+
+<h3>8.6. Blockref Neighbor lookup</h3>
+
+<p><a id="wm_012_0239"></a>Given a block reference, find the id another block reference
+at local position <code>p</code>. If nothing pops up, an invalid id of
+0 gets returned.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>unsigned int wmp_blkref_neighbor(wmp_core *c,
+                                 wmp_blkref *br,
+                                 int pos);</pre></code>
+<p></p>
+<p>The SQLite query looks like this:
+</p>
+<pre><code>select id from blkref where ref=?1 and pos=?2 and program=?3;</pre></code>
+<p></p>
+<p>Where ?1 <code>ref</code> is the block reference id, found in the
+passed in blkref, and ?2 <code>pos</code> is the local position. The
+<code>program</code> ?3 is .
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>unsigned int wmp_blkref_neighbor(wmp_core *c,
+                                 wmp_blkref *br,
+                                 int pos)
+{
+    sqlite3 *db;
+    int rc;
+    sqlite3_stmt *stmt;
+    unsigned int id;
+
+    db = wmp_core_db(c);
+
+    id = 0;
+
+    sqlite3_prepare_v2(db,
+                       "SELECT id "
+                       "FROM blkref "
+                       "WHERE(ref == ?1) AND "
+                       "(pos == ?2) AND "
+                       "(program == ?3);"
+                       ,
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_int(stmt, 1, br-&gt;ref);
+    sqlite3_bind_int(stmt, 2, pos);
+    sqlite3_bind_int(stmt, 3, br-&gt;prog);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc == SQLITE_ROW) {
+        id = sqlite3_column_int(stmt, 0);
+    }
+
+    sqlite3_finalize(stmt);
+    return id;
+}</pre></code>
+
+<h3>8.7. Code Block Regeneration</h3>
+
+<p><a id="wm_012_0246"></a>The function <code>wmp_blkref_codeblock</code> will reproduce a portion
+of a code block, referred to as a <code>subblock</code>, given a block
+reference. This will return the code in the subblock as an
+array of segments.
+</p>
+<p>Since the segment list is dynamically allocated, it must be
+also freed explicitly with <code>wmp_blkref_codeblock_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int wmp_blkref_codeblock(wmp_core *c,
+                         wmp_blkref *br,
+                         wmp_segment **segs,
+                         int *nsegs);
+void wmp_blkref_codeblock_free(wmp_core *c,
+                               wmp_segment **segs,
+                               int nsegs);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_blkref_codeblock(wmp_core *c,
+                         wmp_blkref *br,
+                         wmp_segment **segs,
+                         int *nsegs)
+{
+    wmp_blkref next_br;
+    unsigned int next_br_id;
+    int rc;
+    int len;
+    wmp_segment *list;
+    wmp_segment head;
+    wmp_segment prevseg;
+    wmp_block blk;
+    int ok;
+    int i;
+    wmp_segment seg;
+
+    ok = WMP_OK;
+    len = 0;
+    rc = -1;
+    next_br_id = 0;
+    list = NULL;
+
+    wmp_blkref_init(&next_br);
+    wmp_segment_init(&head);
+    wmp_segment_init(&seg);
+    wmp_segment_init(&prevseg);
+    wmp_block_init(&blk);
+
+&lt;&lt;retrieve_next_block_reference&gt;&gt;
+&lt;&lt;retrieve_block_from_reference&gt;&gt;
+&lt;&lt;calculate_number_of_segments&gt;&gt;
+&lt;&lt;allocate_segment_list&gt;&gt;
+&lt;&lt;obtain_first_segment&gt;&gt;
+&lt;&lt;populate_segment_list&gt;&gt;
+
+    (*nsegs) = len;
+    *segs = list;
+
+
+    cleanup:
+    wmp_blkref_free(&next_br);
+    wmp_block_free(&blk);
+    wmp_segment_free(&prevseg);
+    /* do not free head or seg, will be freed later */
+    return ok;
+}</pre></code>
+<p></p>
+<p>From the block reference, retrieve the next block reference
+(if it exists).
+This will be needed later on. This can be retrieved using
+the <code>pos</code> value in the block reference schema and the magic
+of SQLite. <code>pos + 1</code> will get the next block reference.
+</p>
+<div><b><i>&lt;&lt;retrieve_next_block_reference&gt;&gt;=</i></b></div><pre><code>next_br_id = wmp_blkref_neighbor(c, br, br-&gt;pos + 1);
+if (next_br_id &gt; 0) {
+    rc = wmp_blkref_find(c, next_br_id, &next_br, br-&gt;prog);
+    if (rc != WMP_OK) {
+        wmp_blkref_free(&next_br);
+        ok = WMP_NOT_OK;
+        goto cleanup;
+    }
+}</pre></code>
+<p></p>
+<p>Retrieve the block and make sure it exists. This may be in
+certain edge cases.
+</p>
+<div><b><i>&lt;&lt;retrieve_block_from_reference&gt;&gt;=</i></b></div><pre><code>rc = wmp_find_block(c, br-&gt;ref, &blk, br-&gt;prog);
+if (rc != WMP_OK) {
+    ok = WMP_NOT_OK;
+    goto cleanup;
+}</pre></code>
+<p></p>
+<p>The number of segments in the subblock is calculated from
+<code>segoff</code>, or the segment offset. The segment offset stores
+the starting segment position relative to the block.
+Subtracting <code>segoff</code> of the <b>next</b> subblock will get the size.
+If there is no next reference, the
+offset can be subtracted from the total number of segments
+in the top-level block.
+</p>
+<div><b><i>&lt;&lt;calculate_number_of_segments&gt;&gt;=</i></b></div><pre><code>if (next_br_id &gt; 0) {
+    len = next_br.segoff - br-&gt;segoff;
+} else {
+    len = blk.nsegs - br-&gt;segoff;
+}</pre></code>
+<p></p>
+<p>The output segment list is then allocated with this value.
+</p>
+<div><b><i>&lt;&lt;allocate_segment_list&gt;&gt;=</i></b></div><pre><code>if (len &gt; 0) {
+    list = malloc(sizeof(wmp_segment) * len);
+}</pre></code>
+<p></p>
+<p>The first segment is obtained from <code>prev_lastseg</code>. It holds
+the id of the last segment of the previous block reference.
+Getting the <code>next</code> id from this segment will get the first
+segment of the current subblock.
+</p>
+<p>If no <code>prev_lastseg</code> is found, use the segment found
+in the top-block.
+</p>
+<div><b><i>&lt;&lt;obtain_first_segment&gt;&gt;=</i></b></div><pre><code>if (br-&gt;prev_lastseg &gt; 0) {
+    rc = wmp_find_segment(c, br-&gt;prev_lastseg, &prevseg, br-&gt;prog);
+
+    if (rc != WMP_OK) {
+        ok = WMP_NOT_OK;
+        goto cleanup;
+    }
+
+    rc = wmp_find_segment(c, prevseg.nxtseg, &head, br-&gt;prog);
+
+    if (rc != WMP_OK) {
+        ok = WMP_NOT_OK;
+        goto cleanup;
+    }
+} else {
+    rc = wmp_find_segment(c, blk.head_segment, &head, br-&gt;prog);
+    if (rc != WMP_OK) {
+        ok = WMP_NOT_OK;
+        goto cleanup;
+    }
+}</pre></code>
+<p></p>
+<p>After the first segment and total number of segments is
+found, the rest of the procedure works like a linked list
+operation, with each segment entry has a ID value pointing
+to the next segment. The contents of each segment get copied
+to their respective position in the segment list.
+</p>
+<div><b><i>&lt;&lt;populate_segment_list&gt;&gt;=</i></b></div><pre><code>list[0] = head;
+seg = head;
+for (i = 1; i &lt; len; i++) {
+    unsigned int nxt;
+    nxt = seg.nxtseg;
+    wmp_segment_init(&seg);
+    rc = wmp_find_segment(c, nxt, &seg, br-&gt;prog);
+    if (rc != WMP_OK) {
+        ok = WMP_NOT_OK;
+        len = i;
+        goto cleanup;
+    }
+    list[i] = seg;
+}</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_blkref_codeblock_free(wmp_core *c,
+                               wmp_segment **segs,
+                               int nsegs)
+{
+    int i;
+    wmp_segment *lst;
+
+    lst = *segs;
+
+    for (i = 0; i &lt; nsegs; i++) {
+        wmp_segment_free(&lst[i]);
+    }
+
+    free(lst);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_012_0161">prev</a> | <a href="/loom/worgmap_core">home</a> | <a href="/loom/wm_012_0285">next</a></p>
+</div>
+</body>
+</html>

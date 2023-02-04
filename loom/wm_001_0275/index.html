@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>6. Top-Level Data</h2>
+
+<p><a id="wm_001_0275"></a>All components are managed using a top-level struct called
+<code>txtvm</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct txtvm txtvm;</pre></code>
+<p></p>
+<p>This includes an instance of a stack and a dictionary.
+</p>
+<p>Oh, and an I/O interface.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct txtvm {
+    txtvm_stack stack;
+    txtvm_dict dict;
+    txtvm_io io;
+};</pre></code>
+<p></p>
+<p>txtvm is initialized with <code>txtvm_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_init(txtvm *vm);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_init(txtvm *vm)
+{
+    txtvm_stack_init(&vm-&gt;stack);
+    txtvm_dict_init(&vm-&gt;dict);
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_free(txtvm *vm);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_free(txtvm *vm)
+{
+    txtvm_dict_free(&vm-&gt;dict);
+}</pre></code>
+<p></p>
+<p>A getter for the stack is required for any functions to
+work.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>txtvm_stack *txtvm_stack_get(txtvm *vm);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>txtvm_stack *txtvm_stack_get(txtvm *vm)
+{
+    return &vm-&gt;stack;
+}</pre></code>
+<p></p>
+<p>The define operation is built on top of the append
+operation, and is designed to make it easier to add
+functions. in addition to the main callback and id, userdata
+and a cleanup callback can be provided. If they are <code>NULL</code>they are ignored.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_define(txtvm *vm,
+                  short id,
+                  int (*fun)(txtvm*,void*),
+                  void *ud,
+                  void (*del)(void*));</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_define(txtvm *vm,
+                  short id,
+                  int (*fun)(txtvm*,void*),
+                  void *ud,
+                  void (*del)(void*))
+{
+    txtvm_dict_entry *ent;
+    txtvm_dict *dict;
+
+    dict = &vm-&gt;dict;
+
+    ent = txtvm_dict_new_entry(dict, id);
+
+    ent-&gt;fun = fun;
+    ent-&gt;ud = ud;
+    ent-&gt;clean = del;
+}</pre></code>
+<p></p>
+<p>A function in txtvm is looked up and called with
+<code>txtvm_call</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_call(txtvm *vm, short id);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_call(txtvm *vm, short id)
+{
+    int rc;
+    txtvm_dict_entry *e;
+
+    e = NULL;
+    rc = txtvm_dict_lookup(&vm-&gt;dict, id, &e);
+
+    if (rc != TXTVM_OK) return rc;
+
+    if (e-&gt;fun != NULL) return e-&gt;fun(vm, e-&gt;ud);
+
+    return TXTVM_OK;
+}</pre></code>
+<p></p>
+<p>Some pushing/popping abstractions are made for convenience.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_pop(txtvm *vm, txtvm_stacklet **s);
+int txtvm_push(txtvm *vm, txtvm_stacklet **s);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_pop(txtvm *vm, txtvm_stacklet **s)
+{
+    return txtvm_stack_pop(&vm-&gt;stack, s);
+}
+
+int txtvm_push(txtvm *vm, txtvm_stacklet **s)
+{
+    return txtvm_stack_push(&vm-&gt;stack, s);
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_pop_int(txtvm *vm, int *i);
+int txtvm_push_int(txtvm *vm, int i);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_pop_int(txtvm *vm, int *i)
+{
+    return txtvm_stack_pop_int(&vm-&gt;stack, i);
+}
+
+int txtvm_push_int(txtvm *vm, int i)
+{
+    return txtvm_stack_push_int(&vm-&gt;stack, i);
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_setup_writer(txtvm *vm,
+                        txtvm_io_writebuf_data *data);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_setup_writer(txtvm *vm,
+                        txtvm_io_writebuf_data *data)
+{
+    txtvm_io_writebuf(&vm-&gt;io, data);
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_setup_parser(txtvm *vm,
+                        txtvm_io_readbuf_data *data);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_setup_parser(txtvm *vm,
+                        txtvm_io_readbuf_data *data)
+{
+    txtvm_io_readbuf(&vm-&gt;io, data);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_001_0216">prev</a> | <a href="/loom/txtvm">home</a> | <a href="/loom/wm_001_0323">next</a></p>
+</div>
+</body>
+</html>

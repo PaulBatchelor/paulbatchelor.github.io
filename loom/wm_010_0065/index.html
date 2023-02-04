@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>4. Parsing</h2>
+
+<p><a id="wm_010_0065"></a></p>
+
+<h3>4.1. Parsing Top</h3>
+
+<p><a id="wm_010_0066"></a>The top-level parsing function is twofold: it is designed to take in org
+markup, and then produce equivalent HTML output.
+</p>
+<p>Each character of the string is fed through a state machine. The mode of
+the state machine determines what kind of formatting to add. HTML
+formatting is tag based. A change <b>to</b> a state indicates the start
+of a particular tag. A change <b>from</b> from a particular state indicates
+the end of that particular tag.
+</p>
+<p>Text is written a block at a time using <code>fwrite</code>. Blocks are written
+any time a state changes. Blocks are also written at the end.
+</p>
+<p>Parsing behavior will change based on the state of the flag <code>mktoc</code>.
+If enabled, the parser will be set up to
+<a href="Table of Contents Parsing Mode">generate a table of contents</a>.
+Otherwise, it is just <a href="Normal Parsing Mode">the regular parser</a>.
+</p>
+
+<h4>4.1.1. The Parse Function</h4>
+
+<p><a id="wm_010_0068"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int parse(sorg_d *sorg, FILE *out, char *buf, size_t size);</pre></code>
+<div><b><i>&lt;&lt;parsing_top&gt;&gt;=</i></b></div><pre><code>static int parse(sorg_d *sorg, FILE *out, char *buf, size_t size)
+{
+    sorg-&gt;pos = 0;
+    sorg-&gt;off = 0;
+    sorg-&gt;blksize = 0;
+    if(mktoc) {
+&lt;&lt;toc_parse_mode&gt;&gt;
+    } else {
+&lt;&lt;normal_parse_mode&gt;&gt;
+    }
+    return 1;
+}</pre></code>
+
+<h4>4.1.2. Normal Parsing Mode</h4>
+
+<p><a id="wm_010_0079"></a>This is the regular parsing mode, which converts all org syntax into HTML.
+<div><b><i>&lt;&lt;normal_parse_mode&gt;&gt;=</i></b></div><pre><code>if(buf[0] == '\n') {
+    if(sorg-&gt;pmode == MODE_TEXT) {
+        fprintf(out,"&lt;/p&gt;\n");
+        sorg-&gt;pmode = MODE_NONE;
+    }
+    return 1;
+}
+
+while(sorg-&gt;pos &lt; size) {
+    switch(sorg-&gt;mode) {
+        case MODE_NONE:
+            if(is_comment(sorg, buf, size)) {
+                sorg-&gt;mode = MODE_NONE;
+                return 1;
+            } if(is_header(sorg, buf, size)) {
+                if(sorg-&gt;pmode == MODE_TEXT) fprintf(out, "&lt;/p&gt;\n");
+                print_header(sorg, buf, size, out);
+                sorg-&gt;mode = MODE_NONE;
+                sorg-&gt;pmode = sorg-&gt;mode;
+                return 1;
+            } else if(is_name(sorg, buf, size)) {
+                if(sorg-&gt;pmode == MODE_TEXT) fprintf(out, "&lt;/p&gt;\n");
+                print_name(sorg, buf, size, out);
+                sorg-&gt;mode = MODE_BEGIN_CODE;
+                sorg-&gt;pmode = sorg-&gt;mode;
+                return 1;
+            } else if(is_title(sorg, buf, size)) {
+                if(sorg-&gt;pmode == MODE_TEXT) fprintf(out, "&lt;/p&gt;\n");
+                print_title(sorg, buf, size, out);
+                sorg-&gt;mode = MODE_NONE;
+                sorg-&gt;pmode = sorg-&gt;mode;
+                return 1;
+            } else if(is_ulistitem(sorg, buf, size)) {
+                if(sorg-&gt;pmode == MODE_TEXT) fprintf(out, "&lt;/p&gt;\n");
+                print_ulist_begin(sorg, out);
+                print_ulist_item(sorg, buf, size, out);
+                sorg-&gt;pmode = sorg-&gt;mode;
+                sorg-&gt;mode = MODE_ULIST;
+                return 1;
+            } else {
+                sorg-&gt;mode = MODE_TEXT;
+                sorg-&gt;off = sorg-&gt;pos;
+                sorg-&gt;blksize = 1;
+                if(sorg-&gt;pmode != MODE_TEXT) fprintf(out, "&lt;p&gt;");
+            }
+            break;
+        case MODE_TEXT:
+&lt;&lt;parse_formatted&gt;&gt;
+            if(is_link(sorg, &buf[sorg-&gt;pos], size - sorg-&gt;pos)) {
+                print_text(sorg, buf, out);
+                sorg-&gt;pos += print_link(sorg,
+                                        &buf[sorg-&gt;pos],
+                                        size - sorg-&gt;pos,
+                                        out);
+                sorg-&gt;blksize = 1;
+                sorg-&gt;off = sorg-&gt;pos;
+            } else if(is_block_ref(sorg, &buf[sorg-&gt;pos], size - sorg-&gt;pos)) {
+                print_text(sorg, buf, out);
+                sorg-&gt;pos += print_block_ref(sorg,
+                                        &buf[sorg-&gt;pos],
+                                        size - sorg-&gt;pos,
+                                        out);
+                sorg-&gt;blksize = 1;
+                sorg-&gt;off = sorg-&gt;pos;
+            } else {
+                if(buf[sorg-&gt;pos] != '\n') sorg-&gt;blksize++;
+                sorg-&gt;pos++;
+            }
+            break;
+        case MODE_BEGIN_CODE:
+            if(!is_begin(sorg, buf, size)) return 0;
+            else {
+                fprintf(out, "\n&lt;p&gt;&lt;pre&gt;&lt;code&gt;");
+                sorg-&gt;mode = MODE_CODE;
+                return 1;
+            }
+            break;
+        case MODE_CODE:
+            if(is_end(sorg, buf, size)) {
+                sorg-&gt;mode = MODE_NONE;
+                fprintf(out, "&lt;/code&gt;&lt;/pre&gt;&lt;/p&gt;\n");
+                return 1;
+            }
+            sorg-&gt;blksize++;
+            switch(buf[sorg-&gt;pos]) {
+                case '&lt;':
+                    fwrite(buf + sorg-&gt;off, 1, sorg-&gt;blksize - 1, out);
+                    sorg-&gt;off = sorg-&gt;pos + 1;
+                    sorg-&gt;blksize = 0;
+                    fprintf(out, "&lt;");
+                    break;
+                case '&gt;':
+                    fwrite(buf + sorg-&gt;off, 1, sorg-&gt;blksize - 1, out);
+                    sorg-&gt;off = sorg-&gt;pos + 1;
+                    sorg-&gt;blksize = 0;
+                    fprintf(out, "&gt;");
+                    break;
+                case '\n':
+                    fwrite(buf + sorg-&gt;off, 1, sorg-&gt;blksize - 1, out);
+                    sorg-&gt;off = sorg-&gt;pos + 1;
+                    sorg-&gt;blksize = 0;
+                    fprintf(out, "\n");
+                    break;
+                case ' ':
+                    fwrite(buf + sorg-&gt;off, 1, sorg-&gt;blksize - 1, out);
+                    sorg-&gt;off = sorg-&gt;pos + 1;
+                    sorg-&gt;blksize = 0;
+                    fprintf(out, "&nbsp;");
+                    break;
+            }
+            sorg-&gt;pos++;
+            break;
+        case MODE_ULIST:
+            if(is_ulistitem(sorg, buf, size)) {
+                print_ulist_item(sorg, buf, size, out);
+                return 1;
+            } else {
+                sorg-&gt;pmode = sorg-&gt;mode;
+                sorg-&gt;mode = MODE_NONE;
+                print_ulist_end(sorg, out);
+                parse(sorg, out, buf, size);
+                return 1;
+            }
+            break;
+    }
+}
+
+fwrite(buf + sorg-&gt;off, 1, sorg-&gt;blksize, out);
+
+sorg-&gt;pmode = sorg-&gt;mode;
+if(sorg-&gt;mode != MODE_CODE) {
+    sorg-&gt;mode = MODE_NONE;
+}</pre></code>
+
+<h4>4.1.3. Table of Contents Parsing Mode</h4>
+
+<p><a id="wm_010_0086"></a>This mode is turned on with a switch from
+<a href="Turn On Section Numbers (-t)">the command line flags.</a>When enabled, the parser is only interested in parsing and printing
+headers. The rest, it skips.
+</p>
+<div><b><i>&lt;&lt;toc_parse_mode&gt;&gt;=</i></b></div><pre><code>if(buf[0] == '\n') {
+    return 1;
+}
+
+if(is_title(sorg, buf, size)) {
+    print_title(sorg, buf, size, out);
+}else if(is_header(sorg, buf, size)) {
+    print_header(sorg, buf, size, out);
+}</pre></code>
+
+<h3>4.2. Type Enum</h3>
+
+<p><a id="wm_010_0091"></a><div><b><i>&lt;&lt;enums&gt;&gt;=</i></b></div><pre><code>enum {
+&lt;&lt;types&gt;&gt;
+    MODE_NONE
+};</pre></code>
+
+<h3>4.3. Headings</h3>
+
+<p><a id="wm_010_0097"></a></p>
+
+<h4>4.3.1. Check for Header</h4>
+
+<p><a id="wm_010_0098"></a>Headers in org-mode always start at the beginning of the line, and
+must have a number of stars, followed by a space. This is checked for
+with the function <code>is_header</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_header(sorg_d *sorg, char *buf, size_t size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_header(sorg_d *sorg, char *buf, size_t size)
+{
+    size_t s;
+
+    if(size == 0) return 0;
+
+    if(buf[0] != '*') return 0;
+
+    for(s = 1; s &lt; size; s++) {
+        if(buf[s] == '*') {
+            continue;
+        } else if(buf[s] == ' ') {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+    return 0;
+}</pre></code>
+
+<h4>4.3.2. Print Header</h4>
+
+<p><a id="wm_010_0104"></a>If the line is indeed a header, the parser will scan the line again, this
+time counting the number of stars before the space indicating the header
+level. (Note: Since the title is reserved for header 1, the largest
+heading size starts at level 2.)
+</p>
+<p>The header will then treat the rest of the line as the header text.
+This action is done with the function <code>print_header</code>.
+</p>
+
+<h5>4.3.2.1. Print Header Function</h5>
+
+<p><a id="wm_010_0106"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static void print_header(sorg_d *sorg, char *buf, size_t size, FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void print_header(sorg_d *sorg, char *buf, size_t size, FILE *out)
+{
+    size_t s;
+    size_t off;
+    int mode;
+    int level;
+    off = 0;
+    mode = 0;
+    level = 1;
+    for(s = 0; s &lt; size; s++) {
+        if(mode == 2) break;
+        switch(mode) {
+            case 0: /* asterisks */
+                if(buf[off] != '*') {
+                    mode = 1;
+                    off++;
+                    break;
+                }
+                level++;
+                off++;
+                break;
+             case 1: /* spaces */
+                if(buf[off] != ' ') {
+                    mode = 2;
+                    break;
+                }
+        }
+    }
+
+    if(buf[size - 1] == '\n') size--; /* chomp */
+
+&lt;&lt;update_section_depth&gt;&gt;
+    if(mktoc) {
+&lt;&lt;print_toc_header&gt;&gt;
+    } else {
+&lt;&lt;print_normal_header&gt;&gt;
+    }
+}</pre></code>
+<p></p>
+<p>It inside the function <code>print_header</code> that the section counter is updated.
+This overloads the functionality of <code>print_header</code>, but it is a quick solution
+to the problem.
+</p>
+<p>Level in this parser starts at header level 2, so the value needs to be
+subtracted by 2 in order to work with the internal section counters.
+</p>
+<br>
+<div><b><i>&lt;&lt;update_section_depth&gt;&gt;=</i></b></div><pre><code>update_section_depth(sorg, level - 2);</pre></code>
+
+<h5>4.3.2.2. Normal Header Printing</h5>
+
+<p><a id="wm_010_0121"></a><div><b><i>&lt;&lt;print_normal_header&gt;&gt;=</i></b></div><pre><code>fprintf(out, "&lt;a id=\"");
+spaces_to_underscores(buf + off, size - off, out);
+fprintf(out, "\"&gt;\n");
+if(level &lt; 6) {
+    fprintf(out, "&lt;h%d&gt;", level);
+    if(use_secno) print_section(sorg, out);
+    fwrite(buf + off, 1, size - off, out);
+    fprintf(out, "&lt;/h%d&gt;\n", level);
+} else {
+    fprintf(out, "&lt;u&gt;&lt;i&gt;");
+    if(use_secno) print_section(sorg, out);
+    fwrite(buf + off, 1, size - off, out);
+    fprintf(out, "&lt;/i&gt;&lt;/u&gt;\n");
+}
+fprintf(out, "&lt;/a&gt;\n");</pre></code>
+
+<h5>4.3.2.3. TOC Header Printing</h5>
+
+<p><a id="wm_010_0125"></a>A TOC section heading in HTML is a list item in an unordered list. HTML
+supports nested lists with automatic indentation, which makes presenting
+the hierarchy a little more elegant (no need to compute indentations
+manually!). However, the program needs to be responsible when to
+start and end unordered lists. To do this, we need to keep track
+of the previous section depth as well as the current one. When
+the depth changes, one has to update the unordered lists.
+</p>
+<p>A new unordered
+list will only begin when there is a new subsection created, so this
+only occurs when the current depth is greater than the previous one.
+</p>
+<p>When the depth goes up a level, this indicates that the currently
+populated list needs to be closed with an end tag. <b>However</b>, sometimes
+the depth will go up more than one level, which means that each of those
+lists will need to be closed. For this reason, a variable number of end
+tags need to be printed. The number of necessary closed tags needed
+is obtained from getting the difference between the current depth
+and the previous depth. (Note: I missed this edge case on the first go).
+<div><b><i>&lt;&lt;print_toc_header&gt;&gt;=</i></b></div><pre><code>if(sorg-&gt;depth &gt; sorg-&gt;pdepth) {
+    fprintf(out, "&lt;ul&gt;");
+} else if(sorg-&gt;depth &lt; sorg-&gt;pdepth) {
+    for(s = 0; s &lt; (sorg-&gt;pdepth - sorg-&gt;depth); s++)
+    fprintf(out, "&lt;/ul&gt;");
+}
+fprintf(out, "&lt;li&gt;&lt;a href=\"%s#", indxfile);
+spaces_to_underscores(buf + off, size - off, out);
+fprintf(out, "\"&gt;");
+if(use_secno) print_section(sorg, out);
+fwrite(buf + off, 1, size - off, out);
+fprintf(out, "&lt;/a&gt;&lt;/li&gt;\n");</pre></code>
+
+<h3>4.4. Titles</h3>
+
+<p><a id="wm_010_0130"></a></p>
+<p>Titles are declared using the <code>TITLE</code> tag in org-mode. They should
+only be used once per document, and it is expected that they are
+declared at the top of the file.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_title(sorg_d *sorg, const char *buf, size_t size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_title(sorg_d *sorg, const char *buf, size_t size)
+{
+    const char *title = "#+TITLE:";
+    size_t title_size = 8;
+    size_t s;
+
+    if(size &lt; title_size) return 0;
+
+    for(s = 0; s &lt; title_size; s++) {
+        if(buf[s] != title[s]) return 0;
+    }
+    return 1;
+}</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static void print_title(sorg_d *sorg, const char *buf, size_t size, FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void print_title(sorg_d *sorg, const char *buf, size_t size, FILE *out)
+{
+    size_t s;
+    int mode;
+    const char *title;
+    size_t tsize;
+    mode = 1;
+    tsize = 0;
+    title = NULL;
+    for(s = 8; s &lt; size; s++) {
+        if(mode == 0) break;
+        switch(mode) {
+            case 1: /* spaces */
+                if(buf[s] == ' ') {
+                    continue;
+                }
+                mode = 2;
+                tsize = 1;
+                title = &buf[s];
+                break;
+            case 2:
+                if(buf[s] == '\n') {
+                    mode = 0;
+                    break;
+                }
+                tsize++;
+                break;
+        }
+    }
+
+    if(title != NULL) {
+        fprintf(out, "&lt;h1&gt;");
+        fwrite(title, 1, tsize, out);
+        fprintf(out, "&lt;/h1&gt;\n");
+    }
+}</pre></code>
+
+<h3>4.5. Plain Text</h3>
+
+<p><a id="wm_010_0140"></a></p>
+<p>Plain text can be roughly defined as stuff in between headers that isn't
+a code block. In this mode, the parser looks for
+<a href="Formatted Text">Formatted Text</a>.
+</p>
+<div><b><i>&lt;&lt;types&gt;&gt;=</i></b></div><pre><code>MODE_TEXT,</pre></code>
+
+<h4>4.5.1. Writing a block of text</h4>
+
+<p><a id="wm_010_0145"></a>A block of text is written using the function |print_text|.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void print_text(sorg_d *sorg, char *buf, FILE *out);</pre></code>
+<p></p>
+<p>This code is a wrapper around |fwrite|.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void print_text(sorg_d *sorg, char *buf, FILE *out)
+{
+    if(sorg-&gt;blksize &gt; 0) {
+        fwrite(buf + sorg-&gt;off, 1, sorg-&gt;blksize - 1, out);
+    }
+}</pre></code>
+
+<h3>4.6. Code Blocks</h3>
+
+<p><a id="wm_010_0152"></a></p>
+<p>All code blocks are assumed to begin with the <code>NAME</code> tag with the code
+block immediately following it on the next line.
+</p>
+<p>A NAME tag is found while the state machine is in NONE mode. It is
+done using the function <code>is_name</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_name(sorg_d *sorg, char *buf, size_t size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_name(sorg_d *sorg, char *buf, size_t size)
+{
+    const char *name = "#+NAME:";
+    const int name_size = 7;
+    size_t s;
+
+    if(size &lt; name_size) return 0;
+
+    for(s = 0; s &lt; name_size; s++) {
+        if(buf[s] != name[s]) return 0;
+    }
+
+    return 1;
+}</pre></code>
+<p></p>
+<p>If a <code>NAME</code> tag is found, this changes the state machine to only look for
+the beginning of a code block.
+</p>
+<div><b><i>&lt;&lt;types&gt;&gt;=</i></b></div><pre><code>MODE_BEGIN_CODE,</pre></code>
+<p></p>
+<p>The NAME tag will also be printed to screen. This is a distinct difference
+between the regular emacs org-mode exporter and this one (and an
+important one!) Emacs will not export the name of the code block, which
+leads to more confusing readability!
+</p>
+<p>In addition to printing the name itself, a link target will be
+printed as well. To distinguish them from section targets,
+code sections will be prepended with an underscore '_'.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static void print_name(sorg_d *sorg, char *buf, size_t size, FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void print_name(sorg_d *sorg, char *buf, size_t size, FILE *out)
+{
+    int mode;
+    size_t name_size;
+    size_t n;
+    size_t off;
+    buf+=7;
+    size -= 7;
+    name_size = 0;
+    mode = 1;
+
+    off = 0;
+
+    for(n = 0; n &lt; size; n++) {
+        if(mode == 0) break;
+        switch(mode) {
+            case 1: /* spaces */
+                if(buf[n] == ' ') {
+                    break;
+                }
+                off = n;
+                mode = 2;
+                name_size = 1;
+                break;
+            case 2: /* count to line break*/
+                if(buf[n] == '\n' || buf[n] == ' ') {
+                    mode = 0;
+                    break;
+                }
+                name_size++;
+                break;
+        }
+    }
+    fprintf(out, "&lt;a id=\"_");
+    spaces_to_underscores(buf + off, name_size, out);
+    fprintf(out, "\"&gt;\n");
+    fprintf(out, "&lt;div&gt;&lt;b&gt;&lt;i&gt;&lt;&lt;");
+    fwrite(buf + off, 1, name_size, out);
+    fprintf(out, "&lt;/b&gt;&lt;/i&gt;&gt;&gt;=&lt;/div&gt;\n");
+    fprintf(out, "&lt;/a&gt;");
+}</pre></code>
+<p></p>
+<p>Code blocks begin and end with <code>BEGIN_SRC</code> and <code>END_SRC</code> tags. When a
+new code block declaration begins, the mode is set to be in code mode.
+</p>
+<div><b><i>&lt;&lt;types&gt;&gt;=</i></b></div><pre><code>MODE_CODE,</pre></code>
+<p></p>
+<p>The <code>BEGIN_SRC</code> tag is checked with the function <code>is_begin</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_begin(sorg_d *sorg, char *buf, size_t size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_begin(sorg_d *sorg, char *buf, size_t size)
+{
+    const char *name = "#+BEGIN_SRC";
+    const int name_size = 11;
+    size_t s;
+
+    if(size &lt; name_size) return 0;
+
+    for(s = 0; s &lt; name_size; s++) {
+        if(buf[s] != name[s]) return 0;
+    }
+
+    return 1;
+}</pre></code>
+<p></p>
+<p>Lines will remain in code mode until the <code>END_SRC</code> tag is found.
+</p>
+<p>The <code>END_SRC</code> tag is found using the function <code>is_end</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_end(sorg_d *sorg, char *buf, size_t size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_end(sorg_d *sorg, char *buf, size_t size)
+{
+    const char *name = "#+END_SRC";
+    const int name_size = 9;
+    size_t s;
+
+    if(size &lt; name_size) return 0;
+
+    for(s = 0; s &lt; name_size; s++) {
+        if(buf[s] != name[s]) return 0;
+    }
+
+    return 1;
+}</pre></code>
+
+<h3>4.7. Code Block References</h3>
+
+<p><a id="wm_010_0179"></a>Code block references are hyperlink references to named code blocks
+in text. This formatting is identical to how it appears in
+the codeblock code.
+</p>
+<p>A code block reference can be found via <code>is_block_ref</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_block_ref(sorg_d *sorg, char *buf, size_t size);</pre></code>
+<p></p>
+<p>The code for this has been heavily copied from the function
+<code>is_link</code>.
+</p>
+<br>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_block_ref(sorg_d *sorg, char *buf, size_t size)
+{
+    size_t n;
+
+    if(size &lt; 5) return 0;
+
+    if(buf[0] != '&lt;' || buf[1] != '&lt;') return 0;
+
+    size -= 1; /* for lookahead */
+
+    for(n = 2; n &lt; size; n++) {
+        if(buf[n] == '&gt;' && buf[n + 1] == '&gt;') return 1;
+    }
+
+    return 0;
+}</pre></code>
+<p></p>
+<p>A code block reference is printed with the function <code>print_block_ref</code>.
+This will print a hyperlink to the targetted codeblock.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static size_t print_block_ref(sorg_d *sorg, char *buf, size_t size, FILE *out);</pre></code>
+<p></p>
+<p>Similar to <code>is_block_ref</code>, <code>print_block_ref</code> is copied from <code>print_link</code>.
+As mentioned in <a href="Code%20Blocks">the code block section,</a>a block reference will always be prepended with an underscore "_".
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static size_t print_block_ref(sorg_d *sorg, char *buf, size_t size, FILE *out)
+{
+    size_t off;
+    size_t n;
+    char *name;
+    size_t name_size;
+    size_t tmp;
+
+
+    size -= 1; /* for lookahead */
+
+    off = 2;
+    name_size = 0;
+    tmp = 0;
+    name = &buf[2];
+    for(n = 2; n &lt; size; n++) {
+        off++;
+        tmp++;
+        if(buf[n] == '&gt;' && buf[n + 1] == '&gt;') {
+            name_size = tmp - 1;
+            n++;
+            off++;
+            break;
+        }
+    }
+    fprintf(out, "&lt;a href=\"#_");
+    spaces_to_underscores(name, name_size, out);
+    fprintf(out, "\"&gt;&lt;&lt;");
+    fwrite(name, 1, name_size, out);
+    fprintf(out, "&gt;&gt;&lt;/a&gt;");
+    return off;
+}</pre></code>
+
+<h3>4.8. Formatted Text</h3>
+
+<p><a id="wm_010_0192"></a>All formatted text can be generally described as encapsulated text. Each
+formatting is surrounded by a special character (or characters). Because they
+are so similar, this kind of parsing can be generalized.
+</p>
+
+<h4>4.8.1. The core mechanic</h4>
+
+<p><a id="wm_010_0194"></a>First, the parser checks to see if an item is encapsulated by a particular
+delimeter <code>delim</code> of size <code>dsize</code>.
+If there are matching delimeters on the same line, then
+the text between is is considered to be encapsulated.
+</p>
+<p>NOTE: for now, <code>dsize</code> only works with a size of 1.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_encapsulated(sorg_d *sorg,
+                    const char *delim,
+                    int dsize,
+                    char *buf,
+                    size_t size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_encapsulated(sorg_d *sorg,
+                    const char *delim,
+                    int dsize,
+                    char *buf,
+                    size_t size)
+{
+    size_t s;
+    if(buf[0] != delim[0]) return 0;
+    size = size - 1;
+    for(s = 1; s &lt; size; s++) if(buf[s] == delim[0]) return 1;
+    return 0;
+}</pre></code>
+<p>Once encapsulated text is found, the encapsulated text is printed to
+screen. In HTML, this means they are between HTML tags of a certain
+label. This function returns how many characters it parsed, so the parser
+knows to skip over them.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static size_t print_encapsulated(sorg_d *sorg,
+                          const char *delim,
+                          int dsize,
+                          char *buf,
+                          size_t size,
+                          const char *tag,
+                          FILE *out);</pre></code>
+<p></p>
+<p>This function extracts the text in between the two delimiters and
+then prints it between the specified HTML tags. The trick with printing
+the text is factoring in offsets for <b>both</b> sets of delimiters. To avoid
+the leftmost delimiter, offset by the size of the delimiter. To avoid the
+rightmost delimiter, negate the size by two times the delimiter to compensate
+for both the rightmost and leftmost delimiter.
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static size_t print_encapsulated(sorg_d *sorg,
+                          const char *delim,
+                          int dsize,
+                          char *buf,
+                          size_t size,
+                          const char *tag,
+                          FILE *out)
+{
+    size_t off;
+    size_t s;
+    off = 1;
+    size = size - 1;
+    for(s = 1; s &lt; size; s++) {
+        off++;
+        if(buf[s] == delim[0]) {
+            break;
+        }
+    }
+    fprintf(out, "&lt;%s&gt;", tag);
+    fwrite(buf + dsize, 1, off - 2*dsize, out);
+    fprintf(out, "&lt;/%s&gt;", tag);
+    return off;
+}</pre></code>
+<p>In the parse loop, both <code>is_encapsulated</code> and <code>print_encapsulated</code>can be combined together in a function called <code>chk_encapsulated</code>. The
+<code>chk</code> is short for check, and the abbreviation only used to make sure
+the function call fits on the same line.
+</p>
+<p>On success, the function will return "true", causing the function
+to break out of the chain of if statments.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int chk_encapsulated(sorg_d *sorg,
+                          const char *delim,
+                          int dsize,
+                          char *buf,
+                          size_t size,
+                          const char *tag,
+                          FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int chk_encapsulated(sorg_d *sorg,
+                          const char *delim,
+                          int dsize,
+                          char *buf,
+                          size_t size,
+                          const char *tag,
+                          FILE *out)
+{
+    if(is_encapsulated(sorg,
+                        delim,
+                        dsize,
+                        &buf[sorg-&gt;pos],
+                        size - sorg-&gt;pos))
+    {
+        fwrite(buf + sorg-&gt;off, 1, sorg-&gt;blksize - 1, out);
+        sorg-&gt;pos += print_encapsulated(sorg,
+                                        delim,
+                                        dsize,
+                                        &buf[sorg-&gt;pos],
+                                        size - sorg-&gt;pos,
+                                        tag,
+                                        out);
+        sorg-&gt;blksize = 1;
+        sorg-&gt;off = sorg-&gt;pos;
+        return 1;
+    }
+
+    return 0;
+}</pre></code>
+
+<h4>4.8.2. Format Styles</h4>
+
+<p><a id="wm_010_0211"></a></p>
+
+<h5>4.8.2.1. Bold</h5>
+
+<p><a id="wm_010_0212"></a><div><b><i>&lt;&lt;parse_formatted&gt;&gt;=</i></b></div><pre><code>if(chk_encapsulated(sorg, "*", 1, buf, size, "b", out)) break;</pre></code>
+
+<h5>4.8.2.2. Italics</h5>
+
+<p><a id="wm_010_0216"></a><div><b><i>&lt;&lt;parse_formatted&gt;&gt;=</i></b></div><pre><code>if(chk_encapsulated(sorg, "/", 1, buf, size, "i", out)) break;</pre></code>
+
+<h5>4.8.2.3. Preformatted</h5>
+
+<p><a id="wm_010_0219"></a><div><b><i>&lt;&lt;parse_formatted&gt;&gt;=</i></b></div><pre><code>if(chk_encapsulated(sorg, "=", 1, buf, size, "code", out)) break;</pre></code>
+
+<h5>4.8.2.4. Underline</h5>
+
+<p><a id="wm_010_0222"></a><div><b><i>&lt;&lt;parse_formatted&gt;&gt;=</i></b></div><pre><code>if(chk_encapsulated(sorg, "_", 1, buf, size, "u", out)) break;</pre></code>
+
+<h5>4.8.2.5. TeX math mode</h5>
+
+<p><a id="wm_010_0225"></a>This is not yet implemented.
+</p>
+
+<h3>4.9. Ordered Lists</h3>
+
+<p><a id="wm_010_0227"></a>This is not yet implemented.
+</p>
+
+<h3>4.10. Unordered Lists</h3>
+
+<p><a id="wm_010_0229"></a>An unordered list is a list whose entries are noted by
+dashes "-". In Org Mode, unordered lists can have
+hierarchy via indentation. This will be implemented later.
+</p>
+
+<h4>4.10.1. Unordered List mode</h4>
+
+<p><a id="wm_010_0231"></a><div><b><i>&lt;&lt;types&gt;&gt;=</i></b></div><pre><code>MODE_ULIST,</pre></code>
+<p></p>
+<p>When a list is first found out of <code>MODE_NONE</code> mode, it is set to be
+<code>MODE_ULIST</code>, or unordered list mode. In this mode, list items will be
+added until there are no more items. When this happens, it sets the
+mode back to <code>MODE_NONE</code> and re-reads the line.
+</p>
+</p>
+
+<h4>4.10.2. Checking for list</h4>
+
+<p><a id="wm_010_0235"></a>A line that begins with the characters "- " (dash space) are considered to
+be the start of a list. If the line has a dash with no spaces, it is
+considered to be an ordered list.
+</p>
+<p>This check is done using the function <code>is_ulistitem</code>#+NAME: function_declarations
+<pre><code>static int is_ulistitem(sorg_d *sorg, char *buf, size_t size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_ulistitem(sorg_d *sorg, char *buf, size_t size)
+{
+    if(size == 0) return 0;
+    else if(buf[0] != '-') return 0;
+    else if(size == 2 && buf[0] == '-') return 1;
+    else if(buf[0] == '-' && buf[1] == ' ') return 1;
+    return 0;
+}</pre></code>
+
+<h4>4.10.3. Printing the list item</h4>
+
+<p><a id="wm_010_0241"></a>There are different components of a list that need to be printed:
+the beginning of a list, the end of a list, and a list item.
+</p>
+<p>The beginning of a list prints the HTML tag "ul" via <code>print_ulist_begin</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static void print_ulist_begin(sorg_d *sorg, FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void print_ulist_begin(sorg_d *sorg, FILE *out)
+{
+    fprintf(out, "&lt;ul&gt;\n");
+}</pre></code>
+<p></p>
+<p>The end of the list will print the corresponding end tag to "ul" via
+<code>print_list_end</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static void print_ulist_end(sorg_d *sorg, FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void print_ulist_end(sorg_d *sorg, FILE *out)
+{
+    fprintf(out, "&lt;/ul&gt;\n");
+}</pre></code>
+<p></p>
+<p>An item of an unordered list is printed via <code>print_ulist_item</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static void print_ulist_item(sorg_d *sorg, char *buf, size_t size, FILE *out);</pre></code>
+<p></p>
+<p><code>print_ulist_item</code> will begin the item information after the initial
+dashes and any immediate whitespace proceding it. It will end right before
+the line break.
+</p>
+<p>This is an interesting function because it recursively calls the top-level
+parse function in order to format the item string. This has caused some
+initial bugs to surface. Inside of <code>MODE_TEXT</code>, previous blocks of text
+get written before any formattings happen. This parser function gets called
+directly into <code>MODE_TEXT</code>, instead of being called from <code>MODE_NONE</code>. We
+do this because we only want to limit the parsing scope to things inside
+of text. This is a break from previous assumptions. Up to this point, it
+has always been assumed that there is always a block sizes of at least one.
+Now there are cases where there are empty block sizes, and nothing to
+handle for that. For some reason, blocks in text mode are printed N-1. When
+N is 0, you get negative values which results in undefined behavior. To
+combat this, the function <code>print_text</code> does a zero check.
+</p>
+<br>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void print_ulist_item(sorg_d *sorg, char *buf, size_t size, FILE *out)
+{
+    size_t s;
+    int mode;
+    size_t off;
+    size_t len;
+    size_t s_blksize;
+    size_t s_off;
+    size_t s_pos;
+
+    mode = 1;
+    off = 1; /* assume first character is '-' */
+    len = 0;
+
+    for(s = 1; s &lt; size; s++) {
+        if(mode == 0) break;
+        switch(mode) {
+            case 1: /* whitespaces after initial dash */
+                if(buf[s] != ' ') mode = 2;
+                else off++;
+                break;
+            case 2: /* look for linebreak */
+                if(buf[s] == '\n') {
+                    mode = 0;
+                }
+                len++;
+                break;
+        }
+    }
+
+    fprintf(out, "&lt;li&gt;&lt;p&gt;");
+    sorg-&gt;pmode = MODE_NONE;
+    sorg-&gt;mode = MODE_TEXT;
+    s_off = sorg-&gt;off;
+    s_blksize = sorg-&gt;blksize;
+    s_pos = sorg-&gt;pos;
+    parse(sorg, out, buf + off, len + 1);
+    sorg-&gt;off = s_off;
+    sorg-&gt;blksize = s_blksize;
+    sorg-&gt;pos = s_pos;
+
+    sorg-&gt;mode = MODE_ULIST;
+    sorg-&gt;pmode = MODE_ULIST;
+    /* fwrite(buf + off, len, 1, out); */
+    fprintf(out, "&lt;/p&gt;&lt;/li&gt;\n");
+}</pre></code>
+
+<h3>4.11. TODO "TODO" headings</h3>
+
+<p><a id="wm_010_0258"></a>This is not yet implemented.
+</p>
+
+<h3>4.12. Links</h3>
+
+<p><a id="wm_010_0260"></a>A link can be found in Sorg using the function <code>is_link</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_link(sorg_d *sorg, char *buf, size_t size);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_link(sorg_d *sorg, char *buf, size_t size)
+{
+    size_t n;
+
+    if(size &lt; 5) return 0;
+
+    if(buf[0] != '[' || buf[1] != '[') return 0;
+
+    size -= 1; /* for lookahead */
+
+    for(n = 2; n &lt; size; n++) {
+        if(buf[n] == ']' && buf[n + 1] == ']') return 1;
+    }
+
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static size_t print_link(sorg_d *sorg, char *buf, size_t size, FILE *out);</pre></code>
+<p></p>
+<p>Links come in two forms. The first form contains both the link location
+and named description. The second form only contains the link location which
+is also the visible named description. If the "][" combination was not
+found in the buffer, it is assumed to be the second morse terse type. When
+this happens, the <code>name</code> and <code>name_size</code> are set to be identical to
+<code>link</code> and <code>link_size</code>.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static size_t print_link(sorg_d *sorg, char *buf, size_t size, FILE *out)
+{
+    size_t off;
+    size_t n;
+    char *link;
+    size_t link_size;
+    char *name;
+    size_t name_size;
+    size_t tmp;
+
+
+    size -= 1; /* for lookahead */
+
+    off = 2;
+    name_size = 0;
+    link_size = 0;
+    tmp = 0;
+    link = NULL;
+    name = NULL;
+    link = &buf[2];
+    for(n = 2; n &lt; size; n++) {
+        off++;
+        tmp++;
+        if(buf[n] == ']' && buf[n + 1] == '[') {
+            link_size = tmp - 1;
+            tmp = 0;
+            name = &buf[n + 2];
+            n++;
+            off++;
+        } else if(buf[n] == ']' && buf[n + 1] == ']') {
+            name_size = tmp - 1;
+            if(name == NULL) { /* name not set, assume type 2 link */
+                link_size = name_size;
+                name = link;
+            }
+            off++;
+            break;
+        }
+    }
+    if(!strncmp(link, "https://", 8) || !strncmp(link, "http://", 7)) {
+        fprintf(out, "&lt;a href=\"");
+        fwrite(link, 1, link_size, out);
+    } else {
+        fprintf(out, "&lt;a href=\"#");
+        spaces_to_underscores(link, link_size, out);
+    }
+    fprintf(out, "\"&gt;");
+    fwrite(name, 1, name_size, out);
+    fprintf(out, "&lt;/a&gt;");
+    return off;
+}</pre></code>
+
+<h3>4.13. Comments</h3>
+
+<p><a id="wm_010_0271"></a>A comment in org-mode is denoted by "# " (space included).
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int is_comment(sorg_d *sorg, char *line, size_t size);</pre></code>
+<p></p>
+<p>In addition for checking for the pattern "# ", the <code>is_comment</code>function will also check if the line contains only a "#". This will
+be interpretted as a comment as well.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int is_comment(sorg_d *sorg, char *line, size_t size)
+{
+    if(size &lt;= 0) return 0;
+    if(size == 2 && line[0] == '#') return 1;
+    if(line[0] == '#' && line[1] == ' ') return 1;
+    return 0;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_010_0021">prev</a> | <a href="/loom/sorg">home</a> | <a href="/loom/wm_010_0278">next</a></p>
+</div>
+</body>
+</html>

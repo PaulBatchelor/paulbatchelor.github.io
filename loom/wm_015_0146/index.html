@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>9. String Management</h2>
+
+<p><a id="wm_015_0146"></a>Content gets dynamically appended onto a new string in
+memory, before being saved as content to a weewiki page.
+</p>
+<div><b><i>&lt;&lt;string_management&gt;&gt;=</i></b></div><pre><code>&lt;&lt;string_constants&gt;&gt;
+&lt;&lt;string_struct&gt;&gt;
+&lt;&lt;string_funcs&gt;&gt;</pre></code>
+<p></p>
+<p>An interface needs to be built to handle this. Strings need
+to dynamically grow when needed (shrinking not needed at
+the moment), and it needs to be trivial to append stuff
+to the end of the string as well. Something simple and
+fast. Just something that re-allocs stuff under the hood.
+</p>
+<p>The main struct consists of a string pointer, it's current
+size, and the total capacity.
+</p>
+<div><b><i>&lt;&lt;string_struct&gt;&gt;=</i></b></div><pre><code>typedef struct {
+   char *str;
+   size_t sz;
+   size_t cap;
+} wwstring;</pre></code>
+<p></p>
+<p>When the string is initialized, everything is zeroed out.
+</p>
+<div><b><i>&lt;&lt;string_funcs&gt;&gt;=</i></b></div><pre><code>static void wwstring_init(wwstring *s)
+{
+    s-&gt;str = NULL;
+    s-&gt;sz = 0;
+    s-&gt;cap = 1;
+}</pre></code>
+<p></p>
+<p>The internal string grows by getting stuff appended to it.
+Arguments supplied must be the content to appended (duh),
+as well as the size of the content.
+</p>
+<p>Before copying (memmove-ing?) the content over, the string
+must be checked if it has enough capacity for it. If not,
+the capacity will keep doubling until it is greater than
+the needed capacity. Either that, or the capacity reaches
+some built-in max. At which point, and error is returned.
+</p>
+<p>Speaking of max capacity, that's a constant defined! A value
+of 131072 (2^17) <b>should</b> be plenty while still being modest
+on modern hardware.
+</p>
+<div><b><i>&lt;&lt;string_constants&gt;&gt;=</i></b></div><pre><code>#define WWSTRING_MAX 131072</pre></code>
+<p></p>
+<p>An initialized string starts at 0, which means that no
+memory has actually been allocated yet. The initial
+allocation starts at 8, and doubles from there.
+</p>
+<p>None of the sizes/capacities include the null
+terminator, so malloc/realloc makes up for this by
+allocating capacity + 1.
+</p>
+<div><b><i>&lt;&lt;string_resize&gt;&gt;=</i></b></div><pre><code>while (s-&gt;cap &lt; new_sz) {
+    if (s-&gt;cap == 0) {
+        s-&gt;cap = 8;
+        s-&gt;str = malloc(s-&gt;cap + 1);
+    } else {
+        s-&gt;cap *= 2;
+        s-&gt;str = realloc(s-&gt;str, s-&gt;cap + 1);
+    }
+}</pre></code>
+<p></p>
+<p>Since there is a hard coded max, some work needs to be
+done to ensure that the new string does go over the size.
+If this does happen, only part of the string gets appended.
+</p>
+<div><b><i>&lt;&lt;check_limits&gt;&gt;=</i></b></div><pre><code>if (new_sz &gt; WWSTRING_MAX) {
+    sz = WWSTRING_MAX - s-&gt;sz;
+    new_sz = WWSTRING_MAX;
+}</pre></code>
+<p></p>
+<p>String copying is done with <code>memmove</code>, which is a little
+bit more straight forward than <code>memcpy</code> and is less prone
+to undefined behavior.
+</p>
+<p>The string starts copying over stuff where the previous size
+<code>sz</code> is. (I initially wasn't entirely sure this was
+corrrect, so I had to double check with a test; When <code>sz</code> is
+0, <code>str[0]</code> is correctly at the beginning of the string.)
+</p>
+<div><b><i>&lt;&lt;copy_string_over&gt;&gt;=</i></b></div><pre><code>memmove(&s-&gt;str[s-&gt;sz], txt, sz);
+s-&gt;str[new_sz] = '\0'; /* don't forget the null terminator */</pre></code>
+<p></p>
+<p>At the end of it all, update the size of string to be
+<code>new_sz</code>.
+</p>
+<div><b><i>&lt;&lt;update_size&gt;&gt;=</i></b></div><pre><code>s-&gt;sz = new_sz;</pre></code>
+<div><b><i>&lt;&lt;string_funcs&gt;&gt;=</i></b></div><pre><code>static void wwstring_append(wwstring *s,
+                            const char *txt,
+                            size_t sz)
+{
+    size_t new_sz;
+
+    if (s-&gt;sz &gt;= WWSTRING_MAX) return;
+
+    new_sz = s-&gt;sz + sz;
+
+&lt;&lt;check_limits&gt;&gt;
+
+    if (new_sz &gt; s-&gt;cap) {
+&lt;&lt;string_resize&gt;&gt;
+    }
+
+&lt;&lt;copy_string_over&gt;&gt;
+
+&lt;&lt;update_size&gt;&gt;
+}</pre></code>
+<p></p>
+<p>Freeing a string is done with <code>wwstring_free</code>. This function
+will ignore <code>cap</code> and <code>sz</code>, and only check and see if
+the string itself is <code>NULL</code> or not. The string gets
+reinitialized as a precautionary measure. Doing this
+should help to avoid things like double frees and
+out-of-bounds errors.
+</p>
+<div><b><i>&lt;&lt;string_funcs&gt;&gt;=</i></b></div><pre><code>static void wwstring_free(wwstring *s)
+{
+    if (s-&gt;str != NULL) free(s-&gt;str);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_015_0144">prev</a> | <a href="/loom/worgmap_weewiki">home</a> | next</p>
+</div>
+</body>
+</html>

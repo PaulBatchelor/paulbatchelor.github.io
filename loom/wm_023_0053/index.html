@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>7. Operations</h2>
+
+<p><a id="wm_023_0053"></a></p>
+
+<h3>7.1. Num</h3>
+
+<p><a id="wm_023_0054"></a>Creates a 7-bit number in a single instruction.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_num(bitlang_state *st, int num);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_num(bitlang_state *st, int num)
+{
+    num &= 0x7f;
+
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+
+    st-&gt;bytes[st-&gt;len] = 0x80 | num;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+
+<h3>7.2. Add</h3>
+
+<p><a id="wm_023_0060"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_ADD,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_add(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_add(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_ADD;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_ADD: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x + y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "+", 1)) {
+    return bitlang_add(st);
+}</pre></code>
+
+<h3>7.3. Sub</h3>
+
+<p><a id="wm_023_0074"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_SUB,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_sub(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_sub(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_SUB;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_SUB: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x - y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "-", 1)) {
+    return bitlang_sub(st);
+}</pre></code>
+
+<h3>7.4. Mul</h3>
+
+<p><a id="wm_023_0085"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_MUL,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_mul(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_mul(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_MUL;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_MUL: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x * y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "*", 1)) {
+    return bitlang_mul(st);
+}</pre></code>
+
+<h3>7.5. Div</h3>
+
+<p><a id="wm_023_0096"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_DIV,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_div(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_div(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_DIV;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_DIV: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    if (y == 0) return 1;
+    rc = bitlang_push(vm, x / y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "/", 1)) {
+    return bitlang_div(st);
+}</pre></code>
+
+<h3>7.6. Get</h3>
+
+<p><a id="wm_023_0107"></a>Gets a value from a register and pushes it onto the stack.
+</p>
+<div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_GET,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_get(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_get(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_GET;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_GET: {
+    int rp;
+    rc = bitlang_pop(vm, &rp);
+    if (rc) return rc;
+    if (rp &lt; 0 || rp &gt;= 8) return 1;
+    rc = bitlang_push(vm, vm-&gt;reg[rp]);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "get", 3)) {
+    return bitlang_get(st);
+}</pre></code>
+
+<h3>7.7. X, Y, W, H, T</h3>
+
+<p><a id="wm_023_0119"></a>These are all links to getters 0-4.
+</p>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "x", 1)) {
+    int rc;
+    rc = bitlang_num(st, 0);
+    if (rc) return rc;
+    return bitlang_get(st);
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "y", 1)) {
+    int rc;
+    rc = bitlang_num(st, 1);
+    if (rc) return rc;
+    return bitlang_get(st);
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "w", 1)) {
+    int rc;
+    rc = bitlang_num(st, 2);
+    if (rc) return rc;
+    return bitlang_get(st);
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "h", 1)) {
+    int rc;
+    rc = bitlang_num(st, 3);
+    if (rc) return rc;
+    return bitlang_get(st);
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "t", 1)) {
+    int rc;
+    rc = bitlang_num(st, 4);
+    if (rc) return rc;
+    return bitlang_get(st);
+}</pre></code>
+
+<h3>7.8. Mod</h3>
+
+<p><a id="wm_023_0131"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_MOD,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_mod(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_mod(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_MOD;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_MOD: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    if (y == 0) rc = bitlang_push(vm, 0);
+    else rc = bitlang_push(vm, x % y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "%", 1)) {
+    return bitlang_mod(st);
+}</pre></code>
+
+<h3>7.9. Equ</h3>
+
+<p><a id="wm_023_0142"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_EQ,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_eq(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_eq(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_EQ;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_EQ: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x == y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "=", 1)) {
+    return bitlang_eq(st);
+}</pre></code>
+
+<h3>7.10. LShift</h3>
+
+<p><a id="wm_023_0153"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_LSHIFT,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_lshift(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_lshift(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_LSHIFT;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_LSHIFT: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x &lt;&lt; y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "&lt;&lt;", 2)) {
+    return bitlang_lshift(st);
+}</pre></code>
+
+<h3>7.11. RShift</h3>
+
+<p><a id="wm_023_0164"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_RSHIFT,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_rshift(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_rshift(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_RSHIFT;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_RSHIFT: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x &gt;&gt; y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "&gt;&gt;", 2)) {
+    return bitlang_rshift(st);
+}</pre></code>
+
+<h3>7.12. Logical OR</h3>
+
+<p><a id="wm_023_0175"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_LOR,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_lor(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_lor(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_LOR;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_LOR: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x || y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "||", 2)) {
+    return bitlang_lor(st);
+}</pre></code>
+
+<h3>7.13. Bitwise OR</h3>
+
+<p><a id="wm_023_0186"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_BOR,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_bor(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_bor(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_BOR;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_BOR: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x | y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "|", 1)) {
+    return bitlang_bor(st);
+}</pre></code>
+
+<h3>7.14. Bitwise AND</h3>
+
+<p><a id="wm_023_0197"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_BAND,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_band(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_band(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_BAND;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_BAND: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x & y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "&", 1)) {
+    return bitlang_band(st);
+}</pre></code>
+
+<h3>7.15. XOR</h3>
+
+<p><a id="wm_023_0208"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_XOR,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_xor(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_xor(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_XOR;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_XOR: {
+    int x, y;
+    rc = bitlang_pop(vm, &y);
+    if (rc) return rc;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, x ^ y);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "^", 1)) {
+    return bitlang_xor(st);
+}</pre></code>
+
+<h3>7.16. Bitwise NOT</h3>
+
+<p><a id="wm_023_0219"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_BNOT,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_bnot(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_bnot(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_BNOT;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_BNOT: {
+    int x;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, ~x);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "~", 1)) {
+    return bitlang_bnot(st);
+}</pre></code>
+
+<h3>7.17. Logical NOT</h3>
+
+<p><a id="wm_023_0230"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_LNOT,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_lnot(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_lnot(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_LNOT;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_LNOT: {
+    int x;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, !x);
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "!", 1)) {
+    return bitlang_lnot(st);
+}</pre></code>
+
+<h3>7.18. Abs</h3>
+
+<p><a id="wm_023_0241"></a><div><b><i>&lt;&lt;opcodes&gt;&gt;=</i></b></div><pre><code>BITLANG_ABS,</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int bitlang_abs(bitlang_state *st);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int bitlang_abs(bitlang_state *st)
+{
+    if (st-&gt;len &gt;= st-&gt;sz) return 1;
+    st-&gt;bytes[st-&gt;len] = BITLANG_ABS;
+    st-&gt;len++;
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;ops&gt;&gt;=</i></b></div><pre><code>case BITLANG_ABS: {
+    int x;
+    rc = bitlang_pop(vm, &x);
+    if (rc) return rc;
+    rc = bitlang_push(vm, abs(x));
+    if (rc) return rc;
+    pos++;
+    break;
+}</pre></code>
+<div><b><i>&lt;&lt;search&gt;&gt;=</i></b></div><pre><code>else if (match(str, len, "abs", 3)) {
+    return bitlang_abs(st);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_023_0044">prev</a> | <a href="/loom/bitlang">home</a> | <a href="/loom/wm_023_0252">next</a></p>
+</div>
+</body>
+</html>

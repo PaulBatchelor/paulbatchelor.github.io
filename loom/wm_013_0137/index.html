@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>13. Block Search (blksearch)</h2>
+
+<p><a id="wm_013_0137"></a>Find a block with a name.
+<div><b><i>&lt;&lt;available_commands&gt;&gt;=</i></b></div><pre><code>fprintf(stderr, "blksearch: finds a block with a name.\n");</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int get_blksearch(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int get_blksearch(int argc, char *argv[])
+{
+    wmp_core core;
+    int rc;
+    sqlite3_stmt *stmt;
+    wmp_block blk;
+    const char *name;
+
+    if (argc &lt; 2) {
+        fprintf(stderr, "Usage: %s NAME\n", argv[0]);
+        return 1;
+    }
+
+    rc = wmp_core_open(&core, wmp_filename_get());
+    if (!rc) return 0;
+    name = argv[1];
+
+    wmp_block_init(&blk);
+    wmp_blksearch_setup(&core, name, &stmt);
+
+    while (1) {
+        rc = wmp_blksearch_step(&core, stmt, &blk);
+        if (!rc) break;
+        printf("%s:prog=%d:id=%d\n",
+               blk.name,
+               blk.prog,
+               blk.id);
+    }
+
+    wmp_core_close(&core);
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;command_parsing&gt;&gt;=</i></b></div><pre><code>else if (match(argv[1], len, "blksearch", 9)) {
+    argv++;
+    argc--;
+    get_blksearch(argc, argv);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_013_0127">prev</a> | <a href="/loom/worgmap_get">home</a> | <a href="/loom/wm_013_0147">next</a></p>
+</div>
+</body>
+</html>

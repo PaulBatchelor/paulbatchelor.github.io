@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>5. I/O interface</h2>
+
+<p><a id="wm_001_0216"></a>A callback driven I/O interface is used to read/write
+serial data in different configurations.
+</p>
+
+<h3>5.1. Struct</h3>
+
+<p><a id="wm_001_0218"></a>The IO interface is a struct that consists of 3 things: a
+write callback, a read callback, and some user data. The
+user data is tacked on the end of the read/write callbacks.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct txtvm_io txtvm_io;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct txtvm_io {
+    int (*read)(int,char*,void*);
+    int (*write)(int,char*,void*);
+    void *ud;
+};</pre></code>
+<p></p>
+<p>The <code>read</code> callback requests to read a number bytes into
+a supplied buffer. It returns the number of bytes actually
+read. A negative value is an error.
+</p>
+<p>The <code>write</code> callback requests to write a number of bytes
+in a supplied buffer. It returns the number of bytes
+actually written. A negative value is an error.
+</p>
+
+<h3>5.2. Initialize</h3>
+
+<p><a id="wm_001_0225"></a>Initialize the IO with <code>txtvm_io_init</code>. This will make it do
+nothing.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_io_init(txtvm_io *io);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_io_init(txtvm_io *io)
+{
+    io-&gt;read = NULL;
+    io-&gt;write = NULL;
+    io-&gt;ud = NULL;
+}</pre></code>
+
+<h3>5.3. Calling Read/Write callbacks</h3>
+
+<p><a id="wm_001_0231"></a>Call the read callback with <code>txtvm_io_read</code>. Will return -1
+if there is no read callback.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_io_read(txtvm_io *io, int sz, char *buf);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_io_read(txtvm_io *io, int sz, char *buf)
+{
+    if (io-&gt;read == NULL) return -1;
+    return io-&gt;read(sz, buf, io-&gt;ud);
+}</pre></code>
+<p></p>
+<p>Writing is done in a similar way with <code>txtvm_io_write</code>. It
+will also return -1 if no write callback is to be found.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_io_write(txtvm_io *io, int sz, char *buf);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_io_write(txtvm_io *io, int sz, char *buf)
+{
+    if (io-&gt;write == NULL) return -1;
+    return io-&gt;write(sz, buf, io-&gt;ud);
+}</pre></code>
+
+<h3>5.4. Read-Only Memory Buffer Setup</h3>
+
+<p><a id="wm_001_0242"></a>This setup configures things to read bytes from
+a memory buffer. Writing is disabled.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_io_readbuf(txtvm_io *io,
+                      txtvm_io_readbuf_data *data);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;readbuf&gt;&gt;
+void txtvm_io_readbuf(txtvm_io *io,
+                      txtvm_io_readbuf_data *data)
+{
+    io-&gt;read = readbuf;
+    io-&gt;write = NULL;
+    io-&gt;ud = data;
+}</pre></code>
+<p></p>
+<p>The reader callback struct is embedded inside of a struct
+for the serial parser. This new struct is initialized with
+both the memory buffer to read from, as well as the size.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    unsigned long pos;
+    unsigned long sz;
+    const char *buf;
+} txtvm_io_readbuf_data;</pre></code>
+<p></p>
+<p>Internally, the struct keeps track of the buffer offset
+position.
+</p>
+<p>Reading from the buffer is a matter of making sure the
+requested block size is in bounds, adjusting if needed,
+copying the chunk, then updating the offset position.
+</p>
+<div><b><i>&lt;&lt;readbuf&gt;&gt;=</i></b></div><pre><code>static int readbuf(int sz, char *buf, void *ud)
+{
+    txtvm_io_readbuf_data *r;
+    int i;
+
+    r = ud;
+
+    if (r-&gt;pos &gt;= r-&gt;sz) return 0;
+
+    if ((r-&gt;pos + sz) &gt;= r-&gt;sz) {
+        sz = r-&gt;sz - r-&gt;pos;
+    }
+
+    for (i = 0; i &lt; sz; i++) {
+        buf[i] = r-&gt;buf[r-&gt;pos + i];
+    }
+
+    r-&gt;pos += sz;
+    return sz;
+}</pre></code>
+
+<h3>5.5. Write-Only Memory Buffer Setup</h3>
+
+<p><a id="wm_001_0256"></a>Sets up the I/O interface to write content to a buffer with
+a maximum capacity. If it reaches that point, it returns an
+error.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_io_writebuf(txtvm_io *io,
+                       txtvm_io_writebuf_data *data);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;writebuf&gt;&gt;
+void txtvm_io_writebuf(txtvm_io *io,
+                       txtvm_io_writebuf_data *data)
+{
+    io-&gt;read = NULL;
+    io-&gt;write = writebuf;
+    io-&gt;ud = data;
+}</pre></code>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    unsigned long pos;
+    unsigned long sz;
+    char *buf;
+} txtvm_io_writebuf_data;</pre></code>
+<div><b><i>&lt;&lt;writebuf&gt;&gt;=</i></b></div><pre><code>static int writebuf(int sz, char *buf, void *ud)
+{
+    txtvm_io_writebuf_data *w;
+    int i;
+
+    w = ud;
+
+    if (w-&gt;pos &gt;= w-&gt;sz) return 0;
+
+    if ((w-&gt;pos + sz) &gt;= w-&gt;sz) {
+        sz = w-&gt;sz - w-&gt;pos;
+    }
+
+    for (i = 0; i &lt; sz; i++) {
+        w-&gt;buf[w-&gt;pos + i] = buf[i];
+    }
+
+    w-&gt;pos += sz;
+    return sz;
+}</pre></code>
+
+<h3>5.6. I/O Errors</h3>
+
+<p><a id="wm_001_0268"></a></p>
+
+<h4>5.6.1. Incomplete Write</h4>
+
+<p><a id="wm_001_0269"></a><div><b><i>&lt;&lt;errorlist&gt;&gt;=</i></b></div><pre><code>ERRORCODE(TXTVM_INCOMPLETE_WRITE, "Incomplete write.")</pre></code>
+
+<h4>5.6.2. Incomplete Read</h4>
+
+<p><a id="wm_001_0272"></a><div><b><i>&lt;&lt;errorlist&gt;&gt;=</i></b></div><pre><code>ERRORCODE(TXTVM_INCOMPLETE_READ, "Incomplete read.")</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_001_0118">prev</a> | <a href="/loom/txtvm">home</a> | <a href="/loom/wm_001_0275">next</a></p>
+</div>
+</body>
+</html>

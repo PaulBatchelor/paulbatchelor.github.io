@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>10. Header</h2>
+
+<p><a id="wm_012_0301"></a>Gets header information.
+</p>
+
+<h3>10.1. struct</h3>
+
+<p><a id="wm_012_0303"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct wmp_header wmp_header;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct wmp_header {
+    int prog;
+    int id;
+    char *section;
+    int level;
+    char *name;
+    char *filename;
+    int linum;
+    int next;
+};</pre></code>
+
+<h3>10.2. init</h3>
+
+<p><a id="wm_012_0308"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_header_init(wmp_header *h);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_header_init(wmp_header *h)
+{
+    h-&gt;prog = -1;
+    h-&gt;id = -1;
+    h-&gt;section = NULL;
+    h-&gt;level = -1;
+    h-&gt;name = NULL;
+    h-&gt;filename = NULL;
+    h-&gt;linum = -1;
+    h-&gt;next = -1;
+}</pre></code>
+
+<h3>10.3. free</h3>
+
+<p><a id="wm_012_0313"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void wmp_header_free(wmp_header *h);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void wmp_header_free(wmp_header *h)
+{
+    if (h-&gt;section != NULL) {
+        free(h-&gt;section);
+        h-&gt;section = NULL;
+    }
+
+    if (h-&gt;name != NULL) {
+        free(h-&gt;name);
+        h-&gt;name = NULL;
+    }
+
+    if (h-&gt;filename != NULL) {
+        free(h-&gt;filename);
+        h-&gt;filename = NULL;
+    }
+}</pre></code>
+
+<h3>10.4. find</h3>
+
+<p><a id="wm_012_0318"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int wmp_header_find(wmp_core *c,
+                    unsigned int uuid,
+                    wmp_header *h,
+                    int prog);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int wmp_header_find(wmp_core *c,
+                    unsigned int uuid,
+                    wmp_header *h,
+                    int prog)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+
+    db = wmp_core_db(c);
+
+    sqlite3_prepare_v2(db,
+                       "SELECT "
+                         "program, "
+                         "id, "
+                         "section, "
+                         "level, "
+                         "name , "
+                         "filename , "
+                         "linum , "
+                         "next "
+                       "FROM headers "
+                       "WHERE(id==?1) AND "
+                       "(program==?2);",
+                       -1,
+                       &stmt,
+                       NULL);
+    sqlite3_bind_int(stmt, 1, uuid);
+    sqlite3_bind_int(stmt, 2, prog);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+
+    if (rc == SQLITE_ROW) {
+        h-&gt;prog = sqlite3_column_int(stmt, 0);
+        h-&gt;id = sqlite3_column_int(stmt, 1);
+
+        {
+            int nbytes;
+            const char *str;
+            nbytes = sqlite3_column_bytes(stmt, 2);
+            h-&gt;section = calloc(1, nbytes + 1);
+            str = (const char *)sqlite3_column_text(stmt, 2);
+            strncpy(h-&gt;section, str, nbytes);
+        }
+
+        h-&gt;level = sqlite3_column_int(stmt, 3);
+
+        {
+            int nbytes;
+            const char *str;
+            nbytes = sqlite3_column_bytes(stmt, 4);
+            h-&gt;name = calloc(1, nbytes + 1);
+            str = (const char *)sqlite3_column_text(stmt, 4);
+            strncpy(h-&gt;name, str, nbytes);
+        }
+
+        {
+            int nbytes;
+            const char *str;
+            nbytes = sqlite3_column_bytes(stmt, 5);
+            h-&gt;filename = calloc(1, nbytes + 1);
+            str = (const char *)sqlite3_column_text(stmt, 5);
+            strncpy(h-&gt;filename, str, nbytes);
+        }
+
+        h-&gt;linum = sqlite3_column_int(stmt, 6);
+        h-&gt;next = sqlite3_column_int(stmt, 7);
+    } else {
+        fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+    sqlite3_finalize(stmt);
+    return 1;
+}</pre></code>
+
+<h3>10.5. get top header</h3>
+
+<p><a id="wm_012_0323"></a>Finds the topmost header in a program. This is assumed
+to be header chunk smallest ID.
+</p>
+<p>This can be done with the following SQL query:
+</p>
+<pre><code>SELECT MIN(id) from headers where program == prog;</pre></code>
+<p></p>
+<p>Where <code>prog</code> is the program id.
+</p>
+<p>From there <code>wmp_header_find</code> can be called as usual.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>unsigned int wmp_header_top(wmp_core *c, wmp_header *h, int prog);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>unsigned int wmp_header_top(wmp_core *c, wmp_header *h, int prog)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int top;
+
+    db = wmp_core_db(c);
+
+    top = 0;
+
+    sqlite3_prepare_v2(db,
+                       "SELECT MIN(id) from headers "
+                       "where program == ?1;",
+                       -1,
+                       &stmt,
+                       NULL);
+
+    sqlite3_bind_int(stmt, 1, prog);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+
+    if (rc == SQLITE_ROW) {
+        top = sqlite3_column_int(stmt, 0);
+    }
+
+    sqlite3_finalize(stmt);
+
+    if (h != NULL) {
+        rc = wmp_header_find(c, top, h, prog);
+        if (!rc) top = 0;
+    }
+
+    return top;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_012_0285">prev</a> | <a href="/loom/worgmap_core">home</a> | <a href="/loom/wm_012_0329">next</a></p>
+</div>
+</body>
+</html>

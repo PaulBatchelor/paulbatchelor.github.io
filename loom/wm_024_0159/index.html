@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>10. Main Rephasor</h2>
+
+<p><a id="wm_024_0159"></a></p>
+
+<h3>10.1. Overview</h3>
+
+<p><a id="wm_024_0160"></a>Rephasor whose scaling amount is represented as a rational
+number with a numerator and denominator.
+</p>
+
+<h3>10.2. Computation</h3>
+
+<p><a id="wm_024_0162"></a>It is computed with <code>rephasor_tick</code>.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static SKFLT rephasor_tick(gestvm *gvm, SKFLT phs);</pre></code>
+<p></p>
+<p>The rephasor scaling value must be updated any time
+the numerator, denominator, or skewing duration is changed.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static SKFLT rephasor_tick(gestvm *gvm, SKFLT phs)
+{
+    SKFLT out;
+
+    if (gvm-&gt;update_rephasor) {
+        SKFLT scale;
+        gvm-&gt;update_rephasor = 0;
+
+        if (gvm-&gt;den != 0) {
+            scale =
+                (SKFLT)(gvm-&gt;num * gvm-&gt;skewdur) /
+                (SKFLT)gvm-&gt;den;
+        } else scale = 1.0;
+
+        gestvm_rephasor_scale(&gvm-&gt;rephasor, scale);
+    }
+
+    out = gestvm_rephasor_tick(&gvm-&gt;rephasor, phs);
+    return out;
+}</pre></code>
+
+<h3>10.3. Rephasor Control</h3>
+
+<p><a id="wm_024_0169"></a><div><b><i>&lt;&lt;gestvm&gt;&gt;=</i></b></div><pre><code>gestvm_rephasor rephasor;
+int num, den;
+int update_rephasor;</pre></code>
+<div><b><i>&lt;&lt;init&gt;&gt;=</i></b></div><pre><code>gestvm_rephasor_init(&gvm-&gt;rephasor);
+gestvm_rephasor_scale(&gvm-&gt;rephasor, 1.0);
+gvm-&gt;num = 1;
+gvm-&gt;den = 1;
+gvm-&gt;update_rephasor = 0;</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_024_0108">prev</a> | <a href="/loom/gestvm">home</a> | <a href="/loom/wm_024_0174">next</a></p>
+</div>
+</body>
+</html>

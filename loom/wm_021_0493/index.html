@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>9. Phrases</h2>
+
+<p><a id="wm_021_0493"></a>A gesture is built of out of chunks known as as a <code>phrase</code>.
+Phrases convert an incoming conductor signal into a single
+monoramp, and then divide that monoramp into a polyramp.
+</p>
+
+<h3>9.1. Struct Declaration</h3>
+
+<p><a id="wm_021_0495"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct gest_phrase gest_phrase;</pre></code>
+<div><b><i>&lt;&lt;struct_phrase&gt;&gt;=</i></b></div><pre><code>struct gest_phrase {
+    gest_node *top;
+    SKFLT mod;
+    int beats;
+    gest_phrase *next;
+    gest_phrase* (*nextf)(gest_d *, gest_phrase *);
+    gest_metaphrase *meta;
+    gest_phrase* (*get)(gest_d *, gest_phrase *);
+    void *ud;
+&lt;&lt;phrase_skew&gt;&gt;
+};</pre></code>
+<p></p>
+<p>The phrase forms the top of a Ramp Tree that gets populated.
+</p>
+<p>When a phrase is over, it points to the next phrase. If
+there is no phrase, it loops back to itself.
+</p>
+
+<h3>9.2. Initialization</h3>
+
+<p><a id="wm_021_0504"></a>A phrase gets initialized with <code>phrase_init</code>. The duration
+of the phrase, measured in beats, is supplied.
+</p>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static void phrase_init(gest_d *g,
+                        gest_phrase *phrase,
+                        int beats,
+                        int div);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void phrase_init(gest_d *g,
+                        gest_phrase *phrase,
+                        int beats,
+                        int div)
+{
+    if (beats &gt; 0) phrase-&gt;mod = 1.0 / beats;
+    else phrase-&gt;mod = 0;
+    phrase-&gt;beats = beats;
+    phrase-&gt;next = NULL;
+    phrase-&gt;top = mkpolyramp(g, NULL, div);
+    phrase-&gt;meta = NULL;
+    phrase-&gt;get = NULL;
+    phrase-&gt;nextf = NULL;
+&lt;&lt;phrase_skew_init&gt;&gt;
+}</pre></code>
+
+<h3>9.3. Temporal Skewing</h3>
+
+<p><a id="wm_021_0512"></a>Time (represented here as a linear construct) within a
+phrase can be <code>skewed</code> using a function.
+</p>
+<p>This function is a callback called <code>skew</code>, and it is set
+to be NULL by default.
+</p>
+<div><b><i>&lt;&lt;phrase_skew&gt;&gt;=</i></b></div><pre><code>SKFLT (*skew)(SKFLT, SKFLT);</pre></code>
+<div><b><i>&lt;&lt;phrase_skew_init&gt;&gt;=</i></b></div><pre><code>phrase-&gt;skew = NULL;</pre></code>
+<p></p>
+<p><code>skew</code> takes in two arguments, the current linear point in
+time <code>t</code>, and the increment value <code>inc</code>. Skew can return
+a new local increment value based on the linear point in
+time.
+</p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0474">prev</a> | <a href="/loom/gest_program">home</a> | <a href="/loom/wm_021_0521">next</a></p>
+</div>
+</body>
+</html>

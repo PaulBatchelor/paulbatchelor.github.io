@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>7. Miscellaneous Utilties</h2>
+
+<p><a id="wm_010_0319"></a></p>
+
+<h3>7.1. Getline</h3>
+
+<p><a id="wm_010_0320"></a></p>
+<p>The Sorg parser parses a file one line at a time.
+</p>
+<p>Because the getline function is not part of the ANSI C standard, an
+implementation is used in it's place.
+</p>
+<div><b><i>&lt;&lt;getline&gt;&gt;=</i></b></div><pre><code>size_t sorg_getline(char **lineptr, size_t *n, FILE *stream) {
+    char *bufptr = NULL;
+    char *p = bufptr;
+    size_t size;
+    int c;
+
+    if (lineptr == NULL) {
+        return -1;
+    }
+    if (stream == NULL) {
+        return -1;
+    }
+    if (n == NULL) {
+        return -1;
+    }
+    bufptr = *lineptr;
+    size = *n;
+
+    c = fgetc(stream);
+    if (c == EOF) {
+        return -1;
+    }
+    if (bufptr == NULL) {
+        bufptr = malloc(128);
+        if (bufptr == NULL) {
+            return -1;
+        }
+        size = 128;
+    }
+    p = bufptr;
+    while(c != EOF) {
+        if ((p - bufptr) &gt; (size - 1)) {
+            size = size + 128;
+            bufptr = realloc(bufptr, size);
+            if (bufptr == NULL) {
+                return -1;
+            }
+        }
+        *p++ = c;
+        if (c == '\n') {
+            break;
+        }
+        c = fgetc(stream);
+    }
+
+
+    *lineptr = bufptr;
+
+    /* Some text editors do not insert a linebreak on the last line.
+    * For these cases, shift everything by 1.
+    */
+
+    if(c == EOF) {
+        p = p + 1;
+        size += 1;
+    }
+    *p++ = '\0';
+    *n = size;
+
+    return p - bufptr - 1;
+}
+</pre></code>
+
+<h3>7.2. Spaces To Underscores</h3>
+
+<p><a id="wm_010_0325"></a></p>
+<p>As it turns out, some browsers,
+such as <a href="https://www.netsurf-browswer.org">netsurf</a>, don't work well when
+references have spaces in them. This function will take in a string and
+write it to a file handle, replacing the spaces ( ) to underscores (_).
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static void spaces_to_underscores(const char *str, size_t size, FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void spaces_to_underscores(const char *str, size_t size, FILE *out)
+{
+    size_t blksize;
+    size_t n;
+    size_t off;
+
+    off = 0;
+    blksize = 0;
+
+    for(n = 0; n &lt; size; n++) {
+        blksize++;
+        if(str[n] == ' ') {
+            fwrite(str + off, 1, blksize - 1, out);
+            fputc('_', out);
+            blksize = 0;
+            off = n + 1;
+        }
+    }
+
+    fwrite(str + off, 1, blksize, out);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_010_0290">prev</a> | <a href="/loom/sorg">home</a> | next</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>7. Error Codes</h2>
+
+<p><a id="wm_001_0323"></a>Error codes! We need error codes for stack overflows, empty
+stacks, invalid types, and a generic error. Oh, and an "OK"
+would be good to have too I guess.
+</p>
+<p>It may also be helpful to build error messages associated
+with each macro.
+</p>
+<p>Enter some mild mannered macro abuse. Because who doesn't
+want to do it every now and then?
+</p>
+<p>This is a trick I've use in a few of my projects now.
+</p>
+<p>The way we will do it is with an error list of error codes,
+consisting of their macro and their associated error
+message. We'll call this <code>ERRORCODE</code>.
+</p>
+<div><b><i>&lt;&lt;errorlist.h&gt;&gt;=</i></b></div><pre><code>ERRORCODE(TXTVM_OK, "everything is ok.")
+ERRORCODE(TXTVM_NOT_OK, "something went wrong.")
+&lt;&lt;errorlist&gt;&gt;
+ERRORCODE(TXTVM_UNKNOWN, "not sure what happened.")</pre></code>
+<p></p>
+<p>From there, the macro preprocessor will process the
+the <code>ERRORCODE</code> entries found in <code>errorlist.h</code> in
+two different ways. <code>ERRORCODE</code> will be (re)defined to
+behave differently in each context.
+</p>
+<p>The first will be inside of an enum. The <code>ERRORCODE</code>macro will be defined to only include the error code
+portion.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>#define ERRORCODE(C,S) C,
+enum {
+#include "errorlist.h"
+TXTVM_OOF /* you don't want to reach here */
+};
+#undef ERRORCODE</pre></code>
+<p></p>
+<p>The messages portion will be an array of strings. Similar
+deal as the enums, only take the message portion.
+</p>
+<p>Doing it this way, the enum values will line up with message
+array indices.
+</p>
+<div><b><i>&lt;&lt;constants&gt;&gt;=</i></b></div><pre><code>#define ERRORCODE(C, S) S,
+static const char *errmsg[] =
+{
+#include "errorlist.h"
+};
+#undef ERRORCODE</pre></code>
+<p></p>
+<p>The function <code>txtvm_errmsg</code> returns the associated error
+message.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>const char* txtvm_errmsg(int rc);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>const char* txtvm_errmsg(int rc)
+{
+    if (rc &lt; 0 || rc &gt; TXTVM_UNKNOWN) rc = TXTVM_UNKNOWN;
+    return errmsg[rc];
+}</pre></code>
+<p></p>
+<p>the function <code>txtvm_errcheck</code> checks the error code to see
+if things are okie-dokie.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_errcheck(int rc);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_errcheck(int rc)
+{
+    return rc != TXTVM_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_ok(void);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_ok(void)
+{
+    return TXTVM_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_not_ok(void);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_not_ok(void)
+{
+    return TXTVM_NOT_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;exported_macros&gt;&gt;=</i></b></div><pre><code>#define TXTVM_ERROR_CHECK(A) \
+    if (txtvm_errcheck(A)) return A;</pre></code>
+<div><b><i>&lt;&lt;exported_macros&gt;&gt;=</i></b></div><pre><code>#define TXTVM_ERROR_GOTO(A, L) \
+    if (txtvm_errcheck(A)) goto L;</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_001_0275">prev</a> | <a href="/loom/txtvm">home</a> | <a href="/loom/wm_001_0361">next</a></p>
+</div>
+</body>
+</html>

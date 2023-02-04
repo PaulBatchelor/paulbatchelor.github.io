@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>10. Blocklist</h2>
+
+<p><a id="wm_013_0107"></a></p>
+<p>Given a block name, print underlying blocks associated with
+it.
+<div><b><i>&lt;&lt;available_commands&gt;&gt;=</i></b></div><pre><code>fprintf(stderr, "blklst: prints sub-blocks\n");</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int get_blklst(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int get_blklst(int argc, char *argv[])
+{
+    wmp_core core;
+    int rc;
+    wmp_segment s;
+    wmp_block b;
+    int next;
+    int prog;
+
+    prog = 0; /* TODO: make parameter */
+    if (argc &lt; 2) {
+        fprintf(stderr, "Usage: %s NAME\n", argv[0]);
+        return 1;
+    }
+
+    rc = wmp_core_open(&core, wmp_filename_get());
+    if (!rc) return 0;
+    wmp_block_init(&b);
+    rc = wmp_lookup_block(&core, argv[1], &b, prog);
+    if (!rc) {
+        fprintf(stderr,
+                "Could not find block '%s'",
+                argv[1]);
+        return 1;
+    }
+    wmp_segment_init(&s);
+    wmp_find_segment(&core, b.head_segment, &s, prog);
+
+    while (1) {
+        next = s.nxtseg;
+        if (s.id == next || s.id &lt;= 0) {
+            wmp_segment_free(&s);
+            break;
+        }
+
+        if (s.type == 1) {
+            printf("%s\n", s.str);
+        }
+
+        wmp_segment_free(&s);
+        wmp_segment_init(&s);
+        wmp_find_segment(&core, next, &s, prog);
+    }
+    wmp_block_free(&b);
+    wmp_core_close(&core);
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;command_parsing&gt;&gt;=</i></b></div><pre><code>else if (match(argv[1], len, "blklst", 6)) {
+    argv++;
+    argc--;
+    get_blklst(argc, argv);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_013_0097">prev</a> | <a href="/loom/worgmap_get">home</a> | <a href="/loom/wm_013_0117">next</a></p>
+</div>
+</body>
+</html>

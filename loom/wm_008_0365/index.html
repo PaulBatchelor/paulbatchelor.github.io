@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>4. Core Data Structures</h2>
+
+<p><a id="wm_008_0365"></a>The Worgle/Orgle program is very much a data-structure
+driven program. Understanding the hierarchy of data here
+will provide a clear picture for how the tangling works.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>&lt;&lt;worgle_string&gt;&gt;
+&lt;&lt;worgle_segment&gt;&gt;
+&lt;&lt;worgle_block&gt;&gt;
+&lt;&lt;worgle_blocklist&gt;&gt;
+&lt;&lt;worgle_hashmap&gt;&gt;
+&lt;&lt;worgle_file&gt;&gt;
+&lt;&lt;worgle_filelist&gt;&gt;
+&lt;&lt;worgle_textbuf&gt;&gt;
+&lt;&lt;worgle_orglet&gt;&gt;
+&lt;&lt;worgle_orgfile&gt;&gt;
+&lt;&lt;worgle_struct&gt;&gt;</pre></code>
+
+<h3>4.1. Top Level Struct</h3>
+
+<p><a id="wm_008_0380"></a>All Worgle operations are contained in a top-level struct called <code>worgle_d</code>.
+For the most part, this struct aims to be dynamically populated.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_d worgle_d;</pre></code>
+<div><b><i>&lt;&lt;worgle_struct&gt;&gt;=</i></b></div><pre><code>struct worgle_d {
+&lt;&lt;worgle_struct_contents&gt;&gt;
+};</pre></code>
+
+<h4>4.1.1. Worgle Initialization</h4>
+
+<p><a id="wm_008_0390"></a></p>
+<p>Worgle data is initialized using the function <code>worgle_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_init(worgle_d *worg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_init(worgle_d *worg)
+{
+&lt;&lt;worgle_init&gt;&gt;
+}</pre></code>
+
+<h4>4.1.2. Worgle Deallocation</h4>
+
+<p><a id="wm_008_0398"></a></p>
+<p>When worgle is done, the program deallocates memory using the function
+<code>worgle_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_free(worgle_d *worg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_free(worgle_d *worg)
+{
+    int i;
+&lt;&lt;worgle_free&gt;&gt;
+}</pre></code>
+
+<h4>4.1.3. Worgle Data</h4>
+
+<p><a id="wm_008_0406"></a></p>
+
+<h5>4.1.3.1. Text Block</h5>
+
+<p><a id="wm_008_0407"></a>The <code>block</code> variable is used to store multi-line text blocks
+being parsed, such as those in a code block when the parser,
+such as when the parser is in <code>MODE_CODE</code>.
+</p>
+<p>It may also be used to parse content while the parser in
+mode <code>MODE_ORG</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>worgle_string block;</pre></code>
+<p></p>
+<p>It is initialized to be an empty string.
+</p>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worgle_string_init(&worg-&gt;block);</pre></code>
+
+<h5>4.1.3.2. Segment Block</h5>
+
+<p><a id="wm_008_0416"></a>Like the text block, but for holding segments instead.
+Only included in the full-version.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>#ifndef WORGLITE
+worgle_string segblock;
+#endif</pre></code>
+<p></p>
+<p>It is initialized to be an empty string.
+</p>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>#ifndef WORGLITE
+worgle_string_init(&worg-&gt;segblock);
+#endif</pre></code>
+
+<h5>4.1.3.3. Current Line</h5>
+
+<p><a id="wm_008_0423"></a></p>
+<p>The starting line number of the current block is stored in a variable called
+<code>curline</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>long curline;</pre></code>
+<p></p>
+<p>The current line is initialized to be negative value to mark that it has not
+been set yet.
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worg-&gt;curline = -1;</pre></code>
+
+<h5>4.1.3.4. Block Started Flag</h5>
+
+<p><a id="wm_008_0430"></a>The block started flag is used by the parser to check whether or not a code
+block was started on the last iteration.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>int block_started;</pre></code>
+<p></p>
+<p>It is set to be FALSE (0).
+</p>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worg-&gt;block_started = 0;</pre></code>
+
+<h5>4.1.3.5. New Content Flag</h5>
+
+<p><a id="wm_008_0437"></a>This gets set any time Worgle is ready to begin a new
+content block.
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>#ifndef WORGLITE
+int new_content;
+#endif</pre></code>
+<p></p>
+<p>It is enabled by default.
+</p>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>#ifndef WORGLITE
+worg-&gt;new_content = 1;
+#endif</pre></code>
+
+<h5>4.1.3.6. Dictionary</h5>
+
+<p><a id="wm_008_0444"></a></p>
+<p>All code blocks are stored in a dictionary, also referred to here as a hash map.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>worgle_hashmap dict;</pre></code>
+<p></p>
+<p>The dictionary is initialized using the function <code>worgle_hashmap_init</code>.
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worgle_hashmap_init(&worg-&gt;dict);</pre></code>
+<p></p>
+<p>When free-ing time comes around, the hashmap will free itself using the function
+<code>worgle_hashmap_free</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_free&gt;&gt;=</i></b></div><pre><code>worgle_hashmap_free(&worg-&gt;dict);</pre></code>
+
+<h5>4.1.3.7. File List</h5>
+
+<p><a id="wm_008_0455"></a></p>
+<p>All files to be written to are stored in a local file list called <code>flist</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>worgle_filelist flist;</pre></code>
+<p></p>
+<p>Initialization.
+</p>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worgle_filelist_init(&worg-&gt;flist);</pre></code>
+<p></p>
+<p>Destruction.
+</p>
+<div><b><i>&lt;&lt;worgle_free&gt;&gt;=</i></b></div><pre><code>worgle_filelist_free(&worg-&gt;flist);</pre></code>
+
+<h5>4.1.3.8. Text Buffer</h5>
+
+<p><a id="wm_008_0465"></a>Text files are loaded into buffers, encapsulated as a type
+<code>worgle_textbuf</code>. The currently used text buffer is stored in
+the variable <code>curbuf</code>. Buffers are stored in an array of text
+buffers known as <code>buflist</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>worgle_textbuf *curbuf;
+worgle_textbuf *buffers;
+int nbuffers;</pre></code>
+<p></p>
+<p>The loaded happens after initialization, so the buffer is set to be NULL for
+now.
+</p>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worg-&gt;curbuf = NULL;
+worg-&gt;buffers = NULL;
+worg-&gt;nbuffers = 0;</pre></code>
+<p></p>
+<p>If the buffer is non-null, the memory will be freed.
+</p>
+<div><b><i>&lt;&lt;worgle_free&gt;&gt;=</i></b></div><pre><code>for(i = 0; i &lt; worg-&gt;nbuffers; i++) {
+    worgle_textbuf_free(&worg-&gt;buffers[i]);
+}
+if(worg-&gt;nbuffers &gt; 0) free(worg-&gt;buffers);</pre></code>
+
+<h5>4.1.3.9. Current Block</h5>
+
+<p><a id="wm_008_0475"></a>A pointer to the currently populated code block is stored in a variable called
+<code>curblock</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>worgle_block *curblock;</pre></code>
+<p></p>
+<p>There is no block on startup, so set it to be NULL.
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worg-&gt;curblock = NULL;</pre></code>
+
+<h5>4.1.3.10. Line Number</h5>
+
+<p><a id="wm_008_0482"></a></p>
+<p>The currently parsed line number is stored in a variable called <code>linum</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>size_t linum;</pre></code>
+<p></p>
+<p>The line number is incremented, so the starting value starts at 0. Line 1 is
+the first line. Do not be tempted to set this to be -1, because it won't work.
+</p>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worg-&gt;linum = 0;</pre></code>
+
+<h5>4.1.3.11. Orgfile Array</h5>
+
+<p><a id="wm_008_0489"></a>The orgfile array keeps track of data representations
+of orgfiles to be tangled.
+</p>
+
+<h6>4.1.3.11.1. Declaration + Initialization</h6>
+
+<p><a id="wm_008_0491"></a><div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>worgle_orgfile *orgs;
+worgle_orgfile *curorg;</pre></code>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worg-&gt;orgs = NULL;
+worg-&gt;curorg = NULL;</pre></code>
+
+<h6>4.1.3.11.2. Freeing</h6>
+
+<p><a id="wm_008_0496"></a>Org files allocated must be freed.
+<div><b><i>&lt;&lt;worgle_free&gt;&gt;=</i></b></div><pre><code>if(worg-&gt;orgs != NULL && worg-&gt;nbuffers &gt; 0) {
+    for(i = 0; i &lt; worg-&gt;nbuffers; i++) {
+        worgle_orgfile_free(&worg-&gt;orgs[i]);
+    }
+    free(worg-&gt;orgs);
+}</pre></code>
+
+<h6>4.1.3.11.3. Appending an Org file</h6>
+
+<p><a id="wm_008_0500"></a>This happens when the main file list is being populated.
+<div><b><i>&lt;&lt;append_org_file&gt;&gt;=</i></b></div><pre><code>if(worg-&gt;nbuffers == 1) {
+    worg-&gt;orgs = calloc(1, sizeof(worgle_orgfile));
+} else {
+    worg-&gt;orgs = realloc(worg-&gt;orgs,
+                         sizeof(worgle_orgfile) *
+                         worg-&gt;nbuffers);
+}
+if(worg-&gt;nbuffers &gt; 0) {
+    worgle_orgfile_init(&worg-&gt;orgs[worg-&gt;nbuffers - 1]);
+}</pre></code>
+
+<h5>4.1.3.12. Program ID</h5>
+
+<p><a id="wm_008_0505"></a>The program id is a integer value primarily used to
+distinguish itself from other programs in a generated
+database. This functionality allows portions of a program
+to be incrementally updated/written to a database.
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>int prog;</pre></code>
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worg-&gt;prog = 0;</pre></code>
+
+<h3>4.2. String</h3>
+
+<p><a id="wm_008_0511"></a>A string is a wrapper around a raw <code>char</code> pointer and a size. This is used
+as the base string literal.
+</p>
+<div><b><i>&lt;&lt;worgle_string_contents&gt;&gt;=</i></b></div><pre><code>char *str;
+size_t size;</pre></code>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_string worgle_string;</pre></code>
+<div><b><i>&lt;&lt;worgle_string&gt;&gt;=</i></b></div><pre><code>struct worgle_string {
+&lt;&lt;worgle_string_contents&gt;&gt;
+};</pre></code>
+
+<h4>4.2.1. Reset or initialize a string</h4>
+
+<p><a id="wm_008_0523"></a></p>
+<p>Strings in worgle are reset with the function <code>worgle_string_reset</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_string_init&gt;&gt;=</i></b></div><pre><code>str-&gt;str = NULL;
+str-&gt;size = 0;</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_string_reset(worgle_string *str);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_string_reset(worgle_string *str)
+{
+&lt;&lt;worgle_string_init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>A string being initialized is identical to a string being reset. The function
+<code>worgle_string_init</code> is just a wrapper around <code>worgle_string_reset</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_string_init(worgle_string *str);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_string_init(worgle_string *str)
+{
+    worgle_string_reset(str);
+}</pre></code>
+
+<h4>4.2.2. Writing a String</h4>
+
+<p><a id="wm_008_0539"></a></p>
+<p>A string is written to a particular filehandle with the function
+<code>worgle_string_write</code>.Worgle strings are <b>not</b> zero-terminated
+and can't be used in functions like printf.
+</p>
+<br>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int worgle_string_write(FILE *fp, worgle_string *str);</pre></code>
+<p></p>
+<p>This function is a wrapper around a call to <code>fwrite</code>.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int worgle_string_write(FILE *fp, worgle_string *str)
+{
+    return fwrite(str-&gt;str, 1, str-&gt;size, fp);
+}</pre></code>
+
+<h3>4.3. Segment</h3>
+
+<p><a id="wm_008_0546"></a>A segment turns a string into a linked list component that has a type.
+A segment type flag can either be a text chunk or a reference.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_segment worgle_segment;</pre></code>
+<div><b><i>&lt;&lt;worgle_segment&gt;&gt;=</i></b></div><pre><code>enum {
+&lt;&lt;worgle_segment_types&gt;&gt;
+};
+struct worgle_segment {
+&lt;&lt;worgle_segment_contents&gt;&gt;
+};</pre></code>
+<div><b><i>&lt;&lt;worgle_segment_contents&gt;&gt;=</i></b></div><pre><code>int type;
+worgle_string str;
+&lt;&lt;worgle_segment_line_control&gt;&gt;
+worgle_segment *nxt;</pre></code>
+<p></p>
+<p>Segments also keep track of where they are in the original org file.
+This information can be used to generate line control preprocessor commands
+for C/C++.
+</p>
+<div><b><i>&lt;&lt;worgle_segment_line_control&gt;&gt;=</i></b></div><pre><code>size_t linum;
+worgle_string *filename;</pre></code>
+
+<h4>4.3.1. Text Chunk Type</h4>
+
+<p><a id="wm_008_0566"></a></p>
+<p>A text chunk is a literal string of text.
+</p>
+<p>When a text chunk segment is processed, it gets written to file directly.
+</p>
+<div><b><i>&lt;&lt;worgle_segment_types&gt;&gt;=</i></b></div><pre><code>SEGTYPE_TEXT,</pre></code>
+
+<h4>4.3.2. Reference Type</h4>
+
+<p><a id="wm_008_0571"></a></p>
+<p>A reference contains a string reference to another block.
+</p>
+<p>When a reference
+segment gets processed, it looks up the reference and processes all the
+segements in that code block.
+</p>
+<div><b><i>&lt;&lt;worgle_segment_types&gt;&gt;=</i></b></div><pre><code>SEGTYPE_REFERENCE</pre></code>
+
+<h4>4.3.3. Initializing a Segment</h4>
+
+<p><a id="wm_008_0575"></a>A segment is initialized with the function <code>worgle_segment_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_segment_init(worgle_segment *s,
+                        int type,
+                        worgle_string *str,
+                        worgle_string *filename,
+                        size_t linum);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_segment_init(worgle_segment *s,
+                        int type,
+                        worgle_string *str,
+                        worgle_string *filename,
+                        size_t linum)
+{
+&lt;&lt;worgle_segment_init&gt;&gt;
+}</pre></code>
+<div><b><i>&lt;&lt;worgle_segment_init&gt;&gt;=</i></b></div><pre><code>s-&gt;type = type;
+s-&gt;str = *str;
+s-&gt;filename = filename;
+s-&gt;linum = linum;
+s-&gt;nxt = NULL;</pre></code>
+
+<h4>4.3.4. Writing a Segment</h4>
+
+<p><a id="wm_008_0586"></a></p>
+<p>A segment is written to a file handle using the function <code>worgle_segment_write</code>.
+In addition to taking in a filehandle and segment, a hashmap is also passed
+in in the event that the segment is a reference.
+</p>
+<p>On sucess, the function returns TRUE (1). On failure, FALSE (0).
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int worgle_segment_write(worgle_segment *s, worgle_hashmap *h, FILE *fp);</pre></code>
+<p></p>
+<p>Different behaviors happen depending on the segment type.
+</p>
+<p>If the segment is a chunk of text (<code>SEGTYPE_TEXT</code>), then the string
+is written. If the <code>use_debug</code> global variable is enabled, then C preprocessor
+macros are written indicating the position from the original file. This
+only needs to happen for text blocks and not references.
+</p>
+<p>If the segment is a reference (<code>SEGTYPE_REFERENCE</code>), the
+function attempts to look up a block and write it to disk. If it cannot
+find the reference, a warning is flashed to screen. If the warning
+mode is soft, the error code returns TRUE. If warning errors are turned on,
+it returns FALSE.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int worgle_segment_write(worgle_segment *s, worgle_hashmap *h, FILE *fp)
+{
+    worgle_block *b;
+    if(s-&gt;type == SEGTYPE_TEXT) {
+        if(use_debug) {
+            fprintf(fp, "#line %lu \"", s-&gt;linum);
+            worgle_string_write(fp, s-&gt;filename);
+            fprintf(fp, "\"\n");
+        }
+        worgle_string_write(fp, &s-&gt;str);
+    } else {
+        if(!worgle_hashmap_find(h, &s-&gt;str, &b)) {
+            fprintf(stderr, "Warning: could not find reference segment '");
+            worgle_string_write(stderr, &s-&gt;str);
+            fprintf(stderr, "'\n");
+            if(use_warnings == 2) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+        return worgle_block_write(b, h, fp);
+    }
+
+    return 1;
+}</pre></code>
+
+<h4>4.3.5. Segment Type Checks</h4>
+
+<p><a id="wm_008_0593"></a>All segment types can be checked with a few functions, without needing to know
+any of the type macros.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int worgle_segment_is_text(worgle_segment *s);
+int worgle_segment_is_reference(worgle_segment *s);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int worgle_segment_is_text(worgle_segment *s)
+{
+    return s-&gt;type == SEGTYPE_TEXT;
+}
+
+int worgle_segment_is_reference(worgle_segment *s)
+{
+    return s-&gt;type == SEGTYPE_REFERENCE;
+}</pre></code>
+
+<h3>4.4. Code Block</h3>
+
+<p><a id="wm_008_0599"></a>A code block is a top-level unit that stores some amount of code. It is
+made up of a list of segments. Every code block has a unique name.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_block worgle_block;</pre></code>
+<div><b><i>&lt;&lt;worgle_block&gt;&gt;=</i></b></div><pre><code>struct worgle_block {
+&lt;&lt;worgle_block_contents&gt;&gt;
+};</pre></code>
+<div><b><i>&lt;&lt;worgle_block_contents&gt;&gt;=</i></b></div><pre><code>int nsegs;
+worgle_segment *head;
+worgle_segment *tail;
+worgle_string name;
+int am_i_used;
+worgle_block *nxt;</pre></code>
+
+<h4>4.4.1. Initializing a code block</h4>
+
+<p><a id="wm_008_0611"></a>A worgle code block is initialized using the function
+<code>worgle_block_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_block_init(worgle_block *b);</pre></code>
+<p></p>
+<p>The initialization will zero out all the variables related to the segment
+linked list, as well as initialize the string holding the name of the block.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_block_init(worgle_block *b)
+{
+&lt;&lt;worgle_block_init&gt;&gt;
+}</pre></code>
+<div><b><i>&lt;&lt;worgle_block_init&gt;&gt;=</i></b></div><pre><code>b-&gt;nsegs = 0;
+b-&gt;head = NULL;
+b-&gt;tail = NULL;
+b-&gt;nxt = NULL;
+b-&gt;am_i_used = 0;
+worgle_string_init(&b-&gt;name);</pre></code>
+
+<h4>4.4.2. Freeing a code block</h4>
+
+<p><a id="wm_008_0623"></a>A code block is freed using the function <code>worgle_block_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_block_free(worgle_block *lst);</pre></code>
+<p></p>
+<p>This function iterates through the segment linked list contained
+inside the block, and frees each one. Since there is nothing to
+free below a segment, the standard free function is called directly.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_block_free(worgle_block *lst)
+{
+    worgle_segment *s;
+    worgle_segment *nxt;
+    int n;
+    s = lst-&gt;head;
+    for(n = 0; n &lt; lst-&gt;nsegs; n++) {
+        nxt = s-&gt;nxt;
+        free(s);
+        s = nxt;
+    }
+}</pre></code>
+
+<h4>4.4.3. Appending a segment to a code block</h4>
+
+<p><a id="wm_008_0630"></a>A generic segment is appended to a code block with the
+function <code>worgle_block_append_segment</code>.
+</p>
+<p>The block <code>b</code>, name of the block <code>str</code>, and type <code>type</code> are
+mandatory parameters which describe the segment. The
+location in the file is also required, so the line number
+<code>linum</code> and name of file <code>filename</code> are also provided as
+well. This function is called inside of a type-specific
+append function instead of being called directly.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>worgle_segment* worgle_block_append_segment(worgle_block *b,
+                                            worgle_string *str,
+                                            int type,
+                                            size_t linum,
+                                            worgle_string *filename);</pre></code>
+<p></p>
+<p>It is worthwhile to note that it is in this function that a data
+segment type gets allocated.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>worgle_segment* worgle_block_append_segment(worgle_block *b,
+                                            worgle_string *str,
+                                            int type,
+                                            size_t linum,
+                                            worgle_string *filename)
+{
+    worgle_segment *s;
+    s = malloc(sizeof(worgle_segment));
+    if(b-&gt;nsegs == 0) {
+        b-&gt;head = s;
+        b-&gt;tail = s;
+    }
+    worgle_segment_init(s, type, str, filename, linum);
+    b-&gt;tail-&gt;nxt = s;
+    b-&gt;tail = s;
+    b-&gt;nsegs++;
+&lt;&lt;store_last_seg&gt;&gt;
+    return s;
+}</pre></code>
+
+<h5>4.4.3.1. Appending a string segment</h5>
+
+<p><a id="wm_008_0639"></a>A string segment is appended to a code block using the function
+<code>worgle_block_append_string</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>worgle_segment* worgle_block_append_string(worgle_block *b,
+                               worgle_string *str,
+                               size_t linum,
+                               worgle_string *filename);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>worgle_segment* worgle_block_append_string(worgle_block *b,
+                                           worgle_string *str,
+                                           size_t linum,
+                                           worgle_string *filename)
+{
+    return worgle_block_append_segment(b, str, SEGTYPE_TEXT, linum, filename);
+}</pre></code>
+
+<h5>4.4.3.2. Appending a reference segment</h5>
+
+<p><a id="wm_008_0645"></a></p>
+<p>A reference segment is appended to a code block using the function
+<code>worgle_block_append_reference</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>worgle_segment* worgle_block_append_reference(worgle_block *b,
+                                              worgle_string *str,
+                                              size_t linum,
+                                              worgle_string *filename);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>worgle_segment* worgle_block_append_reference(worgle_block *b,
+                                              worgle_string *str,
+                                              size_t linum,
+                                              worgle_string *filename)
+{
+    return worgle_block_append_segment(b, str, SEGTYPE_REFERENCE,
+                                       linum, filename);
+}</pre></code>
+
+<h4>4.4.4. Appending a code block to a code block</h4>
+
+<p><a id="wm_008_0651"></a>In both CWEB and Org-tangle, existing code blocks can be
+appeneded to in different sections. Because of how this
+program works, this functionality comes for free.
+</p>
+<p>It can be useful to be able to differentiate between
+different code block sections. This is done using a variable
+called <code>nblocks</code>, which keeps track of the number of blocks
+in a code block.
+</p>
+<div><b><i>&lt;&lt;worgle_block_contents&gt;&gt;=</i></b></div><pre><code>int nblocks;</pre></code>
+<div><b><i>&lt;&lt;worgle_block_init&gt;&gt;=</i></b></div><pre><code>b-&gt;nblocks = 0;</pre></code>
+<p></p>
+<p>Every time a new <code>NAME</code>'d block appears,
+the <code>nblock</code> variable gets incremented. The current <code>nblock</code>value is used as a position value that gets stored in the
+<code>worgle_orglet_blkref</code>.
+</p>
+<br>
+<div><b><i>&lt;&lt;increment_nblocks&gt;&gt;=</i></b></div><pre><code>worg-&gt;curblock-&gt;nblocks++;</pre></code>
+
+<h4>4.4.5. Writing a code block to filehandle</h4>
+
+<p><a id="wm_008_0661"></a></p>
+<p>Writing a code block to a filehandle can be done using the function
+<code>worgle_block_write</code>. In addition to the file handle <code>fp</code>, an org block
+requires a hashmap, which is required in the lower level function
+<code>orgle_segment_write</code> for expanding code references.
+</p>
+<p>This function returns a boolean TRUE (1) on success or FALSE (0) on failure.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int worgle_block_write(worgle_block *b, worgle_hashmap *h, FILE *fp);</pre></code>
+<p></p>
+<p>A code block iterates it's segment list, writing each segment to disk.
+A block will also be marked as being used, which is useful for supplying
+warning information later.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int worgle_block_write(worgle_block *b, worgle_hashmap *h, FILE *fp)
+{
+    worgle_segment *s;
+    int n;
+    s = b-&gt;head;
+    b-&gt;am_i_used = 1;
+    for(n = 0; n &lt; b-&gt;nsegs; n++) {
+        if(!worgle_segment_write(s, h, fp)) return 0;
+        s = s-&gt;nxt;
+    }
+
+    return 1;
+}</pre></code>
+
+<h4>4.4.6. Keeping track of the last segment</h4>
+
+<p><a id="wm_008_0668"></a>The id of the last segment appended is kept track of. This
+done for the benefit of <code>worgle_orglet_blkref</code>.
+</p>
+<div><b><i>&lt;&lt;worgle_block_contents&gt;&gt;=</i></b></div><pre><code>int last_seg;</pre></code>
+<div><b><i>&lt;&lt;worgle_block_init&gt;&gt;=</i></b></div><pre><code>b-&gt;last_seg = -1;</pre></code>
+<p></p>
+<p>When a new block reference is created, the id of the last
+appended segment is saved. Segments need to happen after the
+id is created, which happens to be in two places: one for
+appending reference segments , and the other for appending
+string segments.
+</p>
+<div><b><i>&lt;&lt;store_last_seg&gt;&gt;=</i></b></div><pre><code>/* TODO: remove this */
+/* b-&gt;last_seg = s-&gt;id; */</pre></code>
+<div><b><i>&lt;&lt;store_last_string_id&gt;&gt;=</i></b></div><pre><code>worg-&gt;curblock-&gt;last_seg = seg-&gt;id;</pre></code>
+<div><b><i>&lt;&lt;store_last_reference_id&gt;&gt;=</i></b></div><pre><code>worg-&gt;curblock-&gt;last_seg = seg-&gt;id;</pre></code>
+<p></p>
+<br>
+<p>This id, if a positive value, would be the last segment of
+the previous block. This information can be used later by
+worgmap to help extrapolate which segments belong to which
+blocks.
+</p>
+<p>The first segment of a given code subblock <code>N</code> is obtained
+by looking at the stored segment id, and then finding the
+next segment. The last segment is obtained by looking at
+the id stored in the next subblock <code>N + 1</code>.
+</p>
+
+<h3>4.5. Code Block List</h3>
+
+<p><a id="wm_008_0685"></a>A code block list is a linked list of blocks, which is used inside of a
+hash map.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_blocklist worgle_blocklist;</pre></code>
+<div><b><i>&lt;&lt;worgle_blocklist&gt;&gt;=</i></b></div><pre><code>struct worgle_blocklist {
+    int nblocks;
+    worgle_block *head;
+    worgle_block *tail;
+};</pre></code>
+
+<h4>4.5.1. Block List Initialization</h4>
+
+<p><a id="wm_008_0692"></a></p>
+<p>A block list is initialized using the function <code>worgle_blocklist_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_blocklist_init(worgle_blocklist *lst);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_blocklist_init(worgle_blocklist *lst)
+{
+    lst-&gt;head = NULL;
+    lst-&gt;tail = NULL;
+    lst-&gt;nblocks = 0;
+}</pre></code>
+
+<h4>4.5.2. Freeing a Block List</h4>
+
+<p><a id="wm_008_0698"></a></p>
+<p>Blocks allocated by the block list are freed using the function
+<code>worgle_blocklist_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_blocklist_free(worgle_blocklist *lst);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_blocklist_free(worgle_blocklist *lst)
+{
+    worgle_block *b;
+    worgle_block *nxt;
+    int n;
+    b = lst-&gt;head;
+    for(n = 0; n &lt; lst-&gt;nblocks; n++) {
+        nxt = b-&gt;nxt;
+        worgle_block_free(b);
+        free(b);
+        b = nxt;
+    }
+}</pre></code>
+
+<h4>4.5.3. Appending a Block</h4>
+
+<p><a id="wm_008_0704"></a></p>
+<p>An allocated block is appended to a block list using the function
+<code>worgle_blocklist_append</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_blocklist_append(worgle_blocklist *lst, worgle_block *b);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_blocklist_append(worgle_blocklist *lst, worgle_block *b)
+{
+    if(lst-&gt;nblocks == 0) {
+        lst-&gt;head = b;
+        lst-&gt;tail = b;
+    }
+    lst-&gt;tail-&gt;nxt = b;
+    lst-&gt;tail = b;
+    lst-&gt;nblocks++;
+}</pre></code>
+
+<h3>4.6. Hash Map</h3>
+
+<p><a id="wm_008_0710"></a>A hash map is a key-value data structure used as a dictionary for storing
+references to code blocks.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_hashmap worgle_hashmap;</pre></code>
+<div><b><i>&lt;&lt;worgle_hashmap&gt;&gt;=</i></b></div><pre><code>#define HASH_SIZE 256
+struct worgle_hashmap {
+    worgle_blocklist blk[HASH_SIZE];
+    int nwords;
+};</pre></code>
+
+<h4>4.6.1. Hash map Initialization</h4>
+
+<p><a id="wm_008_0717"></a></p>
+<p>A hash map is initialized using the function <code>worgle_hashmap_init</code></p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_hashmap_init(worgle_hashmap *h);</pre></code>
+<p></p>
+<p>A hashmap is composed of an array of block lists which must be initialized.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_hashmap_init(worgle_hashmap *h)
+{
+    int n;
+    h-&gt;nwords = 0;
+    for(n = 0; n &lt; HASH_SIZE; n++) {
+        worgle_blocklist_init(&h-&gt;blk[n]);
+    }
+}</pre></code>
+
+<h4>4.6.2. Freeing a Hash Map</h4>
+
+<p><a id="wm_008_0724"></a></p>
+<p>Information allocated inside the hash map is freed using the function
+<code>worgle_hashmap_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_hashmap_free(worgle_hashmap *h);</pre></code>
+<p></p>
+<p>To free a hash map is to free each block list in the array.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_hashmap_free(worgle_hashmap *h)
+{
+    int n;
+    for(n = 0; n &lt; HASH_SIZE; n++) {
+        worgle_blocklist_free(&h-&gt;blk[n]);
+    }
+}</pre></code>
+
+<h4>4.6.3. Looking up an entry</h4>
+
+<p><a id="wm_008_0731"></a></p>
+<p>A hashmap lookup can be done with the function <code>worgle_hashmap_find</code>.
+This will attempt to look for a value with the key value <code>name</code>, and
+save it in the block pointer <code>b</code>. If nothing is found, the function returns
+FALSE (0). On success, TRUE (1).
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int worgle_hashmap_find(worgle_hashmap *h, worgle_string *name, worgle_block **b);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>&lt;&lt;hashmap_hasher&gt;&gt;
+int worgle_hashmap_find(worgle_hashmap *h, worgle_string *name, worgle_block **b)
+{
+    int pos;
+    worgle_blocklist *lst;
+    int n;
+    worgle_block *blk;
+    pos = hash(name-&gt;str, name-&gt;size);
+    lst = &h-&gt;blk[pos];
+
+    blk = lst-&gt;head;
+    for(n = 0; n &lt; lst-&gt;nblocks; n++) {
+        if(name-&gt;size == blk-&gt;name.size) {
+            if(!strncmp(name-&gt;str, blk-&gt;name.str, name-&gt;size)) {
+                *b = blk;
+                return 1;
+            }
+        }
+        blk = blk-&gt;nxt;
+    }
+    return 0;
+}</pre></code>
+<p></p>
+<p>Like any hashmap, a hashing algorithm is used to to compute which list to place
+the entry in. This is one I've used on a number of projects now.
+</p>
+<div><b><i>&lt;&lt;hashmap_hasher&gt;&gt;=</i></b></div><pre><code>static int hash(const char *str, size_t size)
+{
+    unsigned int h = 5381;
+    size_t i = 0;
+
+    for(i = 0; i &lt; size; i++) {
+        h = ((h &lt;&lt; 5) + h) ^ str[i];
+        h %= 0x7FFFFFFF;
+    }
+
+    return h % HASH_SIZE;
+}</pre></code>
+
+<h4>4.6.4. Getting an entry</h4>
+
+<p><a id="wm_008_0742"></a>To "get" an entry means to return a block if it exists or not. Return
+an entry that exists, or make a new one. This can be done with the function
+<code>worgle_hashmap_get</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>worgle_block * worgle_hashmap_get(worgle_hashmap *h, worgle_string *name);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>worgle_block * worgle_hashmap_get(worgle_hashmap *h, worgle_string *name)
+{
+    worgle_block *b;
+    worgle_blocklist *lst;
+    int pos;
+
+    if(worgle_hashmap_find(h, name, &b)) return b;
+    pos = hash(name-&gt;str, name-&gt;size);
+    b = NULL;
+    b = malloc(sizeof(worgle_block));
+    worgle_block_init(b);
+    b-&gt;name = *name;
+    lst = &h-&gt;blk[pos];
+    worgle_blocklist_append(lst, b);
+    return b;
+}</pre></code>
+
+<h3>4.7. File</h3>
+
+<p><a id="wm_008_0748"></a>A worgle file is an abstraction for a single file worgle will write to. Every
+file has a filename, and a top-level code block. A worgle does not have a
+filehandle. Files will only be created at the generation stage.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_file worgle_file;</pre></code>
+<div><b><i>&lt;&lt;worgle_file&gt;&gt;=</i></b></div><pre><code>struct worgle_file {
+&lt;&lt;worgle_file_contents&gt;&gt;
+};</pre></code>
+<div><b><i>&lt;&lt;worgle_file_contents&gt;&gt;=</i></b></div><pre><code>worgle_string filename;
+worgle_block *top;
+worgle_file *nxt;</pre></code>
+
+<h4>4.7.1. Writing A File to a filehandle</h4>
+
+<p><a id="wm_008_0760"></a></p>
+<p>A file is writen to a filehandle using the function <code>worgle_file_write</code>.
+A hashmap is also required because it contains all the named code blocks
+needed for any code expansion.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int worgle_file_write(worgle_file *f, worgle_hashmap *h);</pre></code>
+<p></p>
+<p>A filehandle is opened, the top-most code block is written using
+<code>worgle_block_write</code>, and then the file is closed.
+</p>
+<p>Because worgle strings are not zero terminated, they must be copied to a
+temporary string buffer with a null terminator. Any filename greater than
+127 characters will be truncated.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int worgle_file_write(worgle_file *f, worgle_hashmap *h)
+{
+    FILE *fp;
+    char tmp[128];
+    size_t n;
+    size_t size;
+    int rc;
+
+    if(f-&gt;filename.size &gt; 128) size = 127;
+    else size = f-&gt;filename.size;
+    for(n = 0; n &lt; size; n++) tmp[n] = f-&gt;filename.str[n];
+    tmp[size] = 0;
+
+    fp = fopen(tmp, "w");
+
+    rc = worgle_block_write(f-&gt;top, h, fp);
+
+    fclose(fp);
+    return rc;
+}</pre></code>
+
+<h3>4.8. The File List</h3>
+
+<p><a id="wm_008_0767"></a>A file list is a linked list of worgle files.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_filelist worgle_filelist;</pre></code>
+<div><b><i>&lt;&lt;worgle_filelist&gt;&gt;=</i></b></div><pre><code>struct worgle_filelist {
+    worgle_file *head;
+    worgle_file *tail;
+    int nfiles;
+};</pre></code>
+
+<h4>4.8.1. Initializing a file list</h4>
+
+<p><a id="wm_008_0774"></a></p>
+<p>A file list is zeroed out and initialized using the function
+<code>worgle_filelist_init</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_filelist_init(worgle_filelist *flist);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_filelist_init(worgle_filelist *flist)
+{
+    flist-&gt;head = NULL;
+    flist-&gt;tail = NULL;
+    flist-&gt;nfiles = 0;
+}</pre></code>
+
+<h4>4.8.2. Freeing a file list</h4>
+
+<p><a id="wm_008_0780"></a></p>
+<p>A filelist is freed using the function <code>worgle_filelist_free</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_filelist_free(worgle_filelist *flist);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_filelist_free(worgle_filelist *flist)
+{
+    worgle_file *f;
+    worgle_file *nxt;
+    int n;
+    f = flist-&gt;head;
+    for(n = 0; n &lt; flist-&gt;nfiles; n++) {
+        nxt = f-&gt;nxt;
+        free(f);
+        f = nxt;
+    }
+}</pre></code>
+
+<h4>4.8.3. Appending a file to a file list</h4>
+
+<p><a id="wm_008_0786"></a></p>
+<p>A file is appended to the file list using the function <code>worgle_filelist_append</code>.
+The name, as well as the well as the top-level code block are required here.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>worgle_file* worgle_filelist_append(worgle_filelist *flist,
+                           worgle_string *name,
+                           worgle_block *top);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>worgle_file* worgle_filelist_append(worgle_filelist *flist,
+                           worgle_string *name,
+                           worgle_block *top)
+{
+    worgle_file *f;
+    f = malloc(sizeof(worgle_file));
+    f-&gt;filename = *name;
+    f-&gt;top = top;
+    f-&gt;nxt = NULL;
+&lt;&lt;worgle_file_init_id&gt;&gt;
+
+    if(flist-&gt;nfiles == 0) {
+        flist-&gt;head = f;
+        flist-&gt;tail = f;
+    }
+    flist-&gt;tail-&gt;nxt = f;
+    flist-&gt;tail = f;
+    flist-&gt;nfiles++;
+    return f;
+}</pre></code>
+
+<h4>4.8.4. Writing a filelist to disk</h4>
+
+<p><a id="wm_008_0794"></a>A file list can be appended using the function <code>worgle_filelist_write</code>.
+</p>
+<p>A hashmap containing all named code blocks all that is required.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>int worgle_filelist_write(worgle_filelist *flist, worgle_hashmap *h);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>int worgle_filelist_write(worgle_filelist *flist, worgle_hashmap *h)
+{
+    worgle_file *f;
+    int n;
+
+    f = flist-&gt;head;
+    for(n = 0; n &lt; flist-&gt;nfiles; n++) {
+        if(!worgle_file_write(f, h)) return 0;
+        f = f-&gt;nxt;
+    }
+
+    return 1;
+}</pre></code>
+
+<h3>4.9. Text Buffer</h3>
+
+<p><a id="wm_008_0800"></a>Files in memory are stored in a text buffer known as a <code>worgle_textbuf</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_textbuf worgle_textbuf;</pre></code>
+<div><b><i>&lt;&lt;worgle_textbuf&gt;&gt;=</i></b></div><pre><code>struct worgle_textbuf {
+    char *buf;
+    size_t size;
+    worgle_string filename;
+};</pre></code>
+
+<h4>4.9.1. Zeroing out a text buffer</h4>
+
+<p><a id="wm_008_0807"></a>A text buffer is zeroed out with the function <code>worgle_textbuf_zero</code>.
+This is action will set things to be NULL an zero.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_textbuf_zero(worgle_textbuf *txt);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_textbuf_zero(worgle_textbuf *txt)
+{
+    txt-&gt;buf = NULL;
+    worgle_string_init(&txt-&gt;filename);
+    txt-&gt;size = 0;
+}</pre></code>
+
+<h4>4.9.2. Initializing a text buffer</h4>
+
+<p><a id="wm_008_0813"></a>A text buffer is fully initialized with the function <code>worgle_textbuf_init</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_textbuf_init(worgle_textbuf *txt,
+                         char *buf,
+                         size_t bufsize);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_textbuf_init(worgle_textbuf *txt,
+                         char *buf,
+                         size_t bufsize)
+{
+    txt-&gt;buf = buf;
+    txt-&gt;size = bufsize;
+}</pre></code>
+
+<h4>4.9.3. Freeing a text buffer</h4>
+
+<p><a id="wm_008_0819"></a>A text buffer is in charge of freeing a buffer it holds. This is done
+with the function <code>worgle_textbuf_free</code>. It is assumed that
+the memory for the filename string is handled elsewhere. It is also
+assumed that the buffer was allocated via system <code>malloc</code>, so it
+uses the system <code>free</code> function.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_textbuf_free(worgle_textbuf *txt);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_textbuf_free(worgle_textbuf *txt)
+{
+    if(txt-&gt;buf != NULL) free(txt-&gt;buf);
+    worgle_textbuf_zero(txt);
+}</pre></code>
+
+<h3>4.10. UUID</h3>
+
+<p><a id="wm_008_0825"></a>Every data structure has a Universally Unique Identifier
+(UUID). This concept was added later on in order to better
+accomodate the Worgle Database interface.
+</p>
+
+<h4>4.10.1. Worgle Long Typedef</h4>
+
+<p><a id="wm_008_0827"></a>All UUIDs have a type of <code>worgle_long</code>, which is set to be an unsigned long.
+UUIDs begin at 1, with 0 indicating an uninitialized or unset ID number.
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef unsigned long worgle_long;</pre></code>
+
+<h4>4.10.2. Top-level UUID counter</h4>
+
+<p><a id="wm_008_0831"></a>UUID management is done via a reference counter called <code>UUID_count</code>.
+<div><b><i>&lt;&lt;worgle_struct_contents&gt;&gt;=</i></b></div><pre><code>worgle_long UUID_count;</pre></code>
+<p>It is initialized to be 1, the first valid UUID.
+When using the counter, the Worgle process will return then increment. This
+will ensure that the UUID will be valid no matter what.
+<div><b><i>&lt;&lt;worgle_init&gt;&gt;=</i></b></div><pre><code>worg-&gt;UUID_count = 1;</pre></code>
+<p></p>
+<p>A new UUID is generated by returning the UUID_counter, then
+incrementing it.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>worgle_long worgle_uuid_new(worgle_d *worg);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>worgle_long worgle_uuid_new(worgle_d *worg)
+{
+    return worg-&gt;UUID_count++;
+}</pre></code>
+<p></p>
+<p>#
+#
+#
+</p>
+
+<h4>4.10.3. Segment ID</h4>
+
+<p><a id="wm_008_0844"></a>A segment ID is retrieved using <code>worgle_segment_id_get</code> and set using
+<code>worgle_segment_id_set</code>. This is the lowest level component where a
+UUID is required. The <code>worgle_string</code> type is lower than a <code>worgle_segment</code>,
+but it is always encapsulated in a <code>worgle_segment</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>worgle_long worgle_segment_id_get(worgle_segment *s);
+void worgle_segment_id_set(worgle_segment *s, worgle_long id);</pre></code>
+<div><b><i>&lt;&lt;worgle_segment_contents&gt;&gt;=</i></b></div><pre><code>worgle_long id;</pre></code>
+<div><b><i>&lt;&lt;worgle_segment_init&gt;&gt;=</i></b></div><pre><code>s-&gt;id = 0;</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>worgle_long worgle_segment_id_get(worgle_segment *s)
+{
+    return s-&gt;id;
+}
+
+void worgle_segment_id_set(worgle_segment *s, worgle_long id)
+{
+    s-&gt;id = id;
+}</pre></code>
+<p></p>
+<p>Segment UUIDs are assigned in two places: when a reference is assigned,
+and when string is assigned.
+</p>
+<div><b><i>&lt;&lt;worgle_segment_string_set_id&gt;&gt;=</i></b></div><pre><code>worgle_segment_id_set(seg, worgle_uuid_new(worg));</pre></code>
+<div><b><i>&lt;&lt;worgle_segment_reference_set_id&gt;&gt;=</i></b></div><pre><code>worgle_segment_id_set(seg, worgle_uuid_new(worg));</pre></code>
+
+<h4>4.10.4. Block ID</h4>
+
+<p><a id="wm_008_0861"></a>A block ID is retrieved using <code>worgle_block_id_get</code> and set using
+<code>worgle_block_id_set</code>.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>worgle_long worgle_block_id_get(worgle_block *b);
+void worgle_block_id_set(worgle_block *b, worgle_long id);</pre></code>
+<div><b><i>&lt;&lt;worgle_block_contents&gt;&gt;=</i></b></div><pre><code>worgle_long id;</pre></code>
+<div><b><i>&lt;&lt;worgle_block_init&gt;&gt;=</i></b></div><pre><code>b-&gt;id = 0;</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>worgle_long worgle_block_id_get(worgle_block *b)
+{
+    return b-&gt;id;
+}
+
+void worgle_block_id_set(worgle_block *b, worgle_long id)
+{
+    b-&gt;id = id;
+}</pre></code>
+<p></p>
+<p>The worgle block ID is set inside of <code>worgle_begin_block</code> when
+a <a href="Beginning a new block">new block is started</a>.
+In this section a previously allocated block is retrieved, or a new
+block is created entirely. A newly allocated block will have an id
+of 0. If this is the case, the block will be assigned a UUID. The new block
+also has a string name, so this needs to be assigned as well.
+</p>
+<div><b><i>&lt;&lt;worgle_block_set_id&gt;&gt;=</i></b></div><pre><code>if (worgle_block_id_get(worg-&gt;curblock) == 0) {
+    worgle_block_id_set(worg-&gt;curblock, worgle_uuid_new(worg));
+}</pre></code>
+
+<h4>4.10.5. File ID</h4>
+
+<p><a id="wm_008_0875"></a><div><b><i>&lt;&lt;worgle_file_contents&gt;&gt;=</i></b></div><pre><code>worgle_long id;</pre></code>
+<div><b><i>&lt;&lt;worgle_file_init_id&gt;&gt;=</i></b></div><pre><code>f-&gt;id = 0;</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_file_id_set(worgle_file *f, worgle_long id);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_file_id_set(worgle_file *f, worgle_long id)
+{
+    f-&gt;id = id;
+}</pre></code>
+<div><b><i>&lt;&lt;worgle_file_set_id&gt;&gt;=</i></b></div><pre><code>worgle_file_id_set(f, worgle_uuid_new(worg));</pre></code>
+
+<h4>4.10.6. Orglet ID</h4>
+
+<p><a id="wm_008_0888"></a><div><b><i>&lt;&lt;worgle_orglet_id&gt;&gt;=</i></b></div><pre><code>worgle_long id;</pre></code>
+<div><b><i>&lt;&lt;worgle_orglet_id_init&gt;&gt;=</i></b></div><pre><code>orglet-&gt;id = 0;</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orglet_id_set(worgle_orglet *orglet,
+                           worgle_long id);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orglet_id_set(worgle_orglet *orglet,
+                           worgle_long id)
+{
+    orglet-&gt;id = id;
+}</pre></code>
+<div><b><i>&lt;&lt;worgle_orglet_set_id&gt;&gt;=</i></b></div><pre><code>worgle_orglet_id_set(orglet, worgle_uuid_new(worg));</pre></code>
+
+<h3>4.11. Org File</h3>
+
+<p><a id="wm_008_0902"></a>A <code>worgle_orgfile</code> is a data type for an org file,
+represented as a list of <code>worgle_orglets</code>.
+</p>
+
+<h4>4.11.1. Struct</h4>
+
+<p><a id="wm_008_0904"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_orgfile worgle_orgfile;</pre></code>
+<div><b><i>&lt;&lt;worgle_orgfile&gt;&gt;=</i></b></div><pre><code>struct worgle_orgfile {
+    worgle_orglet *head;
+    worgle_orglet *tail;
+    worgle_orgfile *prev;
+    int size;
+};</pre></code>
+
+<h4>4.11.2. DONE Initialization</h4>
+
+<p><a id="wm_008_0910"></a>CLOSED: [2019-09-12 Thu 07:12]
+An org file type is initialized with <code>worgle_orgfile_init</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_init(worgle_orgfile *org);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_init(worgle_orgfile *org)
+{
+    org-&gt;head = NULL;
+    org-&gt;tail = NULL;
+    org-&gt;size = 0;
+    org-&gt;prev = NULL;
+}</pre></code>
+
+<h4>4.11.3. DONE Freeing</h4>
+
+<p><a id="wm_008_0916"></a>CLOSED: [2019-09-12 Thu 08:27]
+Freed with <code>worgle_orgfile_free</code>.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_free(worgle_orgfile *org);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_free(worgle_orgfile *org)
+{
+    worgle_orglet *ent;
+    worgle_orglet *nxt;
+    int n;
+    if (org-&gt;size &gt; 0) {
+        ent = org-&gt;head;
+        for (n = 0; n &lt; org-&gt;size; n++) {
+            nxt = ent-&gt;next;
+            worgle_orglet_free(ent);
+            ent = nxt;
+        }
+    }
+}</pre></code>
+
+<h4>4.11.4. Appending To File</h4>
+
+<p><a id="wm_008_0922"></a>Operations to append things to files.
+</p>
+
+<h5>4.11.4.1. Appending an orglet</h5>
+
+<p><a id="wm_008_0924"></a>This operation applies a general orglet to a
+<code>worgle_orgfile</code>. This orglet should be initialized and
+allocated by this point.
+</p>
+<p>Most of the time, this is called indirectly through
+other functions.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_append(worgle_d *worg,
+                           worgle_orgfile *file,
+                           worgle_orglet *orglet);</pre></code>
+<p></p>
+<p>To ensure that org content for a program spread out multiple
+files get linked properly, a <code>prev</code> file entry is utilized.
+If it isn't NULL, the <code>tail</code> of the previous list is
+linked to the <code>head</code> of the current list.
+</p>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_append(worgle_d *worg,
+                           worgle_orgfile *file,
+                           worgle_orglet *orglet)
+{
+    if (file-&gt;size &lt;= 0) {
+        file-&gt;head = orglet;
+        if (file-&gt;prev != NULL) {
+            file-&gt;prev-&gt;tail-&gt;next = file-&gt;head;
+        }
+        file-&gt;tail = orglet;
+    }
+
+    file-&gt;tail-&gt;next = orglet;
+    file-&gt;tail = orglet;
+    file-&gt;size++;
+&lt;&lt;worgle_orglet_set_id&gt;&gt;
+}</pre></code>
+
+<h5>4.11.4.2. DONE Appending a header</h5>
+
+<p><a id="wm_008_0933"></a>CLOSED: [2019-09-12 Thu 08:27]
+Appends a header to file.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_append_header(worgle_d *worg,
+                                  worgle_string *header,
+                                  int lvl);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_append_header(worgle_d *worg,
+                                  worgle_string *header,
+                                  int lvl)
+{
+    worgle_orglet *orglet;
+    worgle_orglet_header *h;
+    worgle_orgfile *f;
+    size_t linum;
+
+    f = worg-&gt;curorg;
+    linum = worg-&gt;linum;
+
+    orglet = calloc(1, sizeof(worgle_orglet));
+    h = calloc(1, sizeof(worgle_orglet_header));
+
+    h-&gt;str = *header;
+    h-&gt;lvl = lvl;
+    worgle_orglet_init(orglet);
+
+    orglet-&gt;type = ORGLET_HEADER;
+    orglet-&gt;ud = h;
+    orglet-&gt;linum = linum;
+    worgle_orgfile_append(worg, f, orglet);
+}</pre></code>
+
+<h5>4.11.4.3. DONE Appending Content</h5>
+
+<p><a id="wm_008_0939"></a>CLOSED: [2019-12-10 Tue 15:49]
+Appends content block to an org file.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_append_content(worgle_d *worg,
+                                   worgle_string *text);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_append_content(worgle_d *worg,
+                                   worgle_string *text)
+{
+    worgle_orglet *orglet;
+    worgle_orglet_content *c;
+    worgle_orgfile *f;
+    size_t linum;
+
+    if (text-&gt;size == 0) return;
+    if (text-&gt;size == 1) return;
+
+    f = worg-&gt;curorg;
+    linum = worg-&gt;linum;
+
+    orglet = calloc(1, sizeof(worgle_orglet));
+    c = calloc(1, sizeof(worgle_orglet_content));
+
+    c-&gt;text = *text;
+
+    /* printf("CONTENT(%d): '", c-&gt;text.size); */
+    /* fwrite(c-&gt;text.str, 1, c-&gt;text.size, stdout); */
+    /* printf("'\n"); */
+
+    worgle_orglet_init(orglet);
+
+    orglet-&gt;type = ORGLET_CONTENT;
+    orglet-&gt;ud = c;
+    orglet-&gt;linum = linum;
+    worgle_orgfile_append(worg, f, orglet);
+}</pre></code>
+
+<h5>4.11.4.4. DONE Appending Block Reference</h5>
+
+<p><a id="wm_008_0945"></a>CLOSED: [2019-12-10 Tue 15:49]
+Appends a reference to a code block. Should be called when
+a block first starts.
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_append_reference(worgle_d *worg,
+                                     worgle_block *blk);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orgfile_append_reference(worgle_d *worg,
+                                     worgle_block *blk)
+{
+    worgle_orglet *orglet;
+    worgle_orglet_blkref *br;
+    worgle_orgfile *f;
+    size_t linum;
+
+    f = worg-&gt;curorg;
+    linum = worg-&gt;linum;
+
+    orglet = calloc(1, sizeof(worgle_orglet));
+    br = calloc(1, sizeof(worgle_orglet_blkref));
+
+&lt;&lt;orglet_blkref_setup&gt;&gt;
+    worgle_orglet_init(orglet);
+
+    orglet-&gt;type = ORGLET_BLKREF;
+    orglet-&gt;ud = br;
+    orglet-&gt;linum = linum;
+    worgle_orgfile_append(worg, f, orglet);
+}</pre></code>
+
+<h3>4.12. Orglet</h3>
+
+<p><a id="wm_008_0953"></a>A <code>worgle_orglet</code> is a single entry inside of a
+<code>worgle_orgfile</code>.
+</p>
+
+<h4>4.12.1. Struct</h4>
+
+<p><a id="wm_008_0955"></a><div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_orglet worgle_orglet;</pre></code>
+<div><b><i>&lt;&lt;worgle_orglet&gt;&gt;=</i></b></div><pre><code>&lt;&lt;worgle_orglet_subtypes&gt;&gt;
+struct worgle_orglet {
+    int type;
+    void *ud;
+    worgle_orglet *next;
+    size_t linum;
+&lt;&lt;worgle_orglet_id&gt;&gt;
+};</pre></code>
+
+<h4>4.12.2. Initializing</h4>
+
+<p><a id="wm_008_0964"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orglet_init(worgle_orglet *orglet);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orglet_init(worgle_orglet *orglet)
+{
+    orglet-&gt;type = ORGLET_UNKNOWN;
+    orglet-&gt;ud = NULL;
+    orglet-&gt;next = NULL;
+    orglet-&gt;linum = 0;
+&lt;&lt;worgle_orglet_id_init&gt;&gt;
+}</pre></code>
+
+<h4>4.12.3. Freeing</h4>
+
+<p><a id="wm_008_0971"></a><div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_orglet_free(worgle_orglet *orglet);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_orglet_free(worgle_orglet *orglet)
+{
+    free(orglet-&gt;ud);
+    free(orglet);
+}</pre></code>
+
+<h4>4.12.4. Types</h4>
+
+<p><a id="wm_008_0976"></a>populated here
+<div><b><i>&lt;&lt;enums&gt;&gt;=</i></b></div><pre><code>enum {
+&lt;&lt;orglet_types&gt;&gt;
+ORGLET_UNKNOWN
+};</pre></code>
+
+<h4>4.12.5. Orglet Header</h4>
+
+<p><a id="wm_008_0982"></a><div><b><i>&lt;&lt;orglet_types&gt;&gt;=</i></b></div><pre><code>ORGLET_HEADER,</pre></code>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_orglet_header worgle_orglet_header;</pre></code>
+<div><b><i>&lt;&lt;worgle_orglet_subtypes&gt;&gt;=</i></b></div><pre><code>struct worgle_orglet_header {
+    worgle_string str;
+    int lvl;
+};</pre></code>
+
+<h4>4.12.6. Orglet Content</h4>
+
+<p><a id="wm_008_0991"></a><div><b><i>&lt;&lt;orglet_types&gt;&gt;=</i></b></div><pre><code>ORGLET_CONTENT,</pre></code>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_orglet_content worgle_orglet_content;</pre></code>
+<div><b><i>&lt;&lt;worgle_orglet_subtypes&gt;&gt;=</i></b></div><pre><code>struct worgle_orglet_content {
+    worgle_string text;
+};</pre></code>
+
+<h4>4.12.7. Orglet Block Reference</h4>
+
+<p><a id="wm_008_0998"></a><div><b><i>&lt;&lt;orglet_types&gt;&gt;=</i></b></div><pre><code>ORGLET_BLKREF,</pre></code>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct worgle_orglet_blkref worgle_orglet_blkref;</pre></code>
+<div><b><i>&lt;&lt;worgle_orglet_subtypes&gt;&gt;=</i></b></div><pre><code>struct worgle_orglet_blkref {
+    worgle_block *blk;
+    int pos;
+    int prev_lastseg;
+    int segoff;
+};</pre></code>
+<p></p>
+<p>The integer variables here take a snapshot of current
+code block, and can be used to recreate the code inside a
+code subblock.
+</p>
+<p><code>pos</code> is derived from the <code>nblocks</code> counter, and is turned
+into a relative position id.
+</p>
+<p><code>prev_lastseg</code> is the id of last segment of the previous
+block, and is negative if it doesn't exist. Peaking at the
+next id of this segment gets the first segment of the
+subblock.
+</p>
+<p><code>segoff</code> is the segment offset. It stores the starting
+segment position relative to the block. Subtracting the
+<code>segoff</code> of the next subblock obtains the number of segments
+in the subblock. If there is no next block, the offset can
+be subtracted from the total number of segments in the block
+to get number of segments in the subblock.
+</p>
+<div><b><i>&lt;&lt;orglet_blkref_setup&gt;&gt;=</i></b></div><pre><code>br-&gt;blk = blk;
+br-&gt;pos = blk-&gt;nblocks;
+br-&gt;prev_lastseg = blk-&gt;last_seg;
+br-&gt;segoff = blk-&gt;nsegs;</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_008_0046">prev</a> | <a href="/loom/worgle_main">home</a> | <a href="/loom/wm_008_1009">next</a></p>
+</div>
+</body>
+</html>

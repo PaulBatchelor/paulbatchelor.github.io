@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>3. DONE Block</h2>
+
+<p><a id="wm_014_0034"></a>CLOSED: [2019-11-14 Thu 17:56]
+Creates a graph from a block.
+</p>
+<div><b><i>&lt;&lt;available_commands&gt;&gt;=</i></b></div><pre><code>fprintf(stderr, "block: Creates graph from named block.\n");</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int dot_block(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static void print_tree(wmp_core *c, const char *name, int level)
+{
+    wmp_segment s;
+    wmp_block b;
+    int next;
+    int rc;
+    int prog;
+
+    prog = 0; /* TODO: make parameter */
+    wmp_block_init(&b);
+    rc = wmp_lookup_block(c, name, &b, prog);
+    if (!rc) {
+        fprintf(stderr,
+                "Could not find block '%s'",
+                name);
+        return;
+    }
+    wmp_segment_init(&s);
+    wmp_find_segment(c, b.head_segment, &s, prog);
+
+    while (1) {
+        next = s.nxtseg;
+        if (s.id == next || s.id &lt;= 0) {
+            wmp_segment_free(&s);
+            break;
+        }
+
+        if (s.type == 1) {
+            printf("\"%s\"-&gt;\"%s\"\n", name, s.str);
+            print_tree(c, s.str, level + 1);
+        }
+
+        wmp_segment_free(&s);
+        wmp_segment_init(&s);
+        wmp_find_segment(c, next, &s, prog);
+    }
+    wmp_block_free(&b);
+}
+
+static int dot_block(int argc, char *argv[])
+{
+    wmp_core core;
+    int rc;
+
+    if (argc &lt; 2) {
+        fprintf(stderr, "Usage: %s NAME\n", argv[0]);
+        return 1;
+    }
+
+    rc = wmp_core_open(&core, wmp_filename_get());
+    if (!rc) return 0;
+    printf("digraph {\n");
+    print_tree(&core, argv[1], 0);
+    printf("}\n");
+    wmp_core_close(&core);
+    return 0;
+}</pre></code>
+<div><b><i>&lt;&lt;command_parsing&gt;&gt;=</i></b></div><pre><code>else if (match(argv[1], len, "block", 5)) {
+    argv++;
+    argc--;
+    dot_block(argc, argv);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_014_0010">prev</a> | <a href="/loom/worgmap_dot">home</a> | <a href="/loom/wm_014_0046">next</a></p>
+</div>
+</body>
+</html>

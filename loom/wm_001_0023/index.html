@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>3. Stack</h2>
+
+<p><a id="wm_001_0023"></a>This is a stack based VM, that will be designed in similar
+fashion to Runt.
+</p>
+<p>The stack is a pre-allocated array of <code>stacklets</code>. A
+stacklet is an item that can get placed onto the stack.
+</p>
+<p>A stacklet is known as a <code>txtvm_stacklet</code>.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct txtvm_stacklet txtvm_stacklet;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>struct txtvm_stacklet {
+&lt;&lt;stacklet&gt;&gt;
+};</pre></code>
+<p></p>
+<p>The type flag determines the kind of item that was placed
+onto the stack.
+</p>
+<div><b><i>&lt;&lt;stacklet&gt;&gt;=</i></b></div><pre><code>int type;</pre></code>
+<p></p>
+<p>Type values will be desribed in an enum.
+</p>
+<div><b><i>&lt;&lt;macros&gt;&gt;=</i></b></div><pre><code>enum {
+    TYPE_NONE,
+&lt;&lt;typeflags&gt;&gt;
+    TYPE_END
+};</pre></code>
+<p></p>
+<p>A stacklet is initially set to be <code>TYPE_NONE</code>.
+</p>
+<div><b><i>&lt;&lt;stacklet_init&gt;&gt;=</i></b></div><pre><code>s-&gt;type = TYPE_NONE;</pre></code>
+<p></p>
+<p>An integer value <code>inum</code> can be used to hold an integer. A
+floating point value <code>fnum</code> can be used to hold a floating
+point value. This might be a union some day, if I actually
+learn how to use those properly.
+</p>
+<div><b><i>&lt;&lt;typeflags&gt;&gt;=</i></b></div><pre><code>TYPE_INT,
+TYPE_FLOAT,</pre></code>
+<div><b><i>&lt;&lt;stacklet&gt;&gt;=</i></b></div><pre><code>int ival;
+float fval;</pre></code>
+<div><b><i>&lt;&lt;stacklet_init&gt;&gt;=</i></b></div><pre><code>s-&gt;ival = 0;
+s-&gt;fval = 0;</pre></code>
+<p></p>
+<p>There is also a component for a void pointer <code>ptr</code>. Anything
+more non-trivial than a integer or floating point number
+gets stored here.
+</p>
+<div><b><i>&lt;&lt;typeflags&gt;&gt;=</i></b></div><pre><code>TYPE_CPTR,</pre></code>
+<div><b><i>&lt;&lt;stacklet&gt;&gt;=</i></b></div><pre><code>void *ptr;</pre></code>
+<div><b><i>&lt;&lt;stacklet_init&gt;&gt;=</i></b></div><pre><code>s-&gt;ptr = NULL;</pre></code>
+<p></p>
+<p>The stack itself is mostly a fixed array of stacklets, with
+a few other things to keep track of position and state.
+</p>
+<p>A stack is known as a <code>txtvm_stack</code>:
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct txtvm_stack txtvm_stack;</pre></code>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>#ifndef TXTVM_STACKSIZE
+#define TXTVM_STACKSIZE 16
+#endif
+struct txtvm_stack {
+    txtvm_stacklet s[TXTVM_STACKSIZE];
+&lt;&lt;stack&gt;&gt;
+};</pre></code>
+<p></p>
+<p>The stack is initialized with <code>txtvm_stack_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_stack_init(txtvm_stack *stack);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_stack_init(txtvm_stack *stack)
+{
+    int i;
+
+    for (i = 0; i &lt; TXTVM_STACKSIZE; i++) {
+        txtvm_stacklet_init(&stack-&gt;s[i]);
+    }
+
+&lt;&lt;stack_init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>The core operations of a stack are popping and pushing. This
+is kept track of using a variable keeping track of position
+called <code>pos</code>. A value of <code>0</code> means no items on the stack.
+</p>
+<div><b><i>&lt;&lt;stack&gt;&gt;=</i></b></div><pre><code>int pos;</pre></code>
+<div><b><i>&lt;&lt;stack_init&gt;&gt;=</i></b></div><pre><code>stack-&gt;pos = 0;</pre></code>
+<p></p>
+<p>Both the pushing and popping values return an error code. A
+non-zero error code indicates some sort of failure.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_stack_pop(txtvm_stack *stack, txtvm_stacklet **s);</pre></code>
+<div><b><i>&lt;&lt;errorlist&gt;&gt;=</i></b></div><pre><code>ERRORCODE(TXTVM_EMPTY_STACK, "empty stack.")</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_stack_pop(txtvm_stack *stack, txtvm_stacklet **s)
+{
+    if (stack-&gt;pos == 0) return TXTVM_EMPTY_STACK;
+    stack-&gt;pos--;
+    *s = &stack-&gt;s[stack-&gt;pos];
+    return TXTVM_OK;
+}</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_stack_push(txtvm_stack *stack, txtvm_stacklet **s);</pre></code>
+<div><b><i>&lt;&lt;errorlist&gt;&gt;=</i></b></div><pre><code>ERRORCODE(TXTVM_STACK_OVERFLOW, "stack overflow.")</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_stack_push(txtvm_stack *stack, txtvm_stacklet **s)
+{
+    if (stack-&gt;pos &gt;= TXTVM_STACKSIZE) {
+        return TXTVM_STACK_OVERFLOW;
+    }
+
+    *s = &stack-&gt;s[stack-&gt;pos];
+    stack-&gt;pos++;
+
+    return TXTVM_OK;
+}</pre></code>
+<p></p>
+<p>Stacklets must be initialized and set to be certain values.
+Internally, the stacklet will set the correct type flag and
+value.
+</p>
+<p>Stacklets by default are first initialized with
+<code>txtvm_stacklet_init</code>. This will set them to be an empty
+type.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void txtvm_stacklet_init(txtvm_stacklet *s);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void txtvm_stacklet_init(txtvm_stacklet *s)
+{
+&lt;&lt;stacklet_init&gt;&gt;
+}</pre></code>
+<p></p>
+<p>Typed pops for certain types can be arranged.
+Floating point values and integers, for instance. In
+addition to the pop operation, the type flag is checked.
+</p>
+<p>A integer is retrieved with <code>txtvm_stack_pop_int</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_stack_pop_int(txtvm_stack *stack, int *i);</pre></code>
+<div><b><i>&lt;&lt;errorlist&gt;&gt;=</i></b></div><pre><code>ERRORCODE(TXTVM_WRONG_TYPE, "wrong type.")</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_stack_pop_int(txtvm_stack *stack, int *i)
+{
+    int rc;
+    txtvm_stacklet *s;
+
+    rc = TXTVM_OK;
+    rc = txtvm_stack_pop(stack, &s);
+
+    if (rc != TXTVM_OK) return rc;
+
+    if (s-&gt;type != TYPE_INT) return TXTVM_WRONG_TYPE;
+
+    /* TODO: make functions for this */
+    *i = s-&gt;ival;
+
+    return rc;
+}</pre></code>
+<p></p>
+<p>An integer value can be pushed to the stack with
+<code>txtvm_stack_push_int</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int txtvm_stack_push_int(txtvm_stack *stack, int i);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int txtvm_stack_push_int(txtvm_stack *stack, int i)
+{
+    txtvm_stacklet *s;
+    int rc;
+
+    rc = txtvm_stack_push(stack, &s);
+
+    if (txtvm_errcheck(rc)) return rc;
+
+    /* TODO: make functions for this */
+    s-&gt;ival = i;
+    s-&gt;type = TYPE_INT;
+
+    return TXTVM_OK;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_001_0004">prev</a> | <a href="/loom/txtvm">home</a> | <a href="/loom/wm_001_0118">next</a></p>
+</div>
+</body>
+</html>

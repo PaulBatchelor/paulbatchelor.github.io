@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>4. The Region</h2>
+
+<p><a id="wm_000_0112"></a></p>
+
+<h3>4.1. Region Overview</h3>
+
+<p><a id="wm_000_0113"></a>Regions are rectangular spaces to draw stuff into.
+</p>
+<div><b><i>&lt;&lt;typedefs&gt;&gt;=</i></b></div><pre><code>typedef struct btprnt_region btprnt_region;</pre></code>
+<p></p>
+<p>A region provides two main things: a local coordinate
+space, and rectangular clipping.
+</p>
+<p>A region contains the top left coordinate position,
+the region width, and the region height.
+</p>
+<p>Because of how important regions for user level
+operations, this struct is actually exposed in
+the public header, allowing for instances to be allocated
+on the stack instead of the heap.
+</p>
+<div><b><i>&lt;&lt;btprnt_region_struct&gt;&gt;=</i></b></div><pre><code>struct btprnt_region {
+    btprnt_canvas *c;
+    int w, h;
+    int x, y;
+};</pre></code>
+
+<h3>4.2. Create a New Region</h3>
+
+<p><a id="wm_000_0121"></a>A new region is created with <code>btprnt_region_new</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>btprnt_region * btprnt_region_new(btprnt_canvas *c,
+                                  int x, int y,
+                                  int w, int h);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>btprnt_region * btprnt_region_new(btprnt_canvas *c,
+                                  int x, int y,
+                                  int w, int h)
+{
+    btprnt_region *r;
+
+    r = calloc(1, sizeof(btprnt_region));
+
+    if (r == NULL) return NULL;
+
+    btprnt_region_init(c, r, x, y, w, h);
+
+    return r;
+}</pre></code>
+
+<h3>4.3. Freeing a region</h3>
+
+<p><a id="wm_000_0127"></a>It is freed with <code>btprnt_region_del</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_del(btprnt_region **r);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_del(btprnt_region **r)
+{
+    if (*r == NULL) return;
+    free(*r);
+    *r = NULL;
+}</pre></code>
+
+<h3>4.4. Initializing a Region</h3>
+
+<p><a id="wm_000_0133"></a>If a region is to be allocated on the stack, it needs
+only to be initialized. This can be done with
+<code>btprnt_region_init</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_init(btprnt_canvas *c,
+                        btprnt_region *r,
+                        int x, int y,
+                        int w, int h);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_init(btprnt_canvas *c,
+                        btprnt_region *r,
+                        int x, int y,
+                        int w, int h)
+{
+    btprnt_region_xpos_set(r, x);
+    btprnt_region_ypos_set(r, y);
+    btprnt_region_width_set(r, w);
+    btprnt_region_height_set(r, h);
+    r-&gt;c = c;
+}</pre></code>
+
+<h3>4.5. Setters</h3>
+
+<p><a id="wm_000_0139"></a>The dimensions and position can be changed after it is
+instantiated.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_xpos_set(btprnt_region *r, int x);
+void btprnt_region_ypos_set(btprnt_region *r, int y);
+void btprnt_region_width_set(btprnt_region *r, int w);
+void btprnt_region_height_set(btprnt_region *r, int h);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_xpos_set(btprnt_region *r, int x)
+{
+    r-&gt;x = x;
+}
+
+void btprnt_region_ypos_set(btprnt_region *r, int y)
+{
+    r-&gt;y = y;
+}
+
+void btprnt_region_width_set(btprnt_region *r, int w)
+{
+    r-&gt;w = w;
+}
+
+void btprnt_region_height_set(btprnt_region *r, int h)
+{
+    r-&gt;h = h;
+}</pre></code>
+
+<h3>4.6. Writing a Pixel</h3>
+
+<p><a id="wm_000_0145"></a></p>
+
+<h4>4.6.1. Default Write</h4>
+
+<p><a id="wm_000_0146"></a>Drawing utilities write to a region. The region ensures that
+the pixel is not being written beyond the bounds of itself.
+The actual placement on the buffer is handled via a canvas.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_draw(btprnt_region *r,
+                        int x, int y,
+                        int c);</pre></code>
+<p></p>
+<p>For now, this function will be a little bit overpowered. In
+the future, it might be better to break this up into
+different components and flesh out the canvas interface.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_draw(btprnt_region *r,
+                        int x, int y,
+                        int c)
+{
+    btprnt_canvas *cv;
+    int gx, gy;
+
+    cv = r-&gt;c;
+
+    if (x &lt; 0 || x &gt;= r-&gt;w) return;
+    if (y &lt; 0 || y &gt;= r-&gt;h) return;
+
+    gx = cv-&gt;offx + r-&gt;x + x;
+    if (gx &lt; 0 || gx &gt;= cv-&gt;buf-&gt;w) return;
+    gy = cv-&gt;offy + r-&gt;y + y;
+    if (gy &lt; 0 || gy &gt;= cv-&gt;buf-&gt;h) return;
+
+    btprnt_buf_write(cv-&gt;buf, gx, gy, c);
+}</pre></code>
+
+<h4>4.6.2. Write with wraparound</h4>
+
+<p><a id="wm_000_0153"></a>This will write a pixel, but will wraparound the region
+instead of truncating.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_draw_wrap(btprnt_region *r,
+                             int x, int y,
+                             int c);</pre></code>
+<p></p>
+<p>Wraparound works by ensuring that X does is within
+range <code>(0, tw)</code> and Y is in range <code>(0, th)</code>, where <code>tw</code> and
+<code>th</code> are the target widths and heights.
+</p>
+<p>After these local coordinates are found, the global
+coordinates are factored in by applying the canvas
+offsets. Hard bounds checking is done here. If they
+exceed, no drawing is done.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void btprnt_region_draw_wrap(btprnt_region *r,
+                             int x, int y,
+                             int c)
+{
+    btprnt_canvas *cv;
+    int gx, gy;
+
+    cv = r-&gt;c;
+
+    while (x &lt; 0) x += r-&gt;w;
+    while (x &gt;= r-&gt;w) x -= r-&gt;w;
+
+    while (y &lt; 0) y += r-&gt;h;
+    while (y &gt;= r-&gt;h) y -= r-&gt;h;
+
+    gx = cv-&gt;offx + r-&gt;x + x;
+    if (gx &lt; 0 || gx &gt;= cv-&gt;buf-&gt;w) return;
+    gy = cv-&gt;offy + r-&gt;y + y;
+    if (gy &lt; 0 || gy &gt;= cv-&gt;buf-&gt;h) return;
+
+    btprnt_buf_write(cv-&gt;buf, gx, gy, c);
+}</pre></code>
+
+<h3>4.7. Reading a Pixel</h3>
+
+<p><a id="wm_000_0160"></a>Get the pixel of the region with coordinates relative to
+the region with <code>btprnt_region_read</code>.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int btprnt_region_read(btprnt_region *r, int x, int y);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>int btprnt_region_read(btprnt_region *r, int x, int y)
+{
+    btprnt_canvas *cv;
+    int gx, gy;
+
+    cv = r-&gt;c;
+
+    if (x &lt; 0 || x &gt;= r-&gt;w) return 0;
+    if (y &lt; 0 || y &gt;= r-&gt;h) return 0;
+
+    gx = cv-&gt;offx + r-&gt;x + x;
+    if (gx &lt; 0 || gx &gt;= cv-&gt;buf-&gt;w) return 0;
+    gy = cv-&gt;offy + r-&gt;y + y;
+    if (gy &lt; 0 || gy &gt;= cv-&gt;buf-&gt;h) return 0;
+
+    return btprnt_buf_read(cv-&gt;buf, gx, gy);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_000_0051">prev</a> | <a href="/loom/btprnt">home</a> | <a href="/loom/wm_000_0166">next</a></p>
+</div>
+</body>
+</html>

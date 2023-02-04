@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>6. Source mapping</h2>
+
+<p><a id="wm_008_1098"></a>Worgle has the ability to produce Org data that outlines the
+structure of the named blocks.
+</p>
+<div><b><i>&lt;&lt;mapping&gt;&gt;=</i></b></div><pre><code>if(map_source_code && map_filename != NULL) {
+    worgle_map_files(&worg, map_filename);
+}</pre></code>
+<p></p>
+<p>The idea behind this functionality is to provide
+a quick overview of the source code structure from the
+blocks perspective, rather than from the text perspective.
+</p>
+<p>Every file has a top level block, which is recursively
+iterated through.
+</p>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_map(worgle_d *worg, worgle_block *b, int lvl, FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_map(worgle_d *worg, worgle_block *b, int lvl, FILE *out)
+{
+    int i;
+    worgle_segment *s;
+    worgle_block *newblk;
+    worgle_hashmap *h;
+
+    h = &worg-&gt;dict;
+    if(lvl != 0) {
+        for(i = 0; i &lt;= lvl; i++) {
+            fputc('*', out);
+        }
+        fputc(' ', out);
+        worgle_string_write(out, &b-&gt;name);
+        fputc('\n', out);
+    }
+
+    s = b-&gt;head;
+
+    newblk = NULL;
+
+    for(i = 0; i &lt; b-&gt;nsegs; i++) {
+        if(s-&gt;type == SEGTYPE_TEXT) {
+            if(s-&gt;str.size &gt; 0) {
+                worgle_string_write(out, s-&gt;filename);
+                fprintf(out, ":%lu\n", s-&gt;linum);
+                fprintf(out, "#+NAME: ");
+                worgle_string_write(out, &b-&gt;name);
+                fprintf(out, "_%d\n", i);
+                fprintf(out, "#+BEGIN_SRC\n");
+                worgle_string_write(out, &s-&gt;str);
+                fprintf(out, "#+END_SRC");
+            }
+            fprintf(out, "\n");
+        } else if(worgle_hashmap_find(h, &s-&gt;str, &newblk)) {
+            worgle_map(worg, newblk, lvl + 1, out);
+        }
+        s = s-&gt;nxt;
+    }
+}</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>void worgle_map_files(worgle_d *worg, char *filename);
+void worgle_map_a_file(worgle_d *worg, worgle_file *file, FILE *out);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>void worgle_map_files(worgle_d *worg, char *filename)
+{
+    int n;
+    worgle_file *f;
+    FILE *fp;
+
+    fp = fopen(filename, "w");
+    if(fp == NULL) return;
+
+    f = worg-&gt;flist.head;
+
+    fprintf(fp, "#+TITLE: Code Map\n");
+    for(n = 0; n &lt; worg-&gt;flist.nfiles; n++) {
+        worgle_map_a_file(worg, f, fp);
+        f = f-&gt;nxt;
+    }
+
+    fclose(fp);
+}
+
+void worgle_map_a_file(worgle_d *worg, worgle_file *file, FILE *out)
+{
+    fprintf(out, "* ");
+    worgle_string_write(out, &file-&gt;filename);
+    fprintf(out, "\n");
+    worgle_map(worg, file-&gt;top, 0, out);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_008_1009">prev</a> | <a href="/loom/worgle_main">home</a> | next</p>
+</div>
+</body>
+</html>

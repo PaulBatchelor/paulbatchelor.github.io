@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>6. Block Find (fblk)</h2>
+
+<p><a id="wm_013_0069"></a><div><b><i>&lt;&lt;available_commands&gt;&gt;=</i></b></div><pre><code>fprintf(stderr, "fblk: looks up block given name\n");</pre></code>
+<div><b><i>&lt;&lt;function_declarations&gt;&gt;=</i></b></div><pre><code>static int get_fblk(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int get_fblk(int argc, char *argv[])
+{
+    wmp_core core;
+    int rc;
+    wmp_block blk;
+    int err;
+    int prog;
+
+    err = 0;
+    if (argc &lt; 3) {
+        fprintf(stderr, "Usage: %s NAME prog\n", argv[0]);
+        return 1;
+    }
+    rc = wmp_core_open(&core, wmp_filename_get());
+    if (!rc) return 0;
+    wmp_block_init(&blk);
+
+    prog = atoi(argv[2]);
+    rc = wmp_lookup_block(&core, argv[1], &blk, prog);
+
+    if(!rc) {
+        fprintf(stderr,
+                "Could not find block name '%s'\n",
+                argv[1]);
+        err = 1;
+    } else {
+        print_block(&blk);
+    }
+    wmp_block_free(&blk);
+    wmp_core_close(&core);
+    return err;
+}</pre></code>
+<div><b><i>&lt;&lt;command_parsing&gt;&gt;=</i></b></div><pre><code>else if (match(argv[1], len, "fblk", 4)) {
+    argv++;
+    argc--;
+    get_fblk(argc, argv);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_013_0059">prev</a> | <a href="/loom/worgmap_get">home</a> | <a href="/loom/wm_013_0078">next</a></p>
+</div>
+</body>
+</html>

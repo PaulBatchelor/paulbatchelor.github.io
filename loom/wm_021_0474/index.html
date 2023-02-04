@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>8. Temporal Weight Commands</h2>
+
+<p><a id="wm_021_0474"></a></p>
+
+<h3>8.1. mass</h3>
+
+<p><a id="wm_021_0475"></a><code>gest_mass</code> the global mass to an absolute value.
+Should be in range -120 to 120. 120 is a number chosen
+for it's divisibility properties.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_mass(gest_d *g, SKFLT mass);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_mass(gest_d *g, SKFLT mass)
+{
+    action_mass(g, g-&gt;curtarget, mass);
+}</pre></code>
+
+<h3>8.2. inertia</h3>
+
+<p><a id="wm_021_0481"></a><code>gest_inertia</code> sets the inertia to be a absolute value.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void gest_inertia(gest_d *g, SKFLT inertia);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void gest_inertia(gest_d *g, SKFLT inertia)
+{
+    action_inertia(g, g-&gt;curtarget, inertia);
+}</pre></code>
+
+<h3>8.3. shrink/grow</h3>
+
+<p><a id="wm_021_0487"></a><code>gest_shrink</code> and <code>gest_grow</code> cause the mass to shrink
+and grow by a percentage value.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>int gest_shrink(gest_d *g, SKFLT amt);
+int gest_grow(gest_d *g, SKFLT amt);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void grow_mass(gest_d *g, void *ud, int pos)
+{
+    SKFLT *amt;
+    amt = (SKFLT *) ud;
+    g-&gt;mass += g-&gt;mass * (*amt);
+}
+
+int gest_grow(gest_d *g, SKFLT amt)
+{
+    SKFLT *pamt;
+    gest_target *t;
+
+    if (g-&gt;curtarget == NULL) return 1;
+
+    t = g-&gt;curtarget;
+
+    pamt= gest_alloc(g, sizeof(SKFLT));
+    *pamt = amt;
+
+    append_action(g, t, grow_mass, pamt);
+    return 0;
+}
+
+static void shrink_mass(gest_d *g, void *ud, int pos)
+{
+    SKFLT *amt;
+    amt = (SKFLT *) ud;
+    g-&gt;mass -= g-&gt;mass * (*amt);
+}
+
+int gest_shrink(gest_d *g, SKFLT amt)
+{
+    SKFLT *pamt;
+    gest_target *t;
+
+    if (g-&gt;curtarget == NULL) return 1;
+
+    t = g-&gt;curtarget;
+
+    pamt= gest_alloc(g, sizeof(SKFLT));
+    *pamt = amt;
+
+    append_action(g, t, shrink_mass, pamt);
+    return 0;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_021_0406">prev</a> | <a href="/loom/gest_program">home</a> | <a href="/loom/wm_021_0493">next</a></p>
+</div>
+</body>
+</html>

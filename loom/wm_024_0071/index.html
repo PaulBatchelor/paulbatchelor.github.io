@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>7. Top-Level Computation</h2>
+
+<p><a id="wm_024_0071"></a>A single sample of audio is computed with <code>gestvm_tick</code>.
+It takes expects a <code>conductor</code>, a phasor signal used
+as clock signal, as input.
+</p>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>SKFLT gestvm_tick(gestvm *gvm, SKFLT cnd);</pre></code>
+<p></p>
+<p>The the pipeline is broken up into functions that
+are explained in the later sections. The order
+includes: skew, rephasor, VM, and interpolator.
+</p>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>SKFLT gestvm_tick(gestvm *gvm, SKFLT cnd)
+{
+    SKFLT out;
+
+    out = 0.0;
+
+    /* Skew! */
+
+    cnd = skewer_tick(gvm, cnd);
+
+    /* Main Rephasor! */
+
+    cnd = rephasor_tick(gvm, cnd);
+
+    /* VM process */
+
+    vm_tick(gvm, cnd);
+
+    /* Interpolate */
+
+    out = interpolate(gvm, cnd);
+
+    return out;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_024_0047">prev</a> | <a href="/loom/gestvm">home</a> | <a href="/loom/wm_024_0078">next</a></p>
+</div>
+</body>
+</html>

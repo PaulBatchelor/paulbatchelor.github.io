@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>9. Edit</h2>
+
+<p><a id="wm_002_0284"></a><div><b><i>&lt;&lt;argparse_entries&gt;&gt;=</i></b></div><pre><code>{"edit", 4, p_edit, NULL},</pre></code>
+<div><b><i>&lt;&lt;static_funcdefs&gt;&gt;=</i></b></div><pre><code>static int p_edit(int argc, char *argv[]);</pre></code>
+<div><b><i>&lt;&lt;functions&gt;&gt;=</i></b></div><pre><code>static int p_edit(int argc, char *argv[])
+{
+    weewiki_d ww;
+    char fname[128];
+    char cmd[256];
+    struct tm tm;
+    time_t t;
+    FILE *fp;
+
+    t = time(NULL);
+    tm = *localtime(&t);
+
+    strftime(fname, 128128, "tmp_%m%d%y%H%M%S.org", &tm);
+    fprintf(stderr, "tmpname is %s\n", fname);
+
+    if (argc &lt; 2) {
+        fprintf(stderr,
+                "Usage: %s key\n",
+                argv[0]);
+        return 1;
+    }
+
+    weewiki_init(&ww);
+    weewiki_open(&ww, weewiki_dbname_get());
+
+    if (weewiki_exists(&ww, argv[1])) {
+        fprintf(stderr, "pulling %s to %s\n", argv[1], fname);
+        weewiki_pull(&ww, argv[1], fname);
+    } else {
+        fp = fopen(fname, "w");
+        fprintf(fp, "A new page.");
+        fclose(fp);
+    }
+
+    sprintf(cmd, "$EDITOR %s", fname);
+    system(cmd);
+    weewiki_push(&ww, fname, argv[1]);
+    weewiki_close(&ww);
+    weewiki_clean(&ww);
+    remove(fname);
+    return 1;
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_002_0268">prev</a> | <a href="/loom/weewiki_core">home</a> | <a href="/loom/wm_002_0291">next</a></p>
+</div>
+</body>
+</html>

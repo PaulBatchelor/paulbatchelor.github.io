@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+
+<h2>11. Rounded Rectangle</h2>
+
+<p><a id="wm_000_0315"></a>This rounded rectangle is based off of the algorithm
+used in the Adafruit graphics library.
+</p>
+
+<h3>11.1. Stroked Rounded Rectangle</h3>
+
+<p><a id="wm_000_0317"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_roundrect(btprnt_region *reg,
+                           int x, int y,
+                           int w, int h,
+                           int r,
+                           int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void quadcirc(btprnt_region *reg,
+                     int x0, int y0,
+                     int r,
+                     int corner,
+                     int clr)
+{
+    int f;
+    int ddf_x;
+    int ddf_y;
+    int x;
+    int y;
+
+    f = 1 - r;
+    ddf_x = 1;
+    ddf_y = -2 * r;
+    x = 0;
+    y = r;
+
+    while (x &lt; y) {
+        if (f &gt;= 0) {
+            y--;
+            ddf_y += 2;
+            f += ddf_y;
+        }
+
+        x++;
+        ddf_x += 2;
+        f += ddf_x;
+
+        if (corner & 0x4) {
+            btprnt_region_draw(reg, x0 + x, y0 + y, clr);
+            btprnt_region_draw(reg, x0 + y, y0 + x, clr);
+        }
+
+        if (corner & 0x2) {
+            btprnt_region_draw(reg, x0 + x, y0 - y, clr);
+            btprnt_region_draw(reg, x0 + y, y0 - x, clr);
+        }
+
+        if (corner & 0x8) {
+            btprnt_region_draw(reg, x0 - y, y0 + x, clr);
+            btprnt_region_draw(reg, x0 - x, y0 + y, clr);
+        }
+
+        if (corner & 0x1) {
+            btprnt_region_draw(reg, x0 - y, y0 - x, clr);
+            btprnt_region_draw(reg, x0 - x, y0 - y, clr);
+        }
+    }
+}
+
+void btprnt_draw_roundrect(btprnt_region *reg,
+                           int x, int y,
+                           int w, int h,
+                           int r,
+                           int clr)
+{
+    btprnt_draw_hline(reg, x + r, y, w - 2 * r, clr);
+    btprnt_draw_hline(reg, x + r, y + h - 1, w - 2 * r, clr);
+    btprnt_draw_vline(reg, x, y + r, h - 2 * r, clr);
+    btprnt_draw_vline(reg, x + w - 1, y + r, h - 2 * r, clr);
+
+    quadcirc(reg, x + r, y + r, r, 1, clr);
+    quadcirc(reg, x + w - r - 1, y + r, r, 2, clr);
+    quadcirc(reg, x + w - r - 1, y + h - r - 1, r, 4, clr);
+    quadcirc(reg, x + r, y + h - r - 1, r, 8, clr);
+}</pre></code>
+
+<h3>11.2. Filled Rounded Rectangle</h3>
+
+<p><a id="wm_000_0322"></a><div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void btprnt_draw_roundrect_filled(btprnt_region *r,
+                                  int x, int y,
+                                  int w, int h,
+                                  int rad,
+                                  int clr);</pre></code>
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>static void quadcirc_filled(btprnt_region *reg,
+                            int x0, int y0, int r,
+                            int corner, int delta,
+                            int clr)
+{
+    int f;
+    int ddf_x;
+    int ddf_y;
+    int x;
+    int y;
+    int px;
+    int py;
+
+    f = 1 - r;
+    ddf_x = 1;
+    ddf_y = -2 * r;
+    x = 0;
+    y = r;
+    px = x;
+    py = y;
+
+    delta++;
+
+    while (x &lt; y) {
+        if (f &gt;= 0) {
+            y--;
+            ddf_y += 2;
+            f += ddf_y;
+        }
+
+        x++;
+        ddf_x += 2;
+        f += ddf_x;
+
+        if (x &lt; (y + 1)) {
+            if (corner & 1) {
+                btprnt_draw_vline(reg,
+                                  x0 + x, y0 - y,
+                                  2 * y + delta, clr);
+            }
+
+            if (corner & 2) {
+                btprnt_draw_vline(reg,
+                                  x0 - x, y0 - y,
+                                  2 * y + delta, clr);
+            }
+        }
+        if (y != py) {
+            if (corner & 1) {
+                btprnt_draw_vline(reg,
+                                  x0 + py, y0 - px,
+                                  2 * px + delta, clr);
+            }
+
+            if (corner & 2) {
+                btprnt_draw_vline(reg,
+                                  x0 - py, y0 - px,
+                                  2 * px + delta, clr);
+            }
+
+            py = y;
+        }
+        px = x;
+    }
+}
+
+void btprnt_draw_roundrect_filled(btprnt_region *reg,
+                                  int x, int y,
+                                  int w, int h,
+                                  int r,
+                                  int clr)
+{
+  int max_radius = ((w &lt; h) ? w : h) / 2;
+  if (r &gt; max_radius)
+    r = max_radius;
+  btprnt_draw_rect_filled(reg, x + r, y, w - 2 * r, h, clr);
+  quadcirc_filled(reg,
+                  x + w - r - 1, y + r,
+                  r, 1, h - 2 * r - 1, clr);
+  quadcirc_filled(reg,
+                  x + r, y + r,
+                  r, 2, h - 2 * r - 1, clr);
+}</pre></code>
+<p></p>
+<br>
+<p><hr>
+
+<a href="/loom/wm_000_0295">prev</a> | <a href="/loom/btprnt">home</a> | <a href="/loom/wm_000_0327">next</a></p>
+</div>
+</body>
+</html>
