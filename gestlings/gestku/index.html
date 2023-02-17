@@ -79,7 +79,13 @@ function Gestku:new(o)
     o.path = o.path or Gestku.path
     o.words = {}
     o.gest = Gestku.gest:new{tal = o.tal}
+    -- this is how it was done before I made this
+    -- boilerplate. hence why it is not a method
     setmetatable(o, self)
+    o.patch = function()
+        o.setup(o)
+        o.sound(o)
+    end
     self.__index = self
     return o
 end
@@ -102,6 +108,7 @@ end
 
 function Gestku:setup()
     self.gest:create()
+    self.init(self)
 end
 
 function Gestku:start()
@@ -118,10 +125,31 @@ function Gestku:compile()
     self.gest:compile(self.words)
 end
 
+function Gestku:compile_tal(program)
+    self.gest:compile_tal(program)
+end
+
+function Gestku:compile_words_and_tal(program)
+    self.gest:compile_tal(table.concat(self.words, " ") ..
+                          "\n" .. 
+                          program)
+end
+
+function Gestku:init()
+    -- To be overridden
+end
+
+function Gestku:run()
+    self.sound(self)
+    lil("out")
+end
+
 return Gestku</pre></code>
 
 <h2>4. Messages</h2>
 
+<p><b>[6d4ecc0f] 2023-02-05-20-27</b>: after a week of tool-mind, back to toy-mind with gestku. the focus is going to be on wavetables.
+</p>
 <p><b>[1acc26bf] 2023-01-29-15-25</b>: last gestku made for goblin week today. this one was a snoring goblin.
 </p>
 <p><b>[f6b787b4] 2023-01-28-18-57</b>: today's gestku violated my 11-second rule. But it needed to be a little bit longer (15 seconds) because it was about a goblin trying to remember a tune.

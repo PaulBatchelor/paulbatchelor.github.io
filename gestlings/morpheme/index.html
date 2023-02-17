@@ -64,13 +64,20 @@ duration can be stretched and squashed to fit inside beats
 bars, or units smaller than beats.
 </p>
 
-<h2>5. Implementation</h2>
+<h2>5. Tangled Code</h2>
+
+<div><b><i>&lt;&lt;morpheme.lua&gt;&gt;=</i></b></div><pre><code>local M = {}
+
+&lt;&lt;morpheme&gt;&gt;
+return M</pre></code>
+
+<h2>6. Implementation</h2>
 
 <p>The Morpheme structure is implemented in lua code, using
 lua tables as it's structure.
 </p>
 
-<h3>5.1. Description of Morpheme Function</h3>
+<h3>6.1. Description of Morpheme Function</h3>
 
 <p>The <code>morpheme(m, r)</code> function is used to convert morpheme
 structures into gesture paths.
@@ -110,7 +117,7 @@ the morpheme to take up 2 beats (0.5x speed).
     }
 }</pre></code>
 
-<h3>5.2. Converting Proportional Durations to Rate Multipliers</h3>
+<h3>6.2. Converting Proportional Durations to Rate Multipliers</h3>
 
 <p>To convert proportional durations to actual durations
 (expressed,as rate multipliers in Gesture), find the
@@ -123,11 +130,9 @@ units for a path when duration is expressed in proportional
 terms.
 </p>
 
-<h3>5.3. Lua Code for Morpheme Function</h3>
+<h3>6.3. Lua Code for Morpheme Function</h3>
 
-<div><b><i>&lt;&lt;morpheme.lua&gt;&gt;=</i></b></div><pre><code>local M = {}
-
-&lt;&lt;lcm&gt;&gt;
+<div><b><i>&lt;&lt;morpheme&gt;&gt;=</i></b></div><pre><code>&lt;&lt;lcm&gt;&gt;
 function M.morpheme(m, r)
     -- Get lengths of each gesture path
     local lengths = {}
@@ -198,12 +203,10 @@ function M.morpheme(m, r)
     return out
 end
 
-
 &lt;&lt;helpers&gt;&gt;
+</pre></code>
 
-return M</pre></code>
-
-<h3>5.4. LCM and GCD algorithms</h3>
+<h3>6.4. LCM and GCD algorithms</h3>
 
 <p>Least common multiple algorithm, taken from Rosetta Code.
 </p>
@@ -221,10 +224,10 @@ function lcm(m, n)
         m * n / gcd(m, n) or 0
 end</pre></code>
 
-<h2>6. Morpheme Helpers</h2>
+<h2>7. Morpheme Helpers</h2>
 
 
-<h3>6.1. Append</h3>
+<h3>7.1. Append</h3>
 
 <p>The <code>append(path, mp, r, m)</code> function converts
 a morpheme to a set of gesture path structures and
@@ -269,7 +272,7 @@ function M.appender(path)
     end
 end</pre></code>
 
-<h3>6.2. Compile</h3>
+<h3>7.2. Compile</h3>
 
 <p>The <code>compile</code> function will compile a set of paths into
 a table of Uxntal words. <code>tal</code> and <code>path</code> are lua objects
@@ -292,11 +295,11 @@ previously.
     end
 end</pre></code>
 
-<h3>6.3. Articulate</h3>
+<h3>7.3. Articulate</h3>
 
 <p>The <code>articulate</code> function takes in a sequence of morphemes
 and duration scaling factors, and then returns a table
-of words that could be compiled using the <code>compile_words</code>function in
+of words that could be compiled using the <code>compile_words</code>found in <a href="/gestlings/tal">the Tal Lua module</a>.
 </p>
 <div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.articulate(path, tal, words, seq, head)
     local mp = {}
@@ -307,6 +310,108 @@ of words that could be compiled using the <code>compile_words</code>function in
 
 
     M.compile(tal, path, words, mp, head)
+end</pre></code>
+
+<h2>8. Working with Larger Morphemes</h2>
+
+
+<h3>8.1. Attributes and Sets</h3>
+
+<p>In practice, it is typical for morphemes to become large
+and many. The operations and constructs below aim to make it
+easier to work with these heftier morphemes.
+</p>
+<p>A morpheme, as stated previously, is a collection of named
+paths that run parallel to one another. These named paths
+can be thought of as attributes to a sound, and a morpheme
+can be thought of as a set of attributes.
+Morphemes
+that are tied together in a sequence (using something
+like <a href="/gestlings/mseq">mseq</a>, for example), must all contain the
+identical combination of attributes. In other words,
+morphemes must all share an identical set of attributes.
+</p>
+
+<h3>8.2. Templates</h3>
+
+<p>The <code>template</code> function produces an abstraction that makes
+it easy to create variations from an existing morpheme:
+</p>
+<pre><code>x = {
+    "a": path1,
+    "b": path2,
+    "c": path3,
+}
+
+xt = template(x)
+
+y = x {
+    "b": path4
+}</pre></code>
+<p></p>
+<p>This syntactic sugar works by taking advantage of a Lua
+quirk. In some situations, parantheses are optional for
+functions. If a function takes only a table as an
+argument, the curly braces of that table can be used instead
+of parentheses.
+</p>
+<div><b><i>&lt;&lt;morpheme&gt;&gt;=</i></b></div><pre><code>function M.template(m)
+    return function(p)
+        local o = {}
+        for k,v in pairs(m) do
+            o[k] = p[k] or v
+        end
+        return o
+    end
+end</pre></code>
+
+<h3>8.3. Subsets and Partial Morphemes</h3>
+
+<p>A handful of attributes from a morpheme, known as a subset,
+can be extracted into a smaller morpheme, known as a
+partial morpheme. Partial morphemes can be turned into
+templates an managed as smaller components, then can be
+combined with other partial morphemes to quickly build
+full morphemes.
+</p>
+<p>The <code>subset</code> function takes in a morpheme and a table
+of attributes, and returns a partial morpheme with those
+attributes. This will be a strict operation: attributes
+that don't exist in the morpheme will be treated as
+errors.
+</p>
+<div><b><i>&lt;&lt;morpheme&gt;&gt;=</i></b></div><pre><code>function M.subset(m, a)
+    local o = {}
+
+    for _,v in pairs(a) do
+        if m[v] == nil then
+            error("Attribute '" .. v .. "' doesn't exist.")
+        end
+        o[a] = m[a]
+    end
+
+    return o
+end</pre></code>
+
+<h3>8.4. Merge</h3>
+
+<p>A <code>merge</code> operation is a kind of join operation for
+morphemes A and B that combines their attributes into one
+morpheme. If there are any attributes that intersect between
+A and B, the attributes in B will be chosen.
+</p>
+<div><b><i>&lt;&lt;morpheme&gt;&gt;=</i></b></div><pre><code>function M.merge(A, B)
+    local o = {}
+
+    for k,v in pairs(A) do
+        o[k] = v
+    end
+
+    for k,v in pairs(B) do
+        o[k] = v
+    end
+
+    return o
 end</pre></code>
 </div>
 </body>

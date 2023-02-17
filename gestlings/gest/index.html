@@ -53,7 +53,17 @@ into Gestvm.
         string.format("[glget [grab %s]]", self.name))
 end</pre></code>
 
-<h2>4. Swapper</h2>
+<h2>4. Compile Tal Code</h2>
+
+<p>Similar to <code>compile</code>, except the program is represented
+as a string.
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:compile_tal(program)
+    self.tal.compile(program,
+        self.bufname,
+        string.format("[glget [grab %s]]", self.name))
+end</pre></code>
+
+<h2>5. Swapper</h2>
 
 <p>Creates a swapper node for gestlive. This should be called
 before making any GestVM nodes.
@@ -62,7 +72,7 @@ before making any GestVM nodes.
     lil(string.format("glswapper [grab %s]", self.name))
 end</pre></code>
 
-<h2>5. Done</h2>
+<h2>6. Done</h2>
 
 <p>Tells GestLive it is done adding gestures. Should be called
 right before hotswapping the patch.
@@ -71,7 +81,7 @@ right before hotswapping the patch.
     lil(string.format("gldone [grab %s]", self.name))
 end</pre></code>
 
-<h2>6. Get</h2>
+<h2>7. Get</h2>
 
 <p>Returns a string of LIL code that grabs the active
 instance of GestVM being written to.
@@ -80,7 +90,7 @@ instance of GestVM being written to.
     return string.format("[glget [grab %s]]", self.name)
 end</pre></code>
 
-<h2>7. Node_old (OLD)</h2>
+<h2>8. Node_old (OLD)</h2>
 
 <p>Deprecated node that creates a gesture node.
 </p>
@@ -94,8 +104,20 @@ end</pre></code>
         "gestvmnode %s [gmemsym [grab %s] %s] %s",
         self.get(self), self.bufname, program, cnd))
 end</pre></code>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:nodestring(program, conductor)
+    local cnd = conductor or self.conductor
+    if cnd == nil then
+        error("conductor signal not defined")
+    end
 
-<h2>8. Node</h2>
+    local s = string.format(
+        "gestvmnode %s [gmemsym [grab %s] %s] %s",
+        self.get(self), self.bufname, program, cnd)
+
+    return s
+end</pre></code>
+
+<h2>9. Node</h2>
 
 <p>Creates a <a href="/gestlings/diagraf">diagraf</a>-compatible node that produces
 a gesture node. The "name" field must be supplied as the
@@ -117,7 +139,7 @@ name of the gesture to use.
     end
 end</pre></code>
 
-<h2>9. Gest16fun</h2>
+<h2>10. Gest16fun</h2>
 
 <p>This produces a helper function that rescales the
 output of <a href="/gestlings/seq">seq</a>. The input
@@ -147,7 +169,7 @@ output is a callback that takes in an instance of Gest
 	end
 end</pre></code>
 
-<h2>10. GestVM Behavior Constants</h2>
+<h2>11. GestVM Behavior Constants</h2>
 
 <p><a id="behavior_constants"></a><div><b><i>&lt;&lt;behavior_constants&gt;&gt;=</i></b></div><pre><code>Gest.behavior = {
     linear = 0,
