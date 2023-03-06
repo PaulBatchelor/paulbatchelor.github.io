@@ -9,7 +9,139 @@
 </head>
 <body>
 <div id="main">
-<p></p>
+<p><title>Layout</title>
+<h1>Layout</h1>
+</p>
+
+<h2>1. Overview</h2>
+
+<p>This document concerns itself with how to
+arrange <a href="/gestlings/sigils">gesture sigils</a> on a page,
+and implements an interface for doing so.
+</p>
+<p>The notation style used to represent Gesture is
+fundamentally a tessellation. Sigils, like tiles, are
+optimally arranged on a grid. A sequence of Sigils are
+threaded together with a line to form a Path such
+as this one:
+</p>
+<p><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQAAAAB0CZXLAAAAqUlEQVR4Ae3ZTQqEMAyG4cAs5hg9yhxt5mhzE69QV+6M+FNwUQz4U7F5A8GFjy5i/ShU1CipA/SyWV/pt18AAAAAAAAAACgA/iLv1FnQqHapHw3apS8EMcxdOSgwyQqWnPlnafzM199LD4Lxc2VBenI38JMP081wOYg+QIFJusmHdZ0M1smyCzjKh2CtycPAyf6hwCRd5EOuAAAAAAAAAAA3AutAXI2qAwzHiJWlOZA/fQAAAABJRU5ErkJggg==
+" alt="layout test image">
+</p>
+<p>The basic way to set up layout is to create a region for
+the sigils to inhabit, create the region for the first
+sigil inside of the region, draw the sigil, then move
+the region to where the next region will be drawn.
+</p>
+<p>Movement from sigil to the next can happen in 4
+directions: up, down, left, right. Diagonal movement
+is not permitted.
+</p>
+<p>The preferred way to arrange sigils is on a spiral, with
+the beginning sigil at the center. The thread (line)
+connecting the sigils together outlines the sequential
+order. 16 sigils create a nice even 4x4 spiral.
+</p>
+<p>Movements are typically one unit away. One unit is 32
+pixels. A sigil takes up the center 26x26 pixels. The
+remaining pixels create whitespace.
+</p>
+
+<h2>2. Tangled Files</h2>
+
+<p>Tangled to janet file <code>layout/layout.janet</code>.
+</p>
+<div><b><i>&lt;&lt;layout.janet&gt;&gt;=</i></b></div><pre><code>&lt;&lt;movement&gt;&gt;
+</pre></code>
+
+<h2>3. Movement</h2>
+
+<p>Movement can happen in 4 directions: up, down, left, right.
+The current movement is limited to 1 sigil unit, which is the
+space of a 32x32 pixel square.
+</p>
+
+<h3>3.1. Move Up</h3>
+
+<div><b><i>&lt;&lt;movement&gt;&gt;=</i></b></div><pre><code>(defn move-up [bp main sigil]
+  (btprnt/rect-filled
+    bp main
+    (+ (- (sigil 0) (main 0)) (- 12 3))
+    (- (- (sigil 1) (main 1)) 7)
+    7 6 1)
+
+  (btprnt/rect-filled
+    bp main
+    (+ (- (sigil 0) (main 0)) (- 12 6))
+    (- (- (sigil 1) (main 1)) 6)
+    13 2 1)
+  (array
+    (sigil 0) 
+    (- (sigil 1) 32)
+    (sigil 2)
+    (sigil 3)))</pre></code>
+
+<h3>3.2. Move Down</h3>
+
+<div><b><i>&lt;&lt;movement&gt;&gt;=</i></b></div><pre><code>(defn move-down [bp main sigil]
+  (btprnt/rect-filled
+    bp main
+    (+ (- (sigil 0) (main 0)) (- 12 3))
+    (+ (- (sigil 1) (main 1)) 25)
+    6 7 1)
+
+  (btprnt/rect-filled
+    bp main
+    (+ (- (sigil 0) (main 0)) (- 12 6))
+    (+ (+ (- (sigil 1) (main 1)) 25) 4)
+    13 2 1)
+  (array
+    (sigil 0) 
+    (+ (sigil 1) 32)
+    (sigil 2)
+    (sigil 3)))</pre></code>
+
+<h3>3.3. Move Left</h3>
+
+<div><b><i>&lt;&lt;movement&gt;&gt;=</i></b></div><pre><code>(defn move-left [bp main sigil]
+  (btprnt/rect-filled
+    bp main
+    (- (- (sigil 0) (main 0)) 7)
+    (+ (- (sigil 1) (main 1)) (- 12 3))
+    6 7 1)
+
+  (btprnt/rect-filled
+    bp main
+    (- (- (sigil 0) (main 0)) 6)
+    (+ (- (sigil 1) (main 1)) (- 12 6))
+    2 13 1)
+  (array
+    (- (sigil 0) 32)
+    (sigil 1) 
+    (sigil 2)
+    (sigil 3)))</pre></code>
+
+<h3>3.4. Move Right</h3>
+
+<div><b><i>&lt;&lt;movement&gt;&gt;=</i></b></div><pre><code>(defn move-right [bp main sigil]
+  (btprnt/rect-filled
+    bp main
+    (+ (- (sigil 0) (main 0)) 25)
+    (+ (- (sigil 1) (main 1)) (- 12 3))
+    6 7 1)
+
+  (btprnt/rect-filled
+    bp main
+    (+ (+ (- (sigil 0) (main 0)) 25) 4)
+    (+ (- (sigil 1) (main 1)) (- 12 6))
+    2 13 1)
+  (array
+    (+ (sigil 0) 32)
+    (sigil 1) 
+    (sigil 2)
+    (sigil 3)))</pre></code>
+</p>
 </div>
 </body>
 </html>

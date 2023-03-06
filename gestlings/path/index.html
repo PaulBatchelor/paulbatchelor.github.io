@@ -9,7 +9,90 @@
 </head>
 <body>
 <div id="main">
-<p></p>
+<p><title>The Gesture Path</title>
+<h1>The Gesture Path</h1>
+</p>
+
+<h2>1. Overview</h2>
+
+<p>This document implements a Lua interface for create Gesture
+Paths for Gesture VM. Paths constructed in Lua eventually
+get generated into <a href="/gestlings/tal">tal</a> code.
+</p>
+
+<h2>2. What's a "Path"?</h2>
+
+<p>A <b>path</b> is a construct used to describe Gestures. This
+is a term borrowed from computer science and graph
+theory. A path
+can be described as a sequential set of vertices,
+connected together by edges. In this context,
+a vertice can be thought of as a set of state parameters
+for the Gesture Signal Generator: value, behavior, and
+rate multiplier. Alternatively, one could also imagine
+edges as being weighted by the rate multiplier, but at
+the time of writing there hasn't been any usecase for
+doing it this way.
+</p>
+<p>A path is said to be <b>linear</b> if the vertices flow in
+one single direction. A path becomes <b>non-linear</b> when this
+flow is interrupted somehow, such as with branching.
+</p>
+
+<h2>3. Tangled Code</h2>
+
+<div><b><i>&lt;&lt;path.lua&gt;&gt;=</i></b></div><pre><code>local Path = {}
+
+&lt;&lt;path&gt;&gt;
+return Path</pre></code>
+
+<h2>4. Creating a Vertex</h2>
+
+<p>The <code>vertex</code> function creates a gesture vertex, represented
+as a lua table. The input is an array of 3 values: value,
+duration, and behavior.
+</p>
+<p>Duration is itself a 2-element array containing the numerator
+and denominator values for the rate multiplier.
+</p>
+<p>Behavior is an integer value indicating the type of behavior
+to be used. See the <a href="/gestlings/gest#behavior_constants">gest behavior constants</a> for some human-friendly variable
+names to use instead of just numbers.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.vertex(v)
+    x = {}
+
+    x.val = v[1]
+    x.dur = v[2]
+    x.bhvr = v[3]
+
+    return x
+end</pre></code>
+
+<h2>5. Compiling a Path</h2>
+
+<p>A Path, represented as an array of Gesture vertices in
+Lua, can be compiled into TAL code using the <code>path</code>function. In addition to the path to be compiled,
+the <a href="/gestlings/tal">tal</a> library will need to be passed in,
+along with a table to place the words that get generated.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.path(tal, words, path)
+    for _, v in pairs(path)
+    do
+        if v.val ~= nil then
+            tal.val(words, v.val)
+        end
+
+        if v.dur ~= nil then
+            tal.dur(words, v.dur[1], v.dur[2])
+        end
+
+        if v.bhvr ~= nil then
+            tal.behavior(words, v.bhvr)
+        end
+    end
+end
+</pre></code>
 </div>
 </body>
 </html>
