@@ -173,9 +173,15 @@ void sk_gen_vals(SKFLT **ptab, int *psz, const char *string)
 
 <h2>Sine Sum</h2>
 
-<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_gen_sinesum(SKFLT *tab, int sz, const char *argstring);</pre></code>
+<div><b><i>&lt;&lt;funcdefs&gt;&gt;=</i></b></div><pre><code>void sk_gen_sinesum(SKFLT *tab,
+                    int sz,
+                    const char *argstring,
+                    int normalize);</pre></code>
 <p></p>
-<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_gen_sinesum(SKFLT *tab, int sz, const char *argstring)
+<div><b><i>&lt;&lt;funcs&gt;&gt;=</i></b></div><pre><code>void sk_gen_sinesum(SKFLT *tab,
+                    int sz,
+                    const char *argstring,
+                    int normalize)
 {
     SKFLT *args;
     int argsz;
@@ -184,10 +190,13 @@ void sk_gen_vals(SKFLT **ptab, int *psz, const char *string)
     int flen;
     SKFLT tpdlen;
     int i, n;
+    SKFLT ampsum;
 
     args = malloc(sizeof(SKFLT));
     args[0] = 0;
     argsz = 1;
+
+    ampsum = 0;
 
     sk_gen_vals(&args, &argsz, argstring);
     flen = sz;
@@ -195,12 +204,21 @@ void sk_gen_vals(SKFLT **ptab, int *psz, const char *string)
 
     for (i = argsz; i &gt; 0; i--) {
         amp = args[i - 1];
-        if (amp != 0) {
+        if (amp &gt; 0) {
+            ampsum += amp;
             for (phs = 0, n = 0; n &lt; sz; n++) {
                 tab[n] += sin(phs * tpdlen) * amp;
                 phs += i;
                 phs %= flen;
             }
+        }
+    }
+
+    if (normalize) {
+        SKFLT norm;
+        norm = 1.0 / ampsum;
+        for (n = 0; n &lt; sz; n++) {
+            tab[n] *= norm;
         }
     }
 
