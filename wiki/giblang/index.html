@@ -19,6 +19,12 @@ generate titles for my <a href="/wiki/breathing_cards">Breathing Cards</a>.
 A syllable is a random pairing of a consonant sound and a
 vowel sound.
 </p>
+
+<h2>Janet Implementation</h2>
+
+<p>This is the version I use most frequently, most notably
+in the <a href="/wiki/codex">Candy Crystal Rainbow Codex</a>.
+</p>
 <pre><code>(def cons (array
            "b" "c" "d" "f"
            "g" "h" "j" "k"
@@ -48,6 +54,86 @@ vowel sound.
 
 (seed)
 (print (word))</pre></code>
+
+<h2>Lua Implementation (Original)</h2>
+
+<p>This is the original Giblang program, which was originally
+implemented in Lua. I found this in an email from July 2015,
+where I was helping someone generate placeholder text (I
+think they wanted "real" words lorem-ipsum style, oh well).
+It appears I have this configured to generate 3 paragraphs
+of text.
+</p>
+<p>It was this code that generated the title for <a href="/wiki/tiziku">tiziku</a>, an audio-visual composition.
+</p>
+<pre><code>require("math")
+math.randomseed(os.time())
+
+cons =
+{"b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "r", "s", "t", "v", 
+"w", "z"}
+
+vow =
+{"a", "e", "i", "o", "u", "y"}
+
+wordlist = {}
+
+function syl()
+    return cons[math.random(#cons)] .. vow[math.random(#vow)]
+end
+
+function word()
+    str = ""
+    for i=1,math.random(3) do
+        str = str .. syl()
+    end
+    if(math.random() &gt; 0.2) then
+        str = str .. cons[math.random(#cons)]
+    end
+    return str
+end
+
+
+function sentence()
+    local str = word()
+    str = str:gsub("^%l", string.upper)
+    nwords = math.random(10)
+    local punc = {",", ":", ";"}
+    local ending = {".", ".", ".", "!", "?", "..."}
+    table.insert(wordlist, word())
+    curword = str
+    prevword = str
+    for i=1,nwords do
+
+        if(math.random() &lt; 0.7) then
+            curword = word()
+            table.insert(wordlist, curword)
+        else
+            curword = wordlist[math.random(#wordlist)]
+        end
+
+        str = str .. " " .. curword
+
+        prevword = curword
+
+        if(i ~= nwords and math.random() &lt; 0.1) then
+           str = str .. punc[math.random(#punc)]
+        end
+    end
+    return str .. ending[math.random(#ending)] .. " "
+end
+
+function paragraph()
+    str = ""
+    for i = 1, math.random(10) do
+        str = str .. sentence()
+    end
+    return str .. "\n"
+end
+
+print(paragraph())
+print(paragraph())
+print(paragraph())</pre></code>
 <hr>
 <p><a href="/wiki/">home</a> | <a href="/wiki/wiki_index">index</a></div>
 </body>
