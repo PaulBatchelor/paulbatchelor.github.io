@@ -13,14 +13,14 @@
 <h1>The Gesture Path</h1>
 </p>
 
-<h2>1. Overview</h2>
+<h2>1. <a id="overview">Overview</a></h2>
 
 <p>This document implements a Lua interface for create Gesture
 Paths for Gesture VM. Paths constructed in Lua eventually
 get generated into <a href="/gestlings/tal">tal</a> code.
 </p>
 
-<h2>2. What's a "Path"?</h2>
+<h2>2. <a id="whats-a-path">What's a "Path"?</a></h2>
 
 <p>A <b>path</b> is a construct used to describe Gestures. This
 is a term borrowed from computer science and graph
@@ -39,14 +39,14 @@ one single direction. A path becomes <b>non-linear</b> when this
 flow is interrupted somehow, such as with branching.
 </p>
 
-<h2>3. Tangled Code</h2>
+<h2>3. <a id="tangled-code">Tangled Code</a></h2>
 
 <div><b><i>&lt;&lt;path.lua&gt;&gt;=</i></b></div><pre><code>local Path = {}
 
 &lt;&lt;path&gt;&gt;
 return Path</pre></code>
 
-<h2>4. Creating a Vertex</h2>
+<h2>4. <a id="creating-a-vertex">Creating a Vertex</a></h2>
 
 <p>The <code>vertex</code> function creates a gesture vertex, represented
 as a lua table. The input is an array of 3 values: value,
@@ -69,7 +69,7 @@ names to use instead of just numbers.
     return x
 end</pre></code>
 
-<h2>5. Compiling a Path</h2>
+<h2>5. <a id="compiling-a-path">Compiling a Path</a></h2>
 
 <p>A Path, represented as an array of Gesture vertices in
 Lua, can be compiled into TAL code using the <code>path</code>function. In addition to the path to be compiled,
@@ -93,6 +93,25 @@ along with a table to place the words that get generated.
     end
 end
 </pre></code>
+
+<h2>6. <a id="savingloading-paths-as-assets">Saving/Loading Paths as Assets</a></h2>
+
+<p>Requires an instantiated <a href="/gestlings/asset">asset</a> component.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.save(asset, gpath, filename)
+    asset:save(gpath, filename)
+end
+
+function Path.load(asset, filename)
+    local path_data = asset:load("path.bin.txt")
+
+    local gpath = {}
+    for _,v in pairs(path_data) do
+        table.insert(gpath, Path.vertex(v))
+    end
+
+    return gpath
+end</pre></code>
 </div>
 </body>
 </html>
