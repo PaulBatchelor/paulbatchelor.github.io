@@ -413,6 +413,46 @@ A and B, the attributes in B will be chosen.
 
     return o
 end</pre></code>
+
+<h2>9. <a id="loadingsaving-morphemes">Loading/Saving Morphemes</a></h2>
+
+<p>Similar to how it's done in <a href="/gestlings/path">path</a>, using
+the <a href="/gestlings/asset">asset</a> component. Make sure that the
+asset component is initialized.
+</p>
+<p>Note that the <code>load</code> function will require the
+<a href="/gestlings/path">path</a> component, in order to properly
+convert the data structure to a path that lua can read.
+</p>
+<div><b><i>&lt;&lt;morpheme&gt;&gt;=</i></b></div><pre><code>function M.morpheme_to_data(path, morpheme)
+    local morpheme_data = {}
+
+    for k,v in pairs(morpheme) do
+        morpheme_data[k] = path.path_to_data(v)
+    end
+
+    return morpheme_data
+end
+
+function M.save(asset, path, morpheme, filename)
+    asset:save(M.morpheme_to_data(path, morpheme), filename)
+end
+
+function M.load(asset, path, filename)
+    local morpheme_data = asset:load(filename)
+
+    local morpheme = {}
+
+    for k, v in pairs(morpheme_data) do
+        morpheme[k] = path.data_to_path(v)
+    end
+    -- local gpath = {}
+    -- for _,v in pairs(path_data) do
+    --     table.insert(gpath, Path.vertex(v))
+    -- end
+
+    return morpheme
+end</pre></code>
 </div>
 </body>
 </html>
