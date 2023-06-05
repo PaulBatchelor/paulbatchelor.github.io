@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Sig</title>
+<h1>Sig</h1>
+<ul>
+
+<li>
+
+<a href="/gestlings/sig#overviewtop">1. Overview/Top</a></li>
+
+<li>
+
+<a href="/gestlings/sig#getting-in-the-weeds">2. Getting in the weeds</a></li>
+
+<li>
+
+<a href="/gestlings/sig#new">3. New</a></li>
+
+<li>
+
+<a href="/gestlings/sig#hold">4. Hold</a></li>
+
+<li>
+
+<a href="/gestlings/sig#unhold">5. Unhold</a></li>
+
+<li>
+
+<a href="/gestlings/sig#get">6. Get</a></li>
+
+<li>
+
+<a href="/gestlings/sig#getstr">7. Getstr</a></li>
+
+<li>
+
+<a href="/gestlings/sig#zero">8. zero</a></li>
+
+<li>
+
+<a href="/gestlings/sig#send">9. Send</a></li>
+
+<li>
+
+<a href="/gestlings/sig#throw">10. Throw</a></li>
+
+</ul>
+
+</p>
+
+<h2>1. <a id="overviewtop">Overview/Top</a></h2>
+
+<p>This module contains helper functions that assist in signal management
+in sndkit.
+</p>
+<p><code>signal management</code> refers to any non-trivial use of a signal that
+requires manual intervention. In sndkit, signals become "non-trivial"
+quite quickly; any signal that wants to be used more than once in a way
+that can't be done using stack operations can be considered non-trivial.
+<div><b><i>&lt;&lt;sig.lua&gt;&gt;=</i></b></div><pre><code>Sig = {}
+
+&lt;&lt;sig&gt;&gt;
+return Sig</pre></code>
+
+<h2>2. <a id="getting-in-the-weeds">Getting in the weeds</a></h2>
+
+<p>Here's some low-level details about how signal management
+works in sndkit.
+</p>
+<p>Buffers, blocks of signal that unit generator
+nodes can read/write to, are finite, and managed in
+a pre-allocated resource pool. Any time a signal is used
+more than once in a patch, special care must be put into
+ensuring that the underyling buffer the signal is in is
+marked as in use throughout the lifetime of the
+signal, then returned back to the pool when the signal
+is no longer being used.
+</p>
+<p>Buffers are stored using a register system that sndkit
+employs, which are referenced by index. Similar to buffers,
+registers can be marked as in-use and then cleared when
+they are no longer used, which allows for a process to
+go in and find the next available free register without
+worrying about exaclty which register it is.
+</p>
+<p>So, the process of storing a signal is a matter of finding
+an available buffer to write to from the buffer pool, marking
+the buffer as in-use (unavailable to others), writing the
+signal to that buffer, finding
+an available register to write to, marking the register as
+in-use, and then storing a reference to the buffer in the
+register. Using the signal is a matter of looking up the
+buffer from the register, and the pushing it onto the
+the stack that sndkit uses to pass around data. A signal
+is successfully released by marking both the buffer and
+the signal as available for use again.
+</p>
+<p>A the sndkit layer of abstraction, finding an available buffer from
+the buffer pool is pretty transparent. It is a process handled
+by another low level component of sndkit called <code>graforge</code>.
+</p>
+
+<h2>3. <a id="new">New</a></h2>
+
+<p>Creates a new instance of a signal.
+</p>
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:new(o)
+    o = o or {}
+    o.reg = -1
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end</pre></code>
+
+<h2>4. <a id="hold">Hold</a></h2>
+
+<p>Takes the last item off the buffer stack, holds it,
+and then stores it in a free register.
+</p>
+<p><code>lil_eval</code> is an optional callback that can replace the
+default <code>lil</code> evaluator. It can be used for debugging
+purposes. Usually something like <code>print</code> would be used.
+</p>
+<p>Not that in order for the register marking to work,
+actual lil code must be evaluated. These bits of code
+are always actually called by <code>lil</code>, and will also
+be called by <code>lil_eval</code> if they are different functions.
+</p>
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:hold(lil_eval)
+    -- can be a callback used to simulate holding
+    lil_eval = lil_eval or lil
+    if self.reg &gt;= 0 then
+        error("can't hold, already holding")
+    end
+
+    -- regnxt actually has to be called to see if it is
+    -- working
+
+    local lstr = "param [regnxt 0]"
+    -- if lil_eval ~= lil then
+    --     lil_eval(lstr)
+    -- end
+
+    lil(lstr)
+
+
+    local reg = pop()
+
+    if reg &lt; 0 then
+        error("invalid index")
+    end
+
+    -- hold/regset can be simulated without issue
+    lil_eval("hold zz")
+    lil_eval(string.format("regset zz %d", reg))
+
+    -- regmrk actually has to be called for it to work
+    local lstr = string.format("regmrk %d", reg)
+
+    if lil_eval ~= lil then
+        lil_eval(lstr)
+    end
+
+    lil(lstr)
+    -- lil(string.format("regset zz %d; regmrk %d", reg, reg))
+
+    self.reg = reg
+end</pre></code>
+
+<h2>5. <a id="unhold">Unhold</a></h2>
+
+<p>Unholds the underlying signal (buffer), if there is one
+to be unheld.
+</p>
+<p>Just like <code>hold</code>, <code>lil_eval</code> is a an optional function
+that overrides the default <code>lil</code> evaluator, and was
+originally used for debugging purposes.
+</p>
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:unhold(lil_eval)
+    lil_eval = lil_eval or lil
+    if self.reg &lt; 0 then
+        error("no signal to unhold")
+    end
+
+    lil_eval(string.format("unhold [regget %d]; regclr %d",
+        self.reg, self.reg))
+
+    self.reg = -1
+end</pre></code>
+
+<h2>6. <a id="get">Get</a></h2>
+
+<p>Gets the signal and pushes it onto the buffer stack.
+</p>
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:get()
+    if self.reg &lt; 0 then
+        error("no signal")
+    end
+
+    lil(string.format("regget %d", self.reg))
+end</pre></code>
+
+<h2>7. <a id="getstr">Getstr</a></h2>
+
+<p>This returns the string of LIL code that, once evaluated,
+would push the signal onto the stack.
+</p>
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:getstr()
+    if self.reg &lt; 0 then
+        error("no signal")
+    end
+
+    return string.format("[regget %d]", self.reg)
+end</pre></code>
+
+<h2>8. <a id="zero">zero</a></h2>
+
+<p>Creates and holds an auxilliary cable to be used for
+sends and throws. It starts of with no signal, hence
+the name "zero".
+</p>
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:zero()
+    if self.reg &gt;= 0 then
+        error("A signal is already being held")
+    end
+    lil("zero")
+    self.hold(self)
+end</pre></code>
+
+<h2>9. <a id="send">Send</a></h2>
+
+<p>Pops the last signal off the stack and mixes it into
+the internal cable.
+</p>
+<p>"Gain" is a attenuation value in db units. By default
+it is 0 (full scale).
+</p>
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:send(gain)
+    if self.reg &lt; 0 then
+        error("no signal")
+    end
+
+    gain = gain or 0
+
+    lil(string.format("mix zz [regget %d] [dblin %g]",
+        self.reg, gain))
+end</pre></code>
+
+<h2>10. <a id="throw">Throw</a></h2>
+
+<p>Like send, but instead of popping the signal off the stack,
+it dups it first, keeping a copy of the signal on
+the stack.
+</p>
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:throw(gain)
+    if self.reg &lt; 0 then
+        error("no signal")
+    end
+
+    lil("dup")
+    self.send(self, gain)
+end</pre></code>
+</div>
+</body>
+</html>

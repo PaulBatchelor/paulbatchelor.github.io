@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>loadtiles</title>
+<h1>loadtiles</h1>
+</p>
+
+<h2>1. <a id="gesture-notation-is-made-up-of-tiles">Gesture Notation is Made up Of Tiles</a></h2>
+
+<p>In order to notate gesture structures, the use of tiles
+is required, or at the very least, highly encouraged.
+The proposed system (which has not been established at
+the time of writing) uses a system inspired by brutalist
+aesthetics which will be referred to as
+<code>brutalist gesture notation</code>, meaning that notation is
+specifically optimized for the medium it lives on: digital
+pixels. The symbols, glyphs, and sigils used to describe
+Gesture are made up of smaller components, which can be
+efficiently maintained as rectangular chunks of pixels
+known as <code>tiles</code>. Tiles that are the same size can be
+packed together in a grid in what is known as a <code>tilemap</code>.
+</p>
+<p>There is more than one way to make a tilemap. The author
+has opted to use a text editor. Text editors are a familiar
+keyboard-driven interface, and are suitable enough for
+making sets of small monochrome tiles. Text also happens to
+be a very convenient format.
+</p>
+
+<h2>2. <a id="the-loadtiles-function">The Loadtiles Function</a></h2>
+
+<p><code>loadtiles</code> is a function that reads a specially formatted
+text file containing data a <code>tilemap</code>, and assembles it
+into a raw in-memory tilemap via a Janet Buffer.
+</p>
+<p>The <code>filename</code> argument points to the locatino of
+the text file containing the tilemap. <code>gwidth</code> and
+<code>gheight</code> refer to the pixel dimensions of an
+individual glyph. <code>cols</code> and <code>rows</code> refer to the size
+of the tilemap.
+</p>
+<p>Most of this code has already been been implemented
+in <a href="/gestlings/curated_lglyphs">curated_lglyphs</a> as <code>loadbuf_v2</code>. This
+version aims to clean things up a bit. The goal is to make
+this a re-usable component.
+</p>
+<div><b><i>&lt;&lt;loadtiles.janet&gt;&gt;=</i></b></div><pre><code>(defn loadtiles [filename gwidth gheight cols rows]
+  (var xpos 0)
+  (var ypos 0)
+  (def onbit ((string/bytes "#") 0))
+  (def offbit ((string/bytes "-") 0))
+
+  # btprnt usually does this automatically
+  # handle non-multiples of 8
+  # (def stride
+  #   (let (w (* gwidth cols))
+  #     (if (= (% w 8) 0)
+  #       (/ w 8)
+  #       (+ (math/floor (/ w 8)) 1))))
+
+  (def total-size
+    (let (sz (* gwidth gheight cols rows))
+      (if (= (% sz 8) 0)
+        (/ sz 8)
+        (+ (math/floor (/ sz 8)) 1))))
+
+  (def stride (* cols gwidth))
+  (def height (* rows gheight))
+
+  #(var buf (buffer/new-filled (* stride height)))
+  (var buf (buffer/new-filled total-size))
+  (var f (file/open filename :r))
+  (var linepos 0)
+
+  # turns out janet bitmaps tightly pack bits without
+  # zero-padding rows up to the nearest byte
+  (defn pixel [x y s]
+    (def pos-in-bits (+ (* stride y) x))
+    (def pos (brshift pos-in-bits 3))
+    (def bitpos (- pos-in-bits (blshift pos 3)))
+
+    (if (= s 1)
+      (set (buf pos)
+           (bor (buf pos) (blshift 1 bitpos)))
+      (set (buf pos)
+           (band (buf pos) (bnot (blshift 1 bitpos))))))
+
+  (loop [line :iterate (:read f :line)]
+    (var a (string/bytes line))
+    (if (or (= (a 0) onbit) (= (a 0) offbit))
+      (do
+        (if (&gt;= linepos gheight)
+          # end of glyph. get ready for next glyph.
+          (do
+            (set linepos 0)
+            (set xpos (+ xpos 1))
+
+            # possibly go to new road if at the end
+
+            (if (&gt;= xpos cols)
+              (do
+                (set xpos 0)
+                (set ypos (+ ypos 1))))))
+        # add bits to row, then get ready for next row
+        (for i 0 (length a)
+          (cond
+            (&gt;= i gwidth)
+            '()
+            (= (a i) offbit)
+            (pixel
+              (+ (* xpos gwidth) i)
+              (+ (* ypos gheight) linepos)
+              0)
+            (= (a i) onbit)
+            (pixel
+              (+ (* xpos gwidth) i)
+              (+ (* ypos gheight) linepos)
+              1))
+          )
+        (set linepos (+ linepos 1)))))
+
+  (file/close f)
+  buf)
+
+&lt;&lt;gen-tilemap&gt;&gt;
+</pre></code>
+
+<h2>3. <a id="generating-a-tilemap">Generating a Tilemap</a></h2>
+
+<p>Initially built while making <a href="/gestlings/protosigils">protosigils</a>, the
+<code>gen-tilemap</code> will load a text file into a btprnt buffer.
+In addition to calling <code>loadbits</code> to load the file into
+a Janet buffer, it will also call on <code>drawbits</code> to actually
+place those into a newly allocated btprnt buffer.
+</p>
+<div><b><i>&lt;&lt;gen-tilemap&gt;&gt;=</i></b></div><pre><code>(defn gen-tilemap [filename gw gh ncols nrows]
+  (def buf
+    (loadtiles filename gw gh ncols nrows))
+
+  (def w (* ncols gw))
+  (def h (* nrows gh))
+
+  (def bp (btprnt/new w h))
+
+  (btprnt/drawbits
+    bp buf
+    @[0 0 w h]
+    0 0 w h
+    0 0)
+
+  bp)</pre></code>
+</div>
+</body>
+</html>
