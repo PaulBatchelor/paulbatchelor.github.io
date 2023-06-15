@@ -1,0 +1,2703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>The Algorithm Design Manual</title>
+<h1>The Algorithm Design Manual</h1>
+<p>By Steven S. Skiena (Third Edition)
+</p>
+<p>UUID: <code>gipejljdq-eoqa-heio-wauq-idrilewkhhel</code></p>
+<p>Recommended book in <a href="/brain/TYCS">TYCS</a>.
+</p>
+<p>it is divided into two parts, "techniques" and "resources".
+The former is a general introduction to algorithm design,
+while the latter is inteded for browsing and reference.
+</p>
+
+<h2>Table of Contents</h2>
+
+<p><a href="/brain/TADM#chap1">Chapter 1: Introduction to Algorithm Design</a></p>
+<p><a href="/brain/TADM#chap2">Chapter 2: Algorithm Analysis</a></p>
+<p><a href="/brain/TADM#chap3">Chapter 3: Data Structures</a></p>
+<p><a href="/brain/TADM#chap4">Chapter 4: Sorting</a></p>
+<p><a href="/brain/TADM#chap5">Chapter 5: Divide and Conquer</a></p>
+<p><a href="/brain/TADM#chap6">Chapter 6: Hashing and Randomized Algorithms</a></p>
+<p><a href="/brain/TADM#chap7">Chapter 7: Graph Traversal</a></p>
+<p><a href="/brain/TADM#chap8">Chapter 8: Weighted Graph Algorithms</a></p>
+<p><a href="/brain/TADM#chap9">Chapter 9: Combinatorial Search</a></p>
+<p><a href="/brain/TADM#chap10">Chapter 10: Dynamic Programming</a></p>
+<p><a href="/brain/TADM#chap11">Chapter 11: NP-Completeness</a></p>
+<p><a href="/brain/TADM#chap12">Chapter 12: Dealing With Hard Problems</a></p>
+<p><a href="/brain/TADM#chap13">Chapter 13: How to Design Algorithms</a></p>
+
+<h2>Chapter 1: Introduction To Algorithm Design</h2>
+
+<p><a id="chap1"></a>An algorithm is a procedure to accomplish a specific task.
+</p>
+<p>An algorithm must solve a generalizable set of problems. An
+algorithm will perform on an <code>instance</code> of a problem.
+</p>
+<p>Examples: Robot Tour Optimization (The Traveling Salesman
+problem) and Selecting the Right Jobs.
+</p>
+<p>Reasonable looking algorithms can be easily incorrect.
+Algorithm <code>correctness</code> is a property that must be
+carefully demonstrated.
+</p>
+<p>Proofs are a tool used to distinguish correct algorithms
+from incorrect ones. Formal proofs will not be emphasized
+in this book.
+</p>
+<p>Correctness of an algorithm requires that the problem
+be carefully and clearly stated. Problem specifications
+have two parts: the set of allowed instances, and the
+require properties of the algorithm's output.
+</p>
+<p>An important technique in algorithm design is to narrow
+the scope of allowable instances until there is an
+efficient solution.
+</p>
+<p>Avoid ill defined quetions, such as "best" routes (what
+does best mean?). Also avoid compound goals.
+</p>
+<p>Three common forms of algorithmic notation: English,
+pseudocode, real programming language.
+</p>
+<p>Pseudocode: best defined as a programming language that
+never complains about syntax errors.
+</p>
+<p>The heart of an algorithm is an idea. If your idea
+is not clearly revealed when you express an algorithm,
+then you are using too low-level a notation to describe it.
+</p>
+<p>Counterexample: an instance for an algorithm which yields
+an incorrect answer.
+</p>
+<p>Counterexample properties: verifiability and simplicity.
+</p>
+<p>Verifiability: demonstrate that it is a counterexample.
+Calculate what the answer would have been, and display
+a better answer to prove that the algorithm didn't find it.
+</p>
+<p>Simplicity: strips away all details, and clearly shows
+why the algorithm fails.
+</p>
+<p>Strategies for finding counterexamples: think small,
+think exhaustively, hunt for the weakness, go for a tie,
+seek extremes.
+</p>
+<p>Searching for counterexamples is the best way to
+disprove the correctness of a heuristic.
+</p>
+<p>Failure to find a counterexample to a given algorithm
+does it mean "it is obvious" the algorithm is correct.
+A proof or demonstration of correctness is needed, often
+with the use of mathematical induction.
+</p>
+<p>Mathematicl induction is usually the right way to
+verify the correctness of a recursive or incremental
+insertion algorithm.
+</p>
+<p>Modeling: the art of formulating your application in
+terms of precisely described, well understood problems.
+</p>
+<p>Common structures: permutations, subsets, trees, graphs,
+points, polygons, strings.
+</p>
+<p>Permutations: likely the object in question for problems
+that seek "tour, "ordering", or "sequence".
+</p>
+<p>Subset: likely needed when encountering problems that
+seeks a "cluster", "collection", "committee", "group",
+"packaging", or "selection".
+</p>
+<p>Trees: likely object in question when a problem seeks
+"hierarchy", "dominance relationship",
+"ancestor/descendant relationship", or "taxonomy".
+</p>
+<p>Graphs: "network", "circuit", "web", or "relationship".
+</p>
+<p>Points: "sites", "position", "data records", or "locations".
+</p>
+<p>Polygons: "shapes", "regions", "configurations",
+"boundaries".
+</p>
+<p>Strings: "text", "characters", "patterns", or "labels".
+</p>
+<p>Modeling your application in terms of well defined
+structures and algorithms is the most important single step
+towards a solution.
+</p>
+<p>Thinking recursively: looking for big things that are made
+up of smaller things of exactly the same type as the big
+thing.
+</p>
+<p>Proof by Contradiction: assume the hypothesis is false,
+develop some logical consequences of assumption, show
+that one consequence is false.
+</p>
+<p>Estimation is principled guessing. Try to solve the problem
+in different ways and see if the answers generally agree
+in magnitude.
+</p>
+
+<h2>Chapter 2: Algorithm Analysis</h2>
+
+<p><a id="chap2"></a>Studying algorithm efficiency without implementing them.
+</p>
+<p>Two tools for analysis: the RAM model of computation and
+asymptotic analysis of computational complexity.
+</p>
+<p>RAM: Random Access Machine. Hypothetical computer machine
+where operation time is measured in steps.
+</p>
+<p>In RAM, the quality of an algorithm is determined by how it
+works over all possible instances.
+</p>
+<p>Best case, worst case, average case.
+</p>
+<p>Best case: minimum number of steps taken when instance
+is size N.
+</p>
+<p>Worst case: maximum number of steps when instance is size
+N.
+</p>
+<p>Average case: average number of steps when instance is
+size N. AKA expected time.
+</p>
+<p>Worse Case tends to be the most useful in practice.
+</p>
+<p>Average Case is helpful when working with randomized
+algorithms.
+</p>
+<p>Big-oh notation: simplifies analysis. More "big picture".
+</p>
+<p>Upper bound, lower bound, something inbetween bound (not
+sure what to call this)?
+</p>
+<p>Big oh ignores difference between multiplicative constants.
+</p>
+<p>Dominance: faster growing functions dominate slower
+growing ones.
+</p>
+<p>Functions are grouped by different classes, in descending
+order: Factorial, Exponential, Cubic, Quadratic,
+Superlinear, Linear, Logarithmic, Constant.
+</p>
+<p>Special considerations for thinking about adding/multipying
+functions with Big Oh. (See book).
+</p>
+<p>Analysis for selection sort (See book for details). Proving
+two ways that the Big Oh running time is quadratic (n^2).
+</p>
+<p>Analysis for insertion sort. Using a "round it up" approach
+to find the upper bound worst-case Big Oh time. Useful
+approximation for simple algorithm analysis.
+</p>
+<p>Finding a substring. Analyzes each looping component
+of the algorithm, and using Big Oh rules to get
+an expression interms of n and m.
+</p>
+<p>"proving the theta": proving that the time assessment is
+correct.
+</p>
+<p>Matrix Multiplication. Smells like cubic time, but can
+be precisely proven to be. Other algorithms can do it
+a bit faster.
+</p>
+<p>There are two basic classes of summation formulae: sum
+of a power of integers, and sum of a geometric progression.
+</p>
+<p>Logarithms arise in problems where things are repeatedly
+halved.
+</p>
+<p>Binary search work in logarithmic time.
+</p>
+<p>Range of binary values  double when you add a bit.
+</p>
+<p>Logarithms used to be used to multiple very large
+numbers by hand.
+</p>
+<p>End of the chapter here covers advanced analysis
+techniques. Not used in the rest of the book.
+</p>
+
+<h2>Chapter 3: Data Structures</h2>
+
+<p><a id="chap3"></a></p>
+
+<h3>3.1 Contiguous Vs Linked Data structures</h3>
+
+<p>Data structures can be classified as linked or contiguous.
+</p>
+<p>Contiguous: structures composed of a single slab of memory.
+</p>
+<p>Linked: structures composed of distinct chunks of memory
+tied together using pointers.
+</p>
+<p>Array: fundamental contiguous data struture, consisting
+of a fixed size data record where each element can be
+addressed using an index.
+</p>
+<p>Contiguous array advantages: constant-time access, space
+efficiency, memory locality.
+</p>
+<p>Dynamic Arrays: arrays that can efficiently expand. They
+double in size every time more space is needed, and items
+are copied over to the new chunk. Insertion takes constant
+time worst case.
+</p>
+<p>Linked structures advantages: overflow never happens
+unless memory is actually full, insert/delete are simpler
+than static arrays, moving is easier with larger records.
+</p>
+<p>Dynamic memory allocation provides flexibility on how/where
+limited storage resources are used.
+</p>
+
+<h3>3.2 Containers, Stacks and Queues</h3>
+
+<p>Container: abstract data type that permits
+storage/retrieval of items independent of context.
+</p>
+<p>Containers include stacks and queues.
+</p>
+<p>Stack: LIFO. Simple and efficient. Good to use when
+retrieval doesn't matter. Push and pop.
+</p>
+<p>Queue: FIFO. Trickier to implement than stacks. Good
+for applications where order is important. Minimizes
+that maximum time spent waiting. Enqueue and Dequeue.
+</p>
+<p>Stacks/Queues can be implemented using either an array
+or linked list.
+</p>
+
+<h3>3.3 Dictionaries</h3>
+
+<p>Dictionary: data type that permits access to data items
+by content.
+</p>
+<p>Dictionary operations: search, insert, delete.
+</p>
+<p>Other Dictionary operations: Max/Min: retrieve item
+with largest or smallest key. Predecessor/Successor:
+retrieve item that comes before or after given key in
+sorted order.
+</p>
+<p>Data structure design must balance the operations it
+supports. The fastest structure supporting two
+operations may not be as fast as ones that support
+them individually.
+</p>
+<p>Comparing times for sorted or unsorted array operations.
+</p>
+<p>Comparing times for sorted or unsorted and
+doubly or singly linked list operations.
+</p>
+
+<h3>3.4 Binary Search Trees</h3>
+
+<p>Rooted Binary Tree: recursively defined as being empty,
+or consiting of a a node called the root, together
+with two rooted binary trees called left and right.
+</p>
+<p>Binary Tree Search: runs in O(h) time, where <code>h</code> denotes
+height of tree.
+</p>
+<p>Binary Tree Operations (with sample code): Search, minimum,
+maximum, traversal, insertion, deletion.
+</p>
+<p>Binary Tree Insertion: exactly one place to insert an item
+X into a tree T. Can be done recursively.
+</p>
+<p>Binary Tree Deletion: tricky because the two descendents
+have to be linked into the tree somewhere else. Three
+possibilities: leaf node, node with 1 child, node with
+2 children. Deleting a node with 2 children is the most
+difficult to handle correctly.
+</p>
+<p>Performance of binary tree on average has theta log(N),
+assuming all possibilities are equally probable.
+</p>
+<p>Balanced Search Trees: Trees that adjust after each
+insertion, guaranteeing that the height is always
+O(log N).
+</p>
+<p>The key to binary search trees is exploiting them as
+black boxes.
+</p>
+
+<h3>3.6 Priority Queues</h3>
+
+<p>Priority Queue: an abstract data type that allows
+elements to be added at arbitrary times and be sorted
+properly.
+</p>
+<p>Three Primary Operations: Insert, Find-Minimum/Find-Maximum,
+Delete-Minimum/Delete-Maximum.
+</p>
+</p>
+
+<h3>3.6 War story: triangle stripping</h3>
+
+<p>War Story: using priority queues with a dictionary
+to find small triangle strips that cover a given mesh.
+</p>
+
+<h3>3.7 Hashing</h3>
+
+<p>Hash tables: very practical way to maintain a dictionary.
+</p>
+<p>Hash function: a mathematical function that maps keys
+to integers.
+</p>
+<p>Collisions: when two keys map to the same integer value.
+</p>
+<p>Chaining: represents hash table as array of linked lists.
+Natural way to resolve collision, but memory is allocated
+for pointers, rather than ways to make the table larger
+(and lookup faster).
+</p>
+<p>Open Addressing: maintains hash table as simple array of
+elements (not buckets like chaining). If an index position
+is filled, find the next available one closest. This
+has better performance, but deletion is difficult.
+</p>
+<p>Hashing is a good method for duplicate detection.
+</p>
+<p>Duplicate detection applications that can use hashing:
+checking for a document in a large corpus, document
+plagiaraization, proof that file hasn't been changed.
+</p>
+<p>Hashing tricks: fundamentally about many-to-one mappings,
+where the many isn't too many.
+</p>
+<p>Canonicalization: reducing complicated objects to a
+standard form. Hash tables can be used here.
+</p>
+<p>Intentional collisions in hash tables work well for
+pattern matching problems.
+</p>
+<p>Fingerprinting: hashing for compaction.
+</p>
+
+<h3>3.8 Specialized Data Structures</h3>
+
+<p>Basic Data Structures: represent an unstructured set
+of items that facilitate retrieval operations.
+</p>
+<p>Less well known: data structures for representing
+more specialized objects: points, strings, graphs, sets.
+</p>
+<p>Similar idea: each of these have operations which
+need to be performed on them, efficiently.
+</p>
+
+<h3>3.9 War Story: Sring 'em up</h3>
+
+<p>Finding substrings in a genome sequence (very large)!
+</p>
+<p>Binary search tree: good until it wasn't.
+</p>
+<p>Profiled. Faster dictionary structure. Use hash table:
+good until it wasn't.
+</p>
+<p>Use a suffix tree: worked until it didn't. Ran out
+of memory.
+</p>
+<p>Compressed suffix tree: things work now!
+</p>
+<p>A single operation was isolated (dictionary string search)
+that was being performed many times, and a performance
+was improved by studying the algorithm and finding
+suitable data structures for it.
+</p>
+
+<h2>Chapter 4: Sorting</h2>
+
+<p><a id="chap4"></a>Sorting is fundamental to many algorithms, the source
+of many interesting ideas in the field of algorithm
+design, and is the most thorougly studied problem in CS.
+</p>
+
+<h3>4.1 Application Sorting</h3>
+
+<p>Clever sorting: O(N Log(N)).
+</p>
+<p>Naive: O(N^2).
+</p>
+<p>Sorting is often a basic building block in many algorithms.
+Having things sorted tends to make things way easier.
+</p>
+<p>Some problems that take advantage of sorting: Searching,
+Closest pair, Element uniqueness, Finding the mode,
+Selection, Convex hulls.
+</p>
+<p>Stop and think: finding the intersection. 3 approaches
+involving different combinations of sorting. Small-set
+sorting is best. However, a hash table could be used
+to optimally solve this problem.
+</p>
+<p>When to use hashes?
+</p>
+<p>Searching: hashes are a great answer here.
+</p>
+<p>Closest Pair: hashes (defined thus far) do not help.
+</p>
+<p>Element Uniqueness: hashing is faster than sorting for
+this problem.
+</p>
+<p>Finding the mode: linear time with hash.
+</p>
+<p>Finding the medium: does not help.
+</p>
+<p>Convex Hull: not really.
+</p>
+
+<h3>4.2 Pragmatics of Sorting</h3>
+
+<p>What order do we want items sorted?
+</p>
+<p>Increasing vs decreasing order.
+</p>
+<p>Key vs entire record.
+</p>
+<p>Handling equal keys.
+</p>
+<p>Non-numerical data.
+</p>
+<p>An application specific comparison function is used
+to help solve these issues, which allows sorting algorithms
+to be studied independent of their context.
+</p>
+<p>Qsort: C standard library sorting quicksort function that
+takes in a comparison function.
+</p>
+
+<h3>4.3 Heapsort: fast sorting with data structures</h3>
+
+<p>While you are better off using standard sorting functions,
+understanding how they work will be helpful for
+understanding how other algorithms work.
+</p>
+<p>Selection sort: impelementation takes O(n) to find
+smallest item in unsorted list, O(1) to remove the item.
+Total time takes O(n^2). Using priority queue for these
+operations will take performance from O(n^2) to O(nlog(n))
+time. Priority queue can be made with heap or balanced
+binary tree.
+</p>
+<p>Heapsort: really just selection sort with the right data
+structure.
+</p>
+<p>Heaps: data structure used for efficiently supporting
+PQ operations insert and extract-minimum.
+</p>
+<p>heap-labeled tree: binary tree such that the key of each
+node dominates the keys of its children.
+</p>
+<p>min-heap: domination happens when parent node has small key
+than children.
+</p>
+<p>heap: allows one to convey trees without pointers. Data
+is stored as array of keys.
+</p>
+<p>Acquiring parent/children in heap: left child of <code>k</code> sits
+as <code>2k</code>, right <code>2k + 1</code>, parent of <code>k</code> is at <code>k/2</code>.
+</p>
+<p>Missing internal nodes of a sparse tree still take up
+space.
+</p>
+<p>Elements in heap must be packed as far left as possible,
+leaving empty elements only at the end.
+</p>
+<p>Heap is not a binary search tree, so one can't efficiently
+search through the tree.
+</p>
+<p>To make a heap: insert at leftmost open position, then
+"bubble up" (swapping with parent) to assert dominance.
+Each insert has an O(log(n)) time, with a total insert
+of O(n*log(n)) time.
+</p>
+<p>Extract minimum from heap: pop of the top of the heap,
+then replace with rightmost node (nth position in array).
+Bubble down to ensure that the heap property is
+satisfied (the value dominates its children). This bubbling
+down is also known as <code>heapify</code>.
+</p>
+<p>Faster heap construction is possible, using N/2 calls
+to bubble down. It quickly converges to linear time
+instead of O(n*log(n)).
+</p>
+<p>Stop and think: where in the heap?
+</p>
+<p>Insertion sort: O(n^2) time. simplest example of
+incremental insertion.
+</p>
+<p>Incremental insertion: for n items, build on (n - 1)
+items, then make changes to add last item.
+</p>
+<p>Faster incremental-insertion based sorting algorithms
+utilize more efficient data structures, such as a balanced
+search tree.
+</p>
+
+<h3>4.5 Mergesort: sorting by divide and conquer</h3>
+
+<p>Mergesort: Break a list into two parts, sort, then merge
+them together.
+</p>
+<p>Mergesort efficiency: dependent on how well one can combine
+the two sorted halves into a single sorted list.
+</p>
+<p>Total runtime of mergesort: n / 2^k, where n is the number
+of items (and a power of 2), and k is the level it is
+being processed on.
+</p>
+<p>Linear work is done merging the elements at each level.
+</p>
+<p>Divide-and-conquer mergesort implementation closely
+resembles pseudo-code.
+</p>
+<p>Merging is more challening: where to put the merged
+array? Solution is to copy subarray to avoid overwrite,
+then merge back into array.
+</p>
+
+<h3>4.6 Quicksort: Sorting by Randomization</h3>
+
+<p>Quicksort: take an item from set (pivot), and
+split (parition) remaining items into two piles: those
+greater and those lesser. Pivot item ends up in exactly
+the position it is supposed to be in. Go into each pile,
+pivot and repeat.
+</p>
+<p>Quicksort is a recursive sorting algorithm.
+</p>
+<p>Quicksort runs in O(n*h) time, where <code>h</code> is the height
+of the recursion tree.
+</p>
+<p>The height of the quicksort recursion tree can vary,
+depending on where the pivot ends up.
+</p>
+<p>Best case is it
+picks the median every time, where each level is half
+the size of the previous level (h = log(n)).
+</p>
+<p>Worst case is picking the most uneven pivot point in
+subarray (biggests or smallest value). This gives a
+worst case time of n^2. This worst case time is
+worst than heapsort or mergesort.
+</p>
+<p>Expected performance of quicksort is O(n * log(n)) time.
+</p>
+<p>On average, random quicksort trees perform well. The odds
+of running into a worst case of quadratic time are very
+small.
+</p>
+<p>By scrambling the order of a list before applying
+quicksort (adds an addition O(n) time), it guarantees
+that any input will have a high probability of running
+in O(n*log(n)) time.
+</p>
+<p>In general, the use of randomization can help to improve
+algorithms with bad worst-case, but good worst-case
+complexity.
+</p>
+<p>Randomization techniques: random sampling, randomized
+hashing, randomized search.
+</p>
+<p>Stop and think: nuts and bolts.
+</p>
+
+<h3>4.7 Distribution Sort: Sorting via Bucketting</h3>
+
+<p>Example: organizing names in a phonebook. Break names
+into sections by letter, with sections arrangement in
+alphabetical order. In each section (bucket), do the same
+with the second letter. Repeat until each bucket has
+one letter.
+</p>
+<p>Bucketting works when data is expected to be roughly
+uniform.
+</p>
+<p>Sorting algorithms based on comparison cannot work in
+linear time.
+</p>
+<p>Sorting can be used to illusrate many design paradigms,
+such as data structure techniques, divide and conquer,
+randomization, and incremental construction.
+</p>
+
+<h2>Chapter 5: Divide and Conquer</h2>
+
+<p><a id="chap5"></a>Divide and conquer: divide a problem up into two smaller
+subproblems, recursively solve, then meld them together.
+</p>
+<p>When merging is more efficient than the problem solving,
+it is an efficient algorithm.
+</p>
+
+<h3>5.1 Binary search and related algorithms</h3>
+
+<p>Binary Search: fast algorithm for searching in a sorted
+array of S. Key can be located in O(log(n)) time.
+</p>
+<p>One sided binary search: search algorithm on an
+array that divides it into segments of increasing size.
+Is able to find the transition point p in 2*log(p)
+comparisions. Useful when trying to find item that is
+close to current position.
+</p>
+<p>Bisectional Method: method used to find the square root
+of a number. Can also be generalized means of finding
+roots to an equation. Finds a midpoint, tests the function,
+the updates the midpoint again and repeats until an
+answer is found.
+</p>
+
+<h3>5.2 War story: finding the bug in the bug</h3>
+
+<p>Using binary search to figure out what was causing a
+sequenced (biological) virus to die rather than be
+weakened (for use in synthetic vaccine).
+</p>
+<p>Binary search can be done in parallel, provided that
+queries are arbitrary subsets rather than connected
+halves.
+</p>
+
+<h3>5.3 Recurrence Relations</h3>
+
+<p>Recurrence Relation: an equation in which a function is
+defined in terms of itself.
+</p>
+<p>Recurrence relations are related to recursion in
+programming, and enable one to formally analyze recursive
+functions.
+</p>
+<p>Divide-and-conquer can be represented in the following
+recurrence relation T(n) = a*T(n/b) + f(n). Where
+a task <code>T</code> is broken up in <code>a</code> problems, each being of
+size <code>n/b</code>, and then merged in time <code>f(n)</code>.
+</p>
+<p>Solving a recurrence: finding a nice closed form
+describing or bounding the result.
+</p>
+
+<h3>5.4 solving divide-and-conquer recurrances</h3>
+
+<p>Divide-and-conquer form usually falls into three distinct
+cases, described mathematically (presented in book). Known
+as the <code>master theorem</code>.
+</p>
+<p>Three cases of master thereom correspond to three different
+costs, each of which would be dominant as a function of
+a, b, and f(n): too many lives (case 1), equal work per
+level (case 2), too expensive a root (case 3).
+</p>
+<p>If you accept the master theorem, you can easily any
+divide-and-conquer algorithm given only the recurrence
+associated with it.
+</p>
+
+<h3>5.5 Fast multiplication</h3>
+
+<p>Faster multiplication algorithms can be obtained by
+defining a recurrence that uses fewer multiplications
+but more additions.
+</p>
+
+<h3>5.6 Largest Subrange and Closest Pair</h3>
+
+<p>Largest subrange: given a set of integers, which range
+yields the largest sum? Using divide and conquer, one
+can do it in O(n * log(n)) time.
+</p>
+<p>Broad strokes approach: find the best on each side, then
+check what is straddling in the middle.
+</p>
+<p>If the largest subregion is somewhere in the middle: it's
+the union of two subregions in the left and right, left
+subregion ends on <code>m</code>, right subregion starts on <code>m + 1</code>.
+</p>
+<p>Dividing into two halves and sweeping does linear work
+with a recurrence of $T(n)=2*T(n/2) + \theta(n)$. Case
+2 of the master theorem yields $T(n) = \theta(n \log(n)).
+</p>
+<p>The problem of finding the smallest distance between two
+points can be reworked from a linear sweep
+with n*log(n) time into into a divide-and-conquer with
+linear time, and proven by defining the recurrence and
+applying the master theorem. Using a similar process,
+it can be shown that the case for 2d points can be found
+in n*log(n) time.
+</p>
+
+<h3>5.7 Parallel Algorithms</h3>
+
+<p>Divide and conquer is the most suitable algorithm for
+parallel computation.
+</p>
+<p>Parition a problem of size <code>n</code> into <code>p</code> equal parts,
+thus yielding a time of <code>T(n/p)</code>.
+</p>
+<p>Most parallel tasks aim to exploit <code>data parallelism</code>:
+multiple tasks each process separate data.
+</p>
+<p>Most parallel algorithms are simple yet effective.
+</p>
+<p>Pitfalls of parallelism: there is a small uper bound
+on the potential win, speedup mean snothing, parallel
+algorithms are tough to debug.
+</p>
+
+<h3>5.8 War Story: Going Nowhere Fast</h3>
+
+<p>Parallelizing the Waring's conjector algorithm from
+the previous chapter for use on a supercomputer. Lots
+of problems ensue.
+</p>
+<p>Moral of the story: there are subtleties to consider
+when adapting an algorithm to be parallel. Taking the
+time to do proper load balancing is important.
+</p>
+
+<h3>5.8 Convolution</h3>
+
+<p>There is a divide-and-conquer strategy for sorting that
+can prevent it from being a quadratic time operation.
+</p>
+<p>Important operations of convolution: integer
+multiplicatioin, cross-correlation, moving average filters,
+string matching.
+</p>
+
+<h2>Chapter 6: Hashing and Randomized Algorithms</h2>
+
+<p><a id="chap6"></a>Why Randomize? Yields new classes of efficient algorithms
+that relax the requirement of always correct or always
+efficient.
+</p>
+<p>Two main types of randomized algorithms: Las Vegas
+algorithms and Monte Carlo algorithms.
+</p>
+<p>Las Vegas Algorithm: guarantee correctness, but not
+always efficient. Ex: quicksort.
+</p>
+<p>Monte Carlo Algorithm: Probably efficient, but not always
+correct. Ex: random sampling methods.
+</p>
+<p>While often easy to implement, randomized algorithms can
+be difficult to analyze rigorously.
+</p>
+<p>Randomized algorithms are formally analyzed using
+probability theory.
+</p>
+
+<h3>6.1 Probability Review</h3>
+
+<p>Probability Theory: formal framework for reasoning about
+the likelihood of events.
+</p>
+<p>Experiment: a procedure that yields one of a set of
+possible outcomes.
+</p>
+<p>Sample space: set of possible outcomes of an experiment.
+</p>
+<p>Event: a specified subset of the outcomes of an experiment.
+</p>
+<p>Set Difference: A - B. Operation that produces
+outcomes of event A that are not outcomes of event B.
+</p>
+<p>Intersection: Outcomes between both event A and event B.
+</p>
+<p>Union: outcomes that appear in either A or B.
+</p>
+<p>Events A and B are said to be independent if there is
+no special structure of shared outcomes between events.
+</p>
+<p>Indpendent events are ideal in probability theory because
+they simpilify calculations.
+</p>
+<p>Conditional Probability: the probability of A, given B.
+</p>
+<p>Conditional probability is only interesting when the events
+are depedent on eachother.
+</p>
+<p>Baye's Theorem: reverses the direction of dependencies.
+</p>
+<p>Probability Density Function: a way of representing random
+variabnles. Known as PDF.
+</p>
+<p>Two main types of summary statistics: central tendency
+measures, and variation or variability measures.
+</p>
+<p>Central tendency measures: capture the center around
+which datum is distributed.
+</p>
+<p>Variability measures: spread or how far datum lies from
+the center.
+</p>
+<p>Primary centrality measure is the mean.
+</p>
+<p>Most common measure of variability is the standard
+deviation.
+</p>
+<p>Variance is the square of the standard deviation.
+</p>
+<p>Stop and Think: Random Walks on a Path.
+</p>
+
+<h3>6.2 Understanding Balls and Bins</h3>
+
+<p>Balls and bins are a classic probability model: X balls
+to toss in Y random bins. Interest is in the distribution
+of the balls.
+</p>
+<p>Precise analysis of random process requires formal
+probability theory, algebraic skills, and careful
+asymptotics.
+</p>
+
+<h3>6.3 Why is Hashing a Randomized Algorithm</h3>
+
+<p>Randomized algorithms make the worst-case scenarios go
+away.
+</p>
+<p>Hashing functions are deterministic. In theory one could
+exploit a particular hash function with a edge-case.
+</p>
+<p>Constructing a hash function at random prevents worst-case
+intentional inputs from happening.
+</p>
+
+<h3>6.4 Bloom Filters</h3>
+
+<p>Bloom Filter: Bit-vector hash table. When a bit is set,
+it means there's something in the bucket. Takes an
+item, hashes it in K different ways, then puts each result
+into a bucket.
+</p>
+<p>An already false positive collision in the bloom filter
+would need to set the bits for all the hash functions used.
+The probability of this happening is calculated in the
+book.
+</p>
+
+<h3>6.5 The Birthday Paradox and Perfect Hashing</h3>
+
+<p>Perfect Hashing: a guaranteed
+worst-case constant time search that works for static
+dictionaries.
+</p>
+<p>Calculate: how large a hash table do you need before you
+get zero collisions?
+</p>
+<p>Relates to the Birthday Paradox: how many people do you
+need in a room before it is likely that at least two
+of them share the same birthday?
+</p>
+<p>Perfect hashing utilizes a 2-level hash table.
+</p>
+<p>Perfect hashing is ideal for when you are making a large
+number of queries in a static dictionary.
+</p>
+<p>Minimum perfect hasing: guarantees constant time access
+with zero empty hash table slots, resulting in an n-element
+second hash table for n keys.
+</p>
+
+<h3>6.6 Minwise hashing</h3>
+
+<p>Jaccard Similarity: means of measuing similarity between
+two items. The similarity measure outputs 0-1, which
+can be thought of as a probability that the documents
+are similar. See equation in book.
+</p>
+<p>How to compare similarity of two documents without looking
+at every word? Minwise hashing.
+</p>
+<p>Minwise hashing: compute the hash value of one document,
+get word with the smallest hash value. Then do the same
+with the other document using the same function.
+</p>
+<p>The probabability that the minhash word appears in both
+documents depends on the words in common, as well as
+the total size of the documents.
+</p>
+<p>Minhash value: building indexes for similarity search and
+clustering over a collection of documents.
+</p>
+
+<h3>6.7 Efficient String Matching</h3>
+
+<p>String primary data structure: array of characters, which
+allows constant-time access to parts of the string
+via indexes.
+</p>
+<p>Substring search: fundamental operation on text strings.
+Does an input text string contain a pattern inside of it,
+and if so, where?
+</p>
+<p>Rabin-Karp Algorithm: general-purpose substring matching
+algorithm based on hashing with linear expected time.
+</p>
+<p>When a test substring is moved by one character, the hash
+of the current substring and the previous is different
+by one character, and thus can be computed from the
+previous hash using two multiplications, one addition,
+and one subtraction.
+</p>
+
+<h3>6.8 Primality Testing</h3>
+
+<p>Primality: is the number a prime number?
+</p>
+<p>Randomized algorithms can be used for primality testing,
+and turn out to be faster than the factoring approach.
+</p>
+<p>Fermat's little theorem: $a^{n-1} = 1(\mod n)$ for all
+a not divisible by n.
+</p>
+<p>The mod of this big power is always 1 if n is prime. The
+odds of it being 1 by chance is very small.
+</p>
+<p>Pick 100 random integers between 1 and (n - 1). If all
+random numbers come out to be 1, it is probably prime,
+and the chances of it <b>not</b> being prime are very small.
+This is a monte-carlo type of randomized algorithm.
+</p>
+<p>Carmichael Numbers: Numbers that aren't prime, but fit
+the Fermat congruence for all "a". These will act as
+false positives in the randomized primality algorithm
+described above.
+</p>
+
+<h3>6.9 Giving Knuth the Middle Initial</h3>
+
+<p>Author finds a problem in TAOCP suggestive of Fermats
+little theorem, and writes a mathematica program that
+refutes the conjecture. Contacts Knuth, and Knuth tells
+him that next edition will use his name. Asks for middle
+initial.
+</p>
+
+<h3>6.10 Where do Random Numbers Come from?</h3>
+
+<p>A Linear Congruent Generator (LCG) is essentially a hash
+function that is typically used to produce random
+numbers for a computer.
+</p>
+
+<h2>Chapter 7: Graph Traversal</h2>
+
+<p>A graph consists of a set of vertices V together with a
+set E of vertex pairs or edges.
+</p>
+
+<h4>7.1 Flavors of Graphs</h4>
+
+<p>Flavors: Undirected vs Directed. Weighted vs. Unweighted.
+Simple vs. Non-simple. Sparse vs. Dense. Cyclic vs.
+Acyclic. Embedded vs. Topological. Implicit vs. Explicit.
+Labeled vs. Unlabeled.
+</p>
+<p>Undirected/directed: directed if edges
+(x,y) and (y, x) exist. AKA does it flow both ways or not?
+</p>
+<p>Weighted/unweighted: Do vertices in a graph have some
+concept of "weight" associated with them? Finding the
+shortest path in a weighted graph requires more
+sophisticated algorithms.
+</p>
+<p>Simple/non-simple: graphs with complicated edges, such
+as a self-loop (x,x) and a multi-edge (edge occurs more
+than once).
+</p>
+<p>Sparse vs Dense: How many defined pairs are there? A
+complete graph contains all possible pairs.
+</p>
+<p>Cyclic vs. Acyclic: cylic is a closed path of 3 or more
+vertices that do not repeat except for tghe start and
+end point. Trees are undirected and acyclic graphs.
+Directed acyclic graphs (DAGs) are commonly found in
+scheduling problems with dependency chains.
+</p>
+<p>Embedded/Topological: Embedded means that vertices or
+edges are assigned geometric positions. Edge and Vertex
+descriptions are purely topological.
+</p>
+<p>Implicit/explicit: Some graphs do not need to be fully
+constructed, and can be built on-demand as needed.
+</p>
+<p>Labeled/unlabeled: vertexes are given a unique ID or name
+to distinguish it from other vertices.
+</p>
+<p>Degree of Vertex: number of edges adjacent to it.
+</p>
+<p>Graphs can be used to model a wide variety of
+structures an relationships. Graph-theoretic terminology
+gives us a language to talk about them.
+</p>
+
+<h3>7.2 Data Strutures for Graphs</h3>
+
+<p>Main choices for graph data structure are: adjacency
+matrices and adjacency lists.
+</p>
+<p>Adjacency Matrix: Use an NxN matrix to represent every
+possible pair. Can quickly check if two vertices are
+connected as a pair, but can take up a lot of space.
+</p>
+<p>Adjacency List: use linked list to store neighbors of
+each vertex. Typically more compact, and take more time
+verify whether a given edge is in a graph. Usually
+the correct choice for a Graph data structure.
+</p>
+
+<h3>7.3 War Story: I was a Victim of Moore's Law</h3>
+
+<p>Development of Combinatorica (author's library for
+mathematica) and changing the way graphs are represented
+over the years due to hardware improvements.
+</p>
+
+<h3>7.4 War Story: Getting The Graph</h3>
+
+<p>Problem related to extracting triangular strips for
+fast rendering of triangular surfaces, modelled
+as a graph problem. It turns out that there was a
+bottleneck was in the construction of the graph which
+had to be addressed (it was working in quadratic time).
+After fixing the graph construction, the graph could
+be built in seconds instead of minutes.
+</p>
+
+<h3>7.5 Traversing a Graph</h3>
+
+<p>Traverse a Graph: visit every edge and vertex in a
+systematic way.
+</p>
+<p>Efficient Traversal: don't visit the same places
+repeatedly.
+</p>
+<p>Corrrect Traversal: Ensure that every vertice/edge gets
+visited.
+</p>
+<p>Mark as you go. Each vertice has three possible states:
+undiscovered, then discovered, and then processed.
+</p>
+<p>Undirected edges will be considered twice (both ends).
+Directed edges will be considered once.
+</p>
+
+<h3>7.6 Breadth-First Search</h3>
+
+<p>BFS on undirected graphs assigns direction from discoverer
+to the discovered. Each node has exactly
+one parent (except for root). This creates a tree.
+</p>
+<p>For nontree edges, can point only to vertices on the same
+level as the parent vertex, or to vertices directly below
+the parent.
+</p>
+<p>BFS Implementation: two boolean arrays to keep track
+of vertices in graph: discovered and processed.
+</p>
+<p>A discovered vertex is placed on a FIFO queue. Oldest
+vertices are expanded first, which are closest to
+the root.
+</p>
+<p>Parent array: useful for finding paths inside the graph.
+Parent that first discovered vertex <code>i</code> is <code>parent[i]</code>.
+</p>
+<p>The tree that BFS produces paths that are the shortest
+route from the root to a particular value. Path can be
+reconstructed for any given value X by following X back
+to the root.
+</p>
+
+<h3>7.7 Applications of Breadth-First Search</h3>
+
+<p>Properly implemented traversals are usually around
+linear time, or O(n + m) with n vertexs and m edges.
+</p>
+<p>Graph is connected is there is a path between any two
+vertices.
+</p>
+<p>Connected component: maximal set of vertices such that
+there is a path between every pair of vertices. These
+components are self-contained in a graph, and do not
+connect to other components.
+</p>
+<p>Many (seemingly) complicated problems reduce down to
+finding connected components in a graph structure.
+</p>
+<p>BFS can be utilized to find connected components.
+</p>
+<p>vertex-color problem: color each vertice of a graph such
+that no edge links any two vertices of the same color,
+using the least amount of colors.
+</p>
+<p>bipartite: graph that can be colored using only two colors.
+</p>
+<p>BFS mod to make bipartite graph: discovering a new
+vertex means making it a color the opposite of its parent.
+Check non-tree edge links to make sure colors don't match.
+A successful traversal means the graph is colored
+to be bipartite.
+</p>
+
+<h3>7.8 Depth-First Search</h3>
+
+<p>Difference between DFS and BFS is in the order which they
+explore vertices. Order dependent on the container data
+structure to store the discovered but not processed
+vertices: queue vs stack.
+</p>
+<p>In a Queue (FIFO), the oldest unexplored vertices are
+explored first. This defines a BFS.
+</p>
+<p>A Stack (LIFO) data structure explores vertices along
+a path, then backing up when it encounters already
+discovered vertices. This defines a DFS.
+</p>
+<p>DFS can can be defined recursively, removing the need
+for an explicit stack.
+</p>
+<p>Entry/exit times in DFS trees have interesting properties:
+who is an ancestor? and how many descendants?
+</p>
+<p>DFS partitions edges of undirected graph into two classes:
+tree edges and back edges.
+</p>
+<p>tree edges: discover new vertices.
+</p>
+<p>back edges: edges whose other endpoint is an ancestor
+of the vertex being expanded, so they point back into
+the tree.
+</p>
+
+<h3>7.9 Applications of Depth-First Search</h3>
+
+<p>DFS isn't intimidating, but it is subtle. Correctness
+requires getting details right.
+</p>
+<p>Correctness: dependent on when vertices and edges are
+processed.
+</p>
+<p>Process a vertex before traversal, or after. Sometimes
+things happen during both those times.
+</p>
+<p>Special attention is given to edges in undirected graphs:
+(x,y) and (y, x) exist. Processed vertice is simple
+case, discovered requires a bit more thought.
+</p>
+<p>Y is first traversal unless it is the immediate ancestor
+of X (aka a tree edge).
+</p>
+<p>Cycle detection is done by checking for back edges. In
+order for this to work, each edge in a traversal algorithm
+must be processed exactly once.
+</p>
+<p>Connectivity of a graph: smallest number of vertics whose
+deletion will disconnect the graph.
+</p>
+<p>Articulation Vertex: single vertex whose deletion
+disconnects a connected component of the graph.
+</p>
+<p>A graph with an articulation vertex is said to have a
+connectivity of 1.
+</p>
+<p>Test connectivity with brute force: remove a vertice,
+then do DFS or BFS and see if graph iss still connected.
+Total time is O(n(n + m)).
+</p>
+<p>Three reasons a vertex might be an articulation vertex:
+root cut-nodes, bridge cut-nodes, parent cut-nodes.
+</p>
+<p>Root cut-nodes: root has two or more children.
+</p>
+<p>Bridge cut-nodes: earliest reachable vertex from v
+is v.
+</p>
+<p>Parent cut-nodes: earliest reachable vertex from v is
+the parent of v.
+</p>
+
+<h3>7.10 Depth-First Search on Directed Graphs</h3>
+
+<p>DFS on Directed Graphs can encounter more types of
+edges: forward, backward, cross. Undirected only encounters
+back.
+</p>
+<p>Edge Classification can be determined by looking at
+state, discovery time, and parent of each vertex.
+</p>
+<p>Topological Sort: operation performed on directed acyclic
+graphs (DAGs). Orders vertices such that all directed
+edges go from left to right.
+</p>
+<p>There can be more than one kind of topological sort.
+</p>
+<p>Topological sort allows vertices to be processed before
+successors.
+</p>
+<p>Topological sort can be efficiently performed using DFS.
+</p>
+<p>Strongly connected: a directed graph that has a directed
+path between any two vertices.
+</p>
+<p>Transpose Graph: A graph, but with all the edges reversed.
+</p>
+<p>Transposed Graph is used to establish if a Graph is
+strongly connected. (Can be done in linear time!).
+</p>
+
+<h2>Chapter 8: Weighted Graph Algorithms</h2>
+
+<p><a id="chap8"></a>Weighted Graphs: Graphs where edges have different values
+or weights associated with them.
+</p>
+
+<h3>8.1 Minimum Spanning Trees</h3>
+
+<p>Spanning Tree: a subset of edges from a graph that connect
+to all vertices in a graph.
+</p>
+<p>Minimum Spanning Tree: Spanning tree with the smallest
+possible combined weight.
+</p>
+<p>There can be more than one MST of a given graph.
+</p>
+<p>Algorithms below use greedy heuristics to find MST.
+</p>
+<p>Prim's Minimum Spanning Tree Algorithm: starts from
+one vertex and grows the tree one edge at a time until
+all vertices are included.
+</p>
+<p>Kruskal's Algorithm: another algorithm for
+MST finding that uses greey heuristics. Builds up
+connected components of verticices, culminating in MST.
+Repeatedly considers lightest edge. If two endpoints end
+up in same component, discard. Otherwise, merge components
+into one.
+</p>
+<p>Performance of Kruskals Algorithm: <code>O(m*lg(m))</code> time for
+sorting <code>m</code> edges, <code>O(m*n)</code> algorithm total.
+</p>
+<p>Union-find can be used to speed up component test, making
+Kruskal's algorithm run in <code>O(m*lg(m))</code> time. Faster
+than Prim's algorithm for sparse graphs.
+</p>
+<p>Set Partition: Itemizes the elements of some universal
+set (ex: 1 to n) into a collection of disjoint subsets,
+where each element is in exactly one subset.
+</p>
+<p>Connected components in a graph can be represented as
+a set partition.
+</p>
+<p>To perform well, Kruskals algorithm needs these
+operations to be efficient: Same Component Test, and
+a Merge of two components.
+</p>
+<p>Union Find: data structure that represents each subset
+as a "backwards" tree, with pointers from a node
+to its parent.
+</p>
+<p>Previous operations (same component test and merge) can
+be simplified into operations find and union,
+respecitvely.
+</p>
+<p>Maximum Spanning Tree: Opposite of minimum spanning tree.
+Can be obtained by negating weights and running Kruskal's
+or Prim's algorithm.
+</p>
+<p>Minimum Product Spanning Tree: Spanning tree that minimizes
+the product of edge weights (assuming all positive).
+Replacing weights with their logarithms and then finding
+the MST will accomplish this. Reasoning: logarithm identity
+is the log of two multiplied values is equal to the sum
+of the log values processed individually.
+</p>
+<p>Minimum Bottleneck Spanning Tree: Spanning tree that
+minimizes the maximum edge weight over all possible trees.
+</p>
+
+<h3>8.2 War Story: Nothing but Nets</h3>
+
+<p>Finding the Traveling Salesman problem in moving robot
+arms and minimizing distance. Applying the problem to
+graph algorithms to find reasonable solutions.
+</p>
+<p>Take home lesson: Most applications of graphs can be reduced
+to standard graph properties where well known graphs can
+be used, such as MSTs and shortest paths.
+</p>
+
+<h3>8.3 Shortest Paths</h3>
+
+<p>Path: sequences of edges connecting two vertices.
+</p>
+<p>Shortest Path: Path that minimizes the sum of edge weights.
+</p>
+<p>Shorteset path between two vertices in
+<b>unweighted</b> graph can be found using
+a BFS starting from one of the points. Search tree
+records the minimum-link path, which is therefore the
+shortest path.
+</p>
+<p>Dijkstra's Algorithm: Preferred method for finding the
+shortest path in weighted graph. Finds the shortest path
+from starting point to all other destinations, including
+the target destination.
+</p>
+<p>Dijkstra's algorithm is very similar to Prim's algorithm,
+with the difference being the way the measure the
+desirability of each vertex.
+</p>
+<p>Dijsktra's algorithm can be realized by only slightly
+modifying the implementation for Prim's algorithm done
+previously.
+</p>
+<p>Performance of Dijstra's algorithm: <code>O(n^2)</code>, just like
+Prim's algorithm.
+</p>
+<p>Try to design graphs, not algorithms.
+</p>
+<p>Graph Diameter: the largest shortest-path over all pairs
+of vertices.
+</p>
+<p>Floyd's algorithm: can be used to find the all-pairs
+shortest path, using a graph stored in an adjacency
+matrix.
+</p>
+<p>The performance of Floyd's algorithm is O(n^3), but
+the implementation has very tight loops so it
+performs well.
+</p>
+<p>Another application of Floyd's algorithm is that of
+computing transitive closure.
+</p>
+
+<h3>8.4 War Story: Dialing For Documents</h3>
+
+<p>Using weighted graphs to type in
+words for phone dialing services.
+</p>
+<p>Lesson: the constraints for many pattern recogonition
+problems can be naturally formulated as shortest-path
+problems in graphs.
+</p>
+
+<h3>8.5 Network Flows and Bipartite Matching</h3>
+
+<p>Network Flow Problem: asks for the maximum amount of flow
+that can be sent from one vertice to another, while
+respecting max capacities of each pipe.
+</p>
+<p>Matching: Subset of edges such that no two vertices share
+a vertex. Pairs off vertices such that a vertice is in
+at most one pair.
+</p>
+<p>Bipartite or  two-colorable: vertices can be devided into
+two sets, L and R, such that all edges in G have
+one vertex L and one vertex in R.
+</p>
+<p>Augmenting Paths: finding a path of positive
+capacity from s to t, adding it to the flow.
+</p>
+<p>Flow through network is optimal if and only if there
+is no augmenting path.
+</p>
+<p>Repeatedly applying path augmentation increases flow until
+no such path remains, which produces the global maximum.
+</p>
+<p>Residual Flow Graph: defined as a weighted Graph G, where
+weights represent capacity, and f is an array of flows
+through G.
+</p>
+<p>Max flow from s to t always equal the weight of the minimum
+s-t cut.
+</p>
+<p>Edmonds and Karp proved that always selecting the shortest
+unweighted augmented path guarantees $O(n^3)$. Their
+algorthm is what is implemented in this textbook.
+</p>
+
+<h3>Randomized Min-Cut</h3>
+
+<p>Minimum-Cut Problem: aims to partition the vertices of
+a graph into two sets, such that the smallest possible
+number of edges apan across these two sets.
+</p>
+<p>Minimum-Cut in Network Reliability: what is the smallest
+failure set whose deletion will disconnect the graph?
+</p>
+<p>If it takes K edge deletions to disconnect a graph, each
+vertex must be connected to at least K other vertices.
+This also impliies that for n vertices,
+there are kn/2 edges.
+</p>
+<p>Contraction Operation: collapses vertices X and Y into
+a single vertice XY. Any edge (X,Z) or (Y,Z) becomes
+(XY, Z), and if both exist, two copies are made. An edge
+(X, Y) gets replaced by a self loop (XY, XY).
+</p>
+<p>Contraction and Minimum Cut Size: size is unchanged unless
+one we contract one of the K edges of the optimal cut,
+in which case the min-cut size might grow because the
+best partition is no longer available.
+</p>
+<p>Randomized algorithm: pick an edge and contract it, and
+repeat this $n - 2$ times until there is a 2-vertex
+graph with multiple parallel edges between them. Repeat
+this procedure many times and report the smallest
+cut as the minimum cut.
+</p>
+<p>The probability of this algorithm succeeding can be
+calculated. The equation is presented in the book.
+</p>
+<p>It turns out that running the process $n^2log(n)$ times
+returns a high probability of finding the minimum cut
+at least once.
+</p>
+<p>The key to success in a randomized algorithm is setting
+up a problem where the probabilities can be bounded and
+formally analyzed.
+</p>
+
+<h3>8.7 Design Graphs, not algorithms</h3>
+
+<p>Previous examples where designing graphs is better than
+designing algorithms: maximum spanning tree as a minimum
+spanning tree of a negative graph, and bipartite matching
+using a special network flow graph.
+</p>
+<p>Lots of "Stop and Think" examples here. Will not list them
+here, but are worth looking at. These show different
+problems that can be solved by constructing a graph.
+</p>
+<p>Designing novel graph algorithms is very hard, so don't do
+it. Instead, try to design graphs that enable you to use
+classical algorithms to model your problem.
+</p>
+
+<h2>Chapter 9: Combinatorial Search</h2>
+
+<p>Solving problems with exhaustive search techniques can
+take a lot of computation, but can sometimes be worth it.
+</p>
+<p>Larger problems solved this way requires careful pruning of
+the search space: only look for what matters.
+</p>
+<p>Backtracking as a technique for listing all possible solutions
+to a combinatorial algorithm problem.
+</p>
+
+<h3>9.1 Backtracking</h3>
+
+<p>Backtracking: systematic way to run through all the possible
+configurations of a search space.
+</p>
+<p>Problems of this domain require that each possible combination
+must be generated exactly once.
+</p>
+<p>Combinatorial search solution will be modelled as a vector,
+where each element is selected from a finite ordered set.
+</p>
+<p>Each step of the backtracking algorithm, try to extend a
+given partial solution, then test if it is a complete
+solution.
+</p>
+<p>Backtracking constructs a tree of partial solutions, where
+each node represents a partial solution.
+</p>
+<p>Backtracking ensures correctness by enumerating all
+possibilities.
+</p>
+<p>Application-specific parts of implementation:
+<code>is_a_solution</code>, <code>construct_candidates</code>, <code>process_solution</code>,
+<code>make_move</code>.
+</p>
+
+<h3>9.2 Examples of Backtracking</h3>
+
+<p>Constructing all subsets: set up a boolean array of N cells,
+where each value signifies if it is in the subset. $S_k$ is
+(true, false), and $a$ is a solution whenever $k = n$.
+</p>
+<p>Constructing all permutations.
+</p>
+<p>Constructing all paths in a Graph.
+</p>
+
+<h3>9.3 Search Pruning</h3>
+
+<p>Pruning: The technique of abandoning a search direction
+the instant it can be established that a given partial
+solution cannot be extended into a full solution.
+</p>
+<p>Exploiting symmetry: pruning away partial solutions
+equivalent to those previously considered.
+</p>
+
+<h3>9.4 Sudoku</h3>
+
+<p>Backtracking lends itself nicely to solving sudoku problems.
+</p>
+<p>Heuristics to select the next square: arbitrary square
+selection, or most constrained square selection (better).
+</p>
+<p>If the most constrained square has two possibilities left,
+there is a 50% chance of getting it right on the first
+guess.
+</p>
+<p><code>possible_values</code> approaches: local count or look ahead.
+</p>
+<p>Looking ahead to eliminate dead positions
+as soon as possibnle is the best way to prune a search.
+</p>
+<p>Smart square selection had a similar impact, even
+though it nominally just re-arranges the order in which
+we do work.
+</p>
+<p>Even simple pruning strategies can suffice to ruduce running
+times from impossible to instantaneous.
+</p>
+
+<h3>9.5 War Story: Covering Chessboards</h3>
+
+<p>(I don't really know how to play chess, so I skimmed this.
+basically using careful pruning to solve a problem related
+to chess that was unsovled for 100 years)
+</p>
+
+<h3>9.6 Best First Search</h3>
+
+<p>Explore your best options before less promising ones to speed
+up search.
+</p>
+<p>Existential Search Problems: look for a single solution
+satisfying a set of constraints.
+</p>
+<p>Optimization Problems: Seek the solution with lowest or
+highest value of some objective function.
+</p>
+<p>Best-first search or Branch and Bound: assigns a cost
+to every partial solution generated, and places them in
+a priority queue so the most promising partial solutions
+can be easily identified and expanded.
+</p>
+
+<h3>9.7 The A* Heuristic</h3>
+
+<p>A* heuristic: (pronounced "A-star") is an elaboration on
+branch-and-search. Use a lower bnound on the cost of all
+possible partial solution extensions that is stronger
+than just the cost of the current partial tour.
+</p>
+<p>The promise of a given partial solution is not just its
+cost, but also includes the potential cost of the
+remainder of the solution.
+</p>
+
+<h2>Chapter 10: Dynamic Programming</h2>
+
+<p>The most challenging algorithmic problems involve
+optimization: seeking to find a solution that maximizes
+or minimizes an objective function.
+</p>
+<p>Algorithms for optimziation problems require proof that
+they <b>always</b> return the best solution.
+</p>
+<p>Dynamic programming provides a way to design custom
+algorithms that systematically search all possibilities
+(guarantees correctness this way), while storing
+intermediate results to avoid recomputing (efficient).
+</p>
+<p>Dynamic programming is a technique for efficiently
+implementing a recursive algorithm by storing partial
+results.
+</p>
+<p>Requires seeing that a naive recursive problem computes
+the same problem over and over again.
+</p>
+<p>Start with a recursive algorithm or definition, then speed
+it up with a results matrix.
+</p>
+<p>Suitable for optimization problems on combinatorial objects
+with left-to-right order among components.
+</p>
+<p>Left-to-right order: strings, rooted trees, polygons, integer
+sequences.
+</p>
+
+<h3>10.1 Caching vs. Computation</h3>
+
+<p>Dynamic Programming is a tradeoff of space for time.
+</p>
+<p>Fibonacci Algorithm using Recursion: takes exponential
+time to run.
+</p>
+<p>Fibonacci algorithm can perform much better by caching
+results in a table, a technique known as memoization.
+</p>
+<p>Running time of cached fibbonacci algorithm runs in
+linear time.
+</p>
+<p>Storing partial results doesn't work for these kinds
+of recursive problems: quicksort, backtracking, depth-first
+search. The recursive calls all have distinct parameter
+values. Used once, and never again.
+</p>
+<p>Explicit caching of results of recursive calls provides
+<b>most</b> of the benefits of dynamic programming, usually
+including the same running time as the more elegant full
+solution.
+</p>
+<p>Fibonacci dynamic progamming: calculating in linear time
+can be done by explicitly specifying the order of evaluation
+of the recurrence relation. With proper analysis, storage
+time can be reduced to constant space with no asymptotic
+degredation in running time.
+</p>
+<p>Binomial Coefficients: most important class of counting
+numbers, where $(n \over k)$  counts the number of ways
+to choose k things out of n possibilities.
+</p>
+<p>Binomial Coefficients can be computed using factorials,
+but this can cause arithmetic overflow. A more stable
+way to compute it is to use the implicit recurrence relation
+in the construction of Pascal's Triangle (book has diagram).
+</p>
+<p>In Pascal's Triangle, each number is the sum of two numbers
+directly above it.
+</p>
+
+<h3>10.2 Approximate String Matching</h3>
+
+<p>Cost function tells how far apart two strings are. Distance
+measures the number of changes required to convert one
+string to another.
+</p>
+<p>Three natural types of changes: substitution, insertion,
+deletion.
+</p>
+<p>Edit Distance: assign each operation an equal cost of 1.
+</p>
+<p>Recursive Algorithm Observation: last character in the
+string must either be matched, substituted, inserted,
+or deleted.
+</p>
+<p>Edit Distance by Recursion: very very slow. takes
+exponential time.
+</p>
+<p>Edit Distance functin can be improved via a table-based
+dynamic programming implementation.
+</p>
+<p>String comparison function returns the cost of the optimal
+alignment, but not the alignment itself. The sequence
+of editing operations still needs to be known.
+</p>
+<p>Decisions are recorded in the matrix. Start at the goal
+state, and work backwards using the parent pointer. Repeat
+until arrived back at initial cell.
+</p>
+<p>This is analogous to how path was reconstructed in DFS or
+Dijkstra's algorithm.
+</p>
+<p><code>reconstruct_path</code>: implementation uses recursion, which
+makes it go backward for us.
+</p>
+<p>Types things in <code>string_compare</code> not yet defined (four
+categories): table initialization, penalty costs, goal
+cell identification, traceback actions.
+</p>
+<p>While the functions themselves are simple for edit distant
+computation, getting the boundary conditions and index
+manipulations correct is more difficult.
+</p>
+<p>Dynamic algorithms are easy to design once you understand
+the technique, but getting the details right requires
+clear thinking and thorough testing.
+</p>
+<p>Substring Matching: fuzzy-find a short pattern P within
+a long file. Create an edit distance function where the
+cost of starting the match is position-independent.
+</p>
+<p>Longest Common Subsequence: longest scattered substring
+of characters included within both strings, without changing
+their relative order. (ex: the longest substring between
+"republicans" and "democrats" is "ecas".) Defined by all
+identical-character matches in an edit trace. Prevent
+substitution to maximize matches, only insert/delete.
+LCS has fewest insert/deletes.
+</p>
+<p>Maximum monotone subsequence: subsequence that where each
+value is greater than or equal to the previous value. (ex.
+max subsequence of 243517698 is 23568). This is another
+variation of the longest common subsequence problem.
+</p>
+
+<h3>10.3 Longest Increasing Subsequence</h3>
+
+<p>Three steps in solving a problem by dynamic programming: forumulate the answer as a recurrence relation or recursive algorithm, show that the parameter values for the recurrence is bounded by a polynomial, specify an evaluation order for recurrence such that partial results needed are always available.  [gkeqeroas]
+</p>
+<p>As a case study, work out algorithm for finding maximum monotone subsequence.  [glrwujqor]
+</p>
+<p>Dynamic programming algorithms are often easier to reinvent than lookup.  [gdhqqdhqd]
+</p>
+<p>Runs vs sequences: runs must have values be neighbors. Sequences must sorted in increasing order left-to-right.  [gqrhlwqww]
+</p>
+<p>Longest Sequence is much more challenging to find than longest run (can be done with linear time algorithm).  [ghphrojkf]
+</p>
+<p>Design a recurrence relation for the length of the longest sequence. What information about first (N-1) elements are needed? Length of longest increasing sequence, and the length of the longest sequence that $si$.  [gofkspphu]
+</p>
+<p>Complexity of algorithm: Performs $O(n^2)$. With using dictionary structures in a clever way, recurrence can be evaluated in $O(n*log(n))$ time.  [glaflphoe]
+</p>
+</p>
+
+<h3>10.4 Text Compression for Barcodes</h3>
+
+<p>PDF-417: 2D bardcode standard, similar to QR. Can fit about 1000 bytes of data.  [gwieqhaod]
+</p>
+<p>PDF-417 uses modes. Letters can be encoded to 5 bits per letter, when they stay inside a mode.  [gaprufife]
+</p>
+<p>Lots of mode switching, lots of different ways to encode the same text. How to find optimal encoding?  [grdapkqaq]
+</p>
+<p>Greedy heuristic was what the company was using before, by a better solution could be found using dynamic programming. There was an 8% average improvement.  [glljjqfhd]
+</p>
+<p>Replacing heuristic with global optimum will usually see some kind of improvement. Using heuristics will usually be okay performance, assuming you don't screw things up.  [grlsshrsh]
+</p>
+</p>
+
+<h3>10.5 The Unordered Partion or Subset sum</h3>
+
+<p>Knapsack or subset sum: subset of positive integers that add up to a value k.  [grarouksq]
+</p>
+<p>Dynamic programming works best on linearly ordered items which allows things to move left to right.  [ghqpassod]
+</p>
+<p>$S_n$ is either part of k or it isn't. Can be defined as a recurrance.  [ghadukdio]
+</p>
+<p>The algorithm to find if target k is reasonable performs in O(nk) time.  [guluafifh]
+</p>
+</p>
+
+<h3>10.6 War Story: Balance Of Power</h3>
+
+<p>Electrical engineer problem: optimizing performance of power grid.  [ghuikeuwe]
+</p>
+<p>Balance power laod from phases A, B, and C as much as possible.  [gkujhuaih]
+</p>
+<p>At first, considered using a integer partitioning problem, which is NP complete.  [ghpdfqrju]
+</p>
+<p>Unfortunately, 3-phase balancing is hard to do, couldn't get it in polynomial time.  [gspisekfu]
+</p>
+<p>Realized it could be solved using dynamic programming via the subset sum problem, extended to 3 phases.  [guqewihif]
+</p>
+<p>The dynamic programming solution ended up working in $O(nk%2)$ time.  [gwadrreki]
+</p>
+<p>Later, the EE people took the algorithm further, modified it to minimize number of times the phase changed to make it more efficient.  [gqopklllq]
+</p>
+<p>Power of Dynamic Programming: if you reduce the state space tro a small enough size, you can optimize anything! Simply walk through the state space and score appopriately.  [gllpodsdi]
+</p>
+</p>
+
+<h3>10.7 The Ordered Partition Problem</h3>
+
+<p>Ordered Partition Problem: Partition S into K or fewer entries, to minimize the maximum sum over all ranges, without re-ordering the numbers.  [gsheuhorp]
+</p>
+<p>The novice/naive approach would be to use a heuristic that computes the average weight, and then try to divide segments up into bins that fit into around the average.  [gwoqluifj]
+</p>
+<p>Dynamic programming solution provides a better approach using recursion that is exhaustive.  [gdplfksar]
+</p>
+<p>Revisit 10.7 and try to better grok the math here.  [gkpsaeeqi]
+</p>
+</p>
+
+<h3>10.8 Parsing Context Free Grammars</h3>
+
+<p>Context Free Grammars (CFG) are used in compilers, and provide a precise description of the syntax.  [gaqrpwjhr]
+</p>
+<p>The rule/production of a grammar defines the interpretation for named symbol on left side of rule as a sequence of symbols on the right.  [gaofeeojh]
+</p>
+<p>Right Side: combo of terminals (strings) and nonterminals (defined as rules).  [goiopppqw]
+</p>
+<p>Parse S as a CFG of G: construct parse tree of rule substitutions, define S as a single nonterminal symbol of G.  [gdkerqisp]
+</p>
+<p>S has length N. G is a constant size.  [gsdijoaru]
+</p>
+<p>Chomsky Normal Form: right side of every rule has either exactly two nonterminals (X->YZ), or exactly one symbol (X->a).  [gaphkfkpa]
+</p>
+<p>Root of parse tree: S is split into 2 non-terminals, left generated by Y, right generated by Z.  [girluurwl]
+</p>
+<p>The Dynamic Programming Problem: keep track of all non-terminals generated by each subsection of S.  [gedihripa]
+</p>
+<p>M[i, j, y]: true iff substring $Sj$ is generated by nonterminal x.  [glhwrwoso]
+</p>
+<p>Complexity of DP solution: state space is $O(N^2)$, $O(n)$ to test intermediate values. Total time is $(O(N^3)$.  [gjafkkhda]
+</p>
+<p>Parsimonious Parserization: smallest number of character substitutions requried to make S accepted by G.  [gkwwhfkqh]
+</p>
+<p>Parsimonious Parserization is a more generalized version of the edit distance problem, which is done by forming a more generalized version of the recurrance relation.  [gkdhijojd]
+</p>
+<p>To optimize problems on left/right objects, dynamic programming is likely to lead to an efficient algorithm for optimal selection.  [gelldaefs]
+</p>
+</p>
+
+<h3>10.9 Limitations of Dynamic Programming: TSP</h3>
+
+<p>Understand why dynamic programming fails, and when.  [ghorkplpl]
+</p>
+<p>Traveling Salesmen Problem (TSP) special case: longest simple path, or most expensive path from S to T that doesn't visit any vertex more than once.  [gsislrqlh]
+</p>
+<p>Small differences from TSP: path instead of closed tour. Most expensive instead of least.  [gfdhahouj]
+</p>
+<p>Hamiltonian Paths: N-1 weight for simple paths.  [grfaldqqe]
+</p>
+<p>Dynamic Programming can be applied to any problem that follows principle of optimality.  [geresdkrh]
+</p>
+<p>Partial solution can be optimally extended given state after partial solution, iinstead of specifics of partial solution itself.  [gfiwwdsho]
+</p>
+<p>Future decisions made based on consequences of previous decisions, not decisions themselves.  [gqkiowehu]
+</p>
+<p>Does not follow principle of optimality when operations specifics matter as opposed to just cost.  [gkelfkpsk]
+</p>
+<p>When is dynamic programming efficient?  [gdkwfhoau]
+</p>
+<p>Running time of dynamic programming dependent on: number of solutioins to track, and how long each portion usually lasts. Typically, the size of state space is more important.  [gehdlpwdo]
+</p>
+<p>If objects are not firmly ordered, there is possibly an exponential number of solutions.  [gedpperlf]
+</p>
+<p>In LSP problem, can do better by grouping things as set of intermediate paths. If $S_{ij}$ is a set $a,b,c,i,j$, there are six paths: $i,a,b,c,j$, $i,a,c,bj$, $i,b,a,c,j$, $i,b,c,a,j$, $i,c,a,b,j$, $i,c,b,a,j$.  [gwauilhia]
+</p>
+<p>At most $2^N$ paths, smaller than the enumeration of all paths.  [gaahlwpff]
+</p>
+<p>Without Left-to-Right ordering, problem is doomed to require exponential space and time.  [gipupwppa]
+</p>
+</p>
+
+<h3>10.10 War Story: What's past is Prolog</h3>
+
+<p>Unification in Prolog: binding variables to constants, if it's possibleto match them match head of goal with head of rules.  [gfawhuleu]
+</p>
+<p>Trie data structure used for fast unification.  [glodrdoqe]
+</p>
+<p>Maximize Efficiency: minimizing number of edges in trie.  [ghiruapwr]
+</p>
+<p>Must also keep leaves of trie ordered.  [gfwewjsaa]
+</p>
+<p>Greedy Heuristic for good, not optimal tries: attempts to pick a root character position that minimizes degree of root, or smalleset number of distinct characters.  [gajwqfkqi]
+</p>
+<p>Dynamic programming can do it! An efficient algorithm that does it is easier than proving you can't do it.  [gahpfwwhi]
+</p>
+<p>Dynamic programming solution sometimes gave on 20%  better solution than greedy.  [gqoqdjpur]
+</p>
+<p>Rules needed to be ordered. This was exploited in the dynamic programming solution.  [gkipqlpoo]
+</p>
+<p>Dynamic programming can be better than heuristics for finding global optimum. How much better depends on context.  [gklpjwrfk]
+</p>
+</p>
+
+<h2>Chapter 11: NP-Completeness</h2>
+
+<p><a id="chap11"></a>This chapter will show techniques for proving that no efficient algo can exist for a given problem.  [gkwdoafhw]
+</p>
+<p>NP completeness is useful because it allows one to focus efforts more productively.  [ghlshwudw]
+</p>
+<p>Reduction: showing that two problems really are equivalent.  [gswuljelu]
+</p>
+</p>
+
+<h3>11.1 Problems and Reductions</h3>
+
+<p>Reductions are algorithms that convert one problem into another.  [gaeqqsuwe]
+</p>
+<p>An algorithmic problem is a general question with inputs and conditions for a satisfiable answer. An instance is a problem with input parameters specified.  [guadooeqr]
+</p>
+<p>Consider two algorithmic problems, called Bandersnatch and Bo-Billy. (Further description in Book).  [gwkoifulo]
+</p>
+<p>Reduction: Bandersnatch(G) = Bo-billy(Y).  [ghuduhjdi]
+</p>
+<p>Translation of instances from one type of problem to another is what is meant by reduction.  [ghwfqpoka]
+</p>
+<p>If G to Y runs in O(P(n)) time? Bo-bill runs O(P'(Y)), Bandersnatch runs O(P(n) + P'(n)). Works by translating Bandersnatch problem to Bo-Billy, then calling Bo-Billy to solve it.  [gpjiuflui]
+</p>
+<p>If Omega(P'(N)) on Bandersnatch (no faster way to solve), Omega(P'(n) - P(n)) must be lower bound to compute Bo-Billy.  [gpjqkfqkd]
+</p>
+<p>Reductions show that if Bandersnatch is hard to do, Bo-Billy will be hard as well.  [guihokhak]
+</p>
+<p>Reductions show that two problems are essentially identical.  [gpquorjhl]
+</p>
+<p>The two problems can differ in the range or type of answers they produce.  [gsfloajuh]
+</p>
+<p>Decision Problems: problems whose answers are restricted to boolean true/false. It is convenient to reduce problems to these.  [gfkiwhpuu]
+</p>
+<p>Many optimization problems can be phrased as decision problems, as it captrues the essence of computation.  [gffuoleuo]
+</p>
+<p>Ex of a decision problem: Does there exist a Traveling Salesmen Problem with some cost less than/equal to K?  [gakuwdria]
+</p>
+<p>If you had a falst algorithm for the decision problem, you could do a binary search with different values of K to quickly hone (TADM uses 'home' here) in cost of TSP.  [gfqsaskoi]
+</p>
+</p>
+
+<h3>11.2 Reductions for Algorithms</h3>
+
+<p>Reductions can be used as a way to generate new algorithms from old ones.  [ghwpawuap]
+</p>
+<p>Solve problem A, translate or reduce A instance to B instance, then solve using efficient algorithm for B.  [gdpisfujs]
+</p>
+<p>Closest Pair: find pair of numbers within a given set S that have smallest difference between them.  [guwueodej]
+</p>
+<p>Closest pair is a sorting problem: cloest pairs are neighbors after sorting.  [gskeuuqdq]
+</p>
+<p>Decision problem for closest pairs: is there a pair i,j from set S such that |i - j| is less than or equal to some threshold?  [gawpeesoj]
+</p>
+<p>The decision problem for closest pairs is no easier to do than finding the pairs themselves.  [gfripraip]
+</p>
+<p>Algorithmic Complexity depends upon sorting complexity. O(n(log(n))) sorting algorithm yields O(n(log(n)) + n) closest pair.  [gsdsleela]
+</p>
+<p>The Omega(n log(n)) on sorting does not prove the "close enough" pair problem is Omega(n log(n)) worst case.  [gikoeoopr]
+</p>
+<p>But, if we did happen to know Omega(n log(n)) was the worst case, it would prove sorting coudln't be faster than Omega(n log(n)). That would imply a faster algorithm for closest pair.  [gpqrkfsop]
+</p>
+<p>Longest increasing sequence: longest sequence of positions P(1) ... P(N) such that P(i) < P(i + 1) and S[P(i)] < S[P(i + 1)]. (Sorry for weird notation, I need to make TeX equations work in Weewiki at some point).  [gjolfskqq]
+</p>
+<p>Add support for inline TeX notation (aka $this$).  [ghkuuahor]
+</p>
+<p>As it turns out, the Longest Increasing Sequence problem can be solved as a special form of the Edit Distance problem.  [glihlrkkk]
+</p>
+<p>Edit Distance: go from S->T with least expensive set of operations.  [gajlpwhdp]
+</p>
+<p>Longest Integer Sequence: construct T as S sorted in increasing order. If not allowed to do substitutions, optimal alignment of S->T finds the LIS.  [guflrqikd]
+</p>
+<p>Reduction takes O(n log(n)), due to sorting. Edit distance takes O(|S| * |T|). In total, quadratic time.  [gslkdaoqs]
+</p>
+<p>A faster solution to LIS exists with the use of clever data structures, but this method using reduction is simpler.  [gdeesrihd]
+</p>
+<p>least common multiple and greaest common divisor: can be easily solved reducing x and y to prime factorizations, but no efficient algo is known for factoring integers.  [grrepehlh]
+</p>
+<p>Euclid's algorithm for GCD uses recursion if (A|B), then GCD(a, b) <= b.  [gqusrplqa]
+</p>
+<p>If b divides a, then a = bk for some integer k, and GCD(bk, b) = b.  [gdrlpujsh]
+</p>
+<p>if a = bt + r for integers t and r, then GCD(a,b)=GCD(b,r).  [grlqluhua]
+</p>
+<p>xy multiple of x and y. therefore, LCM(x, y) <= xy. Smaller common multiplies exist if there is non-trivial factor shared between them.  [gakewlple]
+</p>
+<p>Therefore, this reduction for LCM is realized: LCM(x,y): return(xy/GCD(x,y)).  [gpodhwheo]
+</p>
+<p>Finding convex hulls of points sets.  [gwsoskala]
+</p>
+<p>Convex: straight line segment drawn between any 2 points inside Polygon P lies completely within polygon.  [gsjpkowjo]
+</p>
+<p>P contains no notches or concavities.  [gaqfdlukp]
+</p>
+<p>Convex Hull: find smallest convex polygon containing all the points of S.  [guepfjkkl]
+</p>
+<p>Transform: instance of sorting -> convex hull problem.  [gjuhqwiia]
+</p>
+<p>Translate each number to point on plane x->(x, x^2). Maps to parabola y=x^2.  [gfjejjddl]
+</p>
+<p>Region above parabola is convex, every point must be on convex hull.  [gqjdqojss]
+</p>
+<p>Neighboring points on convex hull have neighboring x values. The CH returns points sorted by X coordinates, the original numbers.  [gjhdpoupj]
+</p>
+<p>Creating and reading points takes O(N) time.  [ghkudfsfu]
+</p>
+<p>Sorting has lower bound of Omega(n log(n)), therefore convex hull has Omega(n log(n)).  [gjssjeeus]
+</p>
+</p>
+
+<h3>11.3 Elementary Hardness Reductions</h3>
+
+<p>Reductions can be used to find good algorithims, but they are mainly used for proving hardness.  [gkpjkadrq]
+</p>
+<p>Hamiltonian Cycle and Vertex Cover are hard problems.  [gfheohurf]
+</p>
+<p>Hamiltonian Cycle: very famous graph theory problem. Seeks a tour that visits each vertex one.  [ghhieekaq]
+</p>
+<p>Does there exist a simple tour that vists each vertex of G without repetition?  [grlsawpha]
+</p>
+<p>HC has some similarities to the Traveling Salesman Problem (TSP). But HC works on unweighted graphs. TSP works on weighted graphs.  [gjekoaqed]
+</p>
+<p>Reduction: HC->TSP. Translation from unweighted to weighted.  [guoiljqfl]
+</p>
+<p>Since Hamiltonian Cycle has been proven to be hard, reduction shows that the Traveling Salesman Problem is at least just as hard.  [ghqduoquw]
+</p>
+<p>Vertex Cover: small set of vertices that touch every edge. Formal Problem: is there a subset S of at most K vertices such that every e belonging to E contains at least one vertex in S?  [gluwlsarl]
+</p>
+<p>Tricky part: minimizing the number of vertices.  [gisoekpeh]
+</p>
+<p>Set of vertices S of graph G are said to be independent if there are no edges where both x belongs to S and y belongs to S.  [gqprekwqk]
+</p>
+<p>Maximum Independent Set: Does there exist a set of K independent vertices in G?  [gidrjerao]
+</p>
+<p>Vertex Cover and Independent Set: problems that revolve around finding special subsets of vertices.  [goarflrha]
+</p>
+<p>Vertex Cover: represents every edge. Independent Set: No edges.  [gwdkdwlaj]
+</p>
+<p>If S is Vertex Cover of G, the remaining vertices (V - S) must form independent set.  [guookpihw]
+</p>
+<p>Reduction: Vertex Cover -> Independent Set. Proves that two problems are equally hard.  [gaakasjaf]
+</p>
+<p>Stop and Think: prove that movie scheduling problem is NP complete, with a reduction from independent set.  [gqiisqlfe]
+</p>
+<p>Can a subset of at least K mutually non-overlapping interval sets be selected from I?  [gwqwlihwd]
+</p>
+<p>What is the correspondence between Movie Scheduling Problem and Independent Set?  [garppkheh]
+</p>
+<p>Both seek the largest possible subset of movies or vertices.  [gojafhfua]
+</p>
+<p>Translate Vertices into Movies.  [gkkdehoeh]
+</p>
+<p>Both problems require selected elements not to interfere by sharing edge or overlapping interval.  [gqiqwiasf]
+</p>
+<p>Clique (Graph Theory): complete subgraph, each vertex pair has an edge between them. Densest possible subgraph.  [gasjewkwq]
+</p>
+<p>Maximum Clique: Does the graph contain a clique of K vertices, meaning there is a subset of vertices S where |S| = k such that every pair of vertices in S defines an edge in G?  [guhpfofua]
+</p>
+<p>Independent Set: looks for subset S with no edges between 2 vertices of S. Clique: looks for subset S where there will always be an edge between two vertices.  [gfhfiphld]
+</p>
+<p>Reduction: reverse roles of edges and non-edges AKA complementing the graph.  [gkqkfhohd]
+</p>
+<p>Hardness of Clique: implied by hardness of independent set, implied by hardness of vertex cover.  [gjsfooalk]
+</p>
+<p>Chain together problems with implications hardness, complete when single problem accepted as hard.  [gqkhppase]
+</p>
+</p>
+
+<h3>11.4 Satisfiability</h3>
+
+<p>To demonstrate the hardness of problems by using reductions, we must start from a single problem that is undeniably hard to compute.  [guiwjiiwi]
+</p>
+<p>The Mother of all NP-complete problems is a logic problem called Satisfiability.  [gsosfhfrk]
+</p>
+<p>Does there exist a satisfying truth assignment for C? A way to set each of the variables {v1 ... vn} either true or false so that every clause contains at least one true literal?  [gwkweeplf]
+</p>
+<p>(Book outlines 2 example problems of Satisfiability. One trivial example with a straight forward answer, the other with no satisfying assignment.)  [gqjqsaklf]
+</p>
+<p>It is well accepted that satisfiability is a hard problem. No worst-case polynomial time algorithm exists for it.  [gfliijake]
+</p>
+<p>3 Satisfiability: given a collection of clauses C each containing exactly 3 literals over a set of boolean variables V, is there a truth assignment to V such that each clause is satisfied?  [gqjlspoia]
+</p>
+<p>3-Sat is a restricted case of satisfiability that has implied hardness. Hardness of 3SAT implies harndess of general satisfiability. The converse isn't true.  [gdqhdeeif]
+</p>
+<p>Show hardness of 3-SAT using reduction that translates every instance of 3-SAT without changing if it is satisfiable.  [gpipqwipj]
+</p>
+<p>Reduction transforms each clause based on length: adds clauses and boolean variables when needed.  [grreheduh]
+</p>
+<p>k<code>1, Ci</code>{z1}. Create 2 variables v1, v2, 4 3-literal clauses {v1,v2,z1},{v1,!v2,z1},{!v1,v2,z1},{!v1,v2,z1}, {!v1,!v2,z1}. Can only be true if z1=true.  [gshidlrwj]
+</p>
+<p>Note: I'm using the "!" in "!v1" to refer to the overbar in the mathematical notation from the book.  [geqaahewq]
+</p>
+<p>k<code>2, Ci</code>{z1, z2}. Create 1 variable v1, 2 3-lit clauses {v1, z1, z2}, and {!v1, z1, z2}. Only way to satisfy both clauses is to have at least one of z1 or z2 be true.  [gehkukhqe]
+</p>
+<p>k<code>3, Ci</code>{z1, z2, z3}. Unchanged. Copied over to 3-Sat.  [gqqkjqwod]
+</p>
+<p>k>3, Ci<code>{z1, z3 .. zk}. k-3 new variables, k-2 clauses. Chain: C(i,1)</code>{i,1<code>z1, z2, v(i,1)}, C(i,j)</code>{v(i,j-1), z(j+1),!v(i,j)} for 2<<code>j<</code>k-3 and C(i,k-2)={v_i,k-3,z(k-1), z(k)}.  [gropfiqpu]
+</p>
+<p>(Probably should double check the reduction transformation for when k>3 above in the book. A lot of mathematical notation from there has been typed out quite poorly here, based on notes I scribbled on days ago. There are bound to be mistakes.)  [guuishfsr]
+</p>
+<p>Example when K<code>6: Ci</code>{z1,z2,z3,z4,z5,z6}, vars vi1, vi2, vi3: {{z1,z2,!vi1}, {vi1,z3,!vi2}, {vi2,z4,!vi3}, {vi3,z5,z6}}.  [gehilokwl]
+</p>
+<p>Large clauses are most complicated case. if none of the original literals in Ci are true, then there are not enough new free variables to be able to satisfy all subclauses.  [glqelwsro]
+</p>
+</p>
+
+<h3>11.5 Creative reductions from SAT</h3>
+
+<p>What is the origin of SAT (as in 3-SAT)?  [ghrakqslf]
+</p>
+<p>Satisfiability/3-SAT known to be hard, either can be used in future reductions.  [garprsjpu]
+</p>
+<p>many reductions are intricate: require programming one problem in the language in a significantly different problem.  [giakdrlee]
+</p>
+<p>getting direction of reduction right: transform instance of known NP-complete problem into p roblem we want to solve. AKA Bandersnatch -> Bobilly.  [gsuwdhdod]
+</p>
+<p>(I may have been doing this backwards in previous notes).  [gpfurwdls]
+</p>
+<p>Doing reduction in the wrong direction could lead to an inefficient algorithm with exponential time.  [gqpsalfre]
+</p>
+<p>Algorithmic graph theory is full of hard problems.  [gkdifaufu]
+</p>
+<p>Vertex Cover is a prototypical NP-complete graph problem.  [gkqqhajhi]
+</p>
+<p>Was "NP-complete" ever actually defined here in this book?  [gqkuqeuke]
+</p>
+<p>Demonstrating hardness for vertex cover is difficult, as the two relevant problems seem very different.  [ghseeqejl]
+</p>
+<p>3-SAT -> Vertex Cover: translate variables of 3-SAT, translate clauses of 3-SAT, connect two sets of components together.  [gsupeqoaf]
+</p>
+<p>3-SAT with n vars and c clauses, constructs graph with 2n + 3c vertices.  [grqewdjwk]
+</p>
+<p>Graph has been carefully designed to have vertex cover of size n + 2c iff original expression is satisifiable.  [gffeodfrk]
+</p>
+<p>To show reduction is correct must demonstrate: A: every satisfying truth assignment gives a vertex cover of size n + 2c. B: Every vertex cover of size n + 2c gives a satisfying ruth assignment.  [gqodpopah]
+</p>
+<p>A small set of NP-completeness problems (3-SAT, vertex cover, integer partition, hamiltonian cycle), suffice to prove the hardness of other hard problems.  [ghoopeueq]
+</p>
+<p>Integer programming is a fundamental combinatorial optimization problem. Like linear programming, but only using integers.  [gqkhiiujr]
+</p>
+<p>Given a set of integers V, a set of linear inequalities over V, a linear maximization function f, and integer B, does there exist assignment of integers to V such that all inequalities are true and f(V) >= B?  [goprwawwj]
+</p>
+<p>(Some examples shown in book. One a trivial example, one that has no realizable solution.)  [gidlaqrfl]
+</p>
+<p>Show that integer programming is hard using reduction from general satisfiability. Use 3-SAT.  [geohquiru]
+</p>
+<p>Which direction to take the reduction? Translate satisfiability (Bandersnatch) into integer programming.  [garojdrss]
+</p>
+<p>What does the translation look like? Make integers correspond to booleans, use constraints to serve some role as clauses in original problem.  [gaheodorq]
+</p>
+<p>Translated integer programming problem has 2x more variables as SAT instance: one for each boolean and another for complement.  [gqahwsfju]
+</p>
+<p>Maximization function and bound unimportant: entire satisfiability instance already encoded.  [gkqperpes]
+</p>
+<p>Reduction can be done in polynomial time.  [gopejfrrq]
+</p>
+<p>Verify reduction preserves answer: A: every sat solution gives solution to IP problem. B: every IP soltuion gives a solution to the original SAT problem.  [gloskdsdd]
+</p>
+<p>Reduction works both ways, so integer programming must be hard.  [gdlfawwaa]
+</p>
+<p>Reduction preserved structure of problem, but did not solve it.  [grfsjwhdj]
+</p>
+<p>Integer programming instances resulting from transformations are a small subset of possible instances. This subset is hard, so the general problem is hard.  [gooilipup]
+</p>
+<p>Transform captures essence of why integer programming is hard: satisfying large set of constraints is hard.  [gjwjosqoo]
+</p>
+</p>
+
+<h3>11.6 The Art of Proving Hardness</h3>
+
+<p>Proving problems are hard is a skill.  [guooqkldo]
+</p>
+<p>Takes experience to judge which problems are hard.  [grhusqldq]
+</p>
+<p>One place to check if problem is NP-complete: "Comptuers and Intractability" by Garey and Johnson. Contains a list of hundreds of NP-complete problems.  [gqqjiwjjr]
+</p>
+<p>Make source problem as simple/restricted as possible. Ex: Traveling Salesman Problem -> Hamiltonian Cycle -> Hamiltonian Path. Satisfiability -> 3-SAT -> Planar 3-SAT.  [gwwhiralh]
+</p>
+<p>Planar 3-SAT: exists a way to draw clauses as a graph in the plane such that all instances of the same literal can be connected without crossing.  [gjojfiewj]
+</p>
+<p>Make your target problem as hard as possible.  [gfpolqoes]
+</p>
+<p>Select the right source problem for the right reason.  [gpqiehiof]
+</p>
+<p>Skiena only uses 4 source problems: 3-SAT, integer programming, vertex cover, and Hamiltonian Path.  [greslfqpq]
+</p>
+<p>Amplify penalties for make undesired selection.  [geskpwfff]
+</p>
+<p>Think strategically at high level, then build gadgets to enforce tactics.  [grfrlkfhs]
+</p>
+<p>When you get stuck, switch between looking for an algorithm and a reduction.  [giwfpeorf]
+</p>
+</p>
+
+<h3>11.7 War Story: Hard against the Clock</h3>
+
+<p>Skiena tries to prove a random NP-complete problem from book, in the last 15 minutes of class, in front of his sleepy students.  [greprkpff]
+</p>
+<p>Inequivalence of programs with Assignments. Input: finite set of of variables X, 2 programs P1 and P2, each sequence of the form x0 <- x1 eq x2 ? x3 : x4. Output: is there an initial assignment of value V to each variable in X such that program P1 and P2 yield different final values for some variable in x?  [gerddfdai]
+</p>
+<p>Graph or numerical problem. Try 3-SAT.  [ghwurkdrs]
+</p>
+<p>Direction? 3SAT to program.  [gkaiaujjo]
+</p>
+<p>Be more like 3SAT: limit variables to only take boolean values.  [gqspjsaqw]
+</p>
+<p>Translate set of clauses into two programs: no natural way to do it. Try something else.  [gjpoqhilh]
+</p>
+<p>Translate all clauses into one program, let second program be trivial, like ignore output and always be true/false.  [gwewaiois]
+</p>
+<p>How to turn set of clauses into program?  [glsuheeiu]
+</p>
+<p>Evaluate truth of each clause?  [gflqdseip]
+</p>
+<p>Second program? Sat=false.  [ghwldloka]
+</p>
+<p>Language problem asks whether two programs always output something, regardless of possible variable assignments.  [gjeekrwao]
+</p>
+<p>If clauses satisfiable, there must be an assignment of variables such that long program would output true.  [grdrhqikq]
+</p>
+<p>Testing whether programs are equivalent is the same as asking if the clauses are satisfiable.  [gjjjoeqoo]
+</p>
+</p>
+
+<h3>11.8 And then I failed</h3>
+
+<p>After doing the "pick a random NP-complete and prove hardness" bit 8 times, finally lost.  [gwperleeu]
+</p>
+<p>Problem: uniconnected subgraph. Input: Directed Graph, positive integer K lte |A|. Output: Is there a subset of arcs, A' (symbol I don't know: a sideways U with an underline) A with |A'| lte K such that G' eq (V,A') has at most one directed path between any pair of vertices?  [gdpsjfswa]
+</p>
+<p>Undirected version: finding a spanning tree. Defines exactly one path between vertice.  [gwrsjhlil]
+</p>
+<p>Any form of directed tree would be uniconnected, but problem asks for largest subgraph.  [glrqoewqj]
+</p>
+<p>Selection problem, ergo vertex cover is the problem of choice.  [gpjwflffl]
+</p>
+<p>Similarities between VC and this uniconnected subgraph: both seek subsets, one vertices, the other edges. VC is smallest, US alrgest. Undirected vs directed edges.  [gjehedluq]
+</p>
+<p>Target problem has directed arcs, source has undirected edges. How to add direction?  [gluqpiufl]
+</p>
+<p>Direct edges to make DAG. So what?  [glpilfhhi]
+</p>
+<p>Try to replace undirected edge with 2 arcs XY an YX. No need to choose right arcs for reduction but graph got complicated.  [grwsqlsle]
+</p>
+<p>Next day realization: split the edges.  [gdowqalpo]
+</p>
+<p>replace each undirected edge with gadget consisting of a new central vertex Vxy with arcs going from it to x and y, respectively.  [gqdhlqkhk]
+</p>
+<p>Add sink node S with edges from all original vertices.  [gsdlhepsr]
+</p>
+<p>Exactly 2 paths from each new source vertex to the sink. one has to be to be broken to create a uniconnected subgraph. how?  [gefwfpude]
+</p>
+<p>pick one of 2 vertices to break from sink (x, s) or (y, s) for new vertex Vxy.  [gqaprluhq]
+</p>
+<p>Maximize size of subgraph: find smallest number of arcs to delete. Delete outgoing arc from at least one of 2 vertices defining each original edge. This is exactly the same as finding vertex cover.  [ghlwfrjsl]
+</p>
+</p>
+
+<h3>11.9 P vs. NP</h3>
+
+<p>Theory of NP completeness rests on rigorous yet subtle definitions from automata and formal language theory.  [galhpllld]
+</p>
+<p>"Is P equal to NP?" is the most profound open poblem in CS.  [gqdufrpko]
+</p>
+<p>Primary issue in P vs. NP: is verification an easier task than discovery? Can you verify the answer faster than finding it from scratch?  [gkdihjqaf]
+</p>
+<p>At first, it seems like verification would be easier based on previous problems. However, there is no rigorous lower bound proof that prevents existence of fast algorithms to solve these problems.  [gwodjahlu]
+</p>
+<p>Every weell-defined algorithmic problem must have an asymptotically fastest possible algorithm solving it, as measured in Big Oh, worst case sense of fastest.  [gsshhujrw]
+</p>
+<p>Class P problems are those where there exists a polynomial time algorithm to solve it from scratch. Ex: shortest path, minimum spanning tree, etc.  [gwpphwepe]
+</p>
+<p>NP problems are those whose solutions can be verified in polynomial time. TSP, VC, satisfiability.  [ghjjosiio]
+</p>
+<p>NP means non-deterministic polynomial time.  [gwuiauifo]
+</p>
+<p>All P problems are implicitely NP problems.  [gflwdpula]
+</p>
+<p>Are there problems in NP that are not members of P? That is the Big Question.  [gaafflous]
+</p>
+<p>Most algorists have the opinion that P is not equal to NP, meaning that some NP problems do not have polynomial time algorithms.  [guwwaqepa]
+</p>
+<p>Many NP-completeness reductions rely on the hardness of satisfiability. This may seem fragile at first glance, however it works.  [gfudoqopd]
+</p>
+<p>Cook's theorem: super-reduction that reduces all problems to satisfiability. Proves that satisfiability is as hard as any problem in NP.  [gqkfojoew]
+</p>
+<p>Our inability to find fast algorithms for NP problems is strong evidence to support P is not equal to NP.  [ghhqohuor]
+</p>
+<p>NP Hard: a problem that is at least as hard as any problem in NP.  [gidljkjla]
+</p>
+<p>NP-Complete: NP hard, but also in NP itself.  [gekwljdwu]
+</p>
+<p>Karp72 highly recommended by Skiena. Shows importance of Cook's theorem by providing reductions from satisfiability for more than 20 algorithmic problems. "sheer beauty and economy".  [gioiplolk]
+</p>
+<br>
+</p>
+
+<h2>Chapter 12: Dealing with Hard Problems</h2>
+
+<p><a id="chap12"></a></p>
+<p>Usually, most people want to solve hard problems, not just prove they are hard.  [gadprqidu]
+</p>
+<p>A hard prblem means that you won't find a polynomial time algorithm for it. Won't find one that quickly solves problem to optimality in worst case.  [gfffrwojs]
+</p>
+<p>3 possibilities: algorithmss fast in average case, heuristics, approximation algorithms.  [garuuhaar]
+</p>
+<p>Brief intro to quantum computing: shaking, not breaking, boundaries of what can be efficiently computed.  [goaplqpue]
+</p>
+</p>
+
+<h3>12.1 Approximation Algorithms</h3>
+
+<p>Approximation Algorithms Guarantee: solutions produces will be ones whose quality of the optimal solution is bounded by quality of heuristic solution.  [gadkjjues]
+</p>
+<p>Usually unclear which is better: approximation or heuristics. Approximation is provably correct always, but not always performant. Heuristics have no guarantees.  [gkslqesol]
+</p>
+<p>Do both approximations and heuristics on an instance, choose solution with better results.  [gsslpdusd]
+</p>
+</p>
+
+<h3>12.2 Approximating Vertex Cover</h3>
+
+<p>Vertex Cover Approximation: simple procedure that finds at cover that is at most 2x larger than the optimal cover.  [gjhfwhwsd]
+</p>
+<p>Always produces vertex cover: each edge is deleted after incident vertex has been added to cover only.  [gjoiouhjp]
+</p>
+<p>Claim: best vertex cover must use at least half as many vertices as this one produce by approximation. Why? No two matching edges can share a vertex. Any cover of just these K edges must include at least one vertex per edge. At least 1/2 size 2K greedy cover.  [grradellh]
+</p>
+<p>Algorithm notes: 1. simple not stupid, many seemingly smarter heuristics can end up with worse performance in the worst case. 2. greedy isn't always the answer. 3. making heuristic more complicated doesn't necessarily make it better. 4. A post processing cleanup can't hurt.  [goqushipe]
+</p>
+<p>Import property of approximation algorithm: relating size of solution made to lower bound of optimal solution. Think about worse case, not best.  [giassiuek]
+</p>
+<p>Leaving behind a vertex cover. (pg 392). Reread this.  [gsfwsjodd]
+</p>
+<p>Modify vertex cover procedure to pick vertex at random: randomized vertex cover heuristic.  [gqkwoiluk]
+</p>
+<p>Randomization is a powerful tool for developing approximation algorithms. They make bad special cases go away by making them highly unlikely.  [gaoipfeda]
+</p>
+</p>
+
+<h3>12.3 Euclidean TSP</h3>
+
+<p>In natural applications of TSP, direct routes are inherently shorter than indirect routes.  [gqhasfhpp]
+</p>
+<p>When edge weights are straight line distances between pairs of cities, shortest path is X to Y "as the crow flies".  [glroppepe]
+</p>
+<p>Edge weights induced by euclidean geometry satisfy triangle inequality: d(u,w) gte d(u,v) + d(v,w) for vertices u,v,w (triples).  [godisooak]
+</p>
+<p>Approximate optimal traveling salesman tour on graphs that obey triangle inequality using minimum spanning trees.  [gjsdoppfp]
+</p>
+<p>Weight of minimum spanning tree gives lower bound on cost of an optimal TSP tour.  [gfhloddlk]
+</p>
+<p>Depth first traversal of minimum spanning tree: visits each edge twice; discovery, then going up back to it after fully exporing subtree.  [gfolafaep]
+</p>
+<p>Costs at most 2x optimal tour.  [gjsjuqduo]
+</p>
+<p>Many verts repeated on DFS circuit. Removes copies by taking direct path to next unvisted vertex.  [gsaowsdsu]
+</p>
+<p>Replace chain of edges by single direct edge. Triangle inequality ensures that tour can only get shorter.  [ghrakukij]
+</p>
+<p>This shortcut tour: O(n + m) construction, always has weight at most 2x optimal TSP tour of G.  [gdokdoeaq]
+</p>
+<p>Minimum spanning tree doubling idea: there is another way of looking at it. Leads to better approximation algorithm for TSP.  [gqjkofeer]
+</p>
+<p>Eulerian Cycle: circuit traversing each edge of G exactly once.  [gdiuahrrw]
+</p>
+<p>In Eulerian Cycle: each vertex has even degree. Necessary because it must be able to walk out of each vertex exactly the number of times walked in.  [gdoqoediu]
+</p>
+<p>Reinterpret the minimum spanning tree heuristic for TSP in terms of Eulerian cycles.  [gkueiksus]
+</p>
+<p>Any Eulerian cycle of M (constructed multigraph consisting of 2 copies of spanning tree of G) will define a circuit with exactly the same properties as the DFS circuit described earlier, therefore it can be a shortcut for building a TSP tour with at most 2x optimal tour.  [gwqhosjua]
+</p>
+<p>If there is a cheaper way to ensure vertices are of even degree, approximation gets better.  [gawujsdep]
+</p>
+<p>Adding set of matching edges makes odd degree vertices even, even degree vertices odd.  [gqpwhieqp]
+</p>
+<p>Identify odd-degree vertices, add set of matching edges between them to make graph Eulerian.  [giohdhkie]
+</p>
+<p>Christofides Heuristic: constructs multigraph M consisting of minimum spanning tree of G plus minimum weight set of matching edges between odd degree vertices in tree.  [gqprrfjip]
+</p>
+<p>Cost of matching just odd degree verts must be lower bound on the cost of lowest cost matching of full graph G (presuming triangle inequality holds).  [gpdkjuqfl]
+</p>
+<p>Total weight of M: at most (1 + 1/2) times that of optimal TSp tour. This is the worst-case weight of Christofides heuristic.  [guahjkhua]
+</p>
+</p>
+
+<h3>12.4 When Average Is Good Enough</h3>
+
+<p>For certian optimization problems, all or most of the solutions are somewhat close to the best possible.  [guplujisk]
+</p>
+<p>Maximum 3-SAT: seeks boolean variable assignment that makes largest number of clauses true, rather than 100% true like original 3-SAT.  [gjwjwwles]
+</p>
+<p>Max 3-SAT turns problem into optimization problem. Look for approximation algorithms to solve it.  [gkrjreksw]
+</p>
+<p>Random asiignment for each truth variable: $1-(2/3)^3$ is 7/8, or 87.5% of the clauses.  [guiouuulu]
+</p>
+<p>Max K-Sat instance with m input cases: $m(1 - (1/2)^k)$. Longer clauses means close to optimum.  [gehsoloej]
+</p>
+<p>DAGs are easier to work with than general directed graphs.  [gpjaspoju]
+</p>
+<p>Problem: max directed acyclic graph. Input: a directed graph G defined (V, E). Output: Find largest possible subset E' union thingy E such that G' (V', E') is acyclic.  [gjdpdhiwj]
+</p>
+<p>Simple algorithm exists that guarantees solution with at least half as many edges as optimum.  [gqkrddfew]
+</p>
+<p>Construct any permutation of verts, interpret L to R ordering like topological sort. Some edges point L to R, others R to L. Larger edge subset must be acyclic and contain at least half edges of optimal solution.  [gpjhrfhua]
+</p>
+</p>
+
+<h3>12.5 Set Cover</h3>
+
+<p>Not all problems can be approximated to a constant factor. For example, Max Clique can't be approximated to any interesting factor.  [gwiphjplq]
+</p>
+<p>Set Cover: problem with Theta(log N) approximation algorithm. More general version of Vertex Cover.  [gqelpfwjs]
+</p>
+<p>Problem: Set Cover. Input: Collection of subsets S {S1 ... Sm} of Universal Set U={1, ... n}. Output: What is the smallest subset T of S whose union equals universal set? (See book for math eqn).  [gpekjjwda]
+</p>
+<p>Greedy Heuristic: repeatedly select subset that covers largest collection of (thus-far) uncovered elements.  [gfidsekfe]
+</p>
+<p>Works by gradually selecting smaller and smaller subsets until it reaches 0.  [ghhejjjdd]
+</p>
+<p>Important "milestone" measurement: trace when number of uncovered elements reduces past power of 2. lg(n) such events.  [grhqpealo]
+</p>
+<p>wi where 0 <= i <= lg(n).  [gookjdreo]
+</p>
+<p>lg(n) milestones, therefore w*lg(n) subsetes at most.  [gpjlsesps]
+</p>
+<p>Optimal solution is at least w subsets. Heuristic solution no worse than lg(n) times optimal. (Explanation in book).  [geppufapd]
+</p>
+<p>Approximation algorithms guarantee answers that are always close to optimal. Practical way to solve NP-complete problems.  [gsuiadkra]
+</p>
+</p>
+
+<h3>12.6 Heuristic Search Methods</h3>
+
+<p>Heuristic search methods provide an alternative approach to difficult combinatorial optimization problems.  [gfwspprod]
+</p>
+<p>"Simulated annealing" will be most focus of this section. Skiena finds this most reliable in practice.  [grfuarewr]
+</p>
+<p>3 Heuristic Seach methods examined: random sampling, gradient descent search, simualted annealing.  [glejdoffq]
+</p>
+<p>These heuristics share 2 common components: A: solution candidate representation: complete and concise description of possible solutions for problem. B: Cost function: function to assess ("score") quality of each possible solution.  [gqekirjaf]
+</p>
+<p>Simplest approach to search in solution space uses random sampling, AKA Monte Carlo sampling.  [gwsplelik]
+</p>
+<p>Repeatedly construct random solutions and evaluate until good enough solution found.  [godhiwfad]
+</p>
+<p>When random sampling works well: Large proportion of acceptable solutions, no coherence in solution space: things don't move closer to correct solution.  [guipsheaa]
+</p>
+<p>Picking the pair: propose efficient algo for generating elements from (n over 2) undered pairs {1,...,n} uniformly at random.  [gsjruwfpa]
+</p>
+<p>Uniform randomization is tricky: do {i = rand(1, n); j = rand(1, n); if (i > j) swap(&i, &j) } while(i <code></code> j);  [grhssolwl]
+</p>
+<p>Local search: scans neighbnorhood elements in solution space.  [ghhehiiqe]
+</p>
+<p>each candidate solution x is a vertex with a directed edge (x, y) to every other candidate solution y that is neighbor of x.  [grplijldk]
+</p>
+<p>Do not explicitly construct geraph for solution space: too large.  [ghjefwrdr]
+</p>
+<p>Instead, use transition mechanism: modify current solution to get next one. Ex: swapping random pairs of items, changing (insert/delete) a single item in solution.  [gikhahffk]
+</p>
+<p>Reasonable transition mechanism for TSP: swap current tour positions of random pairs Si, Sj. Changes up to 8 edges on tour, deletes 4 edges adjacent to Si and Sj.  [gpjukhuih]
+</p>
+<p>Local search heuristics start with arbitrary element in solution space, then find most favorable value in neighborhood.  [gflrurldo]
+</p>
+<p>Hill climbing procedure: greedy. Tries to find minimum/maximum by starting at an arbitrary point, then moving in direction that gets us closer. Repeat until neighbors all point in wrong direction.  [gjeeakkwh]
+</p>
+<p>When does local search work well? Great coherence in search space ("it consists of exactly one hill"). Whenever cost of incremental evaluation is cheaper than global evaluation.  [gruodrwld]
+</p>
+<p>Downside of local search: not much to do after finding local optimum. If there are many local hills, unlikely to find optimum.  [gwkoqippe]
+</p>
+<p>Simulated annealing: heuristic search procedure that allows occasional transitions leading to more expensive (inferior) solutions, in order to prevent getting stuck in local optima.  [giqsksiwq]
+</p>
+<p>Inspiration for simulated annealing: physical process of cooling materials down to solid state.  [gpiopheqe]
+</p>
+<p>State of particle in thermodynamics: system doing backwards transition between energy $ej$ at temperature $T$ is probability: $P(ej, T) = e^{(ej) / kB$ is Boltzmann's constant. Tunes frequency of backwards moves.  [gepljphrl]
+</p>
+<p>Physical system cooling seeks to reach minimum energy state. Minimizing tgotal energy is a combinatorial problem for any set of discrete particles.  [griwkjjqs]
+</p>
+<p>Simulated annealing effective because it spends more time in the good solution space (working on elements), and it avoids getting trapped in local optimum.  [gpdssqjrq]
+</p>
+<p>Cooling schedule: component used in simulated annealing, whose parameters govern how likely it is to accept a bad transition as a function of time.  [gfsljkrda]
+</p>
+<p>At the beginning, more randomness is used to explore the space, probability of accepting bad transition high. Later, limit transitions to local improvements and optimizations.  [gequiohdl]
+</p>
+<p>Cooling system control parameters: initial temperature, temperature decrement function, acceptance criteria, stop criteria.  [greaqfauq]
+</p>
+<p>Initial temperature ($Ti = aT_{i - 1}, 0.8 <= a <= 0.99$. Number of iterations between temperature change typically ~1k before lowering.  [gjfsakeje]
+</p>
+<p>Acceptance criteria: usually accept any good transition, bad transition whenever probability is right (Paul: positive? above threshold?).  [gerlskelk]
+</p>
+<p>Stop criteria: usually when value of current solution hasn't changed in last few iterations.  [gioqifspj]
+</p>
+<p>A proper cooling schedule takes some trial and error.  [gklqeuiuf]
+</p>
+<p>Max cut: parition vertices of weighted graph G into sets V1 and V2 to maximise weight or number of edges with one vertex in each set.  [gedparrra]
+</p>
+<p>Electronic circuit: max cut defines larges amount of simultaneous communcation that exists within circuit.  [gdrfjsjde]
+</p>
+<p>Max cut -> simulated annealing. Solution space: 2^{n - 1}. fix vertex v1 to be on left (saves factor of 2 overall subsets). Use bitvector to represesent vertices accompanying v1. Solution cost: sum of weights cut in current configuration. Transition mechanism: select random vertex, flip corresponding bit in bit vector to move to other side.  [gqwihiwpl]
+</p>
+<p>Independent set: in graph G, a susbet of verts S such that there is no edge with both endpoints in S.  [goekrkhds]
+</p>
+<p>max independent set of graph: largest vertex set that induces empty (edgeless) subgraph. state space: 2^n possible vertice subsets, represented via bitvector. Transition mechanism: add/delete one vertex from S (like max cut). Possible objectie function for S: 0 if S-induced subgraph S contains edge, |S| if independent set. Always work towards Independent Set.  [ghrrppilf]
+</p>
+<p>Always working towards independent set as an objective function is too inflexible: should allow for non-empty graphs at early stages of cooling.  [gokwluufw]
+</p>
+<p>More flexible objective function: $C(S) = |S| - \lambda \cdot ms$ is number of edges in subgraph induces by S. $T$ is temperature.  [gjuiujrds]
+</p>
+<p>Circuit board placement: minimize are or optimize aspect ratio or space, minimize total or longest wire length on board. State space: describes positions of each rectangle on board. restricted to integer grid to make it discrete. Transition Mechanism: move rectangles to different location, swapping rectangle positions.  [glhpqqeqf]
+</p>
+<p>Simulated annealing: provides good, not optimal solutions for combinatorial problems.  [gaaksqiwa]
+</p>
+</p>
+
+<h3>12.7 War Story: Only it is not a radio</h3>
+
+<p>Problem surrounding selective assembly.  [gauisajrd]
+</p>
+<p>Selective assembly: allows defective interchangeable parts to be used when all the other parts exceeded required manufacturing tolerances.  [glhuohuue]
+</p>
+<p>Match up parts to make greatest number of working not-radios, by matching up good and bad parts so that total amount of badness not so bad.  [gaspuujqj]
+</p>
+<p>Simplest approach: take best parts of each type and make non-radio. repeat until NR doesn't work. This creates small number of radios varying in quality.  [gfiqldrfu]
+</p>
+<p>Problem sounds related to matching in graphs: seek largest  number of edges such that no vertex appears more than once in matching. Analogous to 2-part matching.  [giqueeqou]
+</p>
+<p>Graph: vertices are part instances, add edge for all 2-part instances within total error tolerance.  [gqrurskhl]
+</p>
+<p>Can bipartite matching be used? Nope. There are more than 2 parts in non-radio.  [gfiissqdf]
+</p>
+<p>Maybe use bin packing? But with constraints in what goes into bin because of different part types. This is an NP-complete problem. Didn't work.  [giajwweha]
+</p>
+<p>Using simulated annealing, managed to produce 8 non-radios, 2 more than the factory.  [glldwojsl]
+</p>
+</p>
+
+<h3>12.8 War Story: Annealing Arrays</h3>
+
+<p>Advanced data structures for sequencing DNA, via building arrays of specific oligonucleotides on demand.  [gjhuiralj]
+</p>
+<p>Oxford biochemist: try it out on our equipment!  [gijsaljuf]
+</p>
+<p>Fabricating Arrays for the machine was a new combinatorial problem: input of n strings to fabricate an MxM array. produce schedule of rows and columns to realize set of strings S.  [gkiepfuow]
+</p>
+<p>Model problem so that it is gives natural representation for simulated annealing.  [gwhseroow]
+</p>
+<p>State space: all possible subsets of prefixes and suffixes. Transition between states: insert/delete strings form subset, or swapping pair in/out.  [gqrodlpjw]
+</p>
+<p>Cost function: try max number of rows (prefixes) or columns (suffixes) used in array, plus number of strings S that are not yet coered.  [gqspakwde]
+</p>
+<p>Started well, but progress started to slow after few thousand iterations.  [gjjjauhsr]
+</p>
+<p>Try changing evalution function: arrays became skinny rectangles instead of squares.  [gsaijqdai]
+</p>
+<p>Add another term to cost function: points for being roughly square.  [guofdsakd]
+</p>
+<p>Skew random selections so that important suffixes/prefixes get picked more often.  [glukaaard]
+</p>
+<p>Simulated annealing is only heuristic, unclear how close it is to optimal solution. Best results come from tweaking and refining.  [gapowphlf]
+</p>
+</p>
+
+<h3>12.9 Genetic algorithms and other heuristics</h3>
+
+<p>Heuristic search methods for combinatorial optimization problems, inspired by real world processes: genetic algorithms, neural networks, ant colony optimization.  [grodeerfq]
+</p>
+<p>Do these lead to better solutions with less implementation complexity or greater efficiency compared to reviously discussed methods? Skiena doesn't think so.  [gapsaruoh]
+</p>
+<p>Genetic algorithms draw inspiration from evolution and natural selection.  [gljdiwaer]
+</p>
+<p>Population of solution candidates, drawn at random and allowed to reproduce, combining aspects of both solutions.  [gwpdpsoaf]
+</p>
+<p>Fitness: probability that element is chosen to reproduce.  [gpjiihqsw]
+</p>
+<p>Quite unnatural to model applications in terms of genetic operations like mutation and crossover on bit strings.  [guruldois]
+</p>
+<p>Takes a long time on non-trivial problems.  [grlwhofoe]
+</p>
+<p>Avoid genetic algorithms. Stick to simulated annealing for your heuristic search voodoo needs.  [gewhhfeea]
+</p>
+</p>
+
+<h3>12.10 Quantum computing</h3>
+
+<p>Quantum Computers: Devices powered by the principles of quantum mechanics, explolits these properties to perform certain types of computations with algorithmic efficiences asymptotially faster than conventional machines.  [gdqrdhqwj]
+</p>
+<p>In this chapter: make up slightly incorrect model of quantum computer. Overview of 3 most famous quantum algorithms. Future predictions. Confess lies in model of Quantum Computer used.  [grskddrrq]
+</p>
+<p>Conventional deterministic computer: n bits memory b(0)...b(n-1). N is 2^n possible states. "ith" state refers to string of bits corresponding to integer i.  [grrekkqqr]
+</p>
+<p>Porbability p(i) being in state i is 0 for 2^n - 1 states, p(j) is 1 if computer happens to be in state j.  [gowwpjddd]
+</p>
+<p>Quantum computers: n qubits of memeory q(0)...q(n-1). N eq  2^n possible bit patterns, but the actual state at any moment is probability distribution.  [gddrasfdh]
+</p>
+<p>Each bit pattern has associated probability p(i), when machine is read would report being in state i.  [gkrsijujk]
+</p>
+<p>Can be a non-zero probability of being in all N states at any given time.  [gwjqlwqsp]
+</p>
+<p>"Quantum" operations: initialize-state(Q, n, D), quantum-gate(Q,C), Jack(Q,c), sample(Q).  [gffiqwese]
+</p>
+<p>Initialize-state(Q, D): initialize probability distribution of n qubits of machine Q, using description D. seek small descriptions. O(|D|) in time.  [gqrdqqewe]
+</p>
+<p>Quantum-gate(Q, c): change probability distribution according to quantum gate condition C. Time proprtional to number of qubits involved with conditions. typically O(1).  [girqdaqfj]
+</p>
+<p>Quantum gate: similar to and/or operations.  [gdfridlqp]
+</p>
+<p>Jack(Q,c): increase probability of all states defined by condition c. Time proportional to number of qubits in c, but typically O(1).  [gllfahkhl]
+</p>
+<p>Sample(Q): select exactly 1 of 2^n states at random with the current probability distribution of machine Q, return n values of n qubits to q(0)...q(n-1). O(n) time.  [gqhaaadsf]
+</p>
+<p>Quantum algorithms: use these operations described above, sometimes mixed with conventional control logic.  [gdlrhospq]
+</p>
+<p>Database search (function inversion): unique binary string defining N as 2^n states as key, each state i associated with value v(i), taking m bits to store. 2^n unsorted strings, nonzero probabilty n+m qubits long, with the value v(i) stored in m highest order qubits.  [gqwiappes]
+</p>
+<p>Create system Q usiniung initialize-state instruction, with appropriate condition D. Any n+m qubit string of the form i concatenated to v(i) gets probability 1/2^n. All other n+m qubit strings with prefix i (2^n - 1) are assigned probability 0.  [gjkpqkikh]
+</p>
+<p>For given m-bit string S, seek to return n+m qubit search string, such that S=q(n)...q(n+m-1).  [gkifrdhrr]
+</p>
+<p>To ensure the sample operation returns desired result, jack up probabilities for correct bits.  [gkiuheurj]
+</p>
+<p>Algorithm increases probabilities at slow enough rate such that it takes Theta(sqrt(N)) rounds. Better than Theta(N) for sequential search.  [gfeokddrs]
+</p>
+<p>Grover's Database searching algorithm can be used for solving satisfiability, the "mother of all NP-complete problems".  [gaheuwifk]
+</p>
+<p>Treat each qubit in an n-qubit string as a boolean truth assignment.  [gisqprqfk]
+</p>
+<p>Add (n+1)st qubit to system: stores whether ith string satisfies given boolean logic formula F.  [giuruqudk]
+</p>
+<p>Truth assignment, satisfies set of clauses: test if each clause contains at least one true literal. can be done in parallel using sequence of logic gaes.  [gsqqfskqf]
+</p>
+<p>Search(Q, (q(n)<code></code>1)), returning state {q(0),...q(n-1)} with high probability, gives efficient algo for satisfiability.  [gqilifrww]
+</p>
+<p>Grover's search runs in O(sqrt(N)) time, N<code>2^n, sqrt(N)</code>sqrt(2^n)=(sqrt(2))^n,O(1.414)^n instead of naive bound. Improvement, but still exponential.  [gfrqwduuu]
+</p>
+<p>Quantum computers cannot solve NP complete problems in polynomial time. believed that class of problems that can be solved in polynomial time on quantum compuers (BQP) do not contain NP. Almost as certain as P != NP.  [gesspiprl]
+</p>
+<p>FFT: most simply done using O(N^2) algorithm, divide and conquer O(N log(n)), circuit with logOM) stages, each stage involving M independent parallel multiplications.  [gpuakqoio]
+</p>
+<p>Each stage of FFT circuit can be implemented using logic quantum gates. FFT of N=2^n states of n-qubit system can be solved on quantum computer in O(log(N)^2) = O(n^2) time. Exponential time improvement.  [gdudrerkj]
+</p>
+<p>Catch: fourier coefficient associated with each input element i in  (0, N) represented as probability of string in Q. No way to get coefficients out of Q.  [ghdupppdp]
+</p>
+<p>Qauntum algorithm lays groundwork for Shor's algorithm for integer factorization.  [grsjuajld]
+</p>
+<p>Interesting connection between periodic functions and integers that have given integer K as factor/divisor.  [goruwowkp]
+</p>
+<p>n-qubit system, initialized p(1) as 1/2^n represents every possible factor i. FFT of system, makes it time domain, yielding number of factors in range (O, N).  [grhikfrfp]
+</p>
+<p>Factor integers M less than N: Set up system Q in a time domain where multiples of factors of M have large probabilities, sample output and apply GCD. If greater than 1, likely candidate for factor of M.  [gqfpardjf]
+</p>
+<p>Pseudo-code for Shor's algorithm for factoring: pg 423.  [gejdkoqhd]
+</p>
+<p>Skiena 2020 quantum computing prospects: QC is real, gonna happen. QC is unlikely to impact problems in this book. Big wins are likely to be in problems computer scientists don't really care about.  [gauierkjw]
+</p>
+<p>QC model differs from real ones, simplified for book: Quantum probabilities are represented as complex numbers. Reading state of quantum system destroys it. Real quantum systems breakdown (decohere) easily. Initializing quantum states and power of quantum gates are a bit different than previously described.  [gwrdqqpsr]
+</p>
+</p>
+
+<h2>Chapter 13: How to Design Algorithms</h2>
+
+<p>Designing the right algorithm for a given application is creative act: taking a problem and pulling a solution out of the air.  [geodwhajo]
+</p>
+<p>Being successful algorithm designer is more than book knowledge: needs a certain "attitude".  [gasrddshh]
+</p>
+<p>Key to algorithm design: ask yourself questions to guide through thought process. Stuck? next question.  [gdhrakruw]
+</p>
+<p>Sequence of questions provided designed to help search for right algo. Writes answers in a log. Never just "no", instead "no, because...".  [gfdqkksqk]
+</p>
+<p>Strategy vs tactics: strategy is about big picture. Tactics are used for minor battles along the way. Tactical descisions are critical to overall quality of solution, but can only be properly evaluated with succesfful strategy.  [gfohjapfi]
+</p>
+<p>Questions (elaborated with subquestions, pg 430): 1. Do I really understand the problem? 2. Can I find a simple algorithm or heuristic for my problem? 3. Is my problem in the catalog of problems at the back of this book? 4. Are there special cases of the problem I know how to solve? 5. Which of the standard algorithm design paradigms are most relevant to my problem? 6. Am I still stumped?  [gsdeofspe]
+</p>
+<p>Recommended book on problem solving: "how to solve it" by Polya.  [glduapspj]
+</p>
+</p>
+
+<h3>13.1 Preparing for tech company interviews</h3>
+
+<p>Possible to learn something valuable about algorithm design with 1 week seriously looking at this book. More is better!  [goswdoihi]
+</p>
+<p>Two ways algorithm design problems sneak into interview process: preliminary coding tests, blackboard problems.  [gdeoajhek]
+</p>
+<p>Often mechanical: can you solve some programming problem on an interview site like HackerRank? Tests speed and correctness.  [ghsuhoswo]
+</p>
+<p>Practice helps. Solve problems on HackerRank and LeetCode. See excercies at end of each chapter for recommended ones.  [glhhiwkhh]
+</p>
+<p>Ask clarifying questions. Present simple, slow correct algorithm before fancy stuff. Sometimes you get points for correcltly solving the wrong problem.  [gijqiqksf]
+</p>
+<p><a id="chap13"></a></p>
+</div>
+</body>
+</html>

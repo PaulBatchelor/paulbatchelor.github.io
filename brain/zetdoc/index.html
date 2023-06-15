@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>ZetDoc</title>
+<h1>ZetDoc</h1>
+
+<h2>Overview</h2>
+
+<p>ZetDoc is a simple format that allows streams of connected
+ideas to be written in a staging document,
+which can then be batch-uploaded and tagged into the zet.
+</p>
+<p>After everything is all imported, zetdoc will create an
+entry of the zetdoc, containing a list of all the
+message UUIDs created, separated by spaces. This can then
+be used to programatically regenerate the document using
+the wiki.
+</p>
+<p>The motivation behind zetdoc is to make information more
+granular and connected.
+</p>
+
+<h2>Example Usage</h2>
+
+<pre><code>@gtags big_idea
+
+This is a chunk talking about a particular thing. Even
+though there are line breaks, it will be treated as
+one chunk.
+@tags little_idea information
+
+This is another chunk. It will also get tagged with
+=big_idea=, before getting tagged with local tags
+@tags secondary another
+
+@end</pre></code>
+<p></p>
+<p>ZetDoc works by grouping sentences into chunks. Each chunk
+gets stored as a message.
+</p>
+<p>Chunks are separated by empty lines (only containing
+a line break). Line breaks between text will be
+treated as spaces.
+</p>
+<p>Messages that are created can be tagged using the <code>@tags</code>command. This command should be at the beginning of a new
+line. Following <code>@tags</code> should be all the tags for the
+message, separated by whitespace.
+</p>
+<p>When tagging, ZetDoc will look for existing tags in the
+zet's database. If it doesn't exist, it will automatically
+create a new one.
+</p>
+<p>Global tags are a set of tags that get used on every
+message. These get set with the <code>@gtags</code> command, which
+behaves the same way as <code>@tags</code>.
+</p>
+
+<h2>Tasks</h2>
+
+<p>To make a task, write a message and use the "@task"
+command. This will make the message a part of the zetdo
+task system.
+</p>
+<pre><code>TODO implement the task feature in zetdo.
+@task</pre></code>
+
+<h2>Implementation</h2>
+
+<p>The <code>zetdoc</code> commandline utility is written in Janet,
+using the version shipped with Weewiki. It cannot
+be run using vanilla Janet, as it contains several
+functions defined by WeeWiki.
+</p>
+<p>This script is intended to be run from the top-level
+directory of the Brain Zettelkasten, and is typically
+invoked like this:
+</p>
+<pre><code>u/zetdoc z.txt</pre></code>
+<p></p>
+<p>Where <code>z.txt</code> is the name of the zetdoc file to be imported.
+</p>
+<p><pre><code>#!/usr/local/bin/weewiki janet
+# given a tag name, return the UUID
+(defn get-tag-uuid [db var]
+ (def q
+  (sqlite3/eval db (string/format `
+SELECT UUID from
+wikizet where value is '@%s'
+LIMIT 1;` var)))
+
+ (if (= (length q) 0) nil
+     ((q 0) "UUID")))
+
+# check if UUID1 is tied to UUID2
+(defn is-linked? [db UUID1 UUID2]
+ (def q (sqlite3/eval db (string/format `
+SELECT EXISTS(SELECT UUID from wikizet WHERE 
+UUID is '%s'
+AND value IS '#' || '%s') as exist;
+ ` UUID1 UUID2)))
+ (if (= ((q 0) "exist") 1) true false))
+
+# generate UUID
+(defn gen-uuid4 [] (ww-zet-uuid-gen))
+
+# unconditionally link UUID1 to UUID2
+(defn linkit [db uuid1 uuid2]
+ (sqlite3/eval db (string/format `
+INSERT INTO
+wikizet(time, UUID, value)
+VALUES('-', '%s', '%s');
+` uuid1 (string "#" uuid2))))
+
+# tie will create exactly one connection from
+# UUID1 to UUID2, if it doesn't already exist.
+
+(defn tie [db UUID1 UUID2]
+ (if (not (is-linked? db UUID1 UUID2))
+     (linkit db UUID1 UUID2)
+     (print (string/format
+        "%s is already linked to %s"
+        UUID1 UUID2)))
+)
+
+# create a new message and return its UUID
+
+(defn mkmessage-uuid [db msg uuid]
+ (sqlite3/eval db (string/format `
+INSERT INTO
+wikizet(time, UUID, value)
+VALUES(datetime(), '%s', '%s');
+` uuid (string/replace-all "'" "''" msg)))
+ uuid)
+
+(defn mkmessage [db msg]
+ (mkmessage-uuid db msg (gen-uuid4)))
+
+# make a new tag and return the UUID.
+
+(defn mktag [db name]
+  (mkmessage db (string "@" name)))
+
+(defn get-label-id [db]
+ (def uuid (get-tag-uuid db "labels"))
+ (if (nil? uuid)
+  (mktag db "labels")
+  uuid))
+
+# get a tag's UUID. automatically make a new one
+# if it doesn't exist. This will get linked to the labels
+# group
+
+(defn get-tag [db name label-group]
+ (def uuid (get-tag-uuid db name))
+
+ (if (nil? uuid)
+  (do
+   (def new-uuid (mktag db name))
+   (tie db new-uuid label-group)
+   new-uuid)
+  uuid))
+
+# push a tag onto a group, and make sure it isn't
+# already there. This is done by exploiting
+# the key/value nature of tables.
+
+(defn push-tag [db tag group]
+ (set (group tag) true))
+
+# remove a tag from a group, if it is there
+# apparently setting to nil removes it
+(defn pop-tag [db tag group]
+ (set (group tag) nil))
+
+# resolves and pushes tags in array to group
+(defn push-tags [db tags group label-group]
+ (each t tags (push-tag db (get-tag db t label-group) group)))
+
+# parse a file and load it into string chunks
+# single line breaks become spaces
+# Any lines starting with '@' become commands
+(defn parse-file [filename]
+  (var x @[])
+  (def fp (file/open filename :r))
+  (def cmdbyte ((string/bytes "@") 0))
+  (var chunk @{})
+
+  (loop [line :iterate (file/read fp :line)]
+   (cond
+    (= (line 0) cmdbyte)
+     (do
+      (if (nil? (chunk "cmds"))
+          (set (chunk "cmds") @[]))
+      (array/push (chunk "cmds") (string/split " " (string/trimr line))))
+    (= (length line) 1)
+     (do
+      (array/push x chunk)
+      (set chunk @{}))
+    (set (chunk "msg") (string (chunk "msg") line))
+    )
+   )
+
+  (file/close fp)
+  x)
+
+(defn link-message [db msg gtags ltags msgids]
+    #(print msg)
+    (def uuid (mkmessage db (string "&gt;" msg)))
+    (array/push msgids uuid)
+    (each tag (keys ltags) (tie db uuid tag))
+    (each tag (keys gtags) (tie db uuid tag))
+    uuid)
+
+(defn mkstate [db mid TODO-id]
+ (mkmessage-uuid db (string "$state:#" TODO-id) mid))
+
+# process structure created from parsed file
+(defn parse-structure [db p]
+ (var gtags @{})
+ (var msgids @[])
+ (def label-group (get-label-id db))
+ (var zetdo-id nil)
+ (var TODO-id nil)
+ (each chunk p
+  # process commands, if any
+  # gtags populates global tags
+  # tags creates local tags
+  (var ltags @{})
+  (var mktask false)
+  (if (not (nil? (chunk "cmds")))
+      (each cmd (chunk "cmds")
+       (cond
+        (= (cmd 0) "@gtags")
+        (push-tags
+         db (array/slice cmd 1 -1) gtags label-group)
+        (= (cmd 0) "@tags")
+        (push-tags
+         db (array/slice cmd 1 -1) ltags label-group)
+        (= (cmd 0) "@task")
+        (set mktask true)
+        )
+         ))
+
+  # if there is a message, add it to the zet,
+  # replace newlines with spaces, and tag it
+  #(print "Message:")
+  (if-not (nil? (chunk "msg"))
+   (do
+    (def mid (link-message
+              db
+              (string/replace-all "\n" " " (chunk "msg"))
+              gtags
+              ltags
+              msgids))
+    (if mktask
+     (do
+      (if (nil? zetdo-id)
+          (set zetdo-id (get-tag db "zetdo" label-group)))
+      (if (nil? TODO-id)
+          (set TODO-id (get-tag db "TODO" label-group)))
+      (tie db mid zetdo-id)
+      (mkstate db mid TODO-id))))))
+ (def zetdoc-uuid
+  (mkmessage
+   db (string "$zetdoc:" (string/join msgids " "))))
+
+ (each id msgids (tie db id zetdoc-uuid))
+ (print zetdoc-uuid))
+
+(defn run [filename]
+ (def db (sqlite3/open "a.db"))
+ (parse-structure db (parse-file filename))
+ (sqlite3/close db))
+
+(def args (dyn :args))
+(if (&lt; (length args) 2)
+ (print "usage: zetdoc doc.txt")
+ (do
+  (ww-zet-uuid-init)
+  (run (args 1))))</pre></code>
+</p>
+
+<h2>Relevant Pages</h2>
+
+<p><a href="/brain/zetdoc_index">zetdoc_index</a>: generated index of named zetdoc entries</p>
+<p><a href="/brain/zetdoc">zetdoc</a>: main page for the zetdoc format.</p>
+</div>
+</body>
+</html>

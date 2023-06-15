@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Computer Systems, A Programmers Perspective</title>
+<h1>Computer Systems, A Programmers Perspective</h1>
+
+<h2>Overview</h2>
+
+<p>A book recommended in the <a href="/brain/TYCS">TYCS</a> series.
+</p>
+<p>Document UUID: <code>gfjehshjf-hqek-hluo-ekoq-uihwfrrlehwi</code>.
+</p>
+<p>The short-term goal is to read chapters 1-6, as recommended
+by TYCS. Projects will be skipped, unless they can be
+somehow reworked to be musical.
+</p>
+<p>Go to <a href="/brain/computer_systems_programmers_perspective#messages">messages</a>.
+</p>
+
+<h2>Chapter 1: A tour of computer systems</h2>
+
+<p>What is a computer system? A computer system
+colnsists of hardawre and systems software that work
+together to run application programs.
+</p>
+<p>Hello World in C. Bits, bytes. The compiler pipeline for
+Hello World. How the hardware is organized: Buses, I/O devices,
+Main Memory, Processor. Caches and memory hierarchy.
+</p>
+<p>OS management of hardware. Virtual memory. Processes. Threads.
+Files. Networks. Parallelism. SIMD.
+</p>
+
+<h2>Chapter 2: Representing and manipulating information</h2>
+
+<p>Hex, Binary, how integers are represented. Also
+floating point.
+</p>
+<p>There's a lot of nitty-gritty details here that are worth
+going back to at some point.
+</p>
+
+<h2>Chapter 3: Machine-Level Represenation of Programs</h2>
+
+
+<h3>3.1: A historical Perspective</h3>
+
+<p>This is just a big list of the processors from Intel. x86
+carries a lot of historical baggage, and you can see
+where things come from.
+</p>
+
+<h3>3.2: Program Encodings</h3>
+
+<p>Outlines some of the differences between C and
+machine representations of programs. C abstracts
+away things like <code>program counter</code>, <code>register</code>,
+<code>condition code</code>, and <code>vector registers</code>. C offers more
+constructs of data, that get translated to continugous
+bytes in machine code.
+</p>
+<p>Some words on tooling here. How to view machine code from
+C code using <code>disassemblers</code>. OBJDUMP is mentioned, GDB
+is mentioned.
+</p>
+<p>ATT vs Intel assembly code formats discussed as an aside.
+This book opts for ATT.
+</p>
+
+<h3>3.3: Data Formats</h3>
+
+<p>Defining a Word as 16 bits. A byte is 8 bits. Long is 32
+bits (or double words). Quads are 64 bits. etc. etc.
+</p>
+<p>Assembly uses single-character suffixes denoting the size
+of the operand (table 3.1). 'l' can mean either 'long'
+or float, depending on context.
+</p>
+
+<h3>3.4: Accessing Information</h3>
+
+<p>x86-64 contains 16 general purpose 64-bit registers.
+</p>
+<p>History dictates the naming of these registers. Originally
+<code>%ax</code> through <code>%bp</code>, then expanded to 32-bit with <code>%eax</code>through <code>%ebp</code>, then expanded to 64 bits with <code>%rax</code>through <code>%rbp</code>. 8 registers were added as well: <code>%r8</code>through <code>%r15</code>.
+</p>
+<p>Instructions can operate on registers using different sizes.
+1 or 2 byte: leave remaing bytes unchagned. 4 bytes:
+set upper 4 bytes to 0.
+</p>
+<p>The <code>%rsp</code> register is the end position in the runtime
+stack, and it is the most specialized register.
+</p>
+<p>Instructions have operands, which specify the source
+and destination values. x86 has many <code>operand forms</code>.
+</p>
+<p>Immediate values are constants, written <code>$</code> followed
+by a value.
+</p>
+<p>Register values denote the contents of register. Denoted
+<code>r_a</code> is a register and <code>R[r_a]</code> is the value in that
+register.
+</p>
+<p>Memory references access a memory location, using
+the notation <code>M_b[Addr]</code>, though the subscript b
+is usually dropped.
+</p>
+<p>There are many <code>addressing modes</code> to get at a memory
+location. There's 9 of 'em in this table on pg 474
+(figure 3.3).
+</p>
+<p><code>lmm</code> is an absolute reference.
+</p>
+<p><code>(r_a)</code> is an indirect reference <code>M[R[r_a]]</code>.
+</p>
+<p><code>lmm(r_b)</code> is base + displacement <code>M[lmm + R[r_b]]</code>.
+</p>
+<p><code>(rb, ri)</code> is indexed <code>M[R[rb] + R[ri]]</code>.
+</p>
+<p><code>lmm(rb, ri)</code> is indexed <code>M[lmm + R[rb] + R[ri]]</code>.
+</p>
+<p><code>(,ri,s)</code> is scaled indexed <code>M[R[ri] * s]</code>.
+</p>
+<p><code>lmm(,ri, s)</code> is scaled indexed <code>M[lmm + R[ri]*s]</code>.
+</p>
+<p><code>(rb,ri,s)</code> is scaled indexed <code>M[R[rb] + R[ri]*s]</code>.
+</p>
+<p><code>lmm(rb,ri,s)</code> is scaled index <code>M[lmm + R[rb] + R[ri]*s]</code>.
+this is the most general form.
+</p>
+<p><code>mov(S,D)</code> copies from data from one place (<b>S</b>ource) to another
+(<b>D</b>estination). <code>movb</code>, <code>movw</code>, <code>movl</code>, <code>moivq</code>,
+<code>movabsq</code>. Source is a value (immediate, register, memory)
+the destination (register, memory address).
+Source/destination can't both be memory addresses.
+</p>
+<p><code>movz(S,D)</code> does a move and pads the remaining bytes with
+zeros. <code>movz</code>, <code>movzbw</code>, <code>movzbl</code>, <code>movzwl</code>, <code>movzbq</code>,
+<code>movzwq</code>. <code>movzlq</code> does not exist because <code>movl</code> will
+automatically zero out the upper 4 bytes.
+</p>
+<p><code>movs(S, D)</code> does a move with sign extension. <code>movsbw</code>,
+<code>movsbl</code>, <code>movswl</code>, <code>movsbq</code>, <code>movswq</code>, <code>movslq</code>, <code>cltq</code>.
+</p>
+<p>The program stack can be a way to move data around. It's
+a LIFO.
+</p>
+<p><code>pushq(S)</code> has the effect:
+</p>
+<pre><code>R[%rsp] = R[%rsp] - 8;
+M[R[%rsp]] = S</pre></code>
+<p></p>
+<p><code>popq(S)</code> has the effect:
+</p>
+<pre><code>D = M[R[%rsp]];
+R[%rsp] = R[%rsp] + 8;</pre></code>
+<p></p>
+<p>Stack grows downward: top element has the lowest
+stack element.
+</p>
+
+<h3>3.5: Arithmetic and Logical Operations</h3>
+
+<p>Operations are divided into 4 groups:
+<code>Load Effective Address</code>, <code>unary</code> (one operand),
+<code>binary</code> (two operands), and <code>shifts</code>.
+</p>
+<p>The Load Effective Address command <code>leaq</code> takes the address
+of a source and loads it into the destination. This
+gets abused for simple arithmetic operations.
+</p>
+<p>unary operations: <code>inc</code>, <code>dec</code>, <code>neg</code>, <code>not</code>.
+</p>
+<p>binary operations: <code>add</code>, <code>sub</code>, <code>mul</code>, <code>xor</code>, <code>or</code>,
+<code>and</code>. Note that the ordering goes <b>S</b>ource, then
+<b>D</b>estination.
+</p>
+<p>Shift operations: <code>sal</code>, <code>shl</code>, <code>sar</code>, <code>shr</code>. Follow
+the arguments (k, D). Where <code>k</code> is a byte that
+determines the amount to shift. Low order bits are used.
+</p>
+<p>x86-64 has limited support for 128-bit arithmetic
+operations: <code>imulq</code>, <code>mulq</code>, <code>cqto</code>, <code>idivq</code>, <code>divq</code>.
+</p>
+
+<h3>3.6: Control</h3>
+
+<p>Condition codes: single-bit registers that the CPU
+maintains, which describe attributes of the most
+recent arithmetic or logical operation. These include
+<code>carry flag</code> (CF), <code>zero flag</code> (ZF), <code>sign flag</code> (SF), and
+<code>overflow flag</code> (OF).
+</p>
+<p>There are two instruction classes that can set condition
+codes without touching the registers. <code>cmp</code> works like
+<code>sub</code> but only changing the condition codes. <code>test</code>behaves like <code>and</code> without updating the registers.
+</p>
+<p>Condition codes get indirectly read 3 wasy: setting
+a byte to 1 or 0, conditionally jumping based on state,
+or conditionally transferring data.
+</p>
+<p>Suffixes for these instructions are different than other
+instructions. <code>setl</code> and <code>setb</code> mean "set less" and
+"set below", not "set long word" or "set byte". (Yeesh).
+</p>
+<p>The <code>set</code> commands are used to set a register or memory
+address to the value of the condition flag. <code>sete</code> or <code>setz</code>,
+<code>setne</code> or <code>setnz</code>, <code>sets</code>, <code>setns</code>, <code>setg</code> or <code>setnle</code>,
+<code>setge</code> or <code>setnl</code>, <code>setl</code> or <code>setnge</code>, <code>setle</code> or <code>setng</code>,
+<code>seta</code> or <code>setnbe</code>, <code>setae</code> or <code>setnb</code>, <code>setb</code> or <code>setnae</code>,
+<code>setbe</code> or <code>setna</code>.
+</p>
+<p>The "or"s are synonyms.
+</p>
+<p>(There's some tricky stuff with set at the end of this
+chapter (pdf pg 125) that I'm still trying to grok. I
+just don't think the author is being all that clear.)
+</p>
+<p>Jumps allows executation to switch to a completely different
+position in the program. They are usually indicated with
+the use of labels. <code>jmp</code> (Label), <code>jmp</code> (Operand), <code>je</code>,
+<code>jne</code>, <code>js</code>, <code>jns</code>, <code>jg</code>, <code>jge</code>, <code>jl</code>, <code>jle</code>, <code>ja</code>, <code>jae</code>,
+<code>jb</code>, <code>jbe</code>.
+</p>
+<p>PC Relative jumps are offsets relative to the positions
+they are jumping off from.
+</p>
+<p>The value of the program counter when performing
+PC-relative addressing is the address of the instruction
+<b>following</b> the jump instruction, not the address
+of the jump instruction itself.
+</p>
+<p>Relative jumps allow for compact code that can be
+shifted to different positions without alterations.
+</p>
+<p>Conditional and unconditional jumping. Gotos can be
+used in C to closely match the equivalent assembly, but
+in "goto code" is considered bad practice.
+</p>
+<p>Conditional moves change a value based on a condition
+being true. Known as conditional data transfer.
+<code>cmove</code> or <code>cmovz</code>, <code>cmovene</code> or <code>cmovenz</code>, <code>cmovs</code>,
+<code>cmovens</code>, <code>cmovg</code> or <code>cmovnle</code>, <code>cmovge</code> or <code>cmovnl</code>,
+<code>cmovl</code> or <code>cmovnge</code>, <code>cmovle</code> or <code>cmovng</code>,
+<code>cmova</code> or <code>cmovnbe</code>, <code>cmovae</code> or <code>cmovnb</code>,
+<code>cmovb</code> or <code>cmovnae</code>, <code>cmovbe</code> or <code>cmovna</code>. 
+</p>
+<p>The pipelining used in modern processors is why this is
+more efficient. Branch prediction allows a processor
+to make guesses where it's going to go, and will
+fill the pipeline full of instructions. A bad prediction
+(branch misprediction) causes it to discard work and
+start filling things over again. This incurs a performance
+penalty.
+</p>
+<p>Not all conditional expressions can be expressed as
+conditional moves. Since both
+sides are evaluated, they could introduce side effects.
+</p>
+<p>Conditional moves aren't always the most efficient option,
+especially if the <code>then-expr</code> or <code>else-expr</code> requires
+significant computation. A compiler like GCC will cleverly
+know when to use them.
+</p>
+<p>Loops in C like do-while, while, and for, boil down to
+combintations of conditional tests and jumps in assembly.
+</p>
+<p><code>do-while</code>: repeat body statment, evaluate test expression,
+and continue if non-zero. The body statement is executed
+at least once.
+</p>
+<p><code>while</code>: like <code>do-while</code>, except the test statement is
+executed before the body. This means the loop can be
+terminated before the first iteration (stopped before
+it even starts).
+</p>
+<p><code>for loop</code>: has <code>init-expr</code>, <code>test-expr</code>, <code>update-expr</code>,
+can <b>mostly</b> be written as an equivalent while loop.
+</p>
+<p><code>switch</code> statement in C: provides multiway branching
+capabilities based on the value of an index. Can be
+efficiently implemented using a <code>jump table</code>. The compiler
+automatically implements these.
+</p>
+<p>Switch cases that <code>fall through</code> don't have a break
+statement.
+</p>
+
+<h3>3.7: Procedures</h3>
+
+<p>Machine-level support for procedures need to do the
+following: pass control, pass data, and allocate/deallocate
+memory for local variables.
+</p>
+<p>Run-time stack: a LIFO stack used to manage memory. When
+a procedure runs out of space in registers, it allocates
+memory on the stack. Known as a <code>stack frame</code>.
+</p>
+<p>Return address: an address that gets pushed onto the stack
+that indicates where to return to when the procedure is
+done.
+</p>
+<p>Procedure Control transfer involves updating program
+counter. <code>call</code> is the instruction that that calls
+a procedure, and the return address is the address that
+follows right after it. <code>ret</code> is used to go back to the
+return address (popping it off the stack and setting
+it to the PC).
+</p>
+<p>Most data transfer between procedures is done via
+registers. In x86-64, up to six integral (integer, pointer)
+arguments can be passed via registers.
+</p>
+<p>Registers are used in a specified order (these names
+change based on the sized value being used). 64-bit
+register order is: <code>%rdi</code>, <code>%rsi</code>, %rdx=, <code>%rc</code>, <code>%r8</code>,
+<code>%r9</code>.
+</p>
+<p>More than 6 integral arguments, and the extras get passed
+on the stack.
+</p>
+<p>When a procedure needs to allocate space on the stack,
+this is done by decrementing the stack pointer, resulting
+in a "local variables" portion of the stack.
+</p>
+<p>Registers are a single resource shared by all procedures.
+How do procedures not overwrite registers?
+</p>
+<p><code>callee-saved registers</code>: When a procedure is called, the
+information in these registers must be the same when it
+returns to the previous procedure. These registers are
+<code>%rbx</code>, <code>%rbp</code>, and <code>%r12-%r15</code>. This is accomplished
+by not touching them at all, or storing their values
+on to the stack and popping them back before
+returning. A dedicated portion of the stack frame is
+reserved for this, called "saved registers".
+</p>
+<p>The convention of saving registers allows for procedures
+to be called recursively.
+</p>
+
+<h3>3.8: Array Allocation and Access</h3>
+
+<p>Arrays are a construct in C, which are reasonably straight
+forward to translate to machine code. Pointer arithmetic
+in C gets translated into address computations in machine
+code. Optimizing compilers can simplify address
+computations quite a fair bit, and this can sometimes
+obfuscate things.
+</p>
+<p>Basic access to an array: <code>A + L*i</code>, where <code>A</code> is the
+initial address of the first element, <code>L</code> is the length
+of the type (in bytes), and <code>i</code> is the index.
+</p>
+<p>Pointer arithmetic: computed value is scaled
+according to the size of the data type referenced by the
+pointer.
+</p>
+<p>Nested arrays: <code>A[5][3]</code> can be thought of as a 2d array
+with 5 rows 3 columns. Known as <code>row-major</code> order.
+</p>
+<p>Access array element in D at i,j: <code>A+L(C*i+j)</code>, where <code>A</code>is the address, <code>L</code> is the length of the type, and <code>C</code>is the column size.
+</p>
+<p>Fixed-size multi-dimensional arrays in C can be heavily
+optimized by C compilers.
+</p>
+<p>Variable-sized arrays were introduced in C99.
+</p>
+
+<h3>3.9: Heterogeneous Data Structures</h3>
+
+<p>C has two mechanisms for combining objects of different
+types. <code>structures</code> (<code>struct</code>) aggregate multiple objects
+into a single unit. <code>unions</code> (<code>union</code>), allow an object
+to be referenced using several types.
+</p>
+<p>Unions are useful in situations when the use of two
+different fields in a structure will be mutually exclusive.
+Using a union will reduce space.
+</p>
+<p>Alignment Restrictions: allowable memory addresses must
+be some multiple of either 2, 4, or 8. This simplifies
+hardware between the processor and memory system.
+</p>
+<p>Alignment can be enforced in x86 using something like
+".align 8".
+</p>
+<p>Structs can add space in between fields to meet the
+alignment requirements.
+</p>
+
+<h3>3.10: Combining Control and Data in Machine-Level Programs</h3>
+
+<p>Pointers. And a bit how they work in C.
+</p>
+<p>Some introductions to GDB.
+</p>
+<p>Buffer Overflow example, attempts to reach for values out
+of bounds.
+</p>
+<p>Exploit code: malicious code inside input to a function
+(such a string). The code then overrides the return to
+point to the new program subroutine.
+</p>
+<p>Stack randomization: randomizes stack position from one
+program to another. Used to thwart stack exploits.
+</p>
+<p>stack randomization is part of address-space layout
+randomization (ASLR), which generally concerns itself
+with loding parts of a computer program (program
+code, library code, stack, global variables, heap data),
+into different addresses spaces every time it is run.
+</p>
+<p><code>stack protection</code> is a way of checking for stack
+corruption checking to see if a <code>canary value</code> has changed.
+this is enabled by default in recent versions of GCC.
+</p>
+<p>Limiting executable regions of code is another means
+to make things more secure. Memory is divided into chunks
+called pages, where the kind of access can be controlled
+(<code>memory protection</code>) at the hardware level.
+</p>
+<p><code>alloca</code>: standard function that allocates arbitrary bytes
+onto the stack.
+</p>
+<p>Variable size stack frames are managed using a special
+pointer to store the base pointer (called <code>%rbp</code>), and
+then addresses things relative to that.
+</p>
+
+<h3>3.11: Floating-point Code</h3>
+
+<p>Floating point architecture has evolved "media"
+instructions inteded for for computer graphics.
+</p>
+<p>Focused on parallel computation (single instruction,
+multiple data, or SIMD).
+</p>
+<p>SSE: Streaming SIMD extensions.
+</p>
+<p>AVX: Advanced Vector Extensions.
+</p>
+<p>Data in these special instructions uses special registers:
+<code>MM</code> for MMX, <code>XMM</code> for SSE, and <code>YMM</code> for AVX.
+</p>
+<p>AVX2: instructions introduced to the core i7 in 2013.
+Second version of AVX. Primary focus.
+</p>
+<p>Floating point movement instructions: <code>vmovss</code> (single)
+<code>vmovsd</code> (double) <code>vmoaps</code> (aligned, packed single)
+<code>vmovapd</code> (aligned, packed double).
+</p>
+<p>Floating point conversions (float to int, int to float),
+on scalar values: <code>vcvttss2si</code>, <code>vcvttsd2si</code>,
+<code>vcvttss2siq</code>, <code>vcvttsd2siq</code>.
+</p>
+<p>Floating point to integer conversion performs truncation,
+rounding values towards zero.
+</p>
+<br>
+<p>These instructions convert from integer to float:
+<code>vcvtsi2ss</code>, <code>vcvtsi2sd</code>, <code>vcvtsi2ssq</code>, <code>vcvtsi2sdq</code>. They
+take 2 sources, and a destintation. (The second source
+can be ignored for now, and are commonly identical).
+</p>
+<p><code>vunpcklps</code> followed by <code>vcvtps2pd</code> is what GCC uses to
+convert between single to double precision. <code>vunpcklps</code>performs some interleaving operation, <code>vcvtps2pd</code> uses
+that that intermediate value to be a double. From the book:
+"it is unclear why GCC generates this code".
+</p>
+<p><code>vmovddup</code> and <code>vcvtpd2psx</code> are used to convert from double
+to single precision. <code>vmovddup</code> will replicate first vector
+element, and the <code>vcvtpd2psx</code> will use that to produce
+the single precision element in the destination.
+</p>
+<p>The XMM registers are used for passing floating point
+arguments to and from functions. Up to 8, <code>%xmm0</code> is
+return, and caller saved (calle can overwrite without
+first saving it).
+</p>
+<p>Floating point arithmetic operations: <code>vaddss</code>, <code>vaddsd</code>,
+<code>vsubss</code>, <code>vsubsd</code>, <code>vmulss</code>, <code>vmulsd</code>, <code>vdivss</code>, <code>vdivsd</code>,
+<code>vmaxss</code>, <code>vmaxsd</code>, <code>vminss</code>, <code>vminsd</code>, <code>sqrtss</code>, <code>sqrtsd</code>.
+</p>
+<p>Constant floating point values must be stored and
+read from memory. Can't be passed in directly as an
+immediate value.
+</p>
+<p>Bitwise operations on floats: performed on entire XMM
+register (128 bits): <code>vxorps</code>, <code>xorpd</code>, <code>vandps</code>, <code>andps</code>.
+</p>
+<p>Floating point comparison operators are: <code>ucomiss</code> and
+<code>comisd</code>. They set the zero flag (ZF), carry flag (CF),
+and this thing called the parity flag (PF), which is
+set when the least significant byte has an even number
+of bits turned on (even parity).
+</p>
+
+<h2>Chapter 4: Processor Architecture</h2>
+
+
+<h3>4.1 The Y86-64 Instruction Set Architecutre</h3>
+
+<p>We're defining our own processor called Y86-64!
+</p>
+<p>Program Visible State: the stuff that programs can
+read and modify.
+</p>
+<p>State layout does not need to directly line up with ISA.
+</p>
+<p>Components: registers, program counter, memory, status
+code.
+</p>
+<p>8-bit integer operations only. 8-bit word.
+</p>
+<p>Byte-level encoding of instructions: ranges from 1-10
+bytes. Initial byte identifies the instruction.
+</p>
+<p>Byte is split into two nibbles: code (high-order), and
+function (low-order).
+</p>
+<p>Register-specifier byte: byte that can specify one or
+two registers.
+</p>
+<p>Constant word: 8 bytes. used for immediate data in
+<code>irmovq</code>, displacement in <code>rmmovq</code> and <code>mrmovq</code>.
+</p>
+<p>Status codes: AOK (all good), HLT (halted), ADR
+(invalid address), INS (invalid instruction).
+</p>
+<p>pushq/popq quirks: <code>pushq %rsp</code> and <code>popq %rsp</code> are
+ambiguous. When in doubt, read the manual.
+</p>
+
+<h3>4.2 Logic Design and the Hardware Control Language</h3>
+
+<p>Logic gates: the basic computing elements for digital
+circuits. Takes in bit values as inputs, peforms boolean
+operation, and outputs a bit. Examples: AND, OR, and NOT.
+</p>
+<p>Combinatorial Circuit: logic gates that form a network.
+</p>
+<p>HCL: syntax for outlining combinatorial circuits in a
+C-like expression.
+</p>
+<p>Combinatorial logic doesn't have any partial evaluation rules
+like C. Things are always getting evaluated in logical
+statemes like AND.
+</p>
+<p>Combinational circuits tend to work on groups of bits known
+as words.
+</p>
+<p>Multiplexors can work on a word level by selecting a word
+from a source using some control condition.
+</p>
+<p>Multiplexing functions are expressed in HCL using case
+expressions.
+</p>
+<p>Logic synthesis: a technique to create an optimal circuit
+from some higher-level logic written in something like HCL.
+</p>
+<p>Hardware registers (directly connected to circuit with
+wires) are slightly different from program
+registers (addressable words).
+</p>
+<p>Hardware register kind of acts like a sample-and-hold.
+It takes in a signal and a clock signal, and holds the
+value when the clock goes up.
+</p>
+<p>Clocked registers: hardware register that whose values
+can be loaded using a clock signal.
+</p>
+<p>A register file is an abstraction that holds words and
+addresses, and is used at the machine-language level.
+</p>
+<p>Register file: two read ports, and one write port. This
+means it is <code>multiported</code>, allowing for multiple read/write
+operations to happen simultaneously.
+</p>
+<p>Memory: address input, data input, data output. Address
+as input, write control to 0, add delay, and the value will
+appear on data output.
+</p>
+
+<h3>4.3 Sequational Y86-64 Implementations</h3>
+
+<p>Processor will be called SEQ.
+</p>
+<p>Instruction processing stages: fetch, decode, execute,
+memory, write back, PC update.
+</p>
+<p>Fetch: grabs bytes from memory.
+</p>
+<p>Decode: reads up to two operands from register file.
+</p>
+<p>Execute: Executes the instruction.
+</p>
+<p>Memory: may read/write memory.
+</p>
+<p>Write back: writes up to two results to register file.
+</p>
+<p>PC update: sets PC to address of next instruction.
+</p>
+<p>addq, subq, andq, xorq: same icode portion (same steps),
+different ifun portion (different ALU computation).
+</p>
+<p>memory write/read: like integer operations, but ALU
+is used to compute valC and valB to get effective
+address. Memory stage will write register value valA
+to memory, or read valM.
+</p>
+<p>pushq: use <code>%rsp</code> as second identifier for operand. ALU
+decrements stack pointer by 8.
+</p>
+<p>popq: like pushq, only read 2 copies of stack pointer
+in decode stage. redundant, but more uniform with other
+instructions. ALU increments by 8. write-back: update
+stack pointer and register rA.
+</p>
+<p>Jumps: fetch like before, but does not require register
+specifier byte. Execute: check condition codes and
+jump condition, determine whether or not to take branch,
+yield 1-bit signal Cnd. PC update: test Cnd flag, update
+PC to valC (jump target) if Cnd is 1, valP (following
+address) if flag is 0.
+</p>
+<p>Hardware structure of SEQ: operates with a single
+clock transition triggering a flow in combinational logic
+to execute an instruction.
+</p>
+<p>Combinational Logic does not require sequencing or control,
+values propogate through the network. The forms of memory
+used (clock registers and random access memories), have
+similar behavior to combinational logic.
+</p>
+<p>Four hardware units that require explicit control over
+their sequencing: program counter, condition code register,
+data memory, regster file. Conrolled via single clock.
+</p>
+<p>Clocking of registers/memories is all that is required
+to control sequencing in the processor, and the sequential
+events in the different instructions will happen.
+</p>
+<p>Why does the execution work? This principle: No Reading
+Back. The processor never needs to read back the state
+updated by an instruciton in order to complete the
+processing of this instruction.
+</p>
+<p>An overview of the HCL requried to build y86-64 is
+included.
+</p>
+<p>Problem: SEQ is too slow. The clock needs to run slowly
+enough to run through all the stages within a single cycle.
+</p>
+<p>Inefficient: each hardware unit is on for a fraction of
+a clock cycle.
+</p>
+<p>Solution to fix SEQ performance: pipelineing.
+</p>
+
+<h3>4.4 General Principles of Pipelining</h3>
+
+<p>Pipelining is something a processor does to address the
+slow performance of instruction sequencing with the clock.
+</p>
+<p>Analogy: cafeteria. instead of having one person at a time
+go through one at a time to get food (salad, main
+dish, dessert, etc), line them up.
+</p>
+<p>Pipelining works by breaking computation into components,
+and allowing instructions to pass through the system
+one component at at time.
+</p>
+<p>Pipelining increases the throughput of a system, but it
+may slightly increase latency (someone going for dessert
+has to wait in line).
+</p>
+<p>Pipeline registers store the state at each pipeline.
+</p>
+<p>Circuit delays are measured in picoseconds.
+</p>
+<p>Pipelining charts are ways to analyze the latency of
+a circuit.
+</p>
+<p>Nonuniform partitioning: when delays in each
+stage are different. pipelinig is only as fast as
+it's slowest component. designing with uniform delay is
+a difficult challenge.
+</p>
+<p>Diminishing returns of pipelining: adding pipelining
+stages eventually doesn't add gains to throughput, due
+to the small delay introduced from the pipeline registers.
+</p>
+<p>Data Dependency: sequentional instructions share data.
+</p>
+<p>Control Dependency: outcome of a instruction determines
+what the next instruction will be.
+</p>
+<p>Feedback in the pipeline handles control and data
+dependencies.
+</p>
+<p>When introducing feedback, the effects must be handled so
+that the resulting behavior matches the model defined by
+the ISA.
+</p>
+
+<h3>4.5 Pipelined Y86-64 Implementations</h3>
+
+<p>SEQ must be changed so that PC update happens at beginning
+of the cycle instead of the end. This will be called SEQ+.
+</p>
+<p>PC now computes address of current instruction.
+</p>
+<p>Next, insert pipeline registers between each state: <b>F</b>holds a predicted value of PC, <b>D</b> (btwn fetch and decode),
+holds information about most recent fetched instruction,
+<b>E</b> (btwn decode and execute) holds information about
+recently decoded instruction, <b>M</b> (btwn execute and memory)
+holds results of last executed instruciton, <b>W</b> (btwn
+memory and feedback paths) supply computed results to
+register file for writing and return address to PC selection
+logic.
+</p>
+<p>Sequential SEQ/SEQ+ only process one instruction at a time.
+Pipelined has to have multiple versions of the value
+kept through the system.
+</p>
+<p>With measures added to handle control dependencies, now
+make it so that a new instruction can be issued on every
+clock cycle, and an instruction can be executed as well.
+This would yield a throughput of 1 instruction/cycle.
+</p>
+<p>To achieve this, the next instruction must be fetched after
+the current one.
+</p>
+<p>With branches, one doesn't know which instruction will
+be chosen until the instruction gets executed down the
+line. A return instruction will also be ambiguous until
+it reaches the memory stage.
+</p>
+<p><code>branch prediction</code>: guessing a branch direction and
+fetching instructions based on that guess.
+</p>
+<p>Return addresses will not be predicted, as it's virtually
+unbounded. When a return instruction happens, hold off
+other instructions until it has passed.
+</p>
+<p>Branch prediction strategies. Always taken (what will
+be used here). ~60% sucess rate. Never taken (NT):
+opposite of Always Taken. ~40% success rate. Backward
+Taken, Forward Not Taken: slightly more involved strategy
+that predicts branches to lower addresses will be taken,
+high addresses will not be taken. ~65% success rate. Works
+because loops are are closed by backward branches and happen
+multiple times, forward branches are conditional operations
+and are less likely to happen.
+</p>
+<p>Pipeline hazards: pipelining with feedback can cause
+problems with data and control dependencies, known as data
+hazards and control hazards.
+</p>
+<p>Data hazards in the current pipeline occur when one of its
+operands is updated by any of the three preceding
+instructions. Occurs because it reads operands for
+an instruction from the register file in the decode
+stage, does not write instruction to the register file
+until three cycles later, after instruction passes
+through the write-back stage.
+</p>
+<p>Stalling: processor holds back one or more instructions in
+the pipeline until the hazard condition no longer exists.
+</p>
+<p>Stalling is a way to avoid data hazards.
+</p>
+<p>Holding an instruction back in the pipeline involves
+injecting a <code>bubble</code>, a dynamically created NOP
+instruction.
+</p>
+<p>Data Forwarding: The technique of passing a result value
+directly from one pipeline stage to another.
+</p>
+<p>Data forwarding is a way to avoid data hazards.
+</p>
+<p>Data forwarding can be used when there is a pending
+write to a register in the memory stage and can be done
+to avoid stalling.
+</p>
+<p>Data forwarding can also pass newly computed values from
+execute stage to decode stage.
+</p>
+<p>Five different forwarding sources, and two different
+forwarding destinations.
+</p>
+<p>Load/use hazard: one instruction reads a value from memory
+while the next instruction needs this value as a source
+operand.
+</p>
+<p>Load/use hazards are solved with a combination of stalling
+and forwarding. Known as a <code>load interlock</code>.
+</p>
+<p>Instruction Cancelling is used to mitigate control hazards
+(branch mispredict) by inserting bubbles into the pipeline.
+Since the fetched instructions didn't reach the execution,
+it doesn't effect program state.
+</p>
+<p>Exceptional control flow: activities in a processor that
+lead to a break in the normal chain of program execution.
+</p>
+<p>Exceptions can happen internally by the program, or
+externally by some outside signal.
+</p>
+<p>Internal exceptions: halt, invalid instruction, invalid
+address.
+</p>
+<p>Exception Instruction: "virtual" instruction that causes
+exception.
+</p>
+<p>Exception handling in pipelined systems has subtleties.
+1: It is possible to have exceptions triggered by multiple
+instructions simultaneously. 2: A fetched instruction
+that begins execution, causes an exception, and then
+is canceled due to branch misprediction. 3: Because
+the pipelined processor updates different parts
+in stages, it is possible for an instruction following
+one causing an exception to alter
+some part of the state before the instruction completes.
+</p>
+<p>Transition look-aside buffer (TLB): a type of cache memory
+that provides a fast translation from virtual to physical
+addresses.
+</p>
+<p>Cache Miss: some reference is made to a location not
+in the cache.
+</p>
+<p>Page Fault Exception: memory location being referenced
+is actually stored in the disk or non-volatile memory.
+</p>
+
+<h2>Chapter 5: Optimizing Program Performance</h2>
+
+
+<h3>Introduction</h3>
+
+<p>The primary objective in writing a program must be to make
+it work correctly under all possible conditions. Making
+the program run fast is also an important consideration
+sometimes.
+</p>
+<p>Writing an efficient program requires selecting an
+appropriate set of data structures, and then writing
+source code that the compiler can effectively optimize into
+executable code (which varies on the language/compiler).
+Efficient code can also be realized by splitting up the
+task into portions that can be run in parallel.
+</p>
+<p>Common Trade-off: how easy it is to maintain vs. how fast
+the program is.
+</p>
+<p>Modern compilers do a good job optimizing code, but sometimes
+programmers need to help by writing code that can be
+trivially optimized.
+</p>
+<p>Optimizig a program first requires eliminating all
+unncesary work: unnecessary function calls, conditional
+tests, memory references, etc.
+</p>
+<p>Programmer and compiler must be aware of the model of
+the target machine to maximise performance.
+</p>
+<p>Understanding processor operation, one can provide
+instruction-level parallelism.
+</p>
+<p>Problems in optimizing large programs, code profilers,
+etc.
+</p>
+<p>Optimization is not a linear problem and requires a lot
+of trial and error.
+</p>
+<p>Studying the assembly code is the most effective means
+for gaining an understanding of the compiler and
+how the generated code will run.
+</p>
+<p>Practical approach: rewrite the program to the point where
+the compiler can generate optimal code that has measurable
+performance increases.
+</p>
+
+<h3>5.1 Capabilities and Limitations of Optimizing Computers</h3>
+
+<p>Modern compilers employ sophisticated program analysis
+techniques that find opportunities to simplify, as well
+as re-use and reduce computations.
+</p>
+<p>GCC has different levels of optmization: <code>-O1</code> through
+<code>-O3</code>. Some clever C code that generates better code
+at <code>-O1</code> than less clever code compiled with <code>-O3</code>.
+</p>
+<p>Compilers apply only safe optimizations to code, so that
+the program behaves the same way at each optimization
+level. (Exception is undefined C behavior).
+</p>
+<p>Memory Aliasing: the case where two pointers may
+designate the same memory location. A safe compiler
+must assume that different pointers may be aliased.
+</p>
+<p>Optmization Blocker: aspects of a program that can
+severely limit the opportunities for a compiler
+to generate optimized code.
+</p>
+<p>Function calls can be an optimization blocker because
+functions can modify global state, causing a side effect.
+</p>
+
+<h3>5.2 Expressing Program Performance</h3>
+
+<p>Cycles Per Element (CPE): metric used to express
+program performance.
+</p>
+<p>Clock provides regular timing, usually measured in
+gigahertz. Expressing measurements in terms of "cycles"
+(rather than in nanoseconds or picoseconds) is more
+intuitive for programmers.
+</p>
+<p>Least squares fit can be used to find the run times
+for programs, expressed in units of cycles as a constant
+plus a factor proportional to the number of elements
+processed.
+</p>
+
+<h3>5.3 Program Example</h3>
+
+<p>This outlines the sample program used in the next sections
+below.
+</p>
+
+<h3>5.4 Eliminating Loop Inefficiences</h3>
+
+<p>Code motion: a general class of optmizations. Identify
+computations performed multiple times where the result
+doesn't change, and move it to an earlier part of
+code where it doesn't execute as often.
+</p>
+<p>Optimizing compilers will try to apply code motion, but
+they are careful about decisions and sometimes won't
+do it.
+</p>
+
+<h3>5.5 Reducing Procedure Calls</h3>
+
+<p>Replaced a function call in the inner loop with direct
+memory access to the vector. Little to noperformance
+benefit.
+</p>
+
+<h3>5.6 Eliminating Unneeded Memory References</h3>
+
+<p>Assembly is analyzed for the <code>combine3</code> procedure,
+and there is a wasteful read/write operation. This gets
+fixed by adding an accumulator variable. This reduces
+memory operations from two reads and one write per iteration
+to just one write and one read.
+</p>
+<p>The compiler is unable to optimize this code because
+of memory aliasing. When using memory addresses, it does
+the conservative approach and reads/writes from memory
+each time.
+</p>
+
+<h3>5.7 Understanding Modern Processors</h3>
+
+<p>Exploiting the microarchitecutre of the processor to
+optimize a program.
+</p>
+<p>Instruction-level parallelism: instructions being executed
+in parallel at the processor level, which may appear
+to be sequential at the code level.
+</p>
+<p>Two lower bounds characterize maximum performance of
+a program: latency bound and throughput bound.
+</p>
+<p>Latency bound: encounterted when a series of operations must
+be performed in strict sequence, because the result of one
+operation is required before the next.
+</p>
+<p>Throughput Bound: raw computing capacity of the processor's
+functional units. Becomes ultimate limit on program
+performance.
+</p>
+<p>This processor is a superscalar processor, meaning it
+processes multiple instructions on every clock cycle
+and not necessarily in sequential order (out of order).
+</p>
+<p>Two main parts: Instruction Control Unit (ICU) and
+Execution Unit (EU).
+</p>
+<p>ICU reads from instruction cache, usually ahead of time
+before the EU. Uses Branch Prediction to load instructions,
+and speculative execution, which executes instructions
+even before it is the correct branch, and resets state if
+it isn't.
+</p>
+<p>Instruction decoding: takes program instructions and
+converts them into primitive operations known
+as micro-operations. Different instructions can have
+a variable number of operations.
+</p>
+<p>Misprediction in branching incurs a significant performance
+penalty.
+</p>
+<p>Processor has different functional units designed to carry
+out various operations (integer/float
+arithmetic, store, load, address computation, etc). Units
+are typically designed to be multifunctional.
+</p>
+<p>Retirement Unit: keeps track of ongoing processing, makes
+sure it obeys sequential semantics of the
+machine-level program.
+</p>
+<p>Instruction that are correctly predicted can be <code>retired</code>,
+with any udpates to the program registers being made.
+Instructions that are mispredicted are <code>flushed</code>, being
+discarded without altering program state.
+</p>
+<p>register renaming: most common mechanism for controlling
+the communication of operands among the execution units.
+</p>
+<p>Register renaming allows entire sequences of operations
+to be performed speculatively. The registers are actually
+updated when the processor is certain of the branch
+outcome.
+</p>
+<p>Timings for machine instructions are determined by
+<code>latency</code>, <code>issue time</code>, and <code>capacity</code>.
+</p>
+<p>Latency: total time to perform operation. Issue time:
+minimum number of clock cycles between two independent
+operations of the same type. Capacity: inidicates number
+of functional units performing that operation.
+</p>
+<p>Fully pipelined: Functional units with issues times of 1
+that can start a new operation every clock cycle.
+</p>
+<p>Throughput is a more common way of expressing issue time,
+which is the reciprocol. Capacity / Issue Time.
+</p>
+<p>Latency Bound: minimum value for the CPE for any function
+that must perform the combining operation in a strict
+sequence.
+</p>
+<p>Throughput Bound: a mimimum bound for the CPE based on the
+maximum rate at which the functional units can
+produce results.
+</p>
+<p>Data-flow representation: graphical notation showing how
+the data dependencies between different operations constrain
+the order which they are executed. Constraints cause
+critical paths in the graph, thus putting a lower bound
+on the number of clock cycles required to execute a
+set of machine instructions.
+</p>
+<p>Code segments forming a loop can have registers classified
+into 4 types: read-only, write-only, local (updated, but no
+dependency from one iteration to the next), loop (used
+as both source values and destinations for loop).
+</p>
+<p>Analyzed performance of combine4, and found latency bounds.
+Next task: restructure the operations to enhance
+instruction-level parallelism. Goal: transform the program
+in such a way that only limitation becomes throughput
+bound.
+</p>
+
+<h3>5.8 Loop Unrolling</h3>
+
+<p>Loop unrolling: program transformation that increases
+the number of elements computed for each iteration, thus
+reducing the number of iterations for a loop.
+</p>
+<p>LU reduces the overhead operations in a loop such as
+indexing, and exposes ways to further reduce operations.
+</p>
+<p><code>K by 1 loop unrolling</code>: make a loop go through <code>k</code>elements at a time.
+</p>
+<p>Optimizig Compilers will often attempt to try loop
+unrolling, especially at higher optimization settings.
+</p>
+
+<h3>5.9 Enhancing Parallelism</h3>
+
+<p><code>2 by 2 Loop Unrolling</code>: iterate over two values,
+accumulate results in two places.
+</p>
+<p>This breaks through the barrier imposed by the latency
+bound.
+</p>
+<p>Reassociation Transformation: reduces number of
+operations along the critical path for computation,
+resulting in better performance by better utilizing the
+multiple function units.
+</p>
+<p>Optimizing compilers will usually not try to do
+reassocation transformations because it is not
+often guaranteed that operations are associative.
+</p>
+
+<h3>5.10 Summary of Results for Optimizing Combining Code</h3>
+
+<p>Optimizations done with scalar code, not taking advantage
+of AVX vector instructions.
+</p>
+<p>Combined optimizations achieve close to the throughput
+bounds of 0.5 and 1.0. A 10-20x improvement over the
+original code.
+</p>
+<p>Modern processors have considerable processing power,
+but may need to be coaxed into using this power through
+the use of writing programs in stylized ways.
+</p>
+
+<h3>5.11 Some Limitng Factors</h3>
+
+<p>Register Spilling: when a program using some degree of
+parallelism exceeds the number of available registers.
+The compiler will have to resort to "spilling" temporary
+values in memory.
+</p>
+<p>Mispredection penalties for branches.
+</p>
+<p>DO NOT BE OVERLY CONCERNED ABOUT PREDICABLE BRANCHES (their
+big text, not mine, though the emphasis using CAPS is
+mine).
+</p>
+
+<h3>5.12 Understanding Memory Performance</h3>
+
+<p>This chapter investigates performance of load/store.
+</p>
+<p>Write/read depdency: outcome of memory read depends on
+a memory write.
+</p>
+
+<h3>5.13 Performance Improvement Techniques</h3>
+
+<p>Already outlined previously.
+</p>
+
+<h3>5.14 Identifying and Eliminating Performance Bottlenecks</h3>
+
+<p>Code Profiler: Analysis tool that collect performance
+data about a program as it executes.
+</p>
+<p>Profilers can be used to guide optimization.
+</p>
+
+<h2>Chapter 6: The Memory Hierarchy</h2>
+
+<p>If you understand how data moves up/down the memory
+hierarchy, then you can write programs with data that
+is quickly accesible by placing them  higher in the
+hierarchy.
+</p>
+
+<h3>6.1 Storage Technologies</h3>
+
+<p>RAM comes in two types: static and dynamic.
+</p>
+<p>Static RAM (SRAM): used cache memories, both on/off the
+CPU chip. Significantly faster and more expensive than
+dynamic RAM.
+</p>
+<p>Dynamic RAM (DRAM): Used for the main memory plus the
+framebuffer of the graphics system.
+</p>
+<p>SRAM stores each bit in a <code>bistable</code> memory cell inside
+of a six transistor circuit. It can stably be in one
+of two states.
+</p>
+<p>DRAM stores each bit as a charge on a capacitor. They
+can be packed very densely, but are very sensitive to
+disturbances. For this reason, many systems periodically
+refresh DRAM.
+</p>
+<p>Supercells: how DRAM partitions cells (bits). These are
+organized in a rectangular array.
+</p>
+<p>Pins are used to set bits in the DRAM. 8 pins can
+transfer 1 byte.
+</p>
+<p>Memory Controller: circuit that DRAM is connected to.
+Used to transfer bits to the DRAM chip.
+</p>
+<p>Supercells are addressed as a coordinate. Row: Row Address
+Strobe (RAS). Column: Column Access Strobe (CAS).
+</p>
+<p>Memory Modules: things that DRAM chips are packaged into.
+Plug into expansion slots.
+</p>
+<p>Enhanced DRAM: Fast-page mode DRAM (FPM DRAM),
+Extended data out (EDO) RAM, Synchronous
+DRAM (SDRAM), Double Data-Rate Synchronous DRAM
+(DDR SDRAM), Video RAM (VRAM).
+</p>
+<p>Nonvolatile Memory: retain information even when they are
+powered off.
+</p>
+<p>PROM: Programmable ROM. Can be programmed exactly once.
+Consists of fuses that can be zapped into a permanent
+position.
+</p>
+<p>EPROM: Erasable programmable ROM. Zeroed out using
+ultra-violet light. Can be rewritten ~1000 times.
+</p>
+<p>EEPROM: Electronically eraseable PROM. Like EPROM, but
+can be programmed inplace on a circuit borad. Can
+be written ~10^5 times.
+</p>
+<p>Flash Memory: non-volatile memory based on EEPROM that
+is very popular in consumer electronics.
+</p>
+<p>Data flow between DRAM and processor is done with the use
+of electrical conduits called buses.
+</p>
+<p>Bus transaction: a single transfer of data beween CPU
+and memory.
+</p>
+<p>Read Transaction: main memory to CPU.
+</p>
+<p>Write Transaction: CPU to main memory.
+</p>
+<p>Whan value at address A is loaded into register:
+bus interface initiates read transaction, CPU puts
+A on system bus, I/O bridge passes it to memory bus,
+main memory gets address, fetches value from DRAM,
+writes to memory bus, passes it back to signal system
+bus and back to CPU.
+</p>
+<p>Writing to a register is basically the reverse.
+</p>
+<p>Disks: storage medium that holds lots of data.
+</p>
+<p>Disks are constructed from platters, double sided, coated
+with magnetic material. They spin at a fixed rate,
+typically between 5400 and 15000 RPM.
+</p>
+<p>Tracks: concentric rings on the surface of the platter.
+</p>
+<p>Sector: equal partioning of the track. Usually 512 bytes.
+Space between sectors is used to store information about
+sector.
+</p>
+<p>Cylinder: collection of tracks on all the surfaces that are
+equidistant from spindle.
+</p>
+<p>Maximum Capacity: maximum number of bits that can be
+recorded to disk.
+</p>
+<p>Capacity factors: Recording Density, Track Density,
+Area Density.
+</p>
+<p>Multiple zone recording: modern technique used for
+(dense) disk layout. Cylinders are partitioned into
+disjointed subsets known as recording zones.
+</p>
+<p>Disk read/write is done with an actuator arm, which
+physically moves around. Due to very small tolerances,
+arm is contained in an air-tight environment.
+</p>
+<p>Access time components: seek time, rotational latency,
+and transfer time.
+</p>
+<p>Logical Blocks: simplified view of disk geometry. Splits
+things up into sector-sized blocks. This is what the
+operating system sees.
+</p>
+<p>Disk Controller: component that maintains mapping between
+logical block numbers and disk sectors.
+</p>
+
+<h3>6.2 Locality</h3>
+
+<p>Locality: programs that tend to reference items that
+are near other recently referenced items.
+</p>
+<p>Locality forms: <code>temporal locality</code> and <code>spatial locality</code>.
+</p>
+<p>Temporal locality: a memory location referenced once is
+likely to be referenced many times in the future.
+</p>
+<p>Spatial locality: a memory location referenced once is
+likely to have a program reference another memory location
+nearyby it.
+</p>
+<p>Programs with good locality tend to run faster than those
+with poor locality.
+</p>
+<p><code>stride-1 reference pattern</code> or
+<code>sequential reference pattern</code> refers to a function that
+references elements of a vector sequentially.
+</p>
+<p>Smaller the stride, the better the spatial locality.
+</p>
+
+<h3>6.3 The Memory Hierarchy</h3>
+
+<p>CPU registers, L1 Cache (SRAM), L2 Cache (SRAM), L3 Cache
+(SRAM), Main Memory (DRAM), Local secondary storage (local
+disks), Remote secondary storage (distrubuted file systems,
+web servers).
+</p>
+<p>Cache: small storage device that acts as a staging area
+for data objects stored in a larger, slower device.
+</p>
+<p>Caches are divided into contiguous chunks of data called
+blocks.
+</p>
+<p>Cache hit: when a program searches for a value in a cache
+at a particular level, and finds it.
+</p>
+<p>Cache miss: when a program searches for a value at
+a particular cache level, but does not find it.
+</p>
+<p>Replacing or evicting a cache block. Governed by the
+cache's replacement policy.
+</p>
+<p>Cold cache is a cache with an empty row. a cold miss is
+an attempt to read from a cold cache. AKA compulsory
+miss.
+</p>
+<p>Placement policy: where to place the block it has retrieved
+from level k+1?
+</p>
+<p>Conflict miss: cache is large enough to hold referenced
+data objects, but because they map to the same cache block,
+the cache keeps missing.
+</p>
+<p>Memory hierarchies based on caching work because programs
+tend to exhibit locality.
+</p>
+
+<h3>6.4 Cache Memories</h3>
+
+<p>Cache is organized to be able to find requested words by
+inspecting bits of the address, similar to a hash
+function.
+</p>
+<p>direct-mapped cache: A cache with exactly one line per set.
+</p>
+<p>Cache determining a hit or miss and then extracting: set
+selection, line matching, word extraction.
+</p>
+<p>Conflict Miss: can be caused when two variables keep
+replacing the same set in the cache due to the collision
+rules.
+</p>
+<p>This kind of conflict miss <code>thrashing</code> can be done with
+the use of padding.
+</p>
+<p>Set-associative cache: cache where each sets hold more
+than one line.
+</p>
+<p>Fully-associative cache: A single set that consists
+of all the cache lines.
+</p>
+<p>It is difficult to build a fully-associative cache
+that is large and fast. Usually only appropriate for
+small caches.
+</p>
+<p>Write Hit: writing a word to a cache that is already
+written.
+</p>
+<p>Write Through: write w's cache block to the next
+lower level.
+</p>
+<p>Write Back: defers the update as long as possible by
+writing the updated block to the next level only
+when it is evicted.
+</p>
+<p>Dealing with write-misses: write-allocate and
+no-write-allocate.
+</p>
+<p>Optmizing caches for writes is a subtle and difficult
+issue.
+</p>
+<p>i-cache: a cache that holds instructions.
+</p>
+<p>d-cache: a cache that (only) holds program data.
+</p>
+<p>unified cache: a cache that holds both instructions and
+program data.
+</p>
+<p>Cache performance metrics: miss rate, hit rate, hit time,
+miss penalty.
+</p>
+<p>Larger cache will tend to increase hit rate, but also
+increase hit time.
+</p>
+<p>Increasing the block size of a cache can help increase
+hit rate, by exploiting a program's spatial locality.
+Larger blocks imply smaller cache lines, which can hurt
+hit rate with programs with temporal locality.
+</p>
+<p>Higher associativity: decreases the chances of thrashing.
+But very expensive to implmement and hard to make fast.
+</p>
+
+<h3>6.5 Writing Cache Friendly Code</h3>
+
+<p>Review: cache lines, sets, and blocks.
+</p>
+<p>block: fixed sized packet of information that moves back
+and forth between a cache and main memory.
+</p>
+<p>line: container in a cache that stores a block, as
+well as other info like valid bit and tag bits.
+</p>
+<p>set: collection of one or more lines.
+</p>
+<p>Basic approaches to cache-friendly code: make common
+case code go fast, and minimize the number of cache misses
+in each inner loop.
+</p>
+
+<h3>6.6 Putting It Together: The Impact of Caches On Program Performance</h3>
+
+<p>Read Throughput or Read Bandwidth: the rate a program
+reads data from the memory system.
+</p>
+<p>Memory Mountain: two dimensional function of read throuput
+versus temporal and spatial locality.
+</p>
+<p>The performance of the memory system is not characterized
+by a single number. Instead is a mountain of temporal
+and spatial locality whose elevations can vary by over and
+order of magnitude.
+</p>
+
+<h2>Messages</h2>
+
+<p><a id="messages"></a>Any messages tagged with the group <code>CSAPP</code>.
+</p>
+<p><b>[ca194d75] 2022-04-13-09-34</b>: done with chapter 6. that finishes my requirements for (<a href="/brain/TYCS">TYCS</a>).
+</p>
+<p><b>[8083fd6d] 2022-04-13-06-22</b>: this aside on cache lines, sets, and blocks was very well placed. I was a little confused up to this point.
+</p>
+<p><b>[a9065925] 2022-04-12-06-28</b>: skeptical about how universal some of these symbols used are. looking at the cache chapter. maybe it's because the typography is bad.
+</p>
+<p><b>[cdd2605c] 2022-04-11-06-20</b>: "While rotating disks are here to stay, it is clear that SSDs are an important alternative" <b>almost</b> sounds dated.
+</p>
+<p><b>[7b798ebe] 2022-04-09-10-47</b>: done reading chapter 5. onto chapter 6 now.
+</p>
+<p><b>[4461d57b] 2022-04-09-06-30</b>: does shakespeare really have exactly 23,706 words? Is that like a known number?
+</p>
+<p><b>[2362a6a9] 2022-04-09-06-08</b>: there's a lot of casual observations in this chapter on optimizations. "we have found that GCC...". This in itself is interesting.
+</p>
+<p><b>[f0872386] 2022-04-08-06-32</b>: the text formatting in this book is very quirky sometimes. looks like a programmer was trying to use microsoft word. In this section, there's this phrase in big text: "Do Not Be Overly Concerned about Predictable Branches". Is this big text for emphasis ever used again? Nope. This book is very dry and humorless, so this quirk is very out of place.
+</p>
+<p><b>[323f8425] 2022-04-08-05-47</b>: onto loop unrolling
+</p>
+<p><b>[4a81a784] 2022-04-07-05-56</b>: I have now hit the longer sections of chapter 5 it seems.
+</p>
+<p><b>[5bc48383] 2022-04-06-06-29</b>: chapter 5 is a much smaller chapter, with much more digestible subsections.
+</p>
+<p><b>[fb36423b] 2022-04-06-05-50</b>: I'm beginning to form an opinion: code is overrated. Using text as a notation is convenient, but may not be the most ideal way of expressing something. Writing something in code as a way to make it seem familiar has diminishing returns, because some things just aren't clearly explained this way.
+</p>
+<p><b>[f97f7bb3] 2022-04-05-15-38</b>: add more CSAPP keywords to glossary page
+</p>
+<p><b>[a969e7b1] 2022-04-05-09-52</b>: chapter 4 I didn't add many words to the glossary, I may get back to that.
+</p>
+<p><b>[97739041] 2022-04-05-09-27</b>: a strategy I seem to be taking, for better or worse, is to extract the big ideas, superficially look at examples, and skip the problem sets entirely. It certainly will minimize retention and intuition, but I think that's about all I can do at the brisk pace I am going at.
+</p>
+<p><b>[513aba37] 2022-04-05-09-23</b>: onto chapter 5: optimizing program performance
+</p>
+<p><b>[c4805400] 2022-04-05-06-24</b>: Shriver and Smith give a thorough presentation of an Intel compatible x86-64 processor manufactured by AMD.
+</p>
+<p><b>[54a42dd3] 2022-04-05-06-23</b>: Hennessy and Patterson have a computer architecture textbook, and provides extensive coverage of architecture design.
+</p>
+<p><b>[a96d1c5d] 2022-04-05-06-23</b>: Katz and Borriello have a standard textbook for logic design, emphasizing the use of hardware languages.
+</p>
+<p><b>[27ff571a] 2022-04-05-06-22</b>: the end of chapter mentions a few books for further reading on this topic.
+</p>
+<p><b>[073bac3c] 2022-04-05-06-17</b>: ugh. they are telling me now that y86-64 is "simplified". Still seems plenty complex to me.
+</p>
+<p><b>[749901bd] 2022-04-05-06-08</b>: I do appreciate that this is going over x86, and just how massively complex it is. I wonder how the RISC-V chip compares?
+</p>
+<p><b>[223e9b12] 2022-04-05-06-07</b>: I'm totally glossing over the bits where the actual y86-64 processor is getting stitched together using HCL. It just seems too overwhelming, and the presentation in this PDF leaves a lot to be desired. I get the feeling like there could be whole books on what this chapter is attempting to cover.
+</p>
+<p><b>[be781514] 2022-04-05-05-45</b>: TIL "canceled" and "cancelled" both are correct.
+</p>
+<p><b>[00f9964e] 2022-04-04-13-37</b>: it's pretty amazing. anytime this book tries to sequentially explain things in a paragraph, my brain just shuts down and refuses to process it. I think I'll have to rewrite those paragraphs in a more terse form in order to get my brain to grok it.
+</p>
+<p><b>[2f58f984] 2022-04-04-13-25</b>: there's a lot of examples I should study more clearly in 4.5 with how pipelining works. Again, if I had more time and energy I would. I think I'm getting the broad strokes of it.
+</p>
+<p><b>[a5d0d462] 2022-04-03-07-41</b>: circuits feel really well suited for structuring generative music events
+</p>
+<p><b>[63c5a4eb] 2022-04-03-07-21</b>: pipelining diagrams look like DSP charts. I bet you could measure DSP performance as a pipelining diagram.
+</p>
+<p><b>[2896b802] 2022-04-03-07-05</b>: I think learning about simpler 8-bit CPU chips would be much more educational than attempting to figure out x86-64 stuff.
+</p>
+<p><b>[b3fa2d25] 2022-04-03-07-04</b>: Skimming 4.3.4 SEQ Stage Implementations, which devises HCL descriptions for the control logic blocks to implement SEQ. I don't know if it's worth the time to study fully, and it seems massively complex (they don't even show the full HCL description).
+</p>
+<p><b>[03706078] 2022-04-03-06-55</b>: I think this book was a thankless task because they decided to stick to x86-64, which seems really hard to teach in a classroom setting.
+</p>
+<p><b>[145fc095] 2022-04-03-06-53</b>: the machine instruction tables in 4.18-4.21 make more sense after reading onwards. I think they were trying to go top-down with machine instructions to combinational logic. I would have done bottoms-up with the combinational logic, working up to instructions. The nand2tetris concept sounds a bit more appealing now.
+</p>
+<p><b>[75a7d4a7] 2022-04-01-16-03</b>: 4.3.2: SEQ hardware structure packs a lot, and may be worth revisiting. The charts do not work well in grayscale on my RM, so that may not work so well.
+</p>
+<p><b>[86e99092] 2022-04-01-15-57</b>: there is definitely a difference in writing between chapters and even sections. really inconsistent.
+</p>
+<p><b>[68980f65] 2022-04-01-15-55</b>: 4.3.2 should absolutely have come first before 4.3.1. Defining the sections as hardware, then the instructions makes things a lot clearer. Not to mention the variables in the tables (and the writing) make more sense.
+</p>
+<p><b>[f512527b] 2022-04-01-15-09</b>: note to self: maybe study the tables 4.18-4.21 in more detail. these describe how Y86-64 instructions proceed through the processing stages.
+</p>
+<p><b>[be3d02c7] 2022-04-01-13-13</b>: the register <b>file</b> is more at the machine-language level, and can store words and addresses.
+</p>
+<p><b>[e24c9a1a] 2022-04-01-13-11</b>: clocked registers: hardware registers that store individual bits or words. The clock signal controls the loading of the register with the value at its input.
+</p>
+<p><b>[5eacef38] 2022-04-01-13-10</b>: ah okay, clocked registers are explained in a weird box (but why though?).
+</p>
+<p><b>[8b8105fe] 2022-04-01-13-09</b>: this is the sentence that is making me confused about clocked registers vs register file: "the writing of words to the register file is controlled by the clock signal in a manner similar to the loading of values into a clocked register".
+</p>
+<p><b>[1db5cdcd] 2022-04-01-06-29</b>: what's the difference between a clocked register and a register file? They seem to be used interchangeably. Maybe I'm not reading close enough.
+</p>
+<p><b>[e0d7f58b] 2022-03-31-10-34</b>: Hardware Description Language (HDL): a textual notation that looks similar to a programming language but that is used to describe hardware structures rather than program behaviors.
+</p>
+<p><b>[4b3af7be] 2022-03-31-10-29</b>: I don't understand the point of going through making Y86-64. There still seems to be a lot of complexity and weirdness, such as with their <code>pushq</code> instruction. Is it that they are trying to mimic the quirks of x86?
+</p>
+<p><b>[566ff57c] 2022-03-31-10-22</b>: Since this chapter is building a fantasy computer, I'm tempted to read this paired with Knuths MIX system. At least there the writing/code will be clearer, and the examples will be interesting data structures.
+</p>
+<p><b>[aa34acd2] 2022-03-31-10-17</b>: this textbook is so sloppy. jeez. I'm seeing tons of typos and formatting errors. Spotted what looks like an erroneos space in a Y86-64 code example.
+</p>
+<p><b>[7cd6589d] 2022-03-31-10-13</b>: exception handler: a procedure designed to handle the specific type of exception encountered.
+</p>
+<p><b>[22ceb0ab] 2022-03-31-06-04</b>: programmer-visible state: refers to the part of a processor state that a program can read and modify.
+</p>
+<p><b>[b49da2a0] 2022-03-31-05-55</b>: Done with chapter 3. now outling chapter 4 in (<a href="/brain/CSAPP">CSAPP</a>).
+</p>
+<p><b>[ac0f5250] 2022-03-30-16-56</b>: From the book: "it is unclear why GCC generates this code."
+</p>
+<p><b>[0e720f0d] 2022-03-30-11-19</b>: copyright of this book is 2016. 6 years old. something to keep in mind.
+</p>
+<p><b>[683cf460] 2022-03-30-11-18</b>: going to need to look at the date of this book. It may be stale. It says AVX2 was introduced in 2013, which was nearly 10 years ago. Is it still relevant?
+</p>
+<p><b>[db723ebe] 2022-03-30-11-13</b>: AVX: Advanced Vector Extensions.
+</p>
+<p><b>[3dd9372c] 2022-03-30-11-12</b>: SSE: Streaming SIMD Instructions.
+</p>
+<p><b>[b8b911d3] 2022-03-30-11-10</b>: the floating point operations chapter feels most relevant to my DSP stuff. SIMD, etc.
+</p>
+<p><b>[67013d1a] 2022-03-30-06-26</b>: canary value: special value used in a stack protector.
+</p>
+<p><b>[189f6375] 2022-03-30-06-25</b>: stack protector: a mechanism uesd to detect stack corruption, implemented in recent versions of GCC.
+</p>
+<p><b>[b4377754] 2022-03-30-06-23</b>: nop sled: a technique used by attackers that involve using a long sequence of nops. used to try and guess the address of the exploit code. used to try and bypass ASLR.
+</p>
+<p><b>[0294b59e] 2022-03-30-06-18</b>: address-space layout randomization (ASLR): techniques that involve loading parts of a computer program into different regions of memory every time it is run.
+</p>
+<p><b>[7dc9f38b] 2022-03-30-06-15</b>: stack randomization: the use of randomizing the stack position of a program from one run of a program to another.
+</p>
+<p><b>[8ae13c84] 2022-03-30-06-14</b>: security monoculture: a phenomenon where many systems are vulnerable to the exact same strain of virus or exploit.
+</p>
+<p><b>[1805855f] 2022-03-30-06-12</b>: virus: a piece of code that adds itself to other programs, including operating systems.
+</p>
+<p><b>[144198b7] 2022-03-30-06-11</b>: worm: a program that can run by itself and can propogate a fully working version of itself to other machines.
+</p>
+<p><b>[4e865412] 2022-03-30-06-08</b>: exploit code: a malicious program contained inside input to some program.
+</p>
+<p><b>[857149a9] 2022-03-30-05-56</b>: "we start by taking a deep look into pointers, one of the most important concepts in the C programming language, but one for which many programmers have a shallow understanding". Go suck a lemon, CSAPP. I'm so done with these little snide remarks.
+</p>
+<p><b>[55847918] 2022-03-30-05-49</b>: alignment restrictions: restrictions placed on allowable addresses for primitive data types in a computer system. typically must be a multiple of some value (2, 4, or 8).
+</p>
+<p><b>[53bf8444] 2022-03-26-16-46</b>: it's really funny to see the phrase "safety provided by the C type system" after reading about (<a href="/brain/rust">rust</a>) in the (<a href="/brain/rustbook">rustbook</a>).
+</p>
+<p><b>[2c45d13d] 2022-03-26-16-40</b>: apparently fixed-sized multi-dimensional arrays have some "clever optimizations". I'll take their word for it. Skimming. This aspect of looking at what the compiler does feels too black-boxy to me.
+</p>
+<p><b>[c1792475] 2022-03-26-16-26</b>: it's very cool to see recursion at this level. the stack smashing risk is quite clear here.
+</p>
+<p><b>[ee0e4c3a] 2022-03-26-16-14</b>: this example is very subtle. I gave it a once-over, but I think I'd like to glance at it again at some point. the code readability is poor on the RM, so I might type it up./
+</p>
+<p><b>[f0fe7eea] 2022-03-26-16-07</b>: what I'm curious about is, is this "x86-64 stack discipline" transferrable knowledge to other ISAs?
+</p>
+<p><b>[c1aa89ad] 2022-03-26-16-07</b>: the <code>call_proc</code> example apparently showcases "many aspects of the stack discipline", and they say "it is worth studying carefully".
+</p>
+<p><b>[a2b56a73] 2022-03-25-13-12</b>: finally done with 3.6. wow that felt like forever.
+</p>
+<p><b>[c38e3679] 2022-03-25-13-07</b>: jump table: data structure used to efficiently implement switches. It is an array of addresses to jump to, using the index as a lookup.
+</p>
+<p><b>[34ad4a46] 2022-03-25-13-00</b>: there's a "jump to middle" strategy. now there's a "guarded-do" strategy.
+</p>
+<p><b>[c101f2d8] 2022-03-25-12-55</b>: <code>jump to middle</code> isn't cleanly defined, but it seems like a term I should become familiar with.
+</p>
+<p><b>[dd40a2e2] 2022-03-24-13-48</b>: branch prediction logic: a mechanism in modern processors use to try and guess whether or not each jump instruction will be followed.
+</p>
+<p><b>[5c8ea530] 2022-03-24-13-44</b>: conditional move instructions are better suited for modern processors than conditional transfer of control (program follows different execution paths based on condition).
+</p>
+<p><b>[86aba329] 2022-03-24-13-40</b>: or, to segue into the current section from the previous section, you say something like "in the previous section..., but now in this section...". again, CSAPP fails to do this, and it makes the writing unclear.
+</p>
+<p><b>[8b9b9fbb] 2022-03-24-13-38</b>: the first sentence of every section should describe what the section is going to be about. this book does not do that, instead choosing to ramble about something else before getting to the point.
+</p>
+<p><b>[c6022ffe] 2022-03-24-13-23</b>: If I were to to do this better, I'd do what Knuth did in TAOCP and include comments on each line of assembly, or have some kind of arrows.
+</p>
+<p><b>[62c25b95] 2022-03-24-13-22</b>: okay, there is more than one '5' in this sample code, which made it hard to understand what they were saying. The '5' here refers to the memory address of the next line, which the jump address adds onto to get where it needs to go. The confusing bit was that a sentence ago, it was talking about the other jump instruction, which had a 5 somewhere.
+</p>
+<p><b>[834cc0e2] 2022-03-24-10-52</b>: so, there's this aside about what repz/retq does. it's this really bonkers convention in the AMD guidelines to writing compilers. It's a thing done to prevent the ret instruction from being the destination of a conditional jump instruction.
+</p>
+<p><b>[1e43664e] 2022-03-23-14-03</b>: PC relative: jumps that are encoded as the difference between the address of the target instruction and the address of the instruction immediately following the jump.
+</p>
+<p><b>[0d256f7a] 2022-03-23-13-39</b>: trying to grok what is meant by this "although all arithmetic and logical operations set the condition codes, the descriptions of the different SET instructions apply to the case where a comparison instruction has been executed, setting the condition codes according to the computation t = a - b."
+</p>
+<p><b>[a7129a42] 2022-03-23-13-37</b>: "wtb" on page 525 is still not making sense to me. It's like having "x" on both sides of the equation. A helpful math textbook would re-arrange things so that the variable is on one side.
+</p>
+<p><b>[0a5e7a07] 2022-03-23-13-21</b>: <code>setl</code> and <code>setb</code> do not in fact mean "set long word" or "set byte", as one would expect. yeeeesh.
+</p>
+<p><b>[15b43c72] 2022-03-22-12-49</b>: this oracle doc page on operands in x86 feels more helpful than this book <a href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/ennby/index.html">https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/ennby/index.html</a>.
+</p>
+<p><b>[8f3d6ee6] 2022-03-22-12-46</b>: in 3.4, it's unclear to me if the notation system used lines up with actual assembly or if it's just a convention in the textbook. Also, there seems to be 9 friggin ways to address memory?
+</p>
+<p><b>[3d02e1f9] 2022-03-21-10-37</b>: My reading approach isn't working. I think I need to be a bit more granular. I've been grouping things by chapter, when it should be subsections.
+</p>
+<p><b>[37352992] 2022-03-15-14-58</b>: try to better grok what t = a - wtb means (pdf page 525)
+</p>
+<p><b>[7cdaa79e] 2022-03-15-14-53</b>: for reference, I'm staring at "t = a - wtb" waiting for that to click. There was another definition a while back about arithmetic shifts with various word sizes that also took a moment for me to grok. Did I mention the math typesetting here sucks?
+</p>
+<p><b>[730caa82] 2022-03-15-14-50</b>: this book really seems to like define things in mathematical terms. It's precise, but not intuitive or clear for me.
+</p>
+<p><b>[949b2997] 2022-03-15-14-48</b>: as an example of synonym, <code>setnle</code> (set not less or equal) and <code>setg</code> (set greater).
+</p>
+<p><b>[03e81f44] 2022-03-15-14-47</b>: apparently there are "synonyms" in assembly, where two instructions refer to the same machine code. totally not confusing.
+</p>
+<p><b>[a3df192b] 2022-03-15-14-45</b>: the SET instructions sets a register or memory location to either 0 or 1.
+</p>
+<p><b>[e1a528d8] 2022-03-15-14-43</b>: common ways to access condition codes: setting a byte to 0 or 1, conditionally jumping, conditionally transferring data.
+</p>
+<p><b>[514670c5] 2022-03-15-14-40</b>: beginning to see the patterns in all these assembly instructions. the names seem to follow a predictable naming system. the hard part for me is remembering all the assembly notation on the right-hand side. interestingly enough, this is what has been tripping me up with learning MIXAL in TAOCP.
+</p>
+<p><b>[86e1e386] 2022-03-15-14-37</b>: the TEST instructions behave like AND. but similar to CMP, they only update the condition codes.
+</p>
+<p><b>[9fe34fac] 2022-03-15-14-36</b>: the CMP instructions set the the condition codes according to the differences between of their two operands. they behave like SUB, except they only update the condition codes, not the destinations.
+</p>
+<p><b>[2f4d9e53] 2022-03-15-14-29</b>: straight-line code: code where instructions follow one another in sequence.
+</p>
+<p><b>[849d5915] 2022-03-15-14-29</b>: onto 3.6: Control
+</p>
+<p><b>[7479f4d8] 2022-03-15-14-28</b>: oct word: what Intel refers to as a 16-byte quantity.
+</p>
+<p><b>[f6f6958b] 2022-03-15-14-28</b>: Skimming through the special arithmetic operations. The gist seems to be that these handle very large numbers like quads and octs (16 byte words).
+</p>
+<p><b>[eb6314ce] 2022-03-14-07-23</b>: moving through the overview of instructins too quickly. call this a first pass.
+</p>
+<p><b>[d181ff55] 2022-03-14-07-15</b>: look at leaq more closely and work on problems
+</p>
+<p><b>[5358f167] 2022-03-14-07-14</b>: leaq looks like black magic to me.
+</p>
+<p><b>[d83a702d] 2022-03-14-07-13</b>: load effective address: instruction that is a variant of the movq instruction, referred to as leaq. Commonly used to perform simple arithmetic.
+</p>
+<p><b>[3d527d32] 2022-03-13-18-55</b>: these abbreviations are getting a little silly. looking at you, movz.
+</p>
+<p><b>[c81d894c] 2022-03-13-18-44</b>: this assembly chapter is starting to go into territory I don't know much about. A part of me thinks it would be wise to do the problem sets, but another part of me wants to keep reading.
+</p>
+<p><b>[38d1fd5a] 2022-03-13-18-43</b>: effective address: in assembly, this is the computed address used to access a particular part of memory.
+</p>
+<p><b>[59cd535d] 2022-03-13-18-42</b>: Operands in x86-64 have three types: immediate (for constant values), register (contents of a register), and memory (access a memory location).
+</p>
+<p><b>[89631152] 2022-03-13-18-38</b>: Figure 3.2 (Integer Registers) looks like a very helpful chart (pdf pg 473). The page before it has a good terse summary of all the register names and abbreviations.
+</p>
+<p><b>[6b9abe6e] 2022-03-13-18-35</b>: in GCC assembly code, the data movement instruction has 4 variants: <code>movb</code> (move byte), <code>movw</code> (move word), <code>movl</code> (move double word), and <code>movg</code> (move quad word).
+</p>
+<p><b>[303ed42f] 2022-03-09-16-30</b>: parity flag: in x86-64, a 1-bit flag that is set after an arithmetic or logical operation. PF is 1 when the lower 8 bits have an even number of 1s, 0 otherwise. This information is not directly accessible in C and requires machien-dependent assembly code.
+</p>
+<p><b>[4b50a996] 2022-03-09-16-25</b>: Intel uses the word "word" to describe a 16-bit data type. This is for historical reasons. Origins as a 16-bit architecture.
+</p>
+<p><b>[7de2489a] 2022-03-09-16-23</b>: it seems NOPs can be used for zero-padding for memory alignement. go figure.
+</p>
+<p><b>[8d9ff2bc] 2022-03-09-16-14</b>: the "-S" flag will generate the assembly file only and go no futher. Probnably should be used with "-Og" for learning purposes.
+</p>
+<p><b>[7ec9d86c] 2022-03-09-16-12</b>: register file: contains 16 named locations storing 64-bit values, able to hold addresses or integer data.
+</p>
+<p><b>[a803ab44] 2022-03-09-16-09</b>: ISA: instruction set architecture.
+</p>
+<p><b>[b9ec9347] 2022-03-09-16-08</b>: the "-Og" flag in GCC is used to produce machine code with the overall structure of the C code.
+</p>
+<p><b>[9af0424a] 2022-03-09-16-07</b>: linking handles filling in the address of global values in the object files
+</p>
+<p><b>[63477beb] 2022-03-09-16-05</b>: reading about instruction sets makes me want to take a peak at RISC-V. I wonder what it's like to learn compared to x86. It doesn't have the historical baggage, so maybe more elegant?
+</p>
+<p><b>[31abc336] 2022-03-09-16-01</b>: hyperthreading: a method to run two programs simultaneously on a single processor. First introduced in the x86 line with the Pentium 4E processor in 2004.
+</p>
+<p><b>[0c292a1e] 2022-03-09-15-18</b>: AMD: Advanced Micro Devices.
+</p>
+<p><b>[f19cf5a8] 2022-03-09-15-18</b>: These intros are very lecture-like.
+</p>
+<p><b>[03376f12] 2022-03-09-15-17</b>: "Those who say 'I understand the general principles, I don't want to bother learning the details' are deluding themselves". Jesus. Little sore much?
+</p>
+<p><b>[494ceb1c] 2022-03-09-15-11</b>: starting chapter 3 now: machine level representations of programs
+</p>
+<p><b>[be268d80] 2022-02-03-14-51</b>: this chapter has concepts that are pretty familiar to me after my years of writing C. I'm skimming this more quickly until I find things that look unfamiliar. Maybe IEEE floating point gets introduced here? I could always stand to learn more about that.
+</p>
+<p><b>[614aa6a5] 2022-02-03-14-50</b>: the math equations in chapter 2 seem to be typeset incorrectly half of the time. And when they are typeset correctly, it looks terrible and confusing.
+</p>
+<p><b>[f91aa55d] 2022-01-24-17-25</b>: I like this, as it is relevant to my bitmap glyph live coding project: In isolation, a single bit is not very useful. When we group bits together and apply some interpretation that gives meaning to the different possible bit patterns, however, we can represent the elements of any finite set.
+</p>
+<p><b>[cda51c27] 2022-01-24-17-23</b>: okay. onto chapter 2 now.
+</p>
+<p><b>[1c52374f] 2022-01-24-17-18</b>: Finished chapter 1. Reviewing before moving on to chapter 2: representing and manipulating information.
+</p>
+<p><b>[e24ecde1] 2022-01-24-17-18</b>: getting my act together with the CSAPP page (which, I regrettably chose a very long name for. oh well).
+</p>
+<p><b>[22c8adad] 2022-01-13-13-18</b>: Amdahl's Law: states that when increasing the speed of one part of the system, the effect on the overall system performance depends on both how significant this part was and how much it sped up.
+</p>
+<p><b>[126d5e28] 2022-01-13-13-14</b>: file: a sequence of bytes. nothing more. nothing less.
+</p>
+<p><b>[9c8481a4] 2022-01-13-13-12</b>: virtual address space: a uniform view of memory that each process has.
+</p>
+<p><b>[aca1e54c] 2022-01-13-13-12</b>: virtual memory: an abstraction that provides each process with the illusion that it has exclusive use of the main memory.
+</p>
+<p><b>[245122be] 2022-01-13-13-08</b>: context: the state information that the process needs in order to run.
+</p>
+<p><b>[eee78ebb] 2022-01-13-13-08</b>: context switching: the mechanism that the OS uses to interleave instructions from multiple processes.
+</p>
+<p><b>[a9b02aa8] 2022-01-13-13-06</b>: concurrently: instructions of one process are interleaved with the instructions of another process.
+</p>
+<p><b>[f0aa548b] 2022-01-13-13-06</b>: process: the operating system's abstraction for a running program.
+</p>
+<p><b>[f72270b8] 2022-01-12-17-45</b>: operating system: the layer of software interposed between the application program and the hardware.
+</p>
+<p><b>[2a73cc20] 2022-01-12-17-44</b>: memory hierarchy: the way a computer system organizes memory by performance. moving from top to bottom, devices become slower, larger, and less costly per byte.
+</p>
+<p><b>[832ac8d8] 2022-01-12-17-42</b>: locality: the tendency for programs to access data and code in localized regions.
+</p>
+<p><b>[81d52e86] 2022-01-12-17-40</b>: L2 cache: cache that is larger than L1 cache, with hundreds of thousands to millions of bytes and is connected to the processor by a special bus. It can be 5x slower than the L1 cache.
+</p>
+<p><b>[c9f8fa63] 2022-01-12-17-39</b>: L1 cache: Cache that tens of thousands of bytes long, and can be accesed nearly as fast at the register file.
+</p>
+<p><b>[a8f04ba6] 2022-01-12-17-38</b>: cache memory is used to deal with the processor-memory gap
+</p>
+<p><b>[0a1352f0] 2022-01-12-17-37</b>: it is easier and cheaper to make processors run faster than it is to make memory run faster.
+</p>
+<p><b>[28deebd5] 2022-01-12-17-37</b>: processor-memory gap: the growing gap between processor and memory performance. as semiconductor technology progresses over the years, this gap continues to increase.
+</p>
+<p><b>[1d34671d] 2022-01-12-17-34</b>: cache memory: smaller and faster storage devices that serve as temporary staging areas for information that the processor is likely to need in the near future.
+</p>
+<p><b>[fd5d3c13] 2022-01-11-08-58</b>: DMA: direct memory access.
+</p>
+<p><b>[e92ac973] 2022-01-11-08-57</b>: ALU: arithmetic logic unit.
+</p>
+<p><b>[4f88cb3a] 2022-01-11-08-56</b>: program counter: a register that points at some machine language instruction in main memory.
+</p>
+<p><b>[a85ba752] 2022-01-11-08-55</b>: register: a word-sized storage device.
+</p>
+<p><b>[35d7a30a] 2022-01-11-08-55</b>: CPU: central processing unit. the engine that interprets (or executes) instructions stored in main memory.
+</p>
+<p><b>[f99d4ba5] 2022-01-11-08-54</b>: DRAM: dynamic random access memory.
+</p>
+<p><b>[4ae19852] 2022-01-11-08-53</b>: main memory: a temporary storage device that holds both a program and the data it manipulates while the processor is executing the program.
+</p>
+<p><b>[60bc46aa] 2022-01-11-08-53</b>: motherboard: systems main printed circuit board.
+</p>
+<p><b>[36843765] 2022-01-11-08-52</b>: controller/adapter: the means by which an IO device is connected to the IO bus. The distinction between a controller or an adapter is mainly one of packaging.
+</p>
+<p><b>[e01b3a40] 2022-01-11-08-51</b>: buses: a collection of electrical conduits that carry bytes of information back and forth between components.
+</p>
+<p><b>[fdfda208] 2022-01-11-08-50</b>: word: a fixed size chunk of bytes. Most machines today have word sizes of 4 bytes or 8 bytes.
+</p>
+<p><b>[fd49f8bb] 2022-01-10-17-48</b>: read chapters 1-6 of CSAPP
+</p>
+<p><b>[ed4c1eaa] 2022-01-09-13-44</b>: just skimmed TOC. there's a lot of ground covered here. (<a href="/brain/TYCS">TYCS</a>) recommends the first part at leaast (1-6). But the other parts seem useful. We shall see what the content is like though.
+</p>
+<p><b>[f979bfa8] 2022-01-09-13-41</b>: the label @CSAPP will be used for anything related to (<a href="/brain/computer_systems_programmers_perspective">computer_systems_programmers_perspective</a>).
+</p>
+</div>
+</body>
+</html>
