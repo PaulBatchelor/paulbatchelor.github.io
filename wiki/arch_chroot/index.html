@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>Arch Chroot on Alpine</title>
+<h1>Arch Chroot on Alpine</h1>
+<p>From: <a href="http://wiki.alpinelinux.org/Installing_ArchLinux_inside_an_Alpine_chroot">http://wiki.alpinelinux.org/Installing_ArchLinux_inside_an_Alpine_chroot</a>.
+</p>
+<br>
+<p>Install bash/wget
+</p>
+<p>zstd is needed too for arch-boostrap.sh
+<pre><code>sudo apk add bash wget zstd</pre></code>
+<p></p>
+<pre><code>wget --no-check-certificate https://raw.github.com/tokland/arch-bootstrap/master/arch-bootstrap.sh</pre></code>
+<p></p>
+<pre><code>mkdir chroot64
+sudo bash arch-bootstrap.sh -a x86_64 chroot64</pre></code>
+<p></p>
+<p>Use this script, save it as <code>start_chroot</code>.
+</p>
+<pre><code>#!/bin/sh -e
+user=`whoami`
+if [ "$user" != "root" ]; then
+  echo "This script needs root access" &gt;&2
+  exit 1
+fi
+if ! [ -d "$1" ]; then
+  echo "Usage: $0 &lt;chroot directory&gt;" &gt;&2
+  exit 1
+fi
+if [ x1 = x`sysctl -ne kernel.grsecurity.chroot_deny_chmod` ]; then
+  echo "Warning: can't suid/sgid inside chroot" &gt;&2
+fi
+if [ x1 = x`sysctl -ne kernel.grsecurity.chroot_deny_chroot` ]; then
+  echo "Warning: can't chroot inside chroot" &gt;&2
+fi
+if [ x1 = x`sysctl -ne kernel.grsecurity.chroot_deny_mknod` ]; then
+  echo "Warning: can't mknod inside chroot" &gt;&2
+fi
+if [ x1 = x`sysctl -ne kernel.grsecurity.chroot_deny_mount` ]; then
+  echo "Warning: can't mount inside chroot" &gt;&2
+fi
+cd "$1"
+shift
+cp -L /etc/resolv.conf ./etc/ || true
+mount -t proc proc ./proc
+mount -t sysfs sys ./sys
+mount -o bind /dev ./dev
+# next line is said to be important for pacman's signature check
+mount -o bind /dev/pts ./dev/pts
+# # for emacsclient to work
+# if [ -d /tmp/emacs1000 ]
+# then
+#     mkdir -p ./tmp/emacs1000
+#     mount -o bind /tmp/emacs1000 ./tmp/emacs1000
+# fi
+
+# copy .Xauthority for firefox to work
+# cp /home/paul/.Xauthority home/paul/
+
+case $1 in
+  -l) shift;;
+  -l*) one=${1#-l}; shift; set -- -$one "$@";;
+esac
+# chroot . /bin/sh -c "su - paul" -l "$@"
+chroot . /bin/sh -l "$@"
+umount ./dev/pts
+# umount ./tmp/emacs1000
+umount ./dev ./sys ./proc</pre></code>
+<p></p>
+<pre><code>pacman-key --init
+pacman-key --populate archlinux
+pacman -Syyu
+pacman -Rs systemd # NOTE: systemd not needed, but can't seem to remove
+pacman -S sudo</pre></code>
+<p></p>
+<pre><code>passwd
+useradd -m -g users -G wheel -s /usr/bin/bash paul
+passwd paul
+export VISUAL=/usr/bin/vim
+visudo # uncomment the wheel group</pre></code>
+<p></p>
+<hr>
+</div>
+</body>
+</html>
