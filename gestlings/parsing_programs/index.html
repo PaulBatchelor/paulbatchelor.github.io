@@ -9,7 +9,585 @@
 </head>
 <body>
 <div id="main">
-<p></p>
+<p><title>Parsing Programs</title>
+<h1>Parsing Programs</h1>
+<ul>
+
+<li>
+
+<a href="/gestlings/parsing_programs#literate-programming-weewiki-and-worgle">1. Literate Programming, Weewiki, and Worgle</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#scope-of-program-structure-parser">2. Scope of Program Structure Parser</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#tangling">3. Tangling</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#phase-1-generating-documents">4. Phase 1: Generating Documents</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/parsing_programs#top-level-document-generator">4.1. Top Level Document Generator</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#openingclosing-the-metadata">4.2. Opening/Closing the Metadata</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#getting-the-resource-list">4.3. Getting the Resource List</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#type-checking">4.4. Type Checking</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#section-headers">4.5. Section Headers</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/parsing_programs#getting-header-data">4.5.1. Getting Header Data</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#printing-header-data">4.5.2. Printing Header Data</a></li>
+
+</ul>
+<li>
+
+<a href="/gestlings/parsing_programs#content">4.6. Content</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/parsing_programs#getting-content-data">4.6.1. Getting Content Data</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#printing-content-data">4.6.2. Printing Content Data</a></li>
+
+</ul>
+<li>
+
+<a href="/gestlings/parsing_programs#block-references">4.7. Block References</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/parsing_programs#getting-block-reference-data">4.7.1. Getting Block Reference Data</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#printing-block-reference-data">4.7.2. Printing Block Reference Data</a></li>
+
+</ul>
+<li>
+
+<a href="/gestlings/parsing_programs#code-blocks">4.8. Code Blocks</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/parsing_programs#getting-code-blocks">4.8.1. Getting Code Blocks</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#printing-code-blocks">4.8.2. Printing Code Blocks</a></li>
+
+</ul>
+<li>
+
+<a href="/gestlings/parsing_programs#segments">4.9. Segments</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#tangled-files">4.10. Tangled Files</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/parsing_programs#getting-file-data">4.10.1. Getting File Data</a></li>
+
+</ul>
+</ul>
+<li>
+
+<a href="/gestlings/parsing_programs#phase-2-map-generation">5. Phase 2: Map Generation</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/parsing_programs#jump-tags">5.1. Jump Tags</a></li>
+
+<li>
+
+<a href="/gestlings/parsing_programs#table-of-contents">5.2. Table Of Contents</a></li>
+
+</ul>
+</ul>
+
+</p>
+
+<h2>1. <a id="literate-programming-weewiki-and-worgle">Literate Programming, Weewiki, and Worgle</a></h2>
+
+<p>The Gestlings project makes heavy use of
+<code>literate programming</code>, a programming style that attempts
+to melt together structures
+found in natural language and computer programs.
+</p>
+<p>I've been using this paradigm quite a bit for myself,
+and in truth, I'm still
+not sure it's a great idea. But here I am, after all these
+years, still compelled to try it.
+</p>
+<p>Gestlings is a creative research endeavor that only
+wishes to deeply think about particular ideas and concepts.
+Literate
+programming forces the author-programmer
+to articulate what they are thinking. And what is research
+but thinking deeply and articulating thoughts for others
+to understand?
+</p>
+<p>In past systems, such as the Loom, I've used Worgle,
+my Tangler for literate programs, together with Weewiki,
+my wiki engine, and have had decent success with the
+combination. It is my hope to try
+integrate these even more than previous attempts.
+</p>
+<p>A big reason why Weewiki and Worgle work well together is
+that they they both read org markup (or "orgdown", as some
+would prefer to call it). A literate program written in
+Worgle can become a wiki page in Weewiki with no
+modifications. The problem is that pages can end up being
+quite long, with no meaningful ways to navigate it.
+</p>
+<p>The problem of navigation and "mapping" a program can be
+solved using Worgle's metadata export feature.
+</p>
+<p>A solution to the navigation or "mapping" problem in
+presenting Worgle literate programs (a process known as 
+"Weaving", the opposite of "tangling") may be found in
+Worgle's metadata export feature.
+This
+metadata holds things like code block names and locations,
+headers, and text. This can provide a great deal of information
+about program structure in a language-agnostic way.
+</p>
+<p>Here's the concept to explore: instead of linking worgle
+programs directly to weewiki, export metadata, and then
+have wiki pages dynamically reconstruct portions or all
+of the literate program using <code>janet</code>. The <code>Loom</code> does
+most of this via <code>worgmap</code>, except that in that case, the
+pages are dynamically named and generated. In Gestlings, the
+names page names would be persistent.
+</p>
+
+<h2>2. <a id="scope-of-program-structure-parser">Scope of Program Structure Parser</a></h2>
+
+<p>The goal of this document is to outline and implement
+a set of usable operations that work on Worgle's
+metadata output. These operations will built up on one
+another, eventually making it possible to reconstruct
+entire documents with embedded information useful for
+navigating the document.
+</p>
+<p>The scope of this functionality is only concerned with
+producing weewiki output. Tangling code will not be
+considered.
+</p>
+
+<h2>3. <a id="tangling">Tangling</a></h2>
+
+<div><b><i>&lt;&lt;progparse.janet&gt;&gt;=</i></b></div><pre><code>&lt;&lt;progparse&gt;&gt;
+&lt;&lt;codeblock-string&gt;&gt;
+&lt;&lt;jumptags&gt;&gt;
+&lt;&lt;docgen&gt;&gt;
+&lt;&lt;tocgen&gt;&gt;
+</pre></code>
+
+<h2>4. <a id="phase-1-generating-documents">Phase 1: Generating Documents</a></h2>
+
+<p>The first phase in parsing the metadata of a literate program
+is to recreate the original org document. In theory,
+all the components are there.
+</p>
+
+<h3>4.1. <a id="top-level-document-generator">Top Level Document Generator</a></h3>
+
+<p>The <code>docgen</code> program will produce a suitable weewiki
+page for the id stored in <code>program</code>.
+</p>
+<p>The function iterates through the metadata (assuming
+metadata exists for the program id), assembling the
+entire document as one org string and then parsing it in
+one go using the <code>org</code> function. Previously, this was
+done using multiple calls to smaller parts of Org, but
+this was causing things to crash (oops).
+</p>
+<div><b><i>&lt;&lt;docgen&gt;&gt;=</i></b></div><pre><code>(defn create-marker [lines tag]
+  (array/push lines (string (markerstr tag))))
+(defn docgen [program &opt db]
+  (default db "a.db")
+  (var lines @[])
+  # (array/push lines (string "#+TITLE: " title "\n"))
+
+  (def md (open-metadata db program))
+  (def htags (generate-header-jump-tags (md :db) program))
+  (def reslist (reslist md))
+  (each res reslist
+    (cond
+      (is-header? (res "type"))
+      (do
+       (def header (get-header md (res "id")))
+       # (create-marker lines (htags (res "id")))
+       (array/push
+        lines
+        (string
+         (string/join
+          (array/new-filled (header "level") "*"))
+         " "
+         (header "section") " "
+         (markerstr (htags (res "id")) (header "name"))
+         "\n")))
+
+      (is-content? (res "type"))
+      (do
+        (def content (get-content md (res "id")))
+        (array/push lines (content "content")))
+      (is-blockref? (res "type"))
+      (do
+        (def blockref
+          (get-blockref md (res "id")))
+        (def block
+          (get-block md (blockref "ref")))
+        (def code (codeblock-string md (res "id")))
+        (array/push lines code))))
+
+  (def orgstr (string/join lines ""))
+  # (def fp (file/open "output.org" :w))
+  # (file/write fp orgstr)
+  # (file/close fp)
+  (close-metadata md)
+  (org orgstr))
+
+(defn wikipage [page]
+  (docgen (page :id)))</pre></code>
+
+<h3>4.2. <a id="openingclosing-the-metadata">Opening/Closing the Metadata</a></h3>
+
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn open-metadata [name program]
+  (table
+    :db (sqlite3/open name)
+    :program program))</pre></code>
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn close-metadata [md] (sqlite3/close (md :db)))</pre></code>
+
+<h3>4.3. <a id="getting-the-resource-list">Getting the Resource List</a></h3>
+
+<p>Text in worgle document is broken up in to components
+known as <code>resources</code>. The inventory of these resources
+is placed in the <code>resource list</code>.
+</p>
+<p>The janet function <code>reslist</code> returns this list given
+a valid program id.
+</p>
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn reslist [md]
+  (sqlite3/eval
+    (md :db)
+    (string/format
+      (string
+        "SELECT id, type FROM resources WHERE program=%d "
+        "ORDER by id ASC")
+      (md :program))))</pre></code>
+
+<h3>4.4. <a id="type-checking">Type Checking</a></h3>
+
+<p>Hard coded in a lookup table here, but it is feasible
+(though highly unlikely) for these values to change. See
+the schema for `reslist` for a key.
+</p>
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn is-file? [id] (= id 0))
+(defn is-block? [id] (= id 1))
+(defn is-segment? [id] (= id 2))
+(defn is-header? [id] (= id 3))
+(defn is-content? [id] (= id 4))
+(defn is-blockref? [id] (= id 5))</pre></code>
+
+<h3>4.5. <a id="section-headers">Section Headers</a></h3>
+
+
+<h4>4.5.1. <a id="getting-header-data">Getting Header Data</a></h4>
+
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn get-header [md id]
+  ((sqlite3/eval
+     (md :db)
+     (string/format
+       "SELECT * FROM headers WHERE id=%d AND program=%d"
+       id (md :program))) 0))</pre></code>
+
+<h4>4.5.2. <a id="printing-header-data">Printing Header Data</a></h4>
+
+
+<h3>4.6. <a id="content">Content</a></h3>
+
+<p>Content refers to text in between section headers.
+</p>
+
+<h4>4.6.1. <a id="getting-content-data">Getting Content Data</a></h4>
+
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn get-content [md id]
+  ((sqlite3/eval
+     (md :db)
+     (string/format
+       "SELECT * FROM content WHERE id=%d AND program=%d"
+       id (md :program))) 0))</pre></code>
+
+<h4>4.6.2. <a id="printing-content-data">Printing Content Data</a></h4>
+
+
+<h3>4.7. <a id="block-references">Block References</a></h3>
+
+
+<h4>4.7.1. <a id="getting-block-reference-data">Getting Block Reference Data</a></h4>
+
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn get-blockref [md id]
+  (def q (sqlite3/eval
+     (md :db)
+     (string/format
+       "SELECT * FROM blkref WHERE id=%d AND program=%d"
+       id (md :program))))
+
+  (if (&gt; (length q) 0) (q 0) nil))</pre></code>
+
+<h4>4.7.2. <a id="printing-block-reference-data">Printing Block Reference Data</a></h4>
+
+
+<h3>4.8. <a id="code-blocks">Code Blocks</a></h3>
+
+
+<h4>4.8.1. <a id="getting-code-blocks">Getting Code Blocks</a></h4>
+
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn get-block [md id]
+  ((sqlite3/eval
+     (md :db)
+     (string/format
+       "SELECT * FROM blocks WHERE id=%d AND program=%d"
+       id (md :program))) 0))</pre></code>
+
+<h4>4.8.2. <a id="printing-code-blocks">Printing Code Blocks</a></h4>
+
+<p>The <code>codeblock-string</code> function creates an org-compatible
+codeblock from a block id and reference to an open metadata
+handle.
+</p>
+<p>Regenerating a particular codeblock from Worgle's Metadata
+can be considered a non-trivial task. What makes codeblock
+regeneration complicated is that a named codeblock can
+actually have more than one block, called a <code>subblock</code>. A
+block reference will contain information for both the
+block and subblock. Due to the way Worgle populates metdata,
+some values will have to be computed from the data.
+</p>
+<p>See the comments in the code below for some clarification
+on the procedure.
+</p>
+<p>Much more information about codeblock regeneration can be
+found in the Worgmap core operations code.
+</p>
+<div><b><i>&lt;&lt;codeblock-string&gt;&gt;=</i></b></div><pre><code>(defn codeblock-string [md id]
+  # get block reference data
+  (def br (get-blockref md id))
+
+  # Find next block reference, if there is one
+  (def next-br-query
+    (sqlite3/eval
+      (md :db)
+      (string
+        "SELECT * FROM blkref WHERE "
+        "program == " (md :program) " AND "
+        "ref == " (br "ref") " AND "
+        "pos == " (+ (br "pos") 1))))
+
+  (defn handle-seg [s]
+    (cond
+      (= (s "type") 1) (string "&lt;&lt;" (s "str") "&gt;&gt;")
+      (= (s "type") 0) (s "str")))
+
+  # Get code block being referenced
+  (def block (get-block md (br "ref")))
+
+  # Compute number of segments in subblock.
+  # If there's another block reference, subtract their
+  # segment offsets. Otherwise, subtract segment offset
+  # from total.
+
+  (def nsegs
+    (if (&gt; (length next-br-query) 0)
+      (- ((next-br-query 0) "segoff") (br "segoff"))
+      (- (block "nsegs") (br "segoff"))))
+
+  (def lines (array/new nsegs))
+  (var next-seg nil)
+
+  # Finding the head segment of the subblock requires
+  # looking at the last segment of the previous subblock
+  # that last segment will point to the head of the current
+  # block. If there is no previous subblock, it's just the
+  # head segment stored in the block struct.
+
+  (if (&gt; (br "prev_lastseg") 0)
+    (do
+      (def prevseg (get-segment md (br "prev_lastseg")))
+      (def head (get-segment  md (prevseg "next_segment")))
+      (set next-seg head)
+      (array/push lines (handle-seg head)))
+    (do
+      (def head (get-segment md (block "head_segment")))
+      (set next-seg head)
+      (array/push
+        lines
+        (handle-seg head))))
+
+  (for i 1 nsegs
+    (def seg (get-segment md (next-seg "next_segment")))
+    (array/push lines (handle-seg seg))
+    (set next-seg seg))
+
+  (if-not (= (string/slice (array/peek lines) -2) "\n")
+    (array/push lines "\n"))
+
+  (string
+    "#+NAME: " (block "name") "\n"
+    "#+BEGIN_SRC\n"
+    (string/join lines "\n")
+    "#+END_SRC\n"))</pre></code>
+
+<h3>4.9. <a id="segments">Segments</a></h3>
+
+<div><b><i>&lt;&lt;progparse&gt;&gt;=</i></b></div><pre><code>(defn get-segment [md id]
+  ((sqlite3/eval
+     (md :db)
+     (string/format
+       "SELECT * FROM segments WHERE id=%d AND program=%d"
+       id (md :program))) 0))</pre></code>
+
+<h3>4.10. <a id="tangled-files">Tangled Files</a></h3>
+
+
+<h4>4.10.1. <a id="getting-file-data">Getting File Data</a></h4>
+
+
+<h2>5. <a id="phase-2-map-generation">Phase 2: Map Generation</a></h2>
+
+<p>It has been shown that a document of a literate program
+can be produced from its metadata. Now, the next step is
+to augment it with better navigation. In HTML, these
+can be done using jump links. A common use for jump links
+is to use them to produce a table of contents, where each
+item is a link to a section. Jump links could also
+potentially used as references for code blocks, among
+other things. There is a great deal of information stored
+in the program metadata. And since it is stored in a SQLite
+database format, there is a great deal of navigation and
+mapping strategies that can be possible.
+</p>
+
+<h3>5.1. <a id="jump-tags">Jump Tags</a></h3>
+
+<p>Perhaps the most conventional use jump links is for
+sections. Ideally, the URL tags for sections would be
+based off of the header name, as it makes for a more
+readable URL (and with any luck, a more permanent one
+that isn't always changing with every update).
+</p>
+<p>The function <code>generate-header-jump-tags</code> creates a dictionary
+that maps ID values of headers onto URL-friendly tag names
+derived from their names. <code>db</code> is a SQLite handle,
+and <code>pid</code> is the program id.
+</p>
+<div><b><i>&lt;&lt;jumptags&gt;&gt;=</i></b></div><pre><code>(defn generate-header-jump-tags [db pid]
+  (def query
+       (sqlite3/eval db
+                     (string
+                       "select * from headers where program == " pid)))
+
+  (def valid-chars
+       (string
+         "abcdefghijklmnopqrstuvwxyz"
+         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+         "0123456789-"
+         ))
+
+  (defn create-valid-str [charset str]
+    (def strlen (length str))
+    (if (= strlen 0) ""
+
+      (if (string/check-set charset str)
+        str
+        (if (&gt; strlen 1)
+          (do
+            (def strlen2 (math/floor (/ strlen 2)))
+            (string
+              (create-valid-str valid-chars (string/slice str 0 strlen2))
+              (create-valid-str valid-chars (string/slice str strlen2 -1))))
+          ""))))
+
+  (defn mklabel [name]
+    (create-valid-str valid-chars (string/replace-all
+                                    " " "-"
+                                    (string/ascii-lower name))))
+
+  (def id-to-name @{})
+
+  (each row query
+        # (def data @{
+               #     :name (mklabel (row "name"))
+               #     :id (row "id")
+               # })
+        #     (pp data)
+        (set (id-to-name (row "id")) (mklabel (row "name"))))
+  id-to-name)</pre></code>
+
+<h3>5.2. <a id="table-of-contents">Table Of Contents</a></h3>
+
+<div><b><i>&lt;&lt;tocgen&gt;&gt;=</i></b></div><pre><code>(defn tocgen [program pgname &opt db]
+  (default db "a.db")
+  (def md (open-metadata db program))
+  (def headers
+    (sqlite3/eval (md :db)
+      (string
+        "SELECT * from headers WHERE program == "
+        (program :id) " ORDER by id")))
+  (print "&lt;ul&gt;\n")
+  (var plevel 1)
+  (def htags (generate-header-jump-tags (md :db) (program :id)))
+  (each hd headers
+    (cond
+      (&gt; (hd "level") plevel)
+      (print "&lt;ul&gt;")
+      (&lt; (hd "level") plevel)
+      (for i 0 (- plevel (hd "level")) (print "&lt;/ul&gt;")))
+    (set plevel (hd "level"))
+    (print "&lt;li&gt;\n")
+    (org
+     (string
+      "[["
+      (pglink pgname (htags (hd "id")))
+      "]["
+    (string (hd "section") " " (hd "name"))
+      "]]"))
+
+    (print "&lt;/li&gt;\n")
+    )
+  (for i 0 (- plevel 1) (print "&lt;/ul&gt;"))
+  (print "&lt;/ul&gt;\n")
+  (close-metadata md))</pre></code>
 </div>
 </body>
 </html>

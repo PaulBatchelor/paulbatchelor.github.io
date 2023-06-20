@@ -9,7 +9,283 @@
 </head>
 <body>
 <div id="main">
+<p><title>The Gesture Path</title>
+<h1>The Gesture Path</h1>
+</p>
+
+<h2>1. <a id="overview">Overview</a></h2>
+
+<p>This document implements a Lua interface for create Gesture
+Paths for Gesture VM. Paths constructed in Lua eventually
+get generated into <a href="/gestlings/tal">tal</a> code.
+</p>
+
+<h2>2. <a id="whats-a-path">What's a "Path"?</a></h2>
+
+<p>A <b>path</b> is a construct used to describe Gestures. This
+is a term borrowed from computer science and graph
+theory. A path
+can be described as a sequential set of vertices,
+connected together by edges. In this context,
+a vertice can be thought of as a set of state parameters
+for the Gesture Signal Generator: value, behavior, and
+rate multiplier. Alternatively, one could also imagine
+edges as being weighted by the rate multiplier, but at
+the time of writing there hasn't been any usecase for
+doing it this way.
+</p>
+<p>A path is said to be <b>linear</b> if the vertices flow in
+one single direction. A path becomes <b>non-linear</b> when this
+flow is interrupted somehow, such as with branching.
+</p>
+
+<h2>3. <a id="tangled-code">Tangled Code</a></h2>
+
+<div><b><i>&lt;&lt;path.lua&gt;&gt;=</i></b></div><pre><code>local Path = {}
+
+&lt;&lt;path&gt;&gt;
+return Path</pre></code>
+
+<h2>4. <a id="creating-a-vertex">Creating a Vertex</a></h2>
+
+<p>The <code>vertex</code> function creates a gesture vertex, represented
+as a lua table. The input is an array of 3 values: value,
+duration, and behavior.
+</p>
+<p>Duration is itself a 2-element array containing the numerator
+and denominator values for the rate multiplier.
+</p>
+<p>Behavior is an integer value indicating the type of behavior
+to be used. See the <a href="/gestlings/gest#behavior_constants">gest behavior constants</a> for some human-friendly variable
+names to use instead of just numbers.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.vertex(v)
+    x = {}
+
+    x.val = v[1]
+    x.dur = v[2]
+    x.bhvr = v[3]
+
+    return x
+end</pre></code>
+
+<h2>5. <a id="compiling-a-path">Compiling a Path</a></h2>
+
+<p>A Path, represented as an array of Gesture vertices in
+Lua, can be compiled into TAL code using the <code>path</code>function. In addition to the path to be compiled,
+the <a href="/gestlings/tal">tal</a> library will need to be passed in,
+along with a table to place the words that get generated.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.path(tal, words, path)
+    for _, v in pairs(path)
+    do
+        if v.val ~= nil then
+            tal.val(words, v.val)
+        end
+
+        if v.dur ~= nil then
+            tal.dur(words, v.dur[1], v.dur[2])
+        end
+
+        if v.bhvr ~= nil then
+            tal.behavior(words, v.bhvr)
+        end
+    end
+end
+</pre></code>
+
+<h2>6. <a id="savingloading-paths-as-assets">Saving/Loading Paths as Assets</a></h2>
+
+<p>Requires an instantiated <a href="/gestlings/asset">asset</a> component.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.save(asset, gpath, filename)
+    asset:save(gpath, filename)
+end
+
+function Path.load(asset, filename)
+    local path_data = asset:load(filename)
+
+    return Path.data_to_path(path_data)
+end</pre></code>
 <p></p>
+<p>Path data saved to disk is a simpler format than the
+format used by Path. The function <code>data_to_path</code> does the
+conversion.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.data_to_path(path_data)
+    local gpath = {}
+    for _,v in pairs(path_data) do
+        table.insert(gpath, Path.vertex(v))
+    end
+    return gpath
+end
+
+function Path.path_to_data(path)
+    local path_data = {}
+    for _,v in pairs(path) do
+        table.insert(path_data, {
+            v.val,
+            v.dur,
+            v.bhvr,
+        })
+    end
+
+    return path_data
+end</pre></code>
+
+<h2>7. <a id="symbol-set-and-grammar">Symbol Set and Grammar</a></h2>
+
+<p>For the symbol set, see <a href="/gestlings/path_symbols">path_symbols</a>.
+The corresponding grammar can be found
+at <a href="/gestlings/path_grammar">path_grammar</a>.
+</p>
+
+<h2>8. <a id="ast-to-path">AST to Path</a></h2>
+
+<p>Converts an abstract syntax tree generated from the <a href="/gestlings/path_grammar">path_grammar</a> into an actual path.
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.AST_to_data(t)
+    behaviors = {
+        linear = 0,
+        step = 1,
+        gliss_medium = 2,
+        gliss_large = 3,
+        gliss_small = 4,
+    }
+
+    local ratemul = {1, 1}
+    local behavior = behaviors["linear"]
+    local gpath = {}
+
+    for _,v in pairs(t) do
+        local val = tonumber("0x" .. v.value[1] .. v.value[2])
+        if v.behavior ~= nil then
+            behavior = behaviors[v.behavior]
+        end
+
+        if v.ratemul ~= nil then
+            if #v.ratemul == 2 then
+                local num, den
+                num = v.ratemul[1]
+                num = tonumber("0x" .. num[1] .. num[2])
+                den = v.ratemul[2]
+                den = tonumber("0x" .. den[1] .. den[2])
+                ratemul = {num, den}
+            elseif #v.ratemul == 1 then
+                local num, den
+                num = v.ratemul[1]
+                num = tonumber("0x" .. num[1] .. num[2])
+                ratemul = num
+            end
+        end
+        local vertex = {
+            val,
+            ratemul,
+            behavior
+        }
+        table.insert(gpath, vertex)
+    end
+    return gpath
+end</pre></code>
+
+<h2>9. <a id="rescale-path-to-morpheme-sequence">Rescale Path to Morpheme Sequence</a></h2>
+
+<p>When composing with Morphemes in a sequence, such as
+with <a href="/gestlings/mseq">mseq</a>, it can be helpful to add paths that
+can stretch over multiple morphemes. The
+function <code>scale_to_morphseq</code> will take in a gesture
+path (relative durations, not rate multipliers), and then
+rescale it so that it lines up with all the durations
+in the morpheme sequence.
+</p>
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>&lt;&lt;scale_to_morphseq_bits&gt;&gt;
+function Path.scale_to_morphseq(gpath, mseq)
+    local seqdur = morphseq_dur(mseq)
+    local pnorm = path_normalizer(gpath)
+    local total_ratemul = fracmul(pnorm, seqdur)
+    local gpath_rescaled =
+        apply_ratemul(gpath, total_ratemul, Path.vertex)
+
+    return gpath_rescaled
+end</pre></code>
+<div><b><i>&lt;&lt;scale_to_morphseq_bits&gt;&gt;=</i></b></div><pre><code>local function gcd(m, n)
+    while n ~= 0 do
+        local q = m
+        m = n
+        n = q % n
+    end
+    return m
+end
+
+local function lcm(m, n)
+    return (m ~= 0 and n ~= 0) and
+        m * n / gcd(m, n) or 0
+end
+
+local function fracadd(a, b)
+    if a[2] == 0 then return b end
+    if b[2] == 0 then return a end
+    local s = lcm(a[2], b[2])
+    local as = s / a[2]
+    local bs = s / b[2]
+    return {as*a[1] + bs*b[1], s}
+end
+
+local function reduce(a)
+    out = a
+    local s = gcd(out[1], out[2])
+
+    if (s ~= 0) then
+        out[1] = out[1] / s
+        out[2] = out[2] / s
+    end
+
+    return out
+end
+
+function fracmul(a, b)
+    local out = {a[1]*b[1], a[2]*b[2]}
+
+    return reduce(out)
+end
+
+local function morphseq_dur(mseq)
+    local total = {0, 0}
+    for _, m in pairs(mseq) do
+        local r = m[2]
+        total = fracadd(total, r)
+    end
+    -- r is a ratemultiplier against a normalize
+    -- path with dur 1. 2/1 is 2x faster, or dur 1/2.
+    -- inverse to get duration
+    -- this can be multiplied with normalized path
+    -- to stretch/squash it out
+    return {total[2], total[1]}
+end
+
+local function path_normalizer(p)
+    local total = 0
+
+    for _, v in pairs(p) do
+        total = total + v[2]
+    end
+
+    return {total, 1}
+end
+
+local function apply_ratemul(p, r, vertexer)
+    path_with_ratemul = {}
+
+    for _,v in pairs(p) do
+        local v_rm = {
+            v[1],
+            reduce({r[1], v[2]*r[2]}),
+            v[3]
+        }
+        table.insert(path_with_ratemul, vertexer(v_rm))
+    end
+
+    return path_with_ratemul
+end</pre></code>
 </div>
 </body>
 </html>

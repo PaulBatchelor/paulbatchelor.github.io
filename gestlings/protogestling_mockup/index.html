@@ -9,7 +9,252 @@
 </head>
 <body>
 <div id="main">
-<p></p>
+<p><title>Protogestling Mockup</title>
+<h1>Protogestling Mockup</h1>
+This is the ProtoGestling test video. It speaks a pseudo-language
+called "blipsqueak", and has its face constructed using
+the <a href="/gestlings/protogestling">protogestling</a> drawing primitive.
+</p>
+<p><video controls>
+<source src="/gestlings/res/protogestling.mp4" type="video/mp4">
+</video>
+</p>
+<p>This is the script that generates the video. It's prototype
+code so things are... quite messy. But, it does enough
+to get a sense of what a gestling could feel like, what's
+currently possible, and what can potentially be improved.
+</p>
+<div><b><i>&lt;&lt;protogestling_mockup.lua&gt;&gt;=</i></b></div><pre><code>blipsqueak = require("blipsqueak/blipsqueak")
+val = valutil
+
+-- setup audio
+lil("blkset 49")
+-- lil("valnew mouth")
+-- lil("grab mouth")
+-- lil("biscale [sine 0.2 1] 0 1")
+-- lil("tog [metro 2]")
+-- lil("valset2 zz zz")
+-- lil("drop")
+local bs = blipsqueak
+comp = bs.components(bs.load_components())
+bs.load_data(comp)
+phrase = {"HELLO", "IAM", "PLEASED", "WELCOME"}
+pitchseq = "h1/ k2~ h1/ d h i2~ h4_"
+temposeq = "d1/ f d4 c"
+bs.speak(comp, phrase, pitchseq, temposeq)
+lil("mul zz [dblin -6]")
+lil([[
+dup; dup;
+bigverb zz zz 0.8 8000
+drop;
+dcblocker zz
+mul zz [dblin -20];
+add zz zz
+]])
+
+os.execute("mkdir -p tmp res")
+lil("wavout zz tmp/protogestling.wav")
+
+lil("gfxnew gfx 200 320")
+lil("grab gfx")
+lil("gfxopen tmp/protogestling.h264")
+lil([[
+grab gfx
+gfxclrset 1 0.0 0.0 0.0
+gfxclrset 0 1.0 1.0 1.0
+]])
+lil([[
+bpnew bp 200 320
+# face
+bpset [grab bp] 0 0 0 200 260
+# text
+bpset [grab bp] 1 0 260 200 60
+# main
+bpset [grab bp] 2 0 0 200 320
+
+# bpoutline [bpget [grab bp] 0] 1
+# bpoutline [bpget [grab bp] 1] 1
+bpline [bpget [grab bp] 1] 0 0 200 0 1
+bproundrect [bpget [grab bp] 2] 0 0 200 320 16 1
+]])
+
+lil("bpget [grab bp] 0")
+face_reg = pop()
+lil("bpfnt_default font")
+lil("bpget [grab bp] 1")
+msgbox_reg = pop()
+lil("grab font")
+font = pop()
+lines = {
+    "Why Hello there!",
+    "I am a Proto-Gestling.",
+    "Pleased to meet you.",
+    "Welcome to Cauldronia!",
+}
+
+total_length = 0
+
+for _,ln in pairs(lines) do
+    total_length = total_length + #ln
+end
+
+function protoface(reg, shape)
+    mouth = shape[1]
+    left_eye = shape[2]
+    right_eye = shape[3]
+    protogestling.face(reg,
+        mouth[1], mouth[2],
+        left_eye[1], left_eye[2],
+        right_eye[1], right_eye[2])
+end
+
+wide_mouth = {0.9, 0.3}
+thin_mouth = {0.9, 0.1}
+small_mouth = {0.1, 0.1}
+
+big_eye = {0.3, 0.9}
+round_eye = {0.3, 0.3}
+
+thin_eye = {0.1, 0.9}
+
+mouth_shapes = {
+    -- 0
+    {wide_mouth, big_eye, big_eye},
+    -- 1
+    {thin_mouth, round_eye, round_eye},
+    -- 2
+    {small_mouth, big_eye, round_eye},
+    -- 3
+    {wide_mouth, round_eye, big_eye},
+    -- 4
+    {thin_mouth, round_eye, big_eye},
+    -- 5
+    {small_mouth, thin_eye, thin_eye},
+    -- 6
+    {wide_mouth, round_eye, big_eye},
+    -- 7
+    {thin_mouth, round_eye, thin_eye},
+    -- 8
+    {small_mouth, thin_eye, round_eye},
+}
+
+test_shape = 0
+prev_face = nil
+
+function lerp(curval, target)
+    local speed = 0.2
+    curval = curval + ((target - curval) * speed)
+    return curval
+end
+
+function lerp_face(curface, target)
+    mouthlerp = {
+        lerp(curface[1][1], target[1][1]),
+        lerp(curface[1][2], target[1][2]),
+    }
+    leyelerp = {
+        lerp(curface[2][1], target[2][1]),
+        lerp(curface[2][2], target[2][2]),
+    }
+    reyelerp = {
+        lerp(curface[3][1], target[3][1]),
+        lerp(curface[3][2], target[3][2]),
+    }
+    return {
+        mouthlerp, leyelerp, reyelerp
+    }
+end
+
+local curface = nil
+
+function draw_face()
+    local shape = math.floor(val.get("mouth")) + 1
+    -- local shape = test_shape + 1
+    lil("bpfill [bpget [grab bp] 0] 0")
+
+    if (curface == nil) then
+        curface = mouth_shapes[shape]
+    end
+
+    curface = lerp_face(curface, mouth_shapes[shape])
+    protoface(face_reg, curface)
+    -- protogestling.face(face_reg, 0.9, 0.3, 0.3, 0.9, 0.3, 0.9)
+    -- protogestling.face(face_reg, 0.9, 0.3, 0.3, 0.9, 0.3, 0.9)
+end
+
+function draw_textblock(lines, textpos)
+    for pos, ln in pairs(lines) do
+        local lnsz = #ln
+        if textpos &lt; lnsz then
+            lnsz = textpos
+        end
+        protogestling.textline(msgbox_reg, font, 10, 10 + 10*(pos -1), ln, 1, 1, lnsz)
+        textpos = textpos - lnsz
+        if textpos &lt;= 0 then
+            return pos, lnsz
+        end
+    end
+end
+
+function get_next_char(lines, lpos, cpos)
+    cpos = cpos + 1
+    if cpos &gt; #lines[lpos] then
+        lpos = lpos + 1
+        cpos = 1
+    end
+
+    if lpos &gt; #lines then
+        return nil
+    end
+
+    return string.char(string.byte(lines[lpos], cpos))
+end
+
+speed = 5
+pause = 30
+timer = speed
+
+txtpos = 0
+nframes = 60 * 10
+fpos = 0
+for n=1,nframes do
+    if fpos == 0 then
+        print(n)
+        fpos = 60
+        test_shape = test_shape + 1
+        test_shape = test_shape % 9
+    end
+    fpos = fpos - 1
+    lil("compute 15")
+    draw_face()
+    local lpos, cpos = draw_textblock(lines, txtpos)
+    lil("bproundrect [bpget [grab bp] 2] 0 0 200 320 16 1")
+    lil("grab gfx")
+    lil("gfxfill 0")
+    lil("bptr [grab bp] 0 0 200 320 0 0 1")
+    lil("grab gfx")
+    lil("gfxtransfer; dup")
+    lil("gfxappend")
+
+    timer = timer - 1
+
+    if timer &lt;= 0 then
+        local nc = get_next_char(lines, lpos, cpos)
+        if nc == '!' or nc == '.' then
+            timer = pause
+        else
+            timer = speed
+        end
+        txtpos = txtpos + 1
+        if txtpos &gt; total_length then
+            txtpos = total_length
+        end
+    end
+end
+
+lil("gfxclose")
+lil("gfxmp4 tmp/protogestling.h264 tmp/protogestling.mp4")
+os.execute("ffmpeg -y -i tmp/protogestling.mp4 -i tmp/protogestling.wav -pix_fmt yuv420p -acodec aac res/protogestling.mp4")</pre></code>
 </div>
 </body>
 </html>
