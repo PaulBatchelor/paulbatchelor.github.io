@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Protogestling</title>
+<h1>Protogestling</h1>
+This is the drawing code needed to make the protogestling
+face. It uses SDFs to draw the primitives, which are then
+rasterized to a btprnt canvas.
+</p>
+<p>To see it in action, see
+the <a href="/gestlings/protogestling_mockup">Protogestling Mockup</a>.
+</p>
+<div><b><i>&lt;&lt;protogestling.c&gt;&gt;=</i></b></div><pre><code>#include &lt;string.h&gt;
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+
+#include "mathc/mathc.h"
+#include "sdf2d/sdf.h"
+#include "btprnt/btprnt.h"
+
+static void draw_ellipse(btprnt_region *r, float a, float b)
+{
+    int x, y;
+    int w, h;
+    float ratio;
+    w = r-&gt;w;
+    h = r-&gt;h;
+
+    ratio = (float)w / h;
+
+    if (ratio &gt; 1) {
+        ratio = 1.0 / ratio;
+    }
+    for (y = 0; y &lt; h; y++) {
+        for (x = 0; x &lt; w; x++) {
+            struct vec2 p;
+            float d;
+            struct vec2 res;
+            struct vec2 ab;
+            int c;
+            res = svec2(w, h);
+
+            p = sdf_normalize(svec2(x, y), res);
+            p.x *= ratio;
+            ab = svec2(a, b);
+            d = sdf_ellipse(p, ab);
+
+            if (isnan(d)) {
+                printf("oops\n");
+            }
+
+            c = (int)(1 - sdf_sign(d));
+            c = c != 0;
+            if (c) {
+                btprnt_region_draw(r, x, y, c);
+            }
+        }
+    }
+}
+
+static void draw_face(btprnt_region *r,
+                      double mouth_w,
+                      double mouth_h,
+                      double eye_left_w,
+                      double eye_left_h,
+                      double eye_right_w,
+                      double eye_right_h)
+{
+    btprnt_region mouth;
+    btprnt_region eyes[2];
+
+    mouth = *r;
+
+    mouth.y += mouth.h / 2;
+    mouth.h = mouth.h / 2;
+    eyes[0] = *r;
+    eyes[0].w /= 2;
+    eyes[0].h /= 2;
+    eyes[1] = eyes[0];
+    eyes[1].x += eyes[1].w;
+
+    draw_ellipse(&mouth, mouth_w, mouth_h);
+    draw_ellipse(&eyes[0], eye_left_w, eye_left_h);
+    draw_ellipse(&eyes[1], eye_right_w, eye_right_h);
+}
+
+static int face(lua_State *L)
+{
+    btprnt_region *reg;
+    double mouth_w;
+    double mouth_h;
+    double eye_left_w;
+    double eye_left_h;
+    double eye_right_w;
+    double eye_right_h;
+    reg = lua_touserdata(L, 1);
+    mouth_w = lua_tonumber(L, 2);
+    mouth_h = lua_tonumber(L, 3);
+    eye_left_w = lua_tonumber(L, 4);
+    eye_left_h = lua_tonumber(L, 5);
+    eye_right_w = lua_tonumber(L, 6);
+    eye_right_h = lua_tonumber(L, 7);
+    draw_face(reg,
+      mouth_w, mouth_h,
+      eye_left_w, eye_left_h,
+      eye_right_w, eye_right_h);
+    return 0;
+}
+
+struct lil_bpfont;
+
+btprnt_buf * lil_bpfont_buf(struct lil_bpfont *fnt);
+int lil_bpfont_width(struct lil_bpfont *fnt);
+int lil_bpfont_height(struct lil_bpfont *fnt);
+
+static int textline(lua_State *L)
+{
+    btprnt_region *reg;
+    struct lil_bpfont *fnt;
+    int x, y;
+    int clr, scale;
+    const char *str;
+    btprnt_buf *buf;
+    int fw, fh;
+    int sz;
+    int n;
+    int nargs;
+
+    nargs = lua_gettop(L);
+    reg = lua_touserdata(L, 1);
+    fnt = lua_touserdata(L, 2);
+    x = lua_tointeger(L, 3);
+    y = lua_tointeger(L, 4);
+    str = lua_tostring(L, 5);
+    scale = lua_tointeger(L, 6);
+    clr = lua_tointeger(L, 7);
+
+    buf = lil_bpfont_buf(fnt);
+    fw = lil_bpfont_width(fnt);
+    fh = lil_bpfont_height(fnt);
+
+    sz = strlen(str);
+    if (nargs &gt;= 8) {
+        int tmp;
+        tmp = lua_tointeger(L, 8);
+
+        if (tmp &lt; sz) {
+            sz = tmp;
+        }
+    }
+
+    for (n = 0; n &lt; sz; n++) {
+        btprnt_draw_char(reg, buf, x, y, fw, fh, str[n], scale, clr);
+        x += fw * scale;
+    }
+
+    return 0;
+}
+
+static const luaL_Reg protogestling_lib[] = {
+    {"face", face},
+    {"textline", textline},
+    {NULL, NULL}
+};
+
+int luaopen_protogestling(lua_State *L)
+{
+    luaL_newlib(L, protogestling_lib);
+    return 1;
+}</pre></code>
+
+<h2>1. <a id="lua-mockup-code">Lua Mockup Code</a></h2>
+
+</div>
+</body>
+</html>

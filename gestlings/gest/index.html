@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Gest</title>
+<h1>Gest</h1>
+Some lua abstractions for creating gestures with gestvm.
+</p>
+<div><b><i>&lt;&lt;gest.lua&gt;&gt;=</i></b></div><pre><code>Gest = {}
+
+&lt;&lt;behavior_constants&gt;&gt;
+&lt;&lt;gest&gt;&gt;
+return Gest</pre></code>
+
+<h2>1. <a id="new">New</a></h2>
+
+<p>Creates a new instance of Gest.
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:new(o)
+    o = o or {}
+    o.name = o.name or "glive"
+    o.bufname = o.bufname or "mem"
+    o.tal = o.tal or tal
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end</pre></code>
+
+<h2>2. <a id="create">Create</a></h2>
+
+<p>Allocates a new instance of GestVM, as well of GestLive,
+the component that allows gestvm to work in realtime.
+</p>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:create()
+    lil("glnew " .. self.name)
+    self.tal.membuf(self.bufname)
+end</pre></code>
+
+<h2>3. <a id="compile">Compile</a></h2>
+
+<p>Compiles a Tal program, represented as a list of words,
+into Gestvm.
+</p>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:compile(words)
+    self.tal.compile_words(words,
+        self.bufname,
+        string.format("[glget [grab %s]]", self.name))
+end</pre></code>
+
+<h2>4. <a id="compile-tal-code">Compile Tal Code</a></h2>
+
+<p>Similar to <code>compile</code>, except the program is represented
+as a string.
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:compile_tal(program)
+    self.tal.compile(program,
+        self.bufname,
+        string.format("[glget [grab %s]]", self.name))
+end</pre></code>
+
+<h2>5. <a id="swapper">Swapper</a></h2>
+
+<p>Creates a swapper node for gestlive. This should be called
+before making any GestVM nodes.
+</p>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:swapper()
+    lil(string.format("glswapper [grab %s]", self.name))
+end</pre></code>
+
+<h2>6. <a id="done">Done</a></h2>
+
+<p>Tells GestLive it is done adding gestures. Should be called
+right before hotswapping the patch.
+</p>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:done()
+    lil(string.format("gldone [grab %s]", self.name))
+end</pre></code>
+
+<h2>7. <a id="get">Get</a></h2>
+
+<p>Returns a string of LIL code that grabs the active
+instance of GestVM being written to.
+</p>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:get()
+    return string.format("[glget [grab %s]]", self.name)
+end</pre></code>
+
+<h2>8. <a id="nodeold-old">Node_old (OLD)</a></h2>
+
+<p>Deprecated node that creates a gesture node.
+</p>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:node_old(program, conductor)
+    local cnd = conductor or self.conductor
+    if cnd == nil then
+        error("conductor signal not defined")
+    end
+
+    lil(string.format(
+        "gestvmnode %s [gmemsym [grab %s] %s] %s",
+        self.get(self), self.bufname, program, cnd))
+end</pre></code>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:nodestring(program, conductor)
+    local cnd = conductor or self.conductor
+    if cnd == nil then
+        error("conductor signal not defined")
+    end
+
+    local s = string.format(
+        "gestvmnode %s [gmemsym [grab %s] %s] %s",
+        self.get(self), self.bufname, program, cnd)
+
+    return s
+end</pre></code>
+
+<h2>9. <a id="node">Node</a></h2>
+
+<p>Creates a <a href="/gestlings/diagraf">diagraf</a>-compatible node that produces
+a gesture node. The "name" field must be supplied as the
+name of the gesture to use.
+</p>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest:node()
+	local glive = self.get(self)
+	local mem = self.bufname
+	local glivef =  function(self) return glive end
+	local cndstr = self.conductor
+
+    return function(n, p)
+        local name = p.name or "gst"
+        local program =
+            string.format("[gmemsym [grab %s] %s]", mem, name)
+
+        -- TODO: glivef makes this work as a regular node
+        -- glive works as only a parameter node. Tests
+        -- will break if glivef is used
+        -- The quick fix is to just introduce a flag
+        local is_param_node = n.sigrune_dummy or false
+        if is_param_node then
+            n.glive = n:param(glive)
+        else
+            n.glive = n:param(glivef)
+        end
+
+        n.conductor = n:param(p.conductor or cndstr)
+        n:lil({"gestvmnode", "zz", program, "zz"})
+        n:label("gesture: " .. name)
+    end
+end</pre></code>
+
+<h2>10. <a id="gest16fun">Gest16fun</a></h2>
+
+<p>This produces a helper function that rescales the
+output of <a href="/gestlings/seq">seq</a>. The input
+are the <a href="/gestlings/sigrunes">sigrunes</a> and core components. The
+output is a callback that takes in an instance of Gest
+<code>gst</code>, the name of the gesture, the conductor signal
+<code>cnd</code>, and the min/max range to scale to <code>mn</code> and <code>mx</code>.
+</p>
+<div><b><i>&lt;&lt;gest&gt;&gt;=</i></b></div><pre><code>function Gest.gest16fun(sr, core)
+    return function (gst, name, cnd, mn, mx)
+        local pn = sr.paramnode
+        local lvl = core.liln
+
+        local node = pn(sr.scale) {
+            input = pn(sr.mul) {
+                a = pn(gst:node()) {
+                    name = name,
+                    conductor = lvl(cnd:getstr())
+                },
+                b = 1.0 / 16.0
+            },
+            min = mn,
+            max = mx
+        }
+
+        return node
+	end
+end</pre></code>
+
+<h2>11. <a id="gestvm-behavior-constants">GestVM Behavior Constants</a></h2>
+
+<p><a id="behavior_constants"></a><div><b><i>&lt;&lt;behavior_constants&gt;&gt;=</i></b></div><pre><code>Gest.behavior = {
+    linear = 0,
+    step = 1,
+    gliss_medium = 2,
+    gliss = 3,
+    gate_125 = 4,
+    gate_25 = 5,
+    gate_50 = 6 
+}</pre></code>
+
+<h2>12. <a id="gmemsymstr">Gmemsymstr</a></h2>
+
+<p>Returns the string code for <code>gmemsym</code>#+NAME: gest
+<pre><code>function Gest:gmemsymstr(symbol)
+	local mem = self.bufname
+    local program = 
+        string.format("gmemsym [grab %s] %s", mem, symbol)
+    return program
+end</pre></code>
+</p>
+</div>
+</body>
+</html>
