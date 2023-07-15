@@ -76,11 +76,17 @@ Lua, can be compiled into TAL code using the <code>path</code>function. In addit
 the <a href="/gestlings/tal">tal</a> library will need to be passed in,
 along with a table to place the words that get generated.
 </p>
-<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.path(tal, words, path)
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.path(tal, words, path, lookup)
     for _, v in pairs(path)
     do
         if v.val ~= nil then
-            tal.val(words, v.val)
+            local pathval = v.val
+
+            if lookup ~= nil and type(pathval) == "string" then
+                pathval = lookup[pathval]
+            end
+
+            tal.val(words, pathval)
         end
 
         if v.dur ~= nil then
