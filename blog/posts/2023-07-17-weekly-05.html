@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width", initial-scale=1>
+<title>Weekly Update 5: Sculpting a Digital Vocal Tract</title>
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<h1>Weekly Update 5: Sculpting a Digital Vocal Tract</h1>
+<p>2023-07-17</p>
+<h2>Sculpting a Vocal Tract</h2>
+<p>This week, I found myself sculpting a digital vocal tract.
+You can see me sculpting it here (yes, there is sound):</p>
+<p><video controls>
+<source src="/res/weekly/sculpting.mp4" type="video/mp4">
+</video>
+</p>
+<p>The sculpter I built makes use of a <a href="/wiki/monome_grid">Monome Grid</a>
+and the KN01 knob from BinePad (also known as the NeoKnob).
+If the vocal tract can be imagined as a long tube, each row
+on the Grid corresponds to a region on that tube. The rows
+act as a kind of horizontal slider. As they get larger, the
+region of that tube gets larger. Various configurations
+of the regions produce geometries of the vocal tract that
+"color" an incoming glottal signal going into it with
+vowel-like timbres. Using the Grid gives me coarse tuning
+of the tract shape, while the knob provides fine tuning.</p>
+<p>This demonstrates one of the advantages to using this
+particular technique of voice synthesis: malleability.
+This is one of the only vocal synthesis techniques out
+there that allows for this interactive kind of sound
+shaping.</p>
+<p>This is not the first time I've built such a thing.
+In fact, I built an interface for my Grid functionally
+identical to this one back in 2021 for an earlier version
+of my system. However, this latest iteration has a few
+small quality of life improvements added to it. For starters,
+it controls a better sounding vocal tract. There's also
+some behind-the-scenes stuff that will make it easier for
+me to build up sets of tract shapes, which can then be
+used as phonemes for a babbling pseudo-language.</p>
+<h2>A notebook of bitmap doodles</h2>
+<p>At some point, I'd like to name these shapes and use the
+Grid to display these names. The low density of the Grid
+forces one to get creative. Letters take too much space,
+so I figured I'd think logographically and design
+symbols that can fit
+the <a href="/blog/posts/2023-07-10-weekly-04.html">text editor for the Grid</a> I
+made last week.</p>
+<p>It's a work in progress, but here's my notebook sketching
+out ideas and brainstorming. I think it showcases my typical
+process pretty well:</p>
+<p><img src="/res/weekly/bitmap_doodles.jpg" alt="Notebook of Bitmap Doodles" /></p>
+<p>Even though these will eventually end up digital bits and pixels,
+I find sketching things out by hand with ink is a better
+impedance match for my brain: it moves closer to the rate at
+which I think about things.</p>
+<p>The thought process here moves top to bottom, left to right.</p>
+<p>At the top of the left page, I start improvising 2x6 bitmap glyphs.
+By the start of the second row, some ideas begin to form. I start
+thinking about symbolically representing an upper and
+lower path.</p>
+<p>The second half of the left page, I switch to 2x4 bitmaps.
+For some reason, something clicks, and I'm immediately
+reminded of some of the Generative Kufic-style Calligraphy
+projects I did a while back, such as <a href="/wiki/kuf">kuf</a> and
+<a href="/wiki/trikuf">trikuf</a>. These dealt with a set of rules which
+yielded aesthetically pleasing 1-bit tilesets, which is
+exactly the sort of thing I want to do here.</p>
+<p>The right page here, I'm thinking about rules, systems,
+and organization. This is where things get a little unhinged.
+I think I know now what I'm after: combinations of 2x4
+tiles that form patterns that conform to some basic
+aesthetic rules inspired by Kufic calligraphy.</p>
+<p>I split the tile in half and rotate it. Instead of 2x4
+columns, I now have 4x1 rows. Given a row, I want to know
+all the valid rows that can come after it. My first instinct
+was to try and draw this out as a tree structure because
+I thought it'd be interesting. I should have known
+that was going to be too tedious to do by hand. I give
+up visualizing stuff, and start using terser notation. A
+row can be split in half and turned into a base-4 number:
+two numbers that are either 0, 1, 2, or 3. I start writing
+down a table for this with an ad-hoc method. I give up after
+a while.</p>
+<p>At some point, it occurs to me that this is a Finite State
+Machine, and I might benefit from writing the entire state
+machine for just 2 bits instead of 4 bits. I drew
+this out on the bottom on the right page. For any given
+2-bit state, there are 3 possible "kufically correct" states
+that can follow it. There's an elegance to that. Since
+there's only 4 possible states, you could define an even
+smaller table that shows what <em>can't</em> follow any given
+state (which is 1 state instead of 3), and you could fit
+it all in 16 bits.</p>
+<p>I return to the 4-bit rows. I want an algorithm that
+produces the possible rows for any given rows. I want to
+try breaking it up into 2 smaller 2-bit states and using
+the lookup table I just made. There are a maximum of 9
+possible states, but only some of those will yield Kufic
+correct results. The 4-bit row is split in half to make
+2 2-bit rows, but there is a third 2-bit row in the middle
+to consider as well.</p>
+<p>The stuff in the center is me trying to shove things into
+a 3x3 matrix because matrixes are neat, and define some adhoc
+"math" notation that will tersely define the operations
+I'm trying to do. The problem is, I just don't remember how
+to do matrix operations, and I can't be bothered to look
+it up. So what is there are scribbled attempts to express
+what I've been doing manually as a formal algorithm. It
+is incomplete, in a confusing state, but I think nearly done.</p>
+<p>Hopefully when this is done, I'll have a re-usable system
+for procedurally generating aesthetically pleasing symbols.</p>
+
+</div>
+</body>
+</html>
