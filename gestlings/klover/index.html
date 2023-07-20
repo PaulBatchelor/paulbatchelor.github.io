@@ -30,6 +30,32 @@
 
 <a href="/gestlings/klover#operations">4. Operations</a></li>
 
+<ul>
+<li>
+
+<a href="/gestlings/klover#split4">4.1. split4</a></li>
+
+<li>
+
+<a href="/gestlings/klover#xy2row">4.2. xy2row</a></li>
+
+<li>
+
+<a href="/gestlings/klover#inner2">4.3. inner2</a></li>
+
+<li>
+
+<a href="/gestlings/klover#belongs">4.4. belongs</a></li>
+
+<li>
+
+<a href="/gestlings/klover#pstates">4.5. pstates</a></li>
+
+<li>
+
+<a href="/gestlings/klover#row2str">4.6. row2str</a></li>
+
+</ul>
 <li>
 
 <a href="/gestlings/klover#generate-finite-state-machine-for-4-bit-rows">5. Generate Finite State Machine for 4-bit rows</a></li>
@@ -110,37 +136,53 @@ kuf2[3] = {0, 1, 2}</pre></code>
 
 <p>Low level operations used to manipulate rows.
 </p>
-<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>-- splits a 4-bit row into 2 2-bit components x,y
-function split4(row)
+</p>
+
+<h3>4.1. <a id="split4">split4</a></h3>
+
+<p>Splits a 4-bit row into 2 2-bit components x,y
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function split4(row)
     local x = (row &gt;&gt; 2) & 3
     local y = row & 3
     return x, y
-end
+end</pre></code>
 
--- base 4 xy pair to row
-function xy2row(x, y)
+<h3>4.2. <a id="xy2row">xy2row</a></h3>
+
+<p>base 4 xy pair to row
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function xy2row(x, y)
     x = x & 3;
     y = y & 3;
     return x &lt;&lt; 2 | y
-end
+end</pre></code>
 
--- getter inner 2-bit shape in a 4-bit row
--- AKA bits 'bc' in row 'abcb'
-function inner2(row)
+<h3>4.3. <a id="inner2">inner2</a></h3>
+
+<p>get inner 2-bit shape in a 4-bit row.
+</p>
+<p>AKA bits 'bc' in row 'abcb'
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function inner2(row)
     return (row &gt;&gt; 1) & 3
-end
+end</pre></code>
 
--- does a value x belong to set s?
-function belongs(x, s)
+<h3>4.4. <a id="belongs">belongs</a></h3>
+
+<p>check: does a value x belong to set 's'?
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function belongs(x, s)
     for _, v in pairs(s) do
         if x == v then return true end
     end
     return false
-end
+end</pre></code>
 
--- calculate possible states for a given 4-bit row
+<h3>4.5. <a id="pstates">pstates</a></h3>
 
-function pstates(row)
+<p>Calculate possible states for a given 4-bit row.
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function pstates(row)
     local ir = inner2(row)
     local x, y = split4(row)
     -- local m = kuf2[x]
@@ -156,10 +198,13 @@ function pstates(row)
     end
 
     return s
-end
+end</pre></code>
 
--- stringify a row, for printing purposes
-function row2str(row)
+<h3>4.6. <a id="row2str">row2str</a></h3>
+
+<p>stringify a row, for (terminal) printing purposes
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function row2str(row)
     local str = ""
     for i=1,4 do
         local x = "-"
@@ -187,6 +232,10 @@ function generate_kuf4()
         kuf4[i] = pstates(i)
     end
     return kuf4
+end
+
+function Klover.generate_fsm()
+    return generate_kuf4()
 end</pre></code>
 
 <h2>6. <a id="generate-a-symbol">Generate a Symbol</a></h2>
@@ -207,6 +256,10 @@ end</pre></code>
         table.insert(symbol, next)
     end
     return symbol
+end
+
+function Klover.generate_symbol(kuf4, len)
+    return generate_symbol(kuf4, len)
 end</pre></code>
 
 <h2>7. <a id="demo-proofsheet">Demo: Proofsheet</a></h2>

@@ -50,9 +50,15 @@ end</pre></code>
 
 <h2>4. <a id="save-save-an-asset-to-a-file">Save: Save an asset to a file</a></h2>
 
-<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset:save(data, filename)
+<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset:encode(data)
     local data_packed = self.msgpack.pack(data)
     local data_b64 = self.base64.encode(data_packed)
+    return data_b64
+end
+function Asset:save(data, filename)
+    -- local data_packed = self.msgpack.pack(data)
+    -- local data_b64 = self.base64.encode(data_packed)
+    local data_b64 = self.encode(self, data)
 
     local fp = io.open(filename, "wb")
     for p=1,#data_b64, 40 do
@@ -63,12 +69,18 @@ end</pre></code>
 
 <h2>5. <a id="load-load-an-asset-from-a-file">Load: Load an asset from a file</a></h2>
 
-<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset:load(filename)
+<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset:decode(data_packed_b64)
+    local data_packed = self.base64.decode(data_packed_b64)
+    local data = self.msgpack.unpack(data_packed)
+    return data
+end
+function Asset:load(filename)
     local fp = io.open(filename, "rb")
     local data_packed_b64 = fp:read("*all")
     fp:close()
-    local data_packed = self.base64.decode(data_packed_b64)
-    local data = self.msgpack.unpack(data_packed)
+    -- local data_packed = self.base64.decode(data_packed_b64)
+    -- local data = self.msgpack.unpack(data_packed)
+    data = self.decode(self, data_packed_b64)
     return data
 end</pre></code>
 </p>
