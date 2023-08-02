@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Descript</title>
+<h1>Descript</h1>
+<ul>
+
+<li>
+
+<a href="/gestlings/descript#overview">1. Overview</a></li>
+
+<li>
+
+<a href="/gestlings/descript#sample-descript-document">2. Sample Descript Document</a></li>
+
+<li>
+
+<a href="/gestlings/descript#parser">3. Parser</a></li>
+
+</ul>
+
+</p>
+
+<h2>1. <a id="overview">Overview</a></h2>
+
+<p>Descript is the name the high-level markup language
+used to build up Gestlings.
+</p>
+<p>Descript is very dialogue-driven. A typical Descript
+document consists of chunks of text, called blocks,
+interleaved with instructions which correspond to
+various actions.
+</p>
+<div><b><i>&lt;&lt;descript.lua&gt;&gt;=</i></b></div><pre><code>Descript = {}
+
+&lt;&lt;parser&gt;&gt;
+return Descript</pre></code>
+
+<h2>2. <a id="sample-descript-document">Sample Descript Document</a></h2>
+
+<p>Consider this document below:
+</p>
+<pre><code>@hello world
+this is a text block
+spanning many lines
+@block
+here is another block
+
+with some empty spaces
+
+@and here
+# is a comment
+the previous line is a comment
+
+@single_command
+@another_single_command
+@block
+here is another block</pre></code>
+<p></p>
+<p>While it doesn't actually do anything related to Gestling,
+it does outline a structure that could eventually become
+a Gestling. The same way HTML is a kind of XML, or a WAV
+file is just a bunch of RIFF chunks.
+</p>
+<p>Like the RIFF, describe breaks lines of text up into chunks.
+A chunk starts with a line beginning with '@', which is
+known as the header. Lines following that are in the chunk
+until the next header is defined. Here the chunk headers
+are 'hello world', 'block', 'and here', 'single_command',
+'anothercommand', and 'block'.
+</p>
+<p>Comments are lines that start with '#'. Lines that
+are empty are ignored.
+</p>
+
+<h2>3. <a id="parser">Parser</a></h2>
+
+<p>Parsing in Descript is done one line at a time.
+</p>
+<p>Descript breaks up lines into chunks.
+</p>
+<div><b><i>&lt;&lt;parser&gt;&gt;=</i></b></div><pre><code>function split(val, sep)
+    local sep = lpeg.P(sep)
+    local elem = lpeg.C((1 - sep)^0)
+    local lines = elem * (sep * elem)^0
+    lines = lpeg.Ct(lines)
+    return lpeg.match(lines, val)
+end
+
+function atfun (subject, pos, vals)
+    local split_vals = split(vals, '\n')
+
+    local new_vals = {}
+
+    for i,v in pairs(split_vals) do
+        if #v &gt; 0 and string.byte(v, 1) ~= string.byte('#')  then
+            table.insert(new_vals, v)
+        end
+    end
+
+    if #new_vals == 0 then return true end
+    return true, new_vals
+end
+
+function Descript.parse(str)
+    local atsym = lpeg.P("@")
+    local atelem = lpeg.C((1 - atsym)^0)
+    local atelem = lpeg.Cmt(atelem, atfun)
+    local atblock = (atsym * atelem)^0 * atelem
+    local t = lpeg.match(lpeg.Ct(atblock), str)
+    return t
+end</pre></code>
+</div>
+</body>
+</html>
