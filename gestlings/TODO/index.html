@@ -15,71 +15,71 @@
 </p>
 <p></p>
 
-<h2>architect gestling creation pipeline</h2>
-
-<a id="1410c566"></a><p>UUID: <a href="#1410c566">#1410c566</a>.
-</p>
-<p>big picture outline of all the components that go into making a single gestling
-</p>
-<blockquote>
-</blockquote>
-</p>
-
 <h2>scope out avatar component</h2>
 
 <a id="e6c08ee3"></a><p>UUID: <a href="#e6c08ee3">#e6c08ee3</a>.
 </p>
 <blockquote>
+<p><b>2023-08-02 22:56:40</b>: did some brainstorming around this, trying to iron how to best control this. I have this rough notion of using SDFs to draw things for this, but that could use some experiments. in glaslukk
+</p>
 <p><b>2023-07-28 21:58:51</b>: at the of writing, this is the major component with the most unknowns. There's not a lot of time, so I need to make sure this is all feasible.
 </p>
 </blockquote>
 </p>
 
-<h2>create map/regions -> HTML imagemap proof of concept</h2>
+<h2>mouth design proof of concept</h2>
 
-<a id="deaeb3b2"></a><p>UUID: <a href="#deaeb3b2">#deaeb3b2</a>.
+<a id="7017c66f"></a><p>UUID: <a href="#7017c66f">#7017c66f</a>.
 </p>
 <blockquote>
-<p><b>2023-08-01 17:15:07</b>: tilemap proof of concept
+<p><b>2023-08-04 14:51:55</b>: create mouth test sheet
 </p>
-<p><b>2023-07-31 16:19:06</b>: might want to anticipate having a tile being drawn on more than once. having a masking bit might be a good idea. These can be visualized with varibright, and maybe a toggle to go between mask mode and color mode
+<p><b>2023-08-03 15:50:55</b>: create sdfvm to btprnt region writer
 </p>
-<p><b>2023-07-29 14:14:13</b>: create tile editor for grid zero
+<p><b>2023-08-03 10:37:35</b>: playing with the SDF library I made, it's making more and more sense to build a little VM abstraction around it. Working on that now.
 </p>
-<p><b>2023-07-29 13:27:01</b>: I need to make map tiles. I could just write these up in a text editor like I've done in the past and that'd be a quick and dirty way to do it, but I'm going to induldge a little bit and build a 16x16 tile editor that works with my new grid zero.
+<p><b>2023-08-03 10:35:59</b>: initial sdf VM
 </p>
-<p><b>2023-07-29 12:23:44</b>: janet JSON bindings have been added to weewiki, have not tested it, but I assume it will work.
+<p><b>2023-08-02 22:59:40</b>: there's apparently a way to do deformations. I wonder how difficult it'd be to deform a circle to make the 'bean' shape as seen in adventure time
 </p>
-<p><b>2023-07-29 12:17:17</b>: there's a slow pure-janet implementation of a JSON parser that I could use in a pinch if I didn't want to touch weewiki. But, you know, if weewiki has btprnt bindings, it should have JSON stuff too.
+<p><b>2023-08-02 22:58:52</b>: polygon + rounding had some interesting results. the quadrilateral case could probably get a surprising amount of usage.
 </p>
-<p><b>2023-07-29 12:16:34</b>: oh, looks like I already added the JSON utility to gestlings for lua
+<p><b>2023-08-02 13:42:21</b>: I'll need to add the polygon SDF to mnolth, then maybe bring some experiments over here to the gestlings repo
 </p>
-<p><b>2023-07-29 12:11:00</b>: I do not have JSON stuff included with weewiki janet. I don't have a JSON encoder for lua either here. I'm just gonna have to do both. I'm choosing JSON over msgpack here because I think it's a little bit more straight forward, and the data is more suitable for JSON.
-</p>
-<p><b>2023-07-29 12:06:43</b>: part of this involves getting the sound/video engine (cantor/mnolth) to talk to the wiki engine (weewiki). I'm going to look into creating an intermediate format that cantor can write to, that weewiki (janet) can parse. I forget if I'm including JSON stuff with weewiki or not.
+<p><b>2023-08-02 13:40:56</b>: an idea I've been wanting to try for mouth movement is to use the 2d SDF for a polygon, and then round it.
 </p>
 </blockquote>
-<p>2 subtasks.
+<p>3 subtasks.
 </p>
 </p>
 
-<h3>create tile editor for grid zero</h3>
+<h3>initial sdf VM</h3>
 
-<a id="f9fdf981"></a><p>UUID: <a href="#f9fdf981">#f9fdf981</a>.
+<a id="06dc830f"></a><p>UUID: <a href="#06dc830f">#06dc830f</a>.
 </p>
 <blockquote>
-<p><b>2023-08-01 12:12:29</b>: I'm tempted to build a tile layout editor as well, since the current alternative is to use a text editor. I'm afraid it might be too much tool mind though. Instead, I'm going to work on exporting a tilemap and using it to make a test map.
-</p>
-<p><b>2023-07-29 22:29:27</b>: I'm using the varibright mappings to generate an outline for the 8x8 shape. super helpful.
-</p>
-<p><b>2023-07-29 22:12:32</b>: 16x16 is too much. going to do 8x8 instead. it would be nice to have the option to use all 4 quadrants at once to test combos to make up 16x16 tiles. but there isn't time.
+<p><b>2023-08-03 15:38:34</b>: I've got enough of a VM implemented in sdf2d that I think I can start moving it to mnolth, then cantor, in order to start prototyping mouths in C inside gestlings.
 </p>
 </blockquote>
 </p>
 
-<h3>tilemap proof of concept</h3>
+<h3>create sdfvm to btprnt region writer</h3>
 
-<a id="23e711bb"></a><p>UUID: <a href="#23e711bb">#23e711bb</a>.
+<a id="9a934013"></a><p>UUID: <a href="#9a934013">#9a934013</a>.
+</p>
+<blockquote>
+<p><b>2023-08-04 14:51:22</b>: It's now at a place where I can start coding up an initial mouth with some tests
+</p>
+<p><b>2023-08-04 14:11:18</b>: getting close to something workable. I'm thinking I'm just going to get it good enough so that it's convenient to make a chart of various mouth test shapes. If I like how it's being used, I'll port it to mnolth or something.
+</p>
+<p><b>2023-08-03 15:52:50</b>: this should involve reworking the vmdemo example to write to a btprnt region instead of to a buffer. instead of outputing a vec3, just do a scalar and truncate (>0.5 is 1, <0.5 is 0).
+</p>
+</blockquote>
+</p>
+
+<h3>create mouth test sheet</h3>
+
+<a id="88b93432"></a><p>UUID: <a href="#88b93432">#88b93432</a>.
 </p>
 <blockquote>
 </blockquote>
