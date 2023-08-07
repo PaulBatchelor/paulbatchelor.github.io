@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>A mouthlike-shape</title>
+<h1>A mouthlike-shape</h1>
+<img src="/gestlings/res/sdfvm_mouth.png">
+</p>
+<p>A proof of concept lua program that generates an SDFVM
+shader program in lua, then renders it to a lua btprnt
+image (see above).
+</p>
+<p>Builds off of <a href="/gestlings/mouthtests">mouthtests</a>. Note how lua
+abstractions make for less code. Neater code maybe? But
+definitely less code.
+</p>
+<div><b><i>&lt;&lt;sdfvm_mouth.lua&gt;&gt;=</i></b></div><pre><code>json = require("util/json")
+pprint = require("util/pprint")
+
+fp = io.open("avatar/sdfvm_lookup_table.json")
+syms = json.decode(fp:read("*all"))
+fp:close()
+
+-- pprint(syms)
+
+lil("bpnew bp 256 256")
+lil("bpset [grab bp] 0 0 0 256 256")
+lil("bufnew buf 256")
+lil("grab buf")
+program = pop()
+lil("sdfvmnew vm")
+lil("grab vm")
+vm = pop()
+
+
+function generate_program(syms, program)
+   mnobuf.append(program, syms.point)
+
+   for i=1,4 do
+       mnobuf.append(program, syms.scalar)
+       mnobuf.append_float(program, i - 1)
+       mnobuf.append(program, syms.register)
+   end
+
+   mnobuf.append(program, syms.poly4)
+
+   -- r5: rounded edge amount
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 5)
+   mnobuf.append(program, syms.register);
+
+   mnobuf.append(program, syms.roundness)
+   mnobuf.append(program, syms.point)
+
+   -- r6: circle radius
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 6)
+   mnobuf.append(program, syms.register);
+
+   mnobuf.append(program, syms.circle);
+
+   -- r4: circleness amount
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 4)
+   mnobuf.append(program, syms.register);
+
+   mnobuf.append(program, syms.lerp);
+   mnobuf.append(program, syms.gtz);
+end
+
+function apply_mouth_shape(vm, mouth)
+    sdfvm.regset_scalar(vm, 4, mouth.circleness)
+    sdfvm.regset_scalar(vm, 5, mouth.roundedge)
+    sdfvm.regset_scalar(vm, 6, mouth.circrad)
+
+    for i=1,4 do
+        local p = mouth.points[i]
+        sdfvm.regset_vec2(vm, i-1, p[1], p[2])
+    end
+end
+
+mouth1 = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+generate_program(syms, program)
+apply_mouth_shape(vm, mouth1)
+
+lil("bpsdf [bpget [grab bp] 0] [grab vm] [grab buf]")
+lil("bppng [grab bp] res/sdfvm_mouth.png")</pre></code>
+</div>
+</body>
+</html>
