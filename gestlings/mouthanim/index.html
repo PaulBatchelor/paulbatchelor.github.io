@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Mouth Animation Test</title>
+<h1>Mouth Animation Test</h1>
+<video controls>
+<source src="/gestlings/res/mouthanim.mp4" type="video/mp4">
+</video>
+</p>
+<p><ul>
+
+<li>
+
+<a href="/gestlings/mouthanim#overview">1. Overview</a></li>
+
+<li>
+
+<a href="/gestlings/mouthanim#bpsdfvm-program-generator">2. BPSDFVM program generator</a></li>
+
+<li>
+
+<a href="/gestlings/mouthanim#mouth-shaping">3. Mouth Shaping</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/mouthanim#applying-a-shape">3.1. Applying a Shape</a></li>
+
+<li>
+
+<a href="/gestlings/mouthanim#interpolation">3.2. Interpolation</a></li>
+
+</ul>
+<li>
+
+<a href="/gestlings/mouthanim#gliss-interpolation">4. Gliss Interpolation</a></li>
+
+<li>
+
+<a href="/gestlings/mouthanim#draw-a-frame">5. Draw a Frame</a></li>
+
+<li>
+
+<a href="/gestlings/mouthanim#render-loop">6. Render loop</a></li>
+
+<li>
+
+<a href="/gestlings/mouthanim#ffmpeg-video-encoding">7. ffmpeg video encoding</a></li>
+
+<li>
+
+<a href="/gestlings/mouthanim#mouth-shapes">8. Mouth Shapes</a></li>
+
+</ul>
+
+</p>
+
+<h2>1. <a id="overview">Overview</a></h2>
+
+<p>This morphs between the shapes found
+in <a href="/gestlings/mouthtests">mouthtests</a>, which have been converted from
+C code to Lua BPSDFVM programs
+using <a href="/gestlings/sdfvm_mouth">sdfvm_mouth</a> as a template.
+</p>
+<div><b><i>&lt;&lt;mouthanim.lua&gt;&gt;=</i></b></div><pre><code>json = require("util/json")
+pprint = require("util/pprint")
+
+os.execute("mkdir -p tmp res")
+fp = io.open("avatar/sdfvm_lookup_table.json")
+syms = json.decode(fp:read("*all"))
+fp:close()
+
+lil("bpnew bp 256 256")
+lil("gfxnew gfx 256 256")
+lil("bpset [grab bp] 0 0 0 256 256")
+lil("bufnew buf 256")
+lil("grab buf")
+program = pop()
+lil("sdfvmnew vm")
+lil("grab vm")
+vm = pop()
+
+lil("grab gfx")
+lil("dup")
+lil("gfxopen tmp/mouthanim.h264")
+
+lil("gfxclrset 1 1.0 1.0 1.0")
+lil("gfxclrset 0 0.0 0.0 0.0")
+lil("drop")
+
+&lt;&lt;program_generator&gt;&gt;
+generate_program(syms, program)
+
+&lt;&lt;mouthshapes&gt;&gt;
+
+mouths = {
+    mouth1, mouth2, mouth1b, mouth2b,
+    mouth3, mouth3b, mouth4, mouth4b,
+    mouth5, mouth1c, mouth2c, mouth6,
+    mouth7, mouth7b, mouth2d, mouth1d
+}
+
+
+&lt;&lt;apply_mouth_shape&gt;&gt;
+&lt;&lt;mouth_interp&gt;&gt;
+&lt;&lt;gliss&gt;&gt;
+&lt;&lt;draw_frame&gt;&gt;
+&lt;&lt;render_loop&gt;&gt;
+&lt;&lt;ffmpeg_encoding&gt;&gt;
+</pre></code>
+
+<h2>2. <a id="bpsdfvm-program-generator">BPSDFVM program generator</a></h2>
+
+<p>Generates the bytecode program for the SDF shape, with
+parameter inputs accessible via the registers.
+</p>
+<div><b><i>&lt;&lt;program_generator&gt;&gt;=</i></b></div><pre><code>function generate_program(syms, program)
+   mnobuf.append(program, syms.point)
+
+   for i=1,4 do
+       mnobuf.append(program, syms.scalar)
+       mnobuf.append_float(program, i - 1)
+       mnobuf.append(program, syms.register)
+   end
+
+   mnobuf.append(program, syms.poly4)
+
+   -- r5: rounded edge amount
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 5)
+   mnobuf.append(program, syms.register);
+
+   mnobuf.append(program, syms.roundness)
+   mnobuf.append(program, syms.point)
+
+   -- r6: circle radius
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 6)
+   mnobuf.append(program, syms.register);
+
+   mnobuf.append(program, syms.circle);
+
+   -- r4: circleness amount
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 4)
+   mnobuf.append(program, syms.register);
+
+   mnobuf.append(program, syms.lerp);
+   mnobuf.append(program, syms.gtz);
+end</pre></code>
+
+<h2>3. <a id="mouth-shaping">Mouth Shaping</a></h2>
+
+
+<h3>3.1. <a id="applying-a-shape">Applying a Shape</a></h3>
+
+<p>Takes a state and sets the appropriate registers bpsdfvm.
+</p>
+<div><b><i>&lt;&lt;apply_mouth_shape&gt;&gt;=</i></b></div><pre><code>function apply_mouth_shape(vm, mouth)
+    sdfvm.regset_scalar(vm, 4, mouth.circleness)
+    sdfvm.regset_scalar(vm, 5, mouth.roundedge)
+    sdfvm.regset_scalar(vm, 6, mouth.circrad)
+
+    for i=1,4 do
+        local p = mouth.points[i]
+        sdfvm.regset_vec2(vm, i-1, p[1], p[2])
+    end
+end</pre></code>
+
+<h3>3.2. <a id="interpolation">Interpolation</a></h3>
+
+<p>Used to linearly interpoate between two mouth parameter
+states. The interpolation coefficient <code>pos</code> is processed
+with a gliss function before being passed into this, so
+the shortens the interpolation time.
+<div><b><i>&lt;&lt;mouth_interp&gt;&gt;=</i></b></div><pre><code>function mouth_interp(m1, m2, pos)
+    local newmouth = {}
+
+    newmouth.circleness =
+        pos*m2.circleness +
+        (1 - pos)*m1.circleness
+
+    newmouth.roundedge =
+        pos*m2.roundedge +
+        (1 - pos)*m1.roundedge
+
+    newmouth.circrad =
+        pos*m2.circrad +
+        (1 - pos)*m1.circrad
+
+    newmouth.points = {}
+    for i=1,4 do
+        newmouth.points[i] = {}
+        newmouth.points[i][1] =
+            pos*m2.points[i][1] +
+            (1 - pos)*m1.points[i][1]
+        newmouth.points[i][2] =
+            pos*m2.points[i][2] +
+            (1 - pos)*m1.points[i][2]
+    end
+
+    return newmouth
+end</pre></code>
+
+<h2>4. <a id="gliss-interpolation">Gliss Interpolation</a></h2>
+
+<p>This is a function imported from gestvm. Given a value
+between 0-1, break it in half. In the second half,
+apply cubic interpolation. In the first half, return 0.
+<div><b><i>&lt;&lt;gliss&gt;&gt;=</i></b></div><pre><code>function gliss(a)
+    if (a &lt; 0.5) then
+        a = 0
+    else
+        a = a - 0.5
+        if (a &lt; 0) then a  = 0 end
+        a = a / 0.5
+        a = a * a * a
+    end
+
+    return a
+end</pre></code>
+
+<h2>5. <a id="draw-a-frame">Draw a Frame</a></h2>
+
+<div><b><i>&lt;&lt;draw_frame&gt;&gt;=</i></b></div><pre><code>function frame(fs)
+    framenum = fs.framenum
+    if (framenum % 60 == 0) then
+        print(framenum)
+    end
+    local m1 = mouths[fs.current_mouth]
+    local m2 = mouths[fs.next_mouth]
+    local ms = mouth_interp(m1, m2, gliss(fs.pos))
+    apply_mouth_shape(vm, ms)
+    lil("bpfill [bpget [grab bp] 0] 0")
+    lil("grab gfx")
+    lil("gfxfill 1")
+    lil("bpsdf [bpget [grab bp] 0] [grab vm] [grab buf]")
+    lil("dup")
+    lil("bptr [grab bp] 0 0 256 256 0 0 0")
+    lil("dup; gfxtransfer; gfxappend")
+end</pre></code>
+
+<h2>6. <a id="render-loop">Render loop</a></h2>
+
+<p>600 frames = 10 seconds at 60fps.
+</p>
+<p>Most of the code here updates the drawing state contained
+in <code>frame_state</code>. the actually  drawing is done in <code>frame</code>.
+<div><b><i>&lt;&lt;render_loop&gt;&gt;=</i></b></div><pre><code>frame_state = {
+    pos = 0,
+    framenum = 0,
+    next_mouth = 2,
+    current_mouth = 1
+}
+for i = 1, 600  do
+    frame_state.framenum = i
+    frame(frame_state)
+    frame_state.pos = frame_state.pos + (1/60)*2
+    if frame_state.pos &gt; 1 then
+        frame_state.pos = frame_state.pos - 1
+        frame_state.current_mouth = frame_state.next_mouth
+        frame_state.next_mouth = (frame_state.next_mouth + 1)
+        if frame_state.next_mouth &gt; #mouths then
+            frame_state.next_mouth = 1
+        end
+        print(frame_state.next_mouth, frame_state.current_mouth)
+    end
+end</pre></code>
+
+<h2>7. <a id="ffmpeg-video-encoding">ffmpeg video encoding</a></h2>
+
+<p>Close the video, encapsulate into mp4. then convert to
+yuv420p colorspace using ffmpeg.
+<div><b><i>&lt;&lt;ffmpeg_encoding&gt;&gt;=</i></b></div><pre><code>lil([[
+grab gfx
+gfxclose
+gfxmp4 tmp/mouthanim.h264 tmp/mouthanim.mp4
+]])
+os.execute("ffmpeg -y -i tmp/mouthanim.mp4 -pix_fmt yuv420p res/mouthanim.mp4")</pre></code>
+
+<h2>8. <a id="mouth-shapes">Mouth Shapes</a></h2>
+
+<div><b><i>&lt;&lt;mouthshapes&gt;&gt;=</i></b></div><pre><code>mouth1 = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+mouth2 = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.1, 0.5},
+        {-0.5, -0.5},
+        {0.5, -0.5},
+        {0.1, 0.5},
+    }
+}
+
+mouth1b = {
+    circleness = 0.8,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+mouth2b = {
+    circleness = 0.8,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.1, 0.5},
+        {-0.5, -0.5},
+        {0.5, -0.5},
+        {0.1, 0.5},
+    }
+}
+
+mouth3 = {
+    circleness = 0.0,
+    roundedge = 0.08,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.02},
+        {-0.5, -0.02},
+        {0.5, -0.02},
+        {0.5, 0.02},
+    }
+}
+
+mouth3b = {
+    circleness = 0.1,
+    roundedge = 0.08,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.02},
+        {-0.5, -0.02},
+        {0.5, -0.02},
+        {0.5, 0.02},
+    }
+}
+
+mouth4 = {
+    circleness = 0.0,
+    roundedge = 0.08,
+    circrad = 0.7,
+    points = {
+        {-0.2, 0.6},
+        {-0.02, -0.6},
+        {0.02, -0.6},
+        {0.2, 0.6},
+    }
+}
+
+mouth4b = {
+    circleness = 0.3,
+    roundedge = 0.08,
+    circrad = 0.7,
+    points = {
+        {-0.2, 0.6},
+        {-0.02, -0.6},
+        {0.02, -0.6},
+        {0.2, 0.6},
+    }
+}
+
+mouth5 = {
+    circleness = 1.0,
+    roundedge = 0.08,
+    circrad = 0.2,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+mouth1c = {
+    circleness = 0.0,
+    roundedge = 0.0,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+mouth2c = {
+    circleness = 0.0,
+    roundedge = 0.0,
+    circrad = 0.7,
+    points = {
+        {-0.1, 0.5},
+        {-0.5, -0.5},
+        {0.5, -0.5},
+        {0.1, 0.5},
+    }
+}
+
+mouth6 = {
+    circleness = 0.0,
+    roundedge = 0.0,
+    circrad = 0.7,
+    points = {
+        {-0.7, 0.7},
+        {-0.4, -0.4},
+        {0.4, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+shearx = 0.2
+mouth7 = {
+    circleness = 0.1,
+    roundedge = 0.05,
+    circrad = 0.7,
+    points = {
+        {-0.3 + shearx, 0.5},
+        {-0.3 - shearx, -0.5},
+        {0.3 - shearx, -0.5},
+        {0.3 + shearx, 0.5},
+    }
+}
+
+shearx = 0.5
+mouth7b = {
+    circleness = 0.0,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.3 - shearx, 0.5},
+        {-0.3 + shearx, -0.5},
+        {0.3 + shearx, -0.5},
+        {0.3 - shearx, 0.5},
+    }
+}
+
+mouth2d = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.1, 0.5},
+        {-0.8, 0.3},
+        {0.8, 0.3},
+        {0.1, 0.5},
+    }
+}
+
+mouth1d = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.8, 0.5},
+        {-0.1, 0.3},
+        {0.1, 0.3},
+        {0.8, 0.5},
+    }
+}
+</pre></code>
+</p>
+</div>
+</body>
+</html>
