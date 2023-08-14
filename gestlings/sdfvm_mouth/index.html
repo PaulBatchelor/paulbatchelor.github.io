@@ -45,7 +45,7 @@ function generate_program(syms, program)
    for i=1,4 do
        mnobuf.append(program, syms.scalar)
        mnobuf.append_float(program, i - 1)
-       mnobuf.append(program, syms.register)
+       mnobuf.append(program, syms.uniform)
    end
 
    mnobuf.append(program, syms.poly4)
@@ -53,7 +53,7 @@ function generate_program(syms, program)
    -- r5: rounded edge amount
    mnobuf.append(program, syms.scalar);
    mnobuf.append_float(program, 5)
-   mnobuf.append(program, syms.register);
+   mnobuf.append(program, syms.uniform);
 
    mnobuf.append(program, syms.roundness)
    mnobuf.append(program, syms.point)
@@ -61,27 +61,27 @@ function generate_program(syms, program)
    -- r6: circle radius
    mnobuf.append(program, syms.scalar);
    mnobuf.append_float(program, 6)
-   mnobuf.append(program, syms.register);
+   mnobuf.append(program, syms.uniform);
 
    mnobuf.append(program, syms.circle);
 
    -- r4: circleness amount
    mnobuf.append(program, syms.scalar);
    mnobuf.append_float(program, 4)
-   mnobuf.append(program, syms.register);
+   mnobuf.append(program, syms.uniform);
 
    mnobuf.append(program, syms.lerp);
    mnobuf.append(program, syms.gtz);
 end
 
 function apply_mouth_shape(vm, mouth)
-    sdfvm.regset_scalar(vm, 4, mouth.circleness)
-    sdfvm.regset_scalar(vm, 5, mouth.roundedge)
-    sdfvm.regset_scalar(vm, 6, mouth.circrad)
+    sdfvm.uniset_scalar(vm, 4, mouth.circleness)
+    sdfvm.uniset_scalar(vm, 5, mouth.roundedge)
+    sdfvm.uniset_scalar(vm, 6, mouth.circrad)
 
     for i=1,4 do
         local p = mouth.points[i]
-        sdfvm.regset_vec2(vm, i-1, p[1], p[2])
+        sdfvm.uniset_vec2(vm, i-1, p[1], p[2])
     end
 end
 
