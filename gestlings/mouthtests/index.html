@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Mouth Tests</title>
+<h1>Mouth Tests</h1>
+<img src="/gestlings/res/mouthtests.png">
+<ul>
+
+<li>
+
+<a href="/gestlings/mouthtests#overview">1. Overview</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#tangled-code">2. Tangled Code</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#structs">3. Structs</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#drawing-threadpool">4. Drawing Threadpool</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#sdfvm-bytecode-generator">5. SDFVM bytecode generator</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouthshape-parameter-mapping-to-sdfvm-uniforms">6. Mouthshape parameter mapping to SDFVM uniforms</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth-drawing-routines">7. Mouth Drawing Routines</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/mouthtests#core-mouth-program">7.1. Core Mouth Program</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth1">7.2. mouth1</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth2">7.3. mouth2</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth1b">7.4. mouth1b</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth2b">7.5. mouth2b</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth3">7.6. mouth3</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth3b">7.7. mouth3b</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth4">7.8. mouth4</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth4b">7.9. mouth4b</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth5">7.10. mouth5</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth1c">7.11. mouth1c</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth2c">7.12. mouth2c</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth6">7.13. mouth6</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth7">7.14. mouth7</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth7b">7.15. mouth7b</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth2d">7.16. mouth2d</a></li>
+
+<li>
+
+<a href="/gestlings/mouthtests#mouth1d">7.17. mouth1d</a></li>
+
+</ul>
+</ul>
+
+</p>
+
+<h2>1. <a id="overview">Overview</a></h2>
+
+<p>This is a prototype for a parametrically controlled mouth
+shape. This program experiments with a few configurations.
+In theory, one could interpolate between all of these
+mouth shapes.
+</p>
+<p>The mouth shape is created using SDFs. It is composed
+of a round quadrilateral with points and a circle
+blendeded together. Points, rounded edge amount, blend,
+and circle radius are all parametric.
+</p>
+<p>A lot of new things had to be built for this, including
+the "sdfvm" stuff to make it easier to prototype with
+SDFs. There also wasn't any good way to get the SDFs
+rendered into a btprnt region, so code for that exists
+here as well.
+</p>
+
+<h2>2. <a id="tangled-code">Tangled Code</a></h2>
+
+<div><b><i>&lt;&lt;mouthtests.c&gt;&gt;=</i></b></div><pre><code>#include &lt;math.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+#include "btprnt/btprnt.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+#include "mathc/mathc.h"
+
+#include "sdf2d/sdf.h"
+
+#define SDF2D_SDFVM_PRIV
+#include "sdf2d/sdfvm.h"
+
+#define US_MAXTHREADS 8
+
+void btprnt_png(btprnt *bp, const char *filename);
+
+
+&lt;&lt;structs&gt;&gt;
+&lt;&lt;drawing_threadpool&gt;&gt;
+&lt;&lt;bytecode_generator&gt;&gt;
+&lt;&lt;map_to_uniforms&gt;&gt;
+&lt;&lt;core_mouth_program&gt;&gt;
+&lt;&lt;mouthfuncs&gt;&gt;
+
+int main(int argc, char *argv[])
+{
+    btprnt *bp;
+    btprnt_region rmain;
+    /* NOTE delibrately changed from 'reg' because
+     * & + reg is an HTML escape code (&reg) and there's
+     * no time to fix it in weewiki.
+     */
+    btprnt_region rg;
+    int i;
+    sdfvm_stacklet uniforms[16];
+    uint8_t *program;
+    size_t sz;
+
+    bp = btprnt_new(512, 512);
+    program = calloc(1, 128);
+
+    sz = 0;
+    generate_program(program, &sz, 128);
+    btprnt_region_init(btprnt_canvas_get(bp),
+                       &rmain, 0, 0,
+                       512, 512);
+
+    btprnt_layout_grid(&rmain, 4, 4, 0, 0, &rg);
+    mouth1(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 1, 0, &rg);
+    mouth2(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 2, 0, &rg);
+    mouth1b(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 3, 0, &rg);
+    mouth2b(&rg, uniforms, 16, program, sz);
+
+    btprnt_layout_grid(&rmain, 4, 4, 0, 1, &rg);
+    mouth3(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 1, 1, &rg);
+    mouth3b(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 2, 1, &rg);
+    mouth4(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 3, 1, &rg);
+    mouth4b(&rg, uniforms, 16, program, sz);
+
+    btprnt_layout_grid(&rmain, 4, 4, 0, 2, &rg);
+    mouth5(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 1, 2, &rg);
+    mouth1c(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 2, 2, &rg);
+    mouth2c(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 3, 2, &rg);
+    mouth6(&rg, uniforms, 16, program, sz);
+
+    btprnt_layout_grid(&rmain, 4, 4, 0, 3, &rg);
+    mouth7(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 1, 3, &rg);
+    mouth7b(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 2, 3, &rg);
+    mouth2d(&rg, uniforms, 16, program, sz);
+    btprnt_layout_grid(&rmain, 4, 4, 3, 3, &rg);
+    mouth1d(&rg, uniforms, 16, program, sz);
+
+    for (i = 0; i &lt; 4; i++) {
+        btprnt_draw_hline(&rmain, 0, (i + 1)*128, 512, 1);
+        btprnt_draw_vline(&rmain, (i + 1)*128, 0, 512, 1);
+    }
+
+    btprnt_png(bp, "res/mouthtests.png");
+
+    btprnt_del(&bp);
+    free(program);
+    return 0;
+}</pre></code>
+
+<h2>3. <a id="structs">Structs</a></h2>
+
+<p>Various structs used in various layers of
+the drawing pipeline.
+</p>
+<p>Some of these might seem a little redundant, as it
+grew out from another program. Might be worth consolidating.
+</p>
+<div><b><i>&lt;&lt;structs&gt;&gt;=</i></b></div><pre><code>typedef struct {
+    void *ud;
+    struct vec4 region;
+    btprnt_region *bpreg;
+} image_data;
+
+typedef struct thread_userdata thread_userdata;
+
+/* an instance is passed to each pthread */
+/* note that each thread gets their own instance of SDFVM */
+typedef struct {
+    image_data *data;
+    int off;
+    void (*draw)(float *, struct vec2, thread_userdata *);
+    sdfvm vm;
+} thread_data;
+
+/* different from thread_data, this gets passed to the draw callback */
+struct thread_userdata {
+    thread_data *th;
+    image_data *data;
+};
+
+/* parameters for the shape */
+typedef struct {
+    struct vec2 points[4];
+    float circleness;
+    float roundedge;
+    float circrad;
+} mouthshape;
+
+/* data passed off to the draw routine */
+typedef struct {
+    mouthshape m;
+    sdfvm_stacklet *uniforms;
+    int nuniforms;
+    const uint8_t *program;
+    size_t sz;
+} mouth_params;</pre></code>
+
+<h2>4. <a id="drawing-threadpool">Drawing Threadpool</a></h2>
+
+<p>This drawing routine has been designed to be multithreaded.
+This works by making a threadpool and dividing up the region
+to be shared amongst the threads. Splitting is done on
+row at a time.
+</p>
+<div><b><i>&lt;&lt;drawing_threadpool&gt;&gt;=</i></b></div><pre><code>void *draw_thread(void *arg)
+{
+    thread_data *td;
+    image_data *data;
+    int x, y;
+    int nthreads;
+    int xstart, ystart;
+    int xend, yend;
+    struct vec4 *reg;
+    thread_userdata thud;
+    btprnt_region *bpreg;
+
+    td = arg;
+    data = td-&gt;data;
+
+    reg = &data-&gt;region;
+
+    bpreg = data-&gt;bpreg;
+
+    ystart = td-&gt;off + reg-&gt;y;
+    xstart = reg-&gt;x;
+    xend = reg-&gt;z + reg-&gt;x;
+    yend = reg-&gt;w + reg-&gt;y;
+
+    /* This is hard-coded for now */
+    nthreads = US_MAXTHREADS;
+
+    thud.th = td;
+    thud.data = data;
+    for (y = ystart; y &lt; yend; y+=nthreads) {
+        for (x = xstart; x &lt; xend; x++) {
+            float c;
+            int bit;
+
+            c = 1.0;
+            td-&gt;draw(&c, svec2(x - reg-&gt;x, y - reg-&gt;y), &thud);
+
+            /* flipped because in btprnt 1 is black, 0 white */
+            bit = c &lt; 0.5 ? 1 : 0;
+            btprnt_region_draw(bpreg, x, y, bit);
+        }
+    }
+
+    return NULL;
+}
+
+void draw_with_stride(void (*drawfunc)(float *, struct vec2, thread_userdata *),
+                      void *ud,
+                      btprnt_region *bpreg)
+{
+    thread_data td[US_MAXTHREADS];
+    pthread_t thread[US_MAXTHREADS];
+    int t;
+    image_data data;
+
+    data.ud = ud;
+    /* data.region = svec4(bpreg-&gt;x, bpreg-&gt;y, bpreg-&gt;w, bpreg-&gt;h); */
+    /* I don't think btprnt offsets are needed, that's only for btprnt canvas */
+    data.region = svec4(0, 0, bpreg-&gt;w, bpreg-&gt;h);
+    data.bpreg = bpreg;
+
+    for (t = 0; t &lt; US_MAXTHREADS; t++) {
+        td[t].data = &data;
+        td[t].off = t;
+        td[t].draw = drawfunc;
+        sdfvm_init(&td[t].vm);
+        pthread_create(&thread[t], NULL, draw_thread, &td[t]);
+    }
+
+    for (t = 0; t &lt; US_MAXTHREADS; t++) {
+        pthread_join(thread[t], NULL);
+    }
+}
+
+void draw(void (*drawfunc)(float *, struct vec2, thread_userdata *),
+          void *ud,
+          btprnt_region *reg)
+{
+    draw_with_stride(drawfunc, ud, reg);
+}</pre></code>
+
+<h2>5. <a id="sdfvm-bytecode-generator">SDFVM bytecode generator</a></h2>
+
+<p>The SDF shape is generated using SDFVM, a small stack-based
+virtual machine that makes calls to underlying SDF functions.
+A corresponding bytecode generator is associated with it,
+and it gets generated here.
+</p>
+<p>Originally, this program called the SDF C functions directly.
+Making a small VM was logical next step. SDFs seem to lend
+themselves well to the composability of stack based systems.
+The bytecode generator was added next in the hopes that it'd
+make writing programs in Lua easier without sacrificing
+too much performance (the idea being that calling Lua
+routines in a multi-threaded environment like this one
+just wouldn't work).
+</p>
+<p>The bytecode generator uses serialize floating point
+values into 4-byte values (assumed to be little endian,
+since those are the only systems I work with). This is
+what the <code>add_float</code> function does.
+</p>
+<div><b><i>&lt;&lt;bytecode_generator&gt;&gt;=</i></b></div><pre><code>static int add_float(uint8_t *prog, size_t *ppos, size_t maxsz, float val)
+{
+    uint8_t fdata[4];
+    float *fptr;
+    size_t pos;
+
+    pos = *ppos;
+    if ((pos + 4) &gt; maxsz) return 1;
+
+    fptr = (float *)fdata;
+    *fptr = val;
+    prog[pos++] = fdata[0];
+    prog[pos++] = fdata[1];
+    prog[pos++] = fdata[2];
+    prog[pos++] = fdata[3];
+
+    *ppos = pos;
+
+    return 0;
+}
+
+void generate_program(uint8_t *prog, size_t *sz, size_t maxsz)
+{
+    size_t pos;
+    int i;
+    pos = 0;
+
+    prog[pos++] = SDF_OP_POINT;
+    for (i = 0; i &lt; 4; i++) {
+        prog[pos++] = SDF_OP_SCALAR;
+        add_float(prog, &pos, maxsz, i);
+        prog[pos++] = SDF_OP_UNIFORM;
+    }
+    prog[pos++] = SDF_OP_POLY4;
+
+    /* r5: rounded edge amount */
+    prog[pos++] = SDF_OP_SCALAR;
+    add_float(prog, &pos, maxsz, 5);
+    prog[pos++] = SDF_OP_UNIFORM;
+
+    prog[pos++] = SDF_OP_ROUNDNESS;
+    prog[pos++] = SDF_OP_POINT;
+
+    /* r6: circle radius */
+    prog[pos++] = SDF_OP_SCALAR;
+    add_float(prog, &pos, maxsz, 6);
+    prog[pos++] = SDF_OP_UNIFORM;
+
+    prog[pos++] = SDF_OP_CIRCLE;
+
+    /* r4: circleness amount */
+    prog[pos++] = SDF_OP_SCALAR;
+    add_float(prog, &pos, maxsz, 4);
+    prog[pos++] = SDF_OP_UNIFORM;
+
+    prog[pos++] = SDF_OP_LERP;
+    prog[pos++] = SDF_OP_SCALAR;
+    add_float(prog, &pos, maxsz, -1.0);
+    prog[pos++] = SDF_OP_MUL;
+    prog[pos++] = SDF_OP_GTZ;
+
+    prog[pos++] = SDF_OP_COLOR;
+    prog[pos++] = SDF_OP_VEC3;
+    add_float(prog, &pos, maxsz, 0.0);
+    add_float(prog, &pos, maxsz, 0.0);
+    add_float(prog, &pos, maxsz, 0.0);
+    prog[pos++] = SDF_OP_LERP3;
+
+    *sz = pos;
+}</pre></code>
+
+<h2>6. <a id="mouthshape-parameter-mapping-to-sdfvm-uniforms">Mouthshape parameter mapping to SDFVM uniforms</a></h2>
+
+<p>The mouthtest program was made before the VM and bytecode
+interpreter existed, so work had to be done to translate
+the mouthshape parameters into SDFVM without needing
+to regenerate the program every time. A read-only uniform
+system was what I came up with.
+</p>
+<p>This program takes a struct containing all the mouth parameters,
+and then maps them to corresponding uniforms so they can
+be read from the SDFVM program.
+</p>
+<div><b><i>&lt;&lt;map_to_uniforms&gt;&gt;=</i></b></div><pre><code>void update_uniforms(sdfvm_stacklet *r, mouthshape *m)
+{
+    int i;
+    struct vec2 *points;
+
+    /* initialize uniforms */
+    for (i = 0; i &lt; 16; i++) {
+        r[i].type = SDFVM_SCALAR;
+        r[i].data.s = 0.0;
+    }
+
+    points = m-&gt;points;
+
+    for (i = 0; i &lt;= 3; i++) {
+        r[i].type = SDFVM_VEC2;
+        r[i].data.v2 = points[i];
+    }
+
+    /* uniform 4: "circleness" */
+    r[4].type = SDFVM_SCALAR;
+    r[4].data.s = m-&gt;circleness;
+
+    /* uniform 5: "roundedge" */
+    r[5].type = SDFVM_SCALAR;
+    r[5].data.s = m-&gt;roundedge;
+
+    /* uniform 6: "circrad" */
+    r[6].type = SDFVM_SCALAR;
+    r[6].data.s = m-&gt;circrad;
+}</pre></code>
+
+<h2>7. <a id="mouth-drawing-routines">Mouth Drawing Routines</a></h2>
+
+<p>These are the actual mouth shapes. It's a theme and
+variations. There is a prototypical core mouth program that
+draws the compound SDF shape, and there are a handful of
+parameters that can supplied to this shape. Each mouth shape
+has a slightly different parameter configuration.
+</p>
+
+<h3>7.1. <a id="core-mouth-program">Core Mouth Program</a></h3>
+
+<div><b><i>&lt;&lt;core_mouth_program&gt;&gt;=</i></b></div><pre><code>static void mouth1_program(sdfvm *vm,
+                           struct vec2 p,
+                           mouthshape *m,
+                           float *fragColor,
+                           const uint8_t *program,
+                           size_t sz,
+                           sdfvm_stacklet *uniforms,
+                           int nuniforms)
+{
+    float col;
+    struct vec3 gray;
+
+    gray = svec3(*fragColor, *fragColor, *fragColor);
+    sdfvm_point_set(vm, p);
+    sdfvm_color_set(vm, gray);
+    sdfvm_uniforms(vm, uniforms, nuniforms);
+    sdfvm_execute(vm, program, sz);
+    sdfvm_pop_vec3(vm, &gray);
+
+    col = gray.x;
+    *fragColor = col;
+}
+
+static void d_mouth1(float *fragColor,
+                     struct vec2 st,
+                     thread_userdata *thud)
+{
+    struct vec2 p;
+    image_data *id;
+    struct vec2 res;
+    sdfvm *vm;
+    mouth_params *mp;
+    mouthshape *m;
+
+    id = thud-&gt;data;
+    vm = &thud-&gt;th-&gt;vm;
+
+    mp = id-&gt;ud;
+    m = &mp-&gt;m;
+
+    res = svec2(id-&gt;region.z, id-&gt;region.w);
+    sdfvm_push_vec2(vm, svec2(st.x, st.y));
+    sdfvm_push_vec2(vm, res);
+    sdfvm_normalize(vm);
+    sdfvm_pop_vec2(vm, &p);
+    p.y = p.y*-1;
+
+    mouth1_program(vm, p, m, fragColor,
+        mp-&gt;program, mp-&gt;sz,
+        mp-&gt;uniforms, 16);
+}</pre></code>
+
+<h3>7.2. <a id="mouth1">mouth1</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth1(btprnt_region *reg,
+            sdfvm_stacklet *uniforms,
+            int nuniforms,
+            uint8_t *program,
+            size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.1;
+    m-&gt;roundedge = 0.1;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.5, 0.5);
+    points[1] = svec2(-0.1, -0.5);
+    points[2] = svec2(0.1, -0.5);
+    points[3] = svec2(0.5, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.3. <a id="mouth2">mouth2</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth2(btprnt_region *reg,
+            sdfvm_stacklet *uniforms,
+            int nuniforms,
+            uint8_t *program,
+            size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.1;
+    m-&gt;roundedge = 0.1;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.1, 0.5);
+    points[1] = svec2(-0.5, -0.5);
+    points[2] = svec2(0.5, -0.5);
+    points[3] = svec2(0.1, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.4. <a id="mouth1b">mouth1b</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth1b(btprnt_region *reg,
+             sdfvm_stacklet *uniforms,
+             int nuniforms,
+             uint8_t *program,
+             size_t sz)
+{
+    mouthshape *m;
+    mouth_params mp;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.8;
+    m-&gt;roundedge = 0.1;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.5, 0.5);
+    points[1] = svec2(-0.1, -0.5);
+    points[2] = svec2(0.1, -0.5);
+    points[3] = svec2(0.5, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.5. <a id="mouth2b">mouth2b</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth2b(btprnt_region *reg,
+             sdfvm_stacklet *uniforms,
+             int nuniforms,
+             uint8_t *program,
+             size_t sz)
+{
+    mouthshape *m;
+    mouth_params mp;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.8;
+    m-&gt;roundedge = 0.1;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.1, 0.5);
+    points[1] = svec2(-0.5, -0.5);
+    points[2] = svec2(0.5, -0.5);
+    points[3] = svec2(0.1, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.6. <a id="mouth3">mouth3</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth3(btprnt_region *reg,
+            sdfvm_stacklet *uniforms,
+            int nuniforms,
+            uint8_t *program,
+            size_t sz)
+{
+    mouthshape *m;
+    mouth_params mp;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.0;
+    m-&gt;roundedge = 0.08;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.5, 0.02);
+    points[1] = svec2(-0.5, -0.02);
+    points[2] = svec2(0.5, -0.02);
+    points[3] = svec2(0.5, 0.02);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}
+</pre></code>
+
+<h3>7.7. <a id="mouth3b">mouth3b</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth3b(btprnt_region *reg,
+            sdfvm_stacklet *uniforms,
+            int nuniforms,
+            uint8_t *program,
+            size_t sz)
+{
+    mouthshape *m;
+    mouth_params mp;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.1;
+    m-&gt;roundedge = 0.08;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.5, 0.02);
+    points[1] = svec2(-0.5, -0.02);
+    points[2] = svec2(0.5, -0.02);
+    points[3] = svec2(0.5, 0.02);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.8. <a id="mouth4">mouth4</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth4(btprnt_region *reg,
+            sdfvm_stacklet *uniforms,
+            int nuniforms,
+            uint8_t *program,
+            size_t sz)
+{
+    mouthshape *m;
+    mouth_params mp;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.0;
+    m-&gt;roundedge = 0.08;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.2, 0.6);
+    points[1] = svec2(-0.02, -0.6);
+    points[2] = svec2(0.02, -0.6);
+    points[3] = svec2(0.2, 0.6);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.9. <a id="mouth4b">mouth4b</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth4b(btprnt_region *reg,
+             sdfvm_stacklet *uniforms,
+             int nuniforms,
+             uint8_t *program,
+             size_t sz)
+{
+    mouthshape *m;
+    mouth_params mp;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.3;
+    m-&gt;roundedge = 0.08;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.2, 0.6);
+    points[1] = svec2(-0.02, -0.6);
+    points[2] = svec2(0.02, -0.6);
+    points[3] = svec2(0.2, 0.6);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.10. <a id="mouth5">mouth5</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth5(btprnt_region *reg,
+            sdfvm_stacklet *uniforms,
+            int nuniforms,
+            uint8_t *program,
+            size_t sz)
+{
+    mouthshape *m;
+    mouth_params mp;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.9;
+    m-&gt;roundedge = 0.08;
+    m-&gt;circrad = 0.3;
+    points = m-&gt;points;
+    points[0] = svec2(-0.5, 0.5);
+    points[1] = svec2(-0.1, -0.5);
+    points[2] = svec2(0.1, -0.5);
+    points[3] = svec2(0.5, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.11. <a id="mouth1c">mouth1c</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth1c(btprnt_region *reg,
+             sdfvm_stacklet *uniforms,
+             int nuniforms,
+             uint8_t *program,
+             size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.0;
+    m-&gt;roundedge = 0.0;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.5, 0.5);
+    points[1] = svec2(-0.1, -0.5);
+    points[2] = svec2(0.1, -0.5);
+    points[3] = svec2(0.5, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}
+</pre></code>
+
+<h3>7.12. <a id="mouth2c">mouth2c</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth2c(btprnt_region *reg,
+             sdfvm_stacklet *uniforms,
+             int nuniforms,
+             uint8_t *program,
+             size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.0;
+    m-&gt;roundedge = 0.0;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.1, 0.5);
+    points[1] = svec2(-0.5, -0.5);
+    points[2] = svec2(0.5, -0.5);
+    points[3] = svec2(0.1, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.13. <a id="mouth6">mouth6</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth6(btprnt_region *reg,
+            sdfvm_stacklet *uniforms,
+            int nuniforms,
+            uint8_t *program,
+            size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.3;
+    m-&gt;roundedge = 0.01;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.7, 0.7);
+    points[1] = svec2(-0.4, -0.4);
+    points[2] = svec2(0.4, -0.5);
+    points[3] = svec2(0.5, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}
+</pre></code>
+
+<h3>7.14. <a id="mouth7">mouth7</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth7(btprnt_region *reg,
+            sdfvm_stacklet *uniforms,
+            int nuniforms,
+            uint8_t *program,
+            size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+    float shearx;
+
+    shearx = 0.2;
+    m = &mp.m;
+    m-&gt;circleness = 0.1;
+    m-&gt;roundedge = 0.05;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.3 + shearx, 0.5);
+    points[1] = svec2(-0.3 - shearx, -0.5);
+    points[2] = svec2(0.3 - shearx, -0.5);
+    points[3] = svec2(0.3 + shearx, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.15. <a id="mouth7b">mouth7b</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth7b(btprnt_region *reg,
+             sdfvm_stacklet *uniforms,
+             int nuniforms,
+             uint8_t *program,
+             size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+    float shearx;
+
+    shearx = 0.5;
+    m = &mp.m;
+    m-&gt;circleness = 0.0;
+    m-&gt;roundedge = 0.1;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.3 - shearx, 0.5);
+    points[1] = svec2(-0.3 + shearx, -0.5);
+    points[2] = svec2(0.3 + shearx, -0.5);
+    points[3] = svec2(0.3 - shearx, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+
+<h3>7.16. <a id="mouth2d">mouth2d</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth2d(btprnt_region *reg,
+             sdfvm_stacklet *uniforms,
+             int nuniforms,
+             uint8_t *program,
+             size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.1;
+    m-&gt;roundedge = 0.1;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.1, 0.5);
+    points[1] = svec2(-0.8, 0.3);
+    points[2] = svec2(0.8, 0.3);
+    points[3] = svec2(0.1, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}
+</pre></code>
+
+<h3>7.17. <a id="mouth1d">mouth1d</a></h3>
+
+<div><b><i>&lt;&lt;mouthfuncs&gt;&gt;=</i></b></div><pre><code>void mouth1d(btprnt_region *reg,
+             sdfvm_stacklet *uniforms,
+             int nuniforms,
+             uint8_t *program,
+             size_t sz)
+{
+    mouth_params mp;
+    mouthshape *m;
+    struct vec2 *points;
+
+    m = &mp.m;
+    m-&gt;circleness = 0.1;
+    m-&gt;roundedge = 0.1;
+    m-&gt;circrad = 0.7;
+    points = m-&gt;points;
+    points[0] = svec2(-0.8, 0.5);
+    points[1] = svec2(-0.1, 0.3);
+    points[2] = svec2(0.1, 0.3);
+    points[3] = svec2(0.8, 0.5);
+
+    update_uniforms(uniforms, m);
+    mp.uniforms = uniforms;
+    mp.nuniforms = nuniforms;
+    mp.program = program;
+    mp.sz = sz;
+    draw(d_mouth1, &mp, reg);
+}</pre></code>
+</p>
+</div>
+</body>
+</html>

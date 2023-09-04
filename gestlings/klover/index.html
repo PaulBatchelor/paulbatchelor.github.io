@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Klover</title>
+<h1>Klover</h1>
+<img src="/gestlings/gestlings/res/klover_proofsheet.png">
+<ul>
+
+<li>
+
+<a href="/gestlings/klover#overview">1. Overview</a></li>
+
+<li>
+
+<a href="/gestlings/klover#tangled-file-kloverlua">2. Tangled File (klover.lua)</a></li>
+
+<li>
+
+<a href="/gestlings/klover#generate-finite-state-machine-for-2-bit-rows">3. Generate Finite State machine for 2-bit rows</a></li>
+
+<li>
+
+<a href="/gestlings/klover#operations">4. Operations</a></li>
+
+<ul>
+<li>
+
+<a href="/gestlings/klover#split4">4.1. split4</a></li>
+
+<li>
+
+<a href="/gestlings/klover#xy2row">4.2. xy2row</a></li>
+
+<li>
+
+<a href="/gestlings/klover#inner2">4.3. inner2</a></li>
+
+<li>
+
+<a href="/gestlings/klover#belongs">4.4. belongs</a></li>
+
+<li>
+
+<a href="/gestlings/klover#pstates">4.5. pstates</a></li>
+
+<li>
+
+<a href="/gestlings/klover#row2str">4.6. row2str</a></li>
+
+</ul>
+<li>
+
+<a href="/gestlings/klover#generate-finite-state-machine-for-4-bit-rows">5. Generate Finite State Machine for 4-bit rows</a></li>
+
+<li>
+
+<a href="/gestlings/klover#generate-a-symbol">6. Generate a Symbol</a></li>
+
+<li>
+
+<a href="/gestlings/klover#demo-proofsheet">7. Demo: Proofsheet</a></li>
+
+</ul>
+
+</p>
+
+<h2>1. <a id="overview">Overview</a></h2>
+
+<p>(Pronounced like "clover", but with a K)
+</p>
+<p>A procedurally generated system of 1-bit symbols. Suitable
+for large grid layouts. The hope is to make it simpler to
+auto-name things in this constrained interface with
+limited information density (letters take up too much
+screen space).
+</p>
+<p>Klover symbols have a height of 4 bits, and variable
+width. Klovers, like lucky 4-leaf clovers, celebrate
+groups of 4. This is where the core of the name
+comes from.
+</p>
+<p>Klover symbols use heuristics inspired by Square Kufic
+calligraphy to generate aesthetically pleasing
+symbols that are well balanced between black and white
+tiles. This is where Klover gets the "K".
+</p>
+<p>There are many ways to generate 1-bit tilemaps that
+are "technically correct" Kufic. The heart of
+this algorithm is a finite state machine. A Klover
+symbol is produced one column at a time (called
+rows in the code sorry for the confusion). An
+initial column is chosen, and then the FSM is used
+to randomly choose which state to go to from a set
+of valid states. Since Klovers are 4 tiles high, they
+can be represented as a 4-bit number. The 4-bit FSM lookup
+table is dynamically generated from a 2-bit FSM.
+</p>
+<p>Precursor found in the file <code>scratch/kufbit4fsm.lua</code>.
+</p>
+
+<h2>2. <a id="tangled-file-kloverlua">Tangled File (klover.lua)</a></h2>
+
+<div><b><i>&lt;&lt;klover.lua&gt;&gt;=</i></b></div><pre><code>Klover = {}
+
+&lt;&lt;fsm_2bit_kufic&gt;&gt;
+&lt;&lt;operations&gt;&gt;
+&lt;&lt;fsm_4bit_kufic&gt;&gt;
+&lt;&lt;generate_symbol&gt;&gt;
+&lt;&lt;proofsheet&gt;&gt;
+
+return Klover</pre></code>
+
+<h2>3. <a id="generate-finite-state-machine-for-2-bit-rows">Generate Finite State machine for 2-bit rows</a></h2>
+
+<div><b><i>&lt;&lt;fsm_2bit_kufic&gt;&gt;=</i></b></div><pre><code>-- 2 bit kufic fsm
+-- 00 -&gt; 01, 10, 11
+-- 01 -&gt; 00, 01, 11
+-- 10 -&gt; 00, 10, 11
+-- 11 -&gt; 00, 01, 10
+
+kuf2 = {}
+kuf2[0] = {1, 2, 3}
+kuf2[1] = {0, 1, 3}
+kuf2[2] = {0, 2, 3}
+kuf2[3] = {0, 1, 2}</pre></code>
+
+<h2>4. <a id="operations">Operations</a></h2>
+
+<p>Low level operations used to manipulate rows.
+</p>
+</p>
+
+<h3>4.1. <a id="split4">split4</a></h3>
+
+<p>Splits a 4-bit row into 2 2-bit components x,y
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function split4(row)
+    local x = (row &gt;&gt; 2) & 3
+    local y = row & 3
+    return x, y
+end</pre></code>
+
+<h3>4.2. <a id="xy2row">xy2row</a></h3>
+
+<p>base 4 xy pair to row
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function xy2row(x, y)
+    x = x & 3;
+    y = y & 3;
+    return x &lt;&lt; 2 | y
+end</pre></code>
+
+<h3>4.3. <a id="inner2">inner2</a></h3>
+
+<p>get inner 2-bit shape in a 4-bit row.
+</p>
+<p>AKA bits 'bc' in row 'abcb'
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function inner2(row)
+    return (row &gt;&gt; 1) & 3
+end</pre></code>
+
+<h3>4.4. <a id="belongs">belongs</a></h3>
+
+<p>check: does a value x belong to set 's'?
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function belongs(x, s)
+    for _, v in pairs(s) do
+        if x == v then return true end
+    end
+    return false
+end</pre></code>
+
+<h3>4.5. <a id="pstates">pstates</a></h3>
+
+<p>Calculate possible states for a given 4-bit row.
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function pstates(row)
+    local ir = inner2(row)
+    local x, y = split4(row)
+    -- local m = kuf2[x]
+    -- local n = kuf2[y]
+    local s = {}
+    for _,m in pairs(kuf2[x]) do
+        for _, n in pairs(kuf2[y]) do
+            local mn = xy2row(m, n)
+            if belongs(inner2(mn), kuf2[ir]) then
+                table.insert(s, mn)
+            end
+        end
+    end
+
+    return s
+end</pre></code>
+
+<h3>4.6. <a id="row2str">row2str</a></h3>
+
+<p>stringify a row, for (terminal) printing purposes
+</p>
+<div><b><i>&lt;&lt;operations&gt;&gt;=</i></b></div><pre><code>function row2str(row)
+    local str = ""
+    for i=1,4 do
+        local x = "-"
+        if (row & (1 &lt;&lt; (4 - i))) &gt; 0 then x = "#" end
+        str = str .. x
+    end
+
+    return str
+end</pre></code>
+
+<h2>5. <a id="generate-finite-state-machine-for-4-bit-rows">Generate Finite State Machine for 4-bit rows</a></h2>
+
+<p>The FSM structure for 4-bit columns are dynamically generated
+by breaking each column into 2 2-bit columns, and using
+the hard-coded 2-bit FSM lookup table to calculate the
+possible states.
+</p>
+<div><b><i>&lt;&lt;fsm_4bit_kufic&gt;&gt;=</i></b></div><pre><code>-- create a 4-bit FSM that complies with kufic rules
+-- use it to procedurally generate small bit patterns that
+-- can be used as identifiers for tract shapes
+
+function generate_kuf4()
+    local kuf4 = {}
+    for i=0,15 do
+        kuf4[i] = pstates(i)
+    end
+    return kuf4
+end
+
+function Klover.generate_fsm()
+    return generate_kuf4()
+end</pre></code>
+
+<h2>6. <a id="generate-a-symbol">Generate a Symbol</a></h2>
+
+<p>Function used to generate a symbol.
+</p>
+<div><b><i>&lt;&lt;generate_symbol&gt;&gt;=</i></b></div><pre><code>function generate_symbol(kuf4, len)
+    -- 1 thru 15 avoids 0
+    local symbol = {}
+    len = len or 6
+    table.insert(symbol, math.random(15))
+    for i=1,(len-1) do
+        local possible = kuf4[symbol[i]]
+        local next = 0
+        while next == 0 do
+            next = possible[math.random(#possible)]
+        end
+        table.insert(symbol, next)
+    end
+    return symbol
+end
+
+function Klover.generate_symbol(kuf4, len)
+    return generate_symbol(kuf4, len)
+end</pre></code>
+
+<h2>7. <a id="demo-proofsheet">Demo: Proofsheet</a></h2>
+
+<p>Generates the proofsheet seen at the top of this page.
+<div><b><i>&lt;&lt;proofsheet&gt;&gt;=</i></b></div><pre><code>function Klover.proofsheet(params)
+    params = params or {}
+    local nrows = 6
+    local ncols = 5
+    local border = 4
+    local width = (ncols * (48 + border*2)) + (ncols - 1) * 8  + 2*8
+    local height = (nrows * (32 + border*2)) + (nrows - 1) * 8  + 2*8
+    lil ("bpnew bp " ..  width ..  " " .. height)
+
+    function draw_symbol(symbol, xoff, yoff)
+        lil("bpset [grab bp] 0 " ..
+            8 + xoff * (48 + 8 + 2*border) .. " " ..
+            8 + yoff * (32 + 8 + 2*border) .. " " ..
+            48 + border*2 ..
+            " " ..
+            32+border*2)
+        lil("bpoutline [bpget [grab bp] 0] 1")
+
+        for y=1,4 do
+            local rowstr = ""
+            for x, row in pairs(symbol) do
+                local bit = row & (1 &lt;&lt; (y - 1))
+
+                if bit &gt; 0 then
+                    lil(string.format("bprectf [bpget [grab bp] 0] %d %d 8 8 1",
+                    (x - 1)*8 + border, (y - 1)*8 + border))
+                end
+            end
+        end
+    end
+
+    local kuf4 = generate_kuf4()
+    for row=1,nrows do
+        for col=1,ncols do
+            draw_symbol(generate_symbol(kuf4), col - 1, row - 1)
+        end
+    end
+
+    local filename = params.filename or "klover_proofsheet.pbm"
+    lil("bppng [grab bp] " .. filename)
+end</pre></code>
+</p>
+</div>
+</body>
+</html>

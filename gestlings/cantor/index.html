@@ -9,2955 +9,41 @@
 </head>
 <body>
 <div id="main">
-<p><pre><code>function Sig:hold(lil_eval)
-    -- can be a callback used to simulate holding
-    lil_eval = lil_eval or lil_default
-    if self.reg &gt;= 0 then
-        error("can't hold, already holding")
-    end
-
-    -- regnxt actually has to be called to see if it is
-    -- working
-
-    local lstr = "param [regnxt 0]"
-    -- if lil_eval ~= lil then
-    --     lil_eval(lstr)
-    -- end
-
-    lil(lstr)
-
-
-    local reg = pop()
-
-    if reg &lt; 0 then
-        error("invalid index")
-    end
-
-    -- hold/regset can be simulated without issue
-    lil_eval({"hold", "zz"})
-    -- lil_eval("hold zz # sig")
-    lil_eval({"regset", "zz",reg})
-
-    -- regmrk actually has to be called for it to work
-    -- local lstr = string.format("regmrk %d", reg)
-    local lstr = {"regmrk", reg}
-
-    if lil_eval ~= lil then
-        lil_eval(lstr)
-    end
-
-    lil(table.concat(lstr, " "))
-    -- lil(string.format("regset zz %d; regmrk %d", reg, reg))
-
-    self.reg = reg
-end</pre></code>
-<p><pre><code>local function lil_default(s)
-    if type(s) == "table" then
-        s = table.concat(s, " ")
-    end
-    lil(s)
-end
-function Graph:new(o)
-    o = o or {}
-    o.nverts = 0
-    o.edges = {}
-    o.nodes = {}
-    o.sig = o.sig or sig
-
-    if o.eval == nil then
-        if o.debug then
-            o.eval = print
-        else
-            o.eval = lil_default
-        end
-    end
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end</pre></code>
-<p><pre><code>seq = {
-    {A, {1, 1}},
-    {B, {2, 1}},
-    {C, {2, 1}},
-}</pre></code>
-<p><pre><code>A2(BC)</pre></code>
-<p><pre><code>function Node:compute()
-    if self.data.gen ~= nil then
-        -- TODO functions that return strings is kinda
-        -- messy. sig breaks this. maybe fix?
-        local str = self.data.gen(self)
-        if str ~= nil then
-            -- refactoring things so that eval string is
-            -- represented as table of words instead of
-            -- string literal
-            -- if type(str) == "table" then
-            --     str = table.concat(str, " ")
-            -- end
-            self.data.g.eval(str)
-        end
-    end
-end</pre></code>
-<p><pre><code>-- spoof the "node" interface from diagraf
-function default_lil_eval(s)
-    if type(s) == "table" then
-        s = table.concat(s, " ")
-    end
-    lil(s)
-end
-dummy = {}
-dummy.eval = default_lil_eval
-
--- this is a hack for the specifically gest node
--- the "glive" parameter for some reason has to be a string
--- it can't work as a callback when it is a parameter node
-dummy.sigrune_dummy = true
-function dummy:lil(str)
-    -- if type(str) == "table" then
-    --     str = table.concat(str, " ")
-    -- end
-    self.eval(str)
-end
-
--- this is a shim for the Node:param() method
--- for some reason, this evals in-place. the current diagraf
--- node method returns something. I think this might be
--- outdated or something? I'll need to revisit.
-function dummy:param(v)
-    if type(v) == "function" then
-        v(self.eval)
-    elseif type(v) == "table" and v.lilnode then
-		self.eval(v.lilstr)
-    else
-        self.eval({"param", v})
-    end
-end
-
-function dummy:label(str)
-
-end</pre></code>
-<p><pre><code>function S.dblin(n, p)
-    n.db = n:param(p.db or 0)
-    n:lil("dblin zz")
-    n:label("dblin")
-end</pre></code>
-<p><pre><code>function S.crossfade(n, p)
-    n.a = n:param(p.a or 0)
-    n.b = n:param(p.b or 1)
-    n.pos  = n:param(p.pos or 0)
-    n:lil({"crossfade", "zz", "zz", "zz"})
-    n:label("crossfade")
-end</pre></code>
-<p><pre><code>function S.butbp(n, p)
-    n.input = n:param(0)
-    n.freq = n:param(p.freq or 1000)
-    n.bw = n:param(p.bw or 1000)
-    n:lil({"butbp", "zz", "zz", "zz"})
-    n:label("butbp")
-end</pre></code>
-<p><pre><code>function S.mtof(n, p)
-    n.input = n:param(p.input or 0)
-    n:lil({"mtof", "zz"})
-    n:label("mtof")
-end</pre></code>
-<p><pre><code>function S.peakeq(n, p)
-    n.input = n:param(0)
-    n.freq = n:param(p.freq or 1000)
-    n.bw = n:param(p.bw or 1000)
-    n.gain = n:param(p.gain or 1)
-    n:lil("peakeq zz zz zz zz")
-    n:label("peakeq")
-end</pre></code>
-<p><pre><code>function S.env(n, p)
-    n.trig = n:param(0)
-    n.atk = n:param(p.atk or 0.001)
-    n.dec = n:param(p.dec or 0.01)
-    n.rel = n:param(p.rel or 0.1)
-    n:lil("env zz zz zz zz")
-    n:label("env")
-end</pre></code>
-<p><pre><code>Whistle = {}
-
-&lt;&lt;oscillator&gt;&gt;
-return Whistle</pre></code>
-<p><pre><code>Gest = {}
-
-&lt;&lt;behavior_constants&gt;&gt;
-&lt;&lt;gest&gt;&gt;
-return Gest</pre></code>
-<p><pre><code>function Gest:new(o)
-    o = o or {}
-    o.name = o.name or "glive"
-    o.bufname = o.bufname or "mem"
-    o.tal = o.tal or tal
-    assert(o.tal ~= nil, "tal not found")
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end</pre></code>
-<p><pre><code>function Gest:create()
-    lil("glnew " .. self.name)
-    self.tal.membuf(self.bufname)
-end</pre></code>
-<p><pre><code>function Gest:compile(words)
-    self.tal.compile_words(words,
-        self.bufname,
-        string.format("[glget [grab %s]]", self.name))
-end</pre></code>
-<p><pre><code>function Gest:compile_tal(program)
-    self.tal.compile(program,
-        self.bufname,
-        string.format("[glget [grab %s]]", self.name))
-end</pre></code>
-<p><pre><code>function Gest:swapper()
-    lil(string.format("glswapper [grab %s]", self.name))
-end</pre></code>
-<p><pre><code>function Gest:done()
-    lil(string.format("gldone [grab %s]", self.name))
-end</pre></code>
-<p><pre><code>function Gest:get()
-    return string.format("[glget [grab %s]]", self.name)
-end</pre></code>
-<p><pre><code>function Gest:node_old(program, conductor)
-    local cnd = conductor or self.conductor
-    if cnd == nil then
-        error("conductor signal not defined")
-    end
-
-    lil(string.format(
-        "gestvmnode %s [gmemsym [grab %s] %s] %s",
-        self.get(self), self.bufname, program, cnd))
-end</pre></code>
-<p><pre><code>function Gest:nodestring(program, conductor)
-    local cnd = conductor or self.conductor
-    if cnd == nil then
-        error("conductor signal not defined")
-    end
-
-    local s = string.format(
-        "gestvmnode %s [gmemsym [grab %s] %s] %s",
-        self.get(self), self.bufname, program, cnd)
-
-    return s
-end</pre></code>
-<p><pre><code>function Gest:node()
-	local glive = self.get(self)
-	local mem = self.bufname
-	local glivef =  function(self) return glive end
-	local cndstr = self.conductor
-
-    return function(n, p)
-        local name = p.name or "gst"
-        local program =
-            string.format("[gmemsym [grab %s] %s]", mem, name)
-
-        -- TODO: glivef makes this work as a regular node
-        -- glive works as only a parameter node. Tests
-        -- will break if glivef is used
-        -- The quick fix is to just introduce a flag
-        local is_param_node = n.sigrune_dummy or false
-        if is_param_node then
-            n.glive = n:param(glive)
-        else
-            n.glive = n:param(glivef)
-        end
-
-        n.conductor = n:param(p.conductor or cndstr)
-        n:lil({"gestvmnode", "zz", program, "zz"})
-        n:label("gesture: " .. name)
-    end
-end</pre></code>
-<p><pre><code>function Gest.gest16fun(sr, core)
-    return function (gst, name, cnd, mn, mx)
-        local pn = sr.paramnode
-        local lvl = core.liln
-
-        local node = pn(sr.scale) {
-            input = pn(sr.mul) {
-                a = pn(gst:node()) {
-                    name = name,
-                    conductor = lvl(cnd:getstr())
-                },
-                b = 1.0 / 16.0
-            },
-            min = mn,
-            max = mx
-        }
-
-        return node
-	end
-end</pre></code>
-<p><pre><code>Gest.behavior = {
-    linear = 0,
-    step = 1,
-    gliss_medium = 2,
-    gliss = 3,
-    gate_125 = 4,
-    gate_25 = 5,
-    gate_50 = 6 
-}</pre></code>
-<p><pre><code>function Gest:gmemsymstr(symbol)
-	local mem = self.bufname
-    local program = 
-        string.format("gmemsym [grab %s] %s", mem, symbol)
-    return program
-end</pre></code>
-<p><pre><code>Gest.behavior = {
-    linear = 0,
-    step = 1,
-    gliss_medium = 2,
-    gliss = 3,
-    gate_125 = 4,
-    gate_25 = 5,
-    gate_50 = 6 
-}</pre></code>
-<p><pre><code>function Gest:gmemsymstr(symbol)
-	local mem = self.bufname
-    local program = 
-        string.format("gmemsym [grab %s] %s", mem, symbol)
-    return program
-end</pre></code>
-<p><pre><code>Sig = {}
-function lil_default(s)
-    if (type(s) == "table") then
-        s = table.concat(s, " ")
-    end
-
-    lil(s)
-end
-
-&lt;&lt;sig&gt;&gt;
-return Sig</pre></code>
-<p><pre><code>function Sig:zero()
-    if self.reg &gt;= 0 then
-        error("A signal is already being held")
-    end
-    lil("zero")
-    self.hold(self)
-end</pre></code>
-<p><pre><code>function Sig:throw(gain)
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    lil("dup")
-    self.send(self, gain)
-end</pre></code>
-<p><pre><code>function Gest.gest16fun(sr, core)
-    return function (gst, name, cnd, mn, mx)
-        local pn = sr.paramnode
-        local lvl = core.liln
-
-        local node = pn(sr.scale) {
-            input = pn(sr.mul) {
-                a = pn(gst:node()) {
-                    name = name,
-                    conductor = lvl(cnd:getstr())
-                },
-                b = 1.0 / 16.0
-            },
-            min = mn,
-            max = mx
-        }
-
-        return node
-	end
-end</pre></code>
-<p><pre><code>function Gest:node()
-	local glive = self.get(self)
-	local mem = self.bufname
-	local glivef =  function(self) return glive end
-	local cndstr = self.conductor
-
-    return function(n, p)
-        local name = p.name or "gst"
-        local program =
-            string.format("[gmemsym [grab %s] %s]", mem, name)
-
-        -- TODO: glivef makes this work as a regular node
-        -- glive works as only a parameter node. Tests
-        -- will break if glivef is used
-        -- The quick fix is to just introduce a flag
-        local is_param_node = n.sigrune_dummy or false
-        if is_param_node then
-            n.glive = n:param(glive)
-        else
-            n.glive = n:param(glivef)
-        end
-
-        n.conductor = n:param(p.conductor or cndstr)
-        n:lil({"gestvmnode", "zz", program, "zz"})
-        n:label("gesture: " .. name)
-    end
-end</pre></code>
-<p><pre><code>function Sig:hold(lil_eval)
-    -- can be a callback used to simulate holding
-    lil_eval = lil_eval or lil_default
-    if self.reg &gt;= 0 then
-        error("can't hold, already holding")
-    end
-
-    -- regnxt actually has to be called to see if it is
-    -- working
-
-    local lstr = "param [regnxt 0]"
-    -- if lil_eval ~= lil then
-    --     lil_eval(lstr)
-    -- end
-
-    lil(lstr)
-
-
-    local reg = pop()
-
-    if reg &lt; 0 then
-        error("invalid index")
-    end
-
-    -- hold/regset can be simulated without issue
-    lil_eval({"hold", "zz"})
-    -- lil_eval("hold zz # sig")
-    lil_eval({"regset", "zz",reg})
-
-    -- regmrk actually has to be called for it to work
-    -- local lstr = string.format("regmrk %d", reg)
-    local lstr = {"regmrk", reg}
-
-    if lil_eval ~= lil then
-        lil_eval(lstr)
-    end
-
-    lil(table.concat(lstr, " "))
-    -- lil(string.format("regset zz %d; regmrk %d", reg, reg))
-
-    self.reg = reg
-end</pre></code>
-<p><pre><code>local M = {}
-
-&lt;&lt;morpheme&gt;&gt;
-return M</pre></code>
-<p><pre><code>morpheme({
-    a={{60, 3, 3}, {67, 1, 3}, {58, 2, 3}},
-    b={{63, 1, 3}, {65, 1, 3}, {63, 1, 3}, {62, 1, 3}}
-}, {1, 3})</pre></code>
-<p><pre><code>{
-    a={
-        {60, {2, 3}, 3},
-        {67, {2, 1}}, 3},
-        {58, {1, 1}, 3}
-    },
-    b={
-        {63, {4,3}, 3},
-        {65, {4,3}, 3},
-        {63, {4,3}, 3},
-        {62, {4,3}, 3}
-    }
-}</pre></code>
-<p><pre><code>&lt;&lt;lcm&gt;&gt;
-function M.morpheme(m, r)
-    -- Get lengths of each gesture path
-    local lengths = {}
-
-    for k, v in pairs(m) do
-        lengths[k] = 0
-        for _,x in pairs(v) do
-            lengths[k] = lengths[k] + x[2]
-        end
-    end
-
-    -- Find LCM of path lengths
-
-    length_lcm = 0
-
-    for _, v in pairs(lengths) do
-        if length_lcm ~= 0 then
-            length_lcm = lcm(length_lcm, v)
-        else
-            length_lcm = v
-        end
-
-    end
-
-    out = {}
-
-    -- rescale paths
-
-    for k, v in pairs(m) do
-        local s = length_lcm / lengths[k]
-        local row = {}
-        for i=1,#v do
-            row[i] = {v[i][1], v[i][2]*s, v[i][3]}
-        end
-        out[k] = row
-    end
-
-    -- convert to rate multiplier
-
-    for k,v in pairs(out) do
-        -- out[k][2] = {length_lcm, out[k][2]}
-        for i=1,#v do
-            -- apply scaling value r and obtain multipler
-
-            local num = length_lcm * r[1]
-            local den = v[i][2] * r[2]
-
-            -- simplify multiplier fractions, if possible
-
-            local div = gcd(num, den)
-            if div == 0 then div = 1 end
-
-            num = num / div
-            den = den / div
-
-            -- make sure multiplier values are in range
-
-            if (num &gt; 255 or den &gt; 255) then
-                error(string.format(
-                    "%s[%d]: multiplier (%d, %d) out of range",
-                    k, i, num, den))
-            end
-            v[i][2] = {num, den}
-        end
-    end
-
-
-    return out
-end
-
-&lt;&lt;helpers&gt;&gt;
-</pre></code>
-<p><pre><code>function gcd(m, n)
-    while n ~= 0 do
-        local q = m
-        m = n
-        n = q % n
-    end
-    return m
-end
-
-function lcm(m, n)
-    return (m ~= 0 and n ~= 0) and
-        m * n / gcd(m, n) or 0
-end</pre></code>
-<p><pre><code>function append_op(path, m, mp)
-    for pname, p in pairs(m) do
-        if mp[pname] == nil then
-            mp[pname] = {}
-        end
-        for k, v in pairs(p) do
-            table.insert(mp[pname], path.vertex(v))
-        end
-    end
-end
-
-function M.append(path, mp, r, m)
-    append_op(path, M.morpheme(m, r), mp)
-end
-
-function M.appender(path)
-    return function(mp, r, m)
-        M.append(path, mp, r, m)
-    end
-end</pre></code>
-<p><pre><code>function M.compile(tal, path, words, mp, head)
-    head = head or {}
-    for label, p in pairs(mp) do
-        tal.label(words, label)
-        if head[label] ~= nil then
-            head[label](words)
-        end
-        path.path(tal, words, p)
-        tal.jump(words, label)
-    end
-end</pre></code>
-<p><pre><code>function M.articulate(path, tal, words, seq, head)
-    local mp = {}
-
-    for _,s in pairs(seq) do
-        M.append(path, mp, s[2], s[1])
-    end
-
-
-    M.compile(tal, path, words, mp, head)
-end</pre></code>
-<p><pre><code>x = {
-    "a": path1,
-    "b": path2,
-    "c": path3,
+<p><title>Cantor</title>
+<h1>Cantor</h1>
+<div><b><i>&lt;&lt;cantor.c&gt;&gt;=</i></b></div><pre><code>#include &lt;stdlib.h&gt;
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+
+#include "lua.h"
+int mno_lua_main_noloader(int argc, char *argv[]);
+void mno_lua_load(lua_State *L);
+void mno_lua_clean(lua_State *L);
+int luaopen_protogestling(lua_State *L);
+int luaopen_bitrune(lua_State *L);
+
+int mno_lua_main(int argc, char **argv,
+                 void (*load)(lua_State*),
+                 void (*clean)(lua_State*));
+
+static void load(lua_State *L)
+{
+    mno_lua_load(L);
+    luaL_requiref(L, "protogestling", luaopen_protogestling, 1);
+    luaL_requiref(L, "bitrune", luaopen_bitrune, 1);
 }
 
-xt = template(x)
-
-y = x {
-    "b": path4
-}</pre></code>
-<p><pre><code>function M.template(m)
-    return function(p)
-        local o = {}
-        for k,v in pairs(m) do
-            o[k] = p[k] or v
-        end
-        return o
-    end
-end</pre></code>
-<p><pre><code>function M.subset(m, a)
-    local o = {}
-
-    for _,v in pairs(a) do
-        if m[v] == nil then
-            error("Attribute '" .. v .. "' doesn't exist.")
-        end
-        o[a] = m[a]
-    end
-
-    return o
-end</pre></code>
-<p><pre><code>function M.merge(A, B)
-    local o = {}
-
-    for k,v in pairs(A) do
-        o[k] = v
-    end
-
-    for k,v in pairs(B) do
-        o[k] = v
-    end
-
-    return o
-end</pre></code>
-<p><pre><code>function M.morpheme_to_data(path, morpheme)
-    local morpheme_data = {}
-
-    for k,v in pairs(morpheme) do
-        morpheme_data[k] = path.path_to_data(v)
-    end
-
-    return morpheme_data
-end
-
-function M.save(asset, path, morpheme, filename)
-    asset:save(M.morpheme_to_data(path, morpheme), filename)
-end
-
-function M.load(asset, path, filename)
-    local morpheme_data = asset:load(filename)
-
-    local morpheme = {}
-
-    for k, v in pairs(morpheme_data) do
-        morpheme[k] = path.data_to_path(v)
-    end
-    -- local gpath = {}
-    -- for _,v in pairs(path_data) do
-    --     table.insert(gpath, Path.vertex(v))
-    -- end
-
-    return morpheme
-end</pre></code>
-<p><pre><code>Sig = {}
-function lil_default(s)
-    if (type(s) == "table") then
-        s = table.concat(s, " ")
-    end
-
-    lil(s)
-end
-
-&lt;&lt;sig&gt;&gt;
-return Sig</pre></code>
-<p><pre><code>function Sig:new(o)
-    o = o or {}
-    o.reg = -1
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end</pre></code>
-<p><pre><code>function Sig:hold(lil_eval)
-    -- can be a callback used to simulate holding
-    lil_eval = lil_eval or lil_default
-    if self.reg &gt;= 0 then
-        error("can't hold, already holding")
-    end
-
-    -- regnxt actually has to be called to see if it is
-    -- working
-
-    local lstr = "param [regnxt 0]"
-    -- if lil_eval ~= lil then
-    --     lil_eval(lstr)
-    -- end
-
-    lil(lstr)
-
-
-    local reg = pop()
-
-    if reg &lt; 0 then
-        error("invalid index")
-    end
-
-    -- hold/regset can be simulated without issue
-    lil_eval({"hold", "zz"})
-    -- lil_eval("hold zz # sig")
-    lil_eval({"regset", "zz",reg})
-
-    -- regmrk actually has to be called for it to work
-    -- local lstr = string.format("regmrk %d", reg)
-    local lstr = {"regmrk", reg}
-
-    if lil_eval ~= lil then
-        lil_eval(lstr)
-    end
-
-    lil(table.concat(lstr, " "))
-    -- lil(string.format("regset zz %d; regmrk %d", reg, reg))
-
-    self.reg = reg
-end</pre></code>
-<p><pre><code>function Sig:unhold(lil_eval)
-    lil_eval = lil_eval or lil_default
-    if self.reg &lt; 0 then
-        error("no signal to unhold")
-    end
-
-    -- lil_eval(string.format("unhold [regget %d]; regclr %d",
-    --    self.reg, self.reg))
-    lil_eval({"regget", self.reg})
-    lil_eval({"unhold", "zz"})
-    lil_eval({"regclr", self.reg})
-
-    self.reg = -1
-end</pre></code>
-<p><pre><code>function Sig:get(eval)
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    if eval == nil then
-        eval = lil
-    end
-
-    -- eval(string.format("regget %d", self.reg))
-    local s = {"regget", self.reg}
-
-    if eval == lil and type(s) ~= "string" then
-        s = table.concat(s, " ")
-    end
-
-    eval(s)
-end</pre></code>
-<p><pre><code>function Sig:getstr()
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    --return string.format("[regget %d]", self.reg)
-    return {"regget", self.reg}
-end</pre></code>
-<p><pre><code>function Sig:zero()
-    if self.reg &gt;= 0 then
-        error("A signal is already being held")
-    end
-    lil("zero")
-    self.hold(self)
-end</pre></code>
-<p><pre><code>function Sig:send(gain)
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    gain = gain or 0
-
-    lil(string.format("mix zz [regget %d] [dblin %g]",
-        self.reg, gain))
-end</pre></code>
-<p><pre><code>function Sig:throw(gain)
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    lil("dup")
-    self.send(self, gain)
-end</pre></code>
-<p><pre><code>function Graph:vert()
-    self.nverts = self.nverts + 1
-    return self.nverts
-end</pre></code>
-<p><pre><code>function Graph:connect(node, input_id)
-    local input = self.nodes[input_id]
-
-    self.edge(self, node.data.id, input_id, 1)
-
-    -- this input doesn't actually compute anything anymore
-    input:disable()
-
-    -- a linking node symlinks the node to be the input
-    input.data.link = node.data.id
-end</pre></code>
-<p><pre><code>function Graph:compute(lst)
-    if type(self.init) == "function" then
-        self.init(self)
-    end
-
-    for _, i in pairs(lst) do
-        local n = self.nodes[i]
-        n:compute()
-    end
-
-    -- User-defined cleanup after computation
-    if type(self.cleanup) == "function" then
-        self.cleanup(self)
-    end
-end</pre></code>
-<p><pre><code>function Node:constant(val)
-    self.data.val = val
-    self.data.constant = true
-end
-
-function Node:isconstant()
-    return self.data.constant
-end</pre></code>
-<p><pre><code>function Path.data_to_path(path_data)
-    local gpath = {}
-    for _,v in pairs(path_data) do
-        table.insert(gpath, Path.vertex(v))
-    end
-    return gpath
-end
-
-function Path.path_to_data(path)
-    local path_data = {}
-    for _,v in pairs(path) do
-        table.insert(path_data, {
-            v.val,
-            v.dur,
-            v.bhvr,
-        })
-    end
-
-    return path_data
-end</pre></code>
-<p><pre><code>function M.merge(A, B)
-    local o = {}
-
-    for k,v in pairs(A) do
-        o[k] = v
-    end
-
-    for k,v in pairs(B) do
-        o[k] = v
-    end
-
-    return o
-end</pre></code>
-<p><pre><code>gates = {
-    o = 1,
-    c = 0,
+static void clean(lua_State *L)
+{
+    mno_lua_clean(L);
 }
 
-function S.gatefun(morpho, str)
-    return function (str)
-        return morpho.eval(str, gates)
-    end
-end</pre></code>
-<p><pre><code>function Gest:create()
-    lil("glnew " .. self.name)
-    self.tal.membuf(self.bufname)
-end</pre></code>
-<p><pre><code>function Gest:compile(words)
-    self.tal.compile_words(words,
-        self.bufname,
-        string.format("[glget [grab %s]]", self.name))
-end</pre></code>
-<p><pre><code>function Gest:compile_tal(program)
-    self.tal.compile(program,
-        self.bufname,
-        string.format("[glget [grab %s]]", self.name))
-end</pre></code>
-<p><pre><code>function Gest:swapper()
-    lil(string.format("glswapper [grab %s]", self.name))
-end</pre></code>
-<p><pre><code>function Gest:done()
-    lil(string.format("gldone [grab %s]", self.name))
-end</pre></code>
-<p><pre><code>function Gest:get()
-    return string.format("[glget [grab %s]]", self.name)
-end</pre></code>
-<p><pre><code>Diagraf = {}
-
-&lt;&lt;diagraf&gt;&gt;
-return Diagraf</pre></code>
-<p><pre><code>function Graph:vert()
-    self.nverts = self.nverts + 1
-    return self.nverts
-end</pre></code>
-<p><pre><code>Whistle = {}
-
-&lt;&lt;oscillator&gt;&gt;
-return Whistle</pre></code>
-<p><pre><code>function Graph:dot(outfile)
-    local printer = print
-    local fp = nil
-
-    if outfile ~= nil then
-        fp = io.open(outfile, "w")
-        printer = function(str)
-            fp:write(str .. "\n")
-        end
-    end
-
-    printer("digraph G {")
-    printer("rankdir=LR")
-    printer("layout=dot")
-
-    for _,n in pairs(self.nodes) do
-        if 
-            n:disabled() == false and
-            n.data.typestr ~= "releaser" and
-            n.data.typestr ~= "getter" and
-            n.data.typestr ~= "setter"
-        then
-            if n:isconstant() then
-                printer(string.format("%d [label=%s]",
-                    n.data.id, n.data.val))
-            else
-                if n.data.label ~= nil then
-                    printer(string.format("%d [label=\"%s (%d)\"]",
-                        n.data.id, n.data.label, n.data.id))
-                else
-                    printer(string.format("%d [label=\"N%d\"]",
-                        n.data.id, n.data.id))
-                end
-            end
-        end
-    end
-    for _, e in pairs(self.edges) do
-        if e[3] == 1 then
-            local n2 = self.nodes[e[2]]
-            local n1 = self.nodes[e[1]]
-            local loud = true
-
-            if
-                n1.data.typestr == "setter" or
-                n2.data.typestr == "setter"
-            then
-                loud = false
-            end
-
-            local incoming = e[1]
-            local outgoing = e[2]
-
-            if n2:disabled() then
-                outgoing = n2.data.parent
-
-                n2 = self.nodes[outgoing]
-
-                if n2.data.typestr == "setter" then
-                    loud = false
-                end
-            end
-
-            if n1.data.typestr == "getter" then
-                incoming = n1.data.getter_parent
-            end
-
-            if n1:disabled() == false and loud == true then
-                printer(string.format("%d -&gt; %d", incoming, outgoing))
-            end
-        end
-    end
-    printer("}")
-    if outfile ~= nil then
-        fp:close()
-    end
-end</pre></code>
-<p><pre><code>function Path.AST_to_data(t)
-    behaviors = {
-        linear = 0,
-        step = 1,
-        gliss_medium = 2,
-        gliss_large = 3,
-        gliss_small = 4,
-    }
-
-    local ratemul = {1, 1}
-    local behavior = behaviors["linear"]
-    local gpath = {}
-
-    for _,v in pairs(t) do
-        local val = tonumber("0x" .. v.value[1] .. v.value[2])
-        if v.behavior ~= nil then
-            behavior = behaviors[v.behavior]
-        end
-
-        if v.ratemul ~= nil then
-            if #v.ratemul == 2 then
-                local num, den
-                num = v.ratemul[1]
-                num = tonumber("0x" .. num[1] .. num[2])
-                den = v.ratemul[2]
-                den = tonumber("0x" .. den[1] .. den[2])
-                ratemul = {num, den}
-            elseif #v.ratemul == 1 then
-                local num, den
-                num = v.ratemul[1]
-                num = tonumber("0x" .. num[1] .. num[2])
-                ratemul = num
-            end
-        end
-        local vertex = {
-            val,
-            ratemul,
-            behavior
-        }
-        table.insert(gpath, vertex)
-    end
-    return gpath
-end</pre></code>
-<p><pre><code>local Path = {}
-
-&lt;&lt;path&gt;&gt;
-return Path</pre></code>
-<p><pre><code>function Path.vertex(v)
-    x = {}
-
-    x.val = v[1]
-    x.dur = v[2]
-    x.bhvr = v[3]
-
-    return x
-end</pre></code>
-<p><pre><code>function Path.path(tal, words, path, lookup)
-    for _, v in pairs(path)
-    do
-        if v.val ~= nil then
-            local pathval = v.val
-
-            if lookup ~= nil and type(pathval) == "string" then
-                pathval = lookup[pathval]
-            end
-
-            tal.val(words, pathval)
-        end
-
-        if v.dur ~= nil then
-            tal.dur(words, v.dur[1], v.dur[2])
-        end
-
-        if v.bhvr ~= nil then
-            tal.behavior(words, v.bhvr)
-        end
-    end
-end
-</pre></code>
-<p><pre><code>function Path.save(asset, gpath, filename)
-    asset:save(gpath, filename)
-end
-
-function Path.load(asset, filename)
-    local path_data = asset:load(filename)
-
-    return Path.data_to_path(path_data)
-end</pre></code>
-<p><pre><code>function Path.data_to_path(path_data)
-    local gpath = {}
-    for _,v in pairs(path_data) do
-        table.insert(gpath, Path.vertex(v))
-    end
-    return gpath
-end
-
-function Path.path_to_data(path)
-    local path_data = {}
-    for _,v in pairs(path) do
-        table.insert(path_data, {
-            v.val,
-            v.dur,
-            v.bhvr,
-        })
-    end
-
-    return path_data
-end</pre></code>
-<p><pre><code>function Path.AST_to_data(t)
-    behaviors = {
-        linear = 0,
-        step = 1,
-        gliss_medium = 2,
-        gliss_large = 3,
-        gliss_small = 4,
-    }
-
-    local ratemul = {1, 1}
-    local behavior = behaviors["linear"]
-    local gpath = {}
-
-    for _,v in pairs(t) do
-        local val = tonumber("0x" .. v.value[1] .. v.value[2])
-        if v.behavior ~= nil then
-            behavior = behaviors[v.behavior]
-        end
-
-        if v.ratemul ~= nil then
-            if #v.ratemul == 2 then
-                local num, den
-                num = v.ratemul[1]
-                num = tonumber("0x" .. num[1] .. num[2])
-                den = v.ratemul[2]
-                den = tonumber("0x" .. den[1] .. den[2])
-                ratemul = {num, den}
-            elseif #v.ratemul == 1 then
-                local num, den
-                num = v.ratemul[1]
-                num = tonumber("0x" .. num[1] .. num[2])
-                ratemul = num
-            end
-        end
-        local vertex = {
-            val,
-            ratemul,
-            behavior
-        }
-        table.insert(gpath, vertex)
-    end
-    return gpath
-end</pre></code>
-<p><pre><code>&lt;&lt;scale_to_morphseq_bits&gt;&gt;
-function Path.scale_to_morphseq(gpath, mseq)
-    local seqdur = morphseq_dur(mseq)
-    local pnorm = path_normalizer(gpath)
-    local total_ratemul = fracmul(pnorm, seqdur)
-    local gpath_rescaled =
-        apply_ratemul(gpath, total_ratemul, Path.vertex)
-
-    return gpath_rescaled
-end</pre></code>
-<p><pre><code>local function gcd(m, n)
-    while n ~= 0 do
-        local q = m
-        m = n
-        n = q % n
-    end
-    return m
-end
-
-local function lcm(m, n)
-    return (m ~= 0 and n ~= 0) and
-        m * n / gcd(m, n) or 0
-end
-
-local function fracadd(a, b)
-    if a[2] == 0 then return b end
-    if b[2] == 0 then return a end
-    local s = lcm(a[2], b[2])
-    local as = s / a[2]
-    local bs = s / b[2]
-    return {as*a[1] + bs*b[1], s}
-end
-
-local function reduce(a)
-    out = a
-    local s = gcd(out[1], out[2])
-
-    if (s ~= 0) then
-        out[1] = out[1] / s
-        out[2] = out[2] / s
-    end
-
-    return out
-end
-
-function fracmul(a, b)
-    local out = {a[1]*b[1], a[2]*b[2]}
-
-    return reduce(out)
-end
-
-local function morphseq_dur(mseq)
-    local total = {0, 0}
-    for _, m in pairs(mseq) do
-        local r = m[2]
-        total = fracadd(total, r)
-    end
-    -- r is a ratemultiplier against a normalize
-    -- path with dur 1. 2/1 is 2x faster, or dur 1/2.
-    -- inverse to get duration
-    -- this can be multiplied with normalized path
-    -- to stretch/squash it out
-    return {total[2], total[1]}
-end
-
-local function path_normalizer(p)
-    local total = 0
-
-    for _, v in pairs(p) do
-        total = total + v[2]
-    end
-
-    return {total, 1}
-end
-
-local function apply_ratemul(p, r, vertexer)
-    path_with_ratemul = {}
-
-    for _,v in pairs(p) do
-        local v_rm = {
-            v[1],
-            reduce({r[1], v[2]*r[2]}),
-            v[3]
-        }
-        table.insert(path_with_ratemul, vertexer(v_rm))
-    end
-
-    return path_with_ratemul
-end</pre></code>
-<p><pre><code>function tal.halt(words)
-    table.insert(words, "BRK")
-end</pre></code>
-<p><pre><code>function M.morpheme_to_data(path, morpheme)
-    local morpheme_data = {}
-
-    for k,v in pairs(morpheme) do
-        morpheme_data[k] = path.path_to_data(v)
-    end
-
-    return morpheme_data
-end
-
-function M.save(asset, path, morpheme, filename)
-    asset:save(M.morpheme_to_data(path, morpheme), filename)
-end
-
-function M.load(asset, path, filename)
-    local morpheme_data = asset:load(filename)
-
-    local morpheme = {}
-
-    for k, v in pairs(morpheme_data) do
-        morpheme[k] = path.data_to_path(v)
-    end
-    -- local gpath = {}
-    -- for _,v in pairs(path_data) do
-    --     table.insert(gpath, Path.vertex(v))
-    -- end
-
-    return morpheme
-end</pre></code>
-<p><pre><code>function Gest:nodestring(program, conductor)
-    local cnd = conductor or self.conductor
-    if cnd == nil then
-        error("conductor signal not defined")
-    end
-
-    local s = string.format(
-        "gestvmnode %s [gmemsym [grab %s] %s] %s",
-        self.get(self), self.bufname, program, cnd)
-
-    return s
-end</pre></code>
-<p><pre><code>step16 = {
-    a = 0,
-    b = 1,
-    c = 2,
-    d = 3,
-    e = 4,
-    f = 5,
-    g = 6,
-    h = 7,
-    h = 8,
-    i = 9,
-    j = 10,
-    k = 11,
-    l = 12,
-    m = 13,
-    n = 14,
-    o = 15,
-    p = 16,
-}
-
-function S.seqfun(morpho, str)
-    return function (str)
-        return morpho.eval(str, step16)
-    end
-end</pre></code>
-<p><pre><code>function Graph:compute(lst)
-    if type(self.init) == "function" then
-        self.init(self)
-    end
-
-    for _, i in pairs(lst) do
-        local n = self.nodes[i]
-        n:compute()
-    end
-
-    -- User-defined cleanup after computation
-    if type(self.cleanup) == "function" then
-        self.cleanup(self)
-    end
-end</pre></code>
-<p><pre><code>S = {}
-
-&lt;&lt;functions&gt;&gt;
-
-return S</pre></code>
-<p><pre><code>x = {
-    "a": path1,
-    "b": path2,
-    "c": path3,
-}
-
-xt = template(x)
-
-y = x {
-    "b": path4
+int main(int argc, char *argv[])
+{
+    return mno_lua_main(argc, argv, load, clean);
 }</pre></code>
-<p><pre><code>function Sig:throw(gain)
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    lil("dup")
-    self.send(self, gain)
-end</pre></code>
-<p><pre><code>function tal.interpolate(words, state)
-    tal.num(words, state)
-    tal.num(words, 0x2a)
-    table.insert(words, "DEO")
-end</pre></code>
-<p><pre><code>&lt;&lt;procedures&gt;&gt;
-
-patch =
-
-&lt;&lt;sndkit_patch&gt;&gt;
-
-program_words = {}
-
-
-&lt;&lt;generate_macros&gt;&gt;
-
--- I forget what this is called
-table.insert(program_words, "|0100")
-
-mklabel(program_words, "mel")
-
-
-&lt;&lt;vertex_shorthand_for_gesture_path&gt;&gt;
-
-path =
-
-&lt;&lt;gesture_path_as_lua_structure&gt;&gt;
-
-mkpath(program_words, path)
-mkjump(program_words, "mel")
-
-program_tal = table.concat(program_words, " ")
-compile_tal(program_tal)
-lil(patch)</pre></code>
-<p><pre><code>mkmacro(program_words, "NUM", {"#24", "DEO"})
-mkmacro(program_words, "DEN", {"#25", "DEO"})
-mkmacro(program_words, "NEXT", {"#26", "DEO"})
-mkmacro(program_words, "NOTE", {"#33", "ADD", "NEXT"})
-mkmacro(program_words, "BHVR", {"#27", "DEO"})</pre></code>
-<p><pre><code>function mkmacro(words, name, program)
-    table.insert(words, "%" .. name)
-    table.insert(words, "{")
-    for _,v in pairs(program)
-    do
-        table.insert(words, v)
-    end
-    table.insert(words, "}")
-end
-
-function mklabel(words, label)
-    table.insert(words, "@" .. label)
-end
-
-function mknum(words, val)
-    table.insert(words, "#" .. string.format("%02x", val))
-end
-
-function mknote(words, note)
-    table.insert(words, "#" .. string.format("%02x", note))
-    table.insert(words, "NOTE")
-    table.insert(words, "BRK")
-end
-
-function mkdur(words, num, den)
-    mknum(words, num)
-    table.insert(words, "NUM")
-    mknum(words, den)
-    table.insert(words, "DEN")
-end
-
-function mkbehavior(words, id)
-    mknum(words, id)
-    table.insert(words, "BHVR")
-end
-
-function mkjump(words, label)
-    table.insert(words, ";" .. label)
-    table.insert(words, "JMP2")
-end
-
-function compile_tal(tal)
-    lil([[
-    gmemnew mem
-    gestvmnew gvm
-    ]])
-
-    gestvm_compile("mem", program_tal)
-    lil("gmemcpy [grab mem] [grab gvm]")
-end</pre></code>
-<p><pre><code>function mkpath(words, path)
-    for _, v in pairs(path)
-    do
-        if v.note ~= nil then
-            mknote(program_words, v.note)
-        end
-
-        if v.dur ~= nil then
-            mkdur(program_words, v.dur[1], v.dur[2])
-        end
-
-        if v.bhvr ~= nil then
-            mkbehavior(program_words, v.bhvr)
-        end
-    end
-end</pre></code>
-<p><pre><code>{
-    v(7, {2,1}, 2),
-    v(5),
-    v(7),
-    v(0, {2,5}),
-
-    v(7, {2,1}, 2),
-    v(10),
-    v(9),
-    v(5, {2,3}),
-
-    v(3, {1, 1}, 3)
-}</pre></code>
-<p><pre><code>v = function (note, dur, behavior)
-    x = {}
-
-    x.note = note
-    x.dur = dur
-    x.bhvr = behavior
-
-    return x
-end</pre></code>
-<p><pre><code>[[
-phasor [expr 96 / 60] 0
-
-hold zz
-regset zz 0
-
-gestvmnode [grab gvm] [gmemsym [grab mem] mel] [regget 0]
-
-mtof zz
-blsaw zz
-mul zz 0.5
-
-butlp zz 800
-
-dup
-dup
-verbity zz zz 0.1 0.1 0.1
-drop
-mul zz [dblin -15]
-dcblocker zz
-add zz zz
-
-unhold [regget 0]
-
-wavouts zz simple_path.wav
-
-computes 10
-]]</pre></code>
-<p><pre><code>function Warble.graph(params)
-    local core = params.core or core
-    local sr = params.sr or sigrunes
-    local diagraf = params.diagraf or diagraf
-    local sig = params.sig or sig
-
-    local nd = sr.node
-    local ln = core.liln
-    local lf = core.lilf
-    local plf = core.plilf
-
-    local g = diagraf.Graph:new{sig=sig}
-
-    g.init = function(grf)
-        grf.eval({"gensine", "[tabnew 8192]"})
-        -- grf.eval("param [regnxt 0]")
-        lil("param [regnxt 0]")
-        local tab = pop()
-        -- grf.eval(string.format("regset zz %d; regmrk %d", tab, tab))
-        grf.eval({"regset", "zz", tab})
-        grf.eval({"regmrk", tab})
-        grf.data = {}
-        grf.data.tab = tab
-    end
-
-    local sintab = function(node, eval)
-        local grf = node.data.g
-        eval = eval or grf.eval
-        local tab = grf.data.tab
-        --eval(string.format("regget %d # sintab", tab))
-        eval({"regget" , tab, "#sintab"})
-    end
-
-    ng = core.nodegen(diagraf.Node, g)
-    pg = core.paramgen(ng)
-    con = g:connector()
-    prmf = core.paramf
-    local p = params
-
-    local pitch = pg(p.pitch or prmf(60), "pitch")
-    local mi = pg(p.mi or prmf(1), "mod index")
-    local car = pg(p.car or prmf(1), "car")
-    local mod = pg(p.mod or prmf(1), "mod")
-    local fdbk = pg(p.fdbk or prmf(0), "feedback")
-
-    local pasp = p.asp or {}
-    local asp = pg(pasp.val or prmf(0), "aspiration")
-    local asp_gt = pg(pasp.gate or prmf(0), "aspiration gate")
-    local asp_atk = pg(pasp.atk or prmf(0.1), "aspiration attack")
-    local asp_rel = pg(pasp.rel or prmf(0.1), "aspiration release")
-    local asp_dur = pg(pasp.dur or prmf(0.1), "aspiration env duration")
-    local asp_gain = pg(pasp.gain or prmf(1.0), "aspiration gain")
-    local asp_bw = pg(pasp.bw or prmf(100), "aspiration bandwidth")
-    local asp_freq = pg(pasp.freq or prmf(500), "aspiration center frequency")
-
-    local pamp = p.amp or {}
-    local amp = pg(pamp.val or prmf(1), "amp")
-    local a_gt = pg(pamp.gate or prmf(0), "amp gate")
-    local a_atk = pg(pamp.atk or prmf(0.1), "amp attack")
-    local a_rel = pg(pamp.rel or prmf(0.1), "amp release")
-    local a_dur = pg(pamp.dur or prmf(0.1), "amp env duration")
-
-    local pvib = p.vib or {}
-    local vib_rate = pg(pvib.rate or prmf(6), "vibrato rate")
-    local vib_depth = pg(pvib.depth or prmf(0.2), "vibrato depth")
-
-    local fm = ng(sr.fmpair) {tab = sintab}
-
-    con(mi, fm.mi)
-    con(car, fm.car)
-    con(mod, fm.mod)
-    con(fdbk, fm.fdbk)
-
-    local scaler = ng(sr.scale)
-
-    local mul = ng(sr.mul)
-    local add = ng(sr.add)
-    local nz = ng(sr.noise)()
-
-    local bpf = ng(sr.butbp)()
-
-    con(asp_bw, bpf.bw)
-    con(asp_freq, bpf.freq)
-
-    local lpf = ng(sr.butlp) {
-        freq = 1000,
-    }
-
-    con(nz, lpf.input)
-    con(lpf, bpf.input)
-    bpf_gain = mul()
-    con(asp_gain, bpf_gain.b)
-    con(bpf, bpf_gain.a)
-
-    local envar = ng(sr.envar)
-
-    local cf = ng(sr.crossfade) {}
-
-    local cfenv = envar {}
-
-    local sclcf = scaler {max = 1.0}
-
-    con(asp_rel, cfenv.rel)
-    con(asp_atk, cfenv.atk)
-
-    tgate = ng(sr.tgate)
-    gtick = ng(sr.gtick)
-
-    cfenv_gtick = gtick()
-    cfenv_tgate = tgate()
-
-    con(asp_gt, cfenv_gtick.gate)
-    con(cfenv_gtick, cfenv_tgate.trig)
-    con(asp_dur, cfenv_tgate.dur)
-
-    con(cfenv_tgate, cfenv.gate)
-    con(asp, sclcf.min)
-    con(cfenv, sclcf.input)
-    con(sclcf, cf.pos)
-
-    con(fm, cf.a)
-    con(bpf_gain, cf.b)
-
-    local generator = cf
-
-    lfo = ng(sr.osc) {
-        tab = sintab
-    }
-
-    con(vib_rate, lfo.freq)
-    con(vib_depth, lfo.amp)
-
-    vib = add()
-    mtof = ng(sr.mtof)
-    fm_freq = mtof()
-    con(pitch, vib.a)
-    con(lfo, vib.b)
-    con(vib, fm_freq.input)
-    con(fm_freq, fm.freq)
-
-    sclamp = scaler {
-        max = 1.0
-    }
-
-    con(amp, sclamp.min)
-
-    ampenv = envar {}
-
-    con(a_atk, ampenv.atk)
-    con(a_rel, ampenv.rel)
-
-    ampenv_gtick = gtick()
-    ampenv_tgate = tgate()
-    con(a_gt, ampenv_gtick.gate)
-    con(ampenv_gtick, ampenv_tgate.trig)
-    con(a_dur, ampenv_tgate.dur)
-
-    con(ampenv_tgate, ampenv.gate)
-    con(ampenv, sclamp.input)
-
-    local ascl_mul = mul()
-    con(generator, ascl_mul.a)
-    con(sclamp, ascl_mul.b)
-
-    g.cleanup = function(grf)
-        local tab = grf.data.tab
-        grf.eval({"regclr", tab})
-    end
-    return g
-end</pre></code>
-<p><pre><code>local tal = {}
-
-&lt;&lt;cmds&gt;&gt;
-return tal</pre></code>
-<p><pre><code>function tal.macro(words, name, program)
-    table.insert(words, "%" .. name)
-    table.insert(words, "{")
-    for _,v in pairs(program)
-    do
-        table.insert(words, v)
-    end
-    table.insert(words, "}")
-end</pre></code>
-<p><pre><code>function tal.label(words, label)
-    table.insert(words, "@" .. label)
-end</pre></code>
-<p><pre><code>function tal.num(words, val)
-    table.insert(words, "#" .. string.format("%02x", val))
-end</pre></code>
-<p><pre><code>function tal.val(words, val)
-    tal.num(words, val)
-    tal.num(words, 0x26)
-    table.insert(words, "DEO")
-    table.insert(words, "BRK")
-end</pre></code>
-<p><pre><code>function tal.halt(words)
-    table.insert(words, "BRK")
-end</pre></code>
-<p><pre><code>function tal.dur(words, num, den)
-    tal.num(words, num)
-    tal.num(words, 0x24)
-    table.insert(words, "DEO")
-    tal.num(words, den)
-    tal.num(words, 0x25)
-    table.insert(words, "DEO")
-end</pre></code>
-<p><pre><code>function tal.behavior(words, id)
-    tal.num(words, id)
-    tal.num(words, 0x27)
-    table.insert(words, "DEO")
-end</pre></code>
-<p><pre><code>function tal.jump(words, label)
-    table.insert(words, ";" .. label)
-    table.insert(words, "JMP2")
-end</pre></code>
-<p><pre><code>function tal.membuf(bufname)
-    lil(string.format("gmemnew %s", bufname))
-end</pre></code>
-<p><pre><code>function tal.start(words)
-    table.insert(words, "|0100")
-end
-
--- I keep wanting to call it begin, not start
-function tal.begin(words)
-    tal.start(words)
-end</pre></code>
-<p><pre><code>function tal.compile_words(words, bufname, gvm)
-    local program = table.concat(words, " ")
-    tal.compile(program, bufname, gvm)
-end</pre></code>
-<p><pre><code>function tal.compile(program, bufname, gvm)
-    gestvm_compile(bufname, program)
-    lil("gmemcpy [grab " .. 
-        bufname .. 
-        "] " .. 
-        gvm)
-end</pre></code>
-<p><pre><code>function tal.interpolate(words, state)
-    tal.num(words, state)
-    tal.num(words, 0x2a)
-    table.insert(words, "DEO")
-end</pre></code>
-<p><pre><code>function Path.AST_to_data(t)
-    behaviors = {
-        linear = 0,
-        step = 1,
-        gliss_medium = 2,
-        gliss_large = 3,
-        gliss_small = 4,
-    }
-
-    local ratemul = {1, 1}
-    local behavior = behaviors["linear"]
-    local gpath = {}
-
-    for _,v in pairs(t) do
-        local val = tonumber("0x" .. v.value[1] .. v.value[2])
-        if v.behavior ~= nil then
-            behavior = behaviors[v.behavior]
-        end
-
-        if v.ratemul ~= nil then
-            if #v.ratemul == 2 then
-                local num, den
-                num = v.ratemul[1]
-                num = tonumber("0x" .. num[1] .. num[2])
-                den = v.ratemul[2]
-                den = tonumber("0x" .. den[1] .. den[2])
-                ratemul = {num, den}
-            elseif #v.ratemul == 1 then
-                local num, den
-                num = v.ratemul[1]
-                num = tonumber("0x" .. num[1] .. num[2])
-                ratemul = num
-            end
-        end
-        local vertex = {
-            val,
-            ratemul,
-            behavior
-        }
-        table.insert(gpath, vertex)
-    end
-    return gpath
-end</pre></code>
-<p><pre><code>&lt;&lt;lcm&gt;&gt;
-function M.morpheme(m, r)
-    -- Get lengths of each gesture path
-    local lengths = {}
-
-    for k, v in pairs(m) do
-        lengths[k] = 0
-        for _,x in pairs(v) do
-            lengths[k] = lengths[k] + x[2]
-        end
-    end
-
-    -- Find LCM of path lengths
-
-    length_lcm = 0
-
-    for _, v in pairs(lengths) do
-        if length_lcm ~= 0 then
-            length_lcm = lcm(length_lcm, v)
-        else
-            length_lcm = v
-        end
-
-    end
-
-    out = {}
-
-    -- rescale paths
-
-    for k, v in pairs(m) do
-        local s = length_lcm / lengths[k]
-        local row = {}
-        for i=1,#v do
-            row[i] = {v[i][1], v[i][2]*s, v[i][3]}
-        end
-        out[k] = row
-    end
-
-    -- convert to rate multiplier
-
-    for k,v in pairs(out) do
-        -- out[k][2] = {length_lcm, out[k][2]}
-        for i=1,#v do
-            -- apply scaling value r and obtain multipler
-
-            local num = length_lcm * r[1]
-            local den = v[i][2] * r[2]
-
-            -- simplify multiplier fractions, if possible
-
-            local div = gcd(num, den)
-            if div == 0 then div = 1 end
-
-            num = num / div
-            den = den / div
-
-            -- make sure multiplier values are in range
-
-            if (num &gt; 255 or den &gt; 255) then
-                error(string.format(
-                    "%s[%d]: multiplier (%d, %d) out of range",
-                    k, i, num, den))
-            end
-            v[i][2] = {num, den}
-        end
-    end
-
-
-    return out
-end
-
-&lt;&lt;helpers&gt;&gt;
-</pre></code>
-<p><pre><code>function M.morpheme_to_data(path, morpheme)
-    local morpheme_data = {}
-
-    for k,v in pairs(morpheme) do
-        morpheme_data[k] = path.path_to_data(v)
-    end
-
-    return morpheme_data
-end
-
-function M.save(asset, path, morpheme, filename)
-    asset:save(M.morpheme_to_data(path, morpheme), filename)
-end
-
-function M.load(asset, path, filename)
-    local morpheme_data = asset:load(filename)
-
-    local morpheme = {}
-
-    for k, v in pairs(morpheme_data) do
-        morpheme[k] = path.data_to_path(v)
-    end
-    -- local gpath = {}
-    -- for _,v in pairs(path_data) do
-    --     table.insert(gpath, Path.vertex(v))
-    -- end
-
-    return morpheme
-end</pre></code>
-<p><pre><code>function Graph:nsort_rec(l, n, i, lvl)
-    lvl = lvl or 0
-    if i &lt;= 0 then
-        return i
-    end
-    -- print(string.format("l[%d]: expecting: node(%d)", i, n.data.id))
-    if n.data.id ~= l[i] then
-        -- print(string.format("l[%d] (%d) is not %d", i, l[i], n.data.id))
-        for k = i, 1, -1 do
-            local m = l[k]
-            if m == n.data.id then
-                local nk = self.nodes[l[k]]
-                local ni = self.nodes[l[i]]
-                local lk = nk.data.label or ""
-                local li = ni.data.label or ""
-
-                -- print(string.format(
-                --     "swapping l[%d] %d (%s) and l[%d] %d (%s)\n",
-                --         k, nk.data.id, lk, i, ni.data.id, li))
-                local t = l[k]
-                l[k] = l[i]
-                l[i] = t
-                break
-            end
-        end
-    end
-
-    i = i - 1
-
-    if n.data.link ~= nil then
-        i = self.nsort_rec(self,
-            l, self.nodes[n.data.link], i, lvl + 1)
-        return i
-    end
-
-    -- process params list in reverse, because sndkit
-    -- uses LIFO stack and pops parameters in reverse
-    -- syntactically, this makes stack syntax look like
-    -- parameters are in "correct" order
-    for p=#n.data.params, 1, -1 do
-        i = self.nsort_rec(self, l, n.data.params[p], i, lvl + 1)
-    end
-
-    return i
-end</pre></code>
-<p><pre><code>Gest.behavior = {
-    linear = 0,
-    step = 1,
-    gliss_medium = 2,
-    gliss = 3,
-    gate_125 = 4,
-    gate_25 = 5,
-    gate_50 = 6 
-}</pre></code>
-<p><pre><code>function Gest:gmemsymstr(symbol)
-	local mem = self.bufname
-    local program = 
-        string.format("gmemsym [grab %s] %s", mem, symbol)
-    return program
-end</pre></code>
-<p><pre><code>function Sig:get(eval)
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    if eval == nil then
-        eval = lil
-    end
-
-    -- eval(string.format("regget %d", self.reg))
-    local s = {"regget", self.reg}
-
-    if eval == lil and type(s) ~= "string" then
-        s = table.concat(s, " ")
-    end
-
-    eval(s)
-end</pre></code>
-<p><pre><code>function Sig:getstr()
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    --return string.format("[regget %d]", self.reg)
-    return {"regget", self.reg}
-end</pre></code>
-<p><pre><code>function Sig:zero()
-    if self.reg &gt;= 0 then
-        error("A signal is already being held")
-    end
-    lil("zero")
-    self.hold(self)
-end</pre></code>
-<p><pre><code>morpheme({
-    a={{60, 3, 3}, {67, 1, 3}, {58, 2, 3}},
-    b={{63, 1, 3}, {65, 1, 3}, {63, 1, 3}, {62, 1, 3}}
-}, {1, 3})</pre></code>
-<p><pre><code>{
-    a={
-        {60, {2, 3}, 3},
-        {67, {2, 1}}, 3},
-        {58, {1, 1}, 3}
-    },
-    b={
-        {63, {4,3}, 3},
-        {65, {4,3}, 3},
-        {63, {4,3}, 3},
-        {62, {4,3}, 3}
-    }
-}</pre></code>
-<p><pre><code>function append_op(path, m, mp)
-    for pname, p in pairs(m) do
-        if mp[pname] == nil then
-            mp[pname] = {}
-        end
-        for k, v in pairs(p) do
-            table.insert(mp[pname], path.vertex(v))
-        end
-    end
-end
-
-function M.append(path, mp, r, m)
-    append_op(path, M.morpheme(m, r), mp)
-end
-
-function M.appender(path)
-    return function(mp, r, m)
-        M.append(path, mp, r, m)
-    end
-end</pre></code>
-<p><pre><code>Gest = {}
-
-&lt;&lt;behavior_constants&gt;&gt;
-&lt;&lt;gest&gt;&gt;
-return Gest</pre></code>
-<p><pre><code>function Gest:new(o)
-    o = o or {}
-    o.name = o.name or "glive"
-    o.bufname = o.bufname or "mem"
-    o.tal = o.tal or tal
-    assert(o.tal ~= nil, "tal not found")
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end</pre></code>
-<p><pre><code>function Sig:unhold(lil_eval)
-    lil_eval = lil_eval or lil_default
-    if self.reg &lt; 0 then
-        error("no signal to unhold")
-    end
-
-    -- lil_eval(string.format("unhold [regget %d]; regclr %d",
-    --    self.reg, self.reg))
-    lil_eval({"regget", self.reg})
-    lil_eval({"unhold", "zz"})
-    lil_eval({"regclr", self.reg})
-
-    self.reg = -1
-end</pre></code>
-<p><pre><code>function Sig:get(eval)
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    if eval == nil then
-        eval = lil
-    end
-
-    -- eval(string.format("regget %d", self.reg))
-    local s = {"regget", self.reg}
-
-    if eval == lil and type(s) ~= "string" then
-        s = table.concat(s, " ")
-    end
-
-    eval(s)
-end</pre></code>
-<p><pre><code>function Sig:new(o)
-    o = o or {}
-    o.reg = -1
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end</pre></code>
-<p><pre><code>function S.parse_tree(tree)
-    local btab = {
-        linear = 0,
-        step = 1,
-        gliss_medium = 2,
-        gliss_big = 3,
-        gliss_small = 4,
-    }
-
-    local behavior = btab["linear"]
-    local dur = 1
-
-    local gpath = {}
-
-    for _,leaf in pairs(tree) do
-        local v = {}
-
-        if leaf.value == nil then
-            error("leaf value is nil")
-        end
-
-        if leaf.behavior ~= nil then
-            behavior = btab[leaf.behavior]
-        end
-
-        if leaf.dur ~= nil then
-            local r = 0
-            for _, digit in pairs(leaf.dur) do
-                r = r * 8 + tonumber(digit)
-            end
-            dur = r
-        end
-
-        v[1] = tonumber(leaf.value)
-        v[2] = dur
-        v[3] = behavior
-        table.insert(gpath, v)
-    end
-
-    return gpath
-end</pre></code>
-<p><pre><code>&lt;&lt;scale_to_morphseq_bits&gt;&gt;
-function Path.scale_to_morphseq(gpath, mseq)
-    local seqdur = morphseq_dur(mseq)
-    local pnorm = path_normalizer(gpath)
-    local total_ratemul = fracmul(pnorm, seqdur)
-    local gpath_rescaled =
-        apply_ratemul(gpath, total_ratemul, Path.vertex)
-
-    return gpath_rescaled
-end</pre></code>
-<p><pre><code>function M.compile(tal, path, words, mp, head)
-    head = head or {}
-    for label, p in pairs(mp) do
-        tal.label(words, label)
-        if head[label] ~= nil then
-            head[label](words)
-        end
-        path.path(tal, words, p)
-        tal.jump(words, label)
-    end
-end</pre></code>
-<p><pre><code>function Gest:node_old(program, conductor)
-    local cnd = conductor or self.conductor
-    if cnd == nil then
-        error("conductor signal not defined")
-    end
-
-    lil(string.format(
-        "gestvmnode %s [gmemsym [grab %s] %s] %s",
-        self.get(self), self.bufname, program, cnd))
-end</pre></code>
-<p><pre><code>function Graph:connect(node, input_id)
-    local input = self.nodes[input_id]
-
-    self.edge(self, node.data.id, input_id, 1)
-
-    -- this input doesn't actually compute anything anymore
-    input:disable()
-
-    -- a linking node symlinks the node to be the input
-    input.data.link = node.data.id
-end</pre></code>
-<p><pre><code>function Gest.gest16fun(sr, core)
-    return function (gst, name, cnd, mn, mx)
-        local pn = sr.paramnode
-        local lvl = core.liln
-
-        local node = pn(sr.scale) {
-            input = pn(sr.mul) {
-                a = pn(gst:node()) {
-                    name = name,
-                    conductor = lvl(cnd:getstr())
-                },
-                b = 1.0 / 16.0
-            },
-            min = mn,
-            max = mx
-        }
-
-        return node
-	end
-end</pre></code>
-<p><pre><code>Gest = {}
-
-&lt;&lt;behavior_constants&gt;&gt;
-&lt;&lt;gest&gt;&gt;
-return Gest</pre></code>
-<p><pre><code>function Gest:new(o)
-    o = o or {}
-    o.name = o.name or "glive"
-    o.bufname = o.bufname or "mem"
-    o.tal = o.tal or tal
-    assert(o.tal ~= nil, "tal not found")
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end</pre></code>
-<p><pre><code>&lt;&lt;procedures&gt;&gt;
-
-patch =
-
-&lt;&lt;sndkit_patch&gt;&gt;
-
-program_words = {}
-
-
-&lt;&lt;generate_macros&gt;&gt;
-
--- I forget what this is called
-table.insert(program_words, "|0100")
-
-mklabel(program_words, "mel")
-
-
-&lt;&lt;vertex_shorthand_for_gesture_path&gt;&gt;
-
-path =
-
-&lt;&lt;gesture_path_as_lua_structure&gt;&gt;
-
-mkpath(program_words, path)
-mkjump(program_words, "mel")
-
-program_tal = table.concat(program_words, " ")
-compile_tal(program_tal)
-lil(patch)</pre></code>
-<p><pre><code>function mkpath(words, path)
-    for _, v in pairs(path)
-    do
-        if v.note ~= nil then
-            mknote(program_words, v.note)
-        end
-
-        if v.dur ~= nil then
-            mkdur(program_words, v.dur[1], v.dur[2])
-        end
-
-        if v.bhvr ~= nil then
-            mkbehavior(program_words, v.bhvr)
-        end
-    end
-end</pre></code>
-<p><pre><code>function Sig:send(gain)
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    gain = gain or 0
-
-    lil(string.format("mix zz [regget %d] [dblin %g]",
-        self.reg, gain))
-end</pre></code>
-<p><pre><code>function gcd(m, n)
-    while n ~= 0 do
-        local q = m
-        m = n
-        n = q % n
-    end
-    return m
-end
-
-function lcm(m, n)
-    return (m ~= 0 and n ~= 0) and
-        m * n / gcd(m, n) or 0
-end</pre></code>
-<p><pre><code>function append_op(path, m, mp)
-    for pname, p in pairs(m) do
-        if mp[pname] == nil then
-            mp[pname] = {}
-        end
-        for k, v in pairs(p) do
-            table.insert(mp[pname], path.vertex(v))
-        end
-    end
-end
-
-function M.append(path, mp, r, m)
-    append_op(path, M.morpheme(m, r), mp)
-end
-
-function M.appender(path)
-    return function(mp, r, m)
-        M.append(path, mp, r, m)
-    end
-end</pre></code>
-<p><pre><code>function M.articulate(path, tal, words, seq, head)
-    local mp = {}
-
-    for _,s in pairs(seq) do
-        M.append(path, mp, s[2], s[1])
-    end
-
-
-    M.compile(tal, path, words, mp, head)
-end</pre></code>
-<p><pre><code>function M.subset(m, a)
-    local o = {}
-
-    for _,v in pairs(a) do
-        if m[v] == nil then
-            error("Attribute '" .. v .. "' doesn't exist.")
-        end
-        o[a] = m[a]
-    end
-
-    return o
-end</pre></code>
-<p><pre><code>local function gcd(m, n)
-    while n ~= 0 do
-        local q = m
-        m = n
-        n = q % n
-    end
-    return m
-end
-
-local function lcm(m, n)
-    return (m ~= 0 and n ~= 0) and
-        m * n / gcd(m, n) or 0
-end
-
-local function fracadd(a, b)
-    if a[2] == 0 then return b end
-    if b[2] == 0 then return a end
-    local s = lcm(a[2], b[2])
-    local as = s / a[2]
-    local bs = s / b[2]
-    return {as*a[1] + bs*b[1], s}
-end
-
-local function reduce(a)
-    out = a
-    local s = gcd(out[1], out[2])
-
-    if (s ~= 0) then
-        out[1] = out[1] / s
-        out[2] = out[2] / s
-    end
-
-    return out
-end
-
-function fracmul(a, b)
-    local out = {a[1]*b[1], a[2]*b[2]}
-
-    return reduce(out)
-end
-
-local function morphseq_dur(mseq)
-    local total = {0, 0}
-    for _, m in pairs(mseq) do
-        local r = m[2]
-        total = fracadd(total, r)
-    end
-    -- r is a ratemultiplier against a normalize
-    -- path with dur 1. 2/1 is 2x faster, or dur 1/2.
-    -- inverse to get duration
-    -- this can be multiplied with normalized path
-    -- to stretch/squash it out
-    return {total[2], total[1]}
-end
-
-local function path_normalizer(p)
-    local total = 0
-
-    for _, v in pairs(p) do
-        total = total + v[2]
-    end
-
-    return {total, 1}
-end
-
-local function apply_ratemul(p, r, vertexer)
-    path_with_ratemul = {}
-
-    for _,v in pairs(p) do
-        local v_rm = {
-            v[1],
-            reduce({r[1], v[2]*r[2]}),
-            v[3]
-        }
-        table.insert(path_with_ratemul, vertexer(v_rm))
-    end
-
-    return path_with_ratemul
-end</pre></code>
-<p><pre><code>function Gest:node()
-	local glive = self.get(self)
-	local mem = self.bufname
-	local glivef =  function(self) return glive end
-	local cndstr = self.conductor
-
-    return function(n, p)
-        local name = p.name or "gst"
-        local program =
-            string.format("[gmemsym [grab %s] %s]", mem, name)
-
-        -- TODO: glivef makes this work as a regular node
-        -- glive works as only a parameter node. Tests
-        -- will break if glivef is used
-        -- The quick fix is to just introduce a flag
-        local is_param_node = n.sigrune_dummy or false
-        if is_param_node then
-            n.glive = n:param(glive)
-        else
-            n.glive = n:param(glivef)
-        end
-
-        n.conductor = n:param(p.conductor or cndstr)
-        n:lil({"gestvmnode", "zz", program, "zz"})
-        n:label("gesture: " .. name)
-    end
-end</pre></code>
-<p><pre><code>local M = {}
-
-&lt;&lt;morpheme&gt;&gt;
-return M</pre></code>
-<p><pre><code>function mkmacro(words, name, program)
-    table.insert(words, "%" .. name)
-    table.insert(words, "{")
-    for _,v in pairs(program)
-    do
-        table.insert(words, v)
-    end
-    table.insert(words, "}")
-end
-
-function mklabel(words, label)
-    table.insert(words, "@" .. label)
-end
-
-function mknum(words, val)
-    table.insert(words, "#" .. string.format("%02x", val))
-end
-
-function mknote(words, note)
-    table.insert(words, "#" .. string.format("%02x", note))
-    table.insert(words, "NOTE")
-    table.insert(words, "BRK")
-end
-
-function mkdur(words, num, den)
-    mknum(words, num)
-    table.insert(words, "NUM")
-    mknum(words, den)
-    table.insert(words, "DEN")
-end
-
-function mkbehavior(words, id)
-    mknum(words, id)
-    table.insert(words, "BHVR")
-end
-
-function mkjump(words, label)
-    table.insert(words, ";" .. label)
-    table.insert(words, "JMP2")
-end
-
-function compile_tal(tal)
-    lil([[
-    gmemnew mem
-    gestvmnew gvm
-    ]])
-
-    gestvm_compile("mem", program_tal)
-    lil("gmemcpy [grab mem] [grab gvm]")
-end</pre></code>
-<p><pre><code>Diagraf.Graph = {}
-Graph = Diagraf.Graph
-
-&lt;&lt;topsort&gt;&gt;
-&lt;&lt;graph&gt;&gt;
-</pre></code>
-<p><pre><code>local Path = {}
-
-&lt;&lt;path&gt;&gt;
-return Path</pre></code>
-<p><pre><code>function tal.num(words, val)
-    table.insert(words, "#" .. string.format("%02x", val))
-end</pre></code>
-<p><pre><code>function tal.num(words, val)
-    table.insert(words, "#" .. string.format("%02x", val))
-end</pre></code>
-<p><pre><code>mkmacro(program_words, "NUM", {"#24", "DEO"})
-mkmacro(program_words, "DEN", {"#25", "DEO"})
-mkmacro(program_words, "NEXT", {"#26", "DEO"})
-mkmacro(program_words, "NOTE", {"#33", "ADD", "NEXT"})
-mkmacro(program_words, "BHVR", {"#27", "DEO"})</pre></code>
-<p><pre><code>        ©         (Ê  
-   û`ˆ</pre></code>
-<p><pre><code>function tal.compile(program, bufname, gvm)
-    gestvm_compile(bufname, program)
-    lil("gmemcpy [grab " .. 
-        bufname .. 
-        "] " .. 
-        gvm)
-end</pre></code>
-<p><pre><code>function Sig:getstr()
-    if self.reg &lt; 0 then
-        error("no signal")
-    end
-
-    --return string.format("[regget %d]", self.reg)
-    return {"regget", self.reg}
-end</pre></code>
-<p><pre><code>function M.template(m)
-    return function(p)
-        local o = {}
-        for k,v in pairs(m) do
-            o[k] = p[k] or v
-        end
-        return o
-    end
-end</pre></code>
-<p><pre><code>local tal = {}
-
-&lt;&lt;cmds&gt;&gt;
-return tal</pre></code>
-<p><pre><code>function tal.label(words, label)
-    table.insert(words, "@" .. label)
-end</pre></code>
-<p><pre><code>function Path.vertex(v)
-    x = {}
-
-    x.val = v[1]
-    x.dur = v[2]
-    x.bhvr = v[3]
-
-    return x
-end</pre></code>
-<p><pre><code>[[
-phasor [expr 96 / 60] 0
-
-hold zz
-regset zz 0
-
-gestvmnode [grab gvm] [gmemsym [grab mem] mel] [regget 0]
-
-mtof zz
-blsaw zz
-mul zz 0.5
-
-butlp zz 800
-
-dup
-dup
-verbity zz zz 0.1 0.1 0.1
-drop
-mul zz [dblin -15]
-dcblocker zz
-add zz zz
-
-unhold [regget 0]
-
-wavouts zz simple_path.wav
-
-computes 10
-]]</pre></code>
-<p><pre><code>local tal = {}
-
-&lt;&lt;cmds&gt;&gt;
-return tal</pre></code>
-<p><pre><code>v = function (note, dur, behavior)
-    x = {}
-
-    x.note = note
-    x.dur = dur
-    x.bhvr = behavior
-
-    return x
-end</pre></code>
-<p><pre><code>[[
-phasor [expr 96 / 60] 0
-
-hold zz
-regset zz 0
-
-gestvmnode [grab gvm] [gmemsym [grab mem] mel] [regget 0]
-
-mtof zz
-blsaw zz
-mul zz 0.5
-
-butlp zz 800
-
-dup
-dup
-verbity zz zz 0.1 0.1 0.1
-drop
-mul zz [dblin -15]
-dcblocker zz
-add zz zz
-
-unhold [regget 0]
-
-wavouts zz simple_path.wav
-
-computes 10
-]]</pre></code>
-<p><pre><code>local M = {}
-
-&lt;&lt;morpheme&gt;&gt;
-return M</pre></code>
-<p><pre><code>function Gest:get()
-    return string.format("[glget [grab %s]]", self.name)
-end</pre></code>
-<p><pre><code>function Gest:create()
-    lil("glnew " .. self.name)
-    self.tal.membuf(self.bufname)
-end</pre></code>
-<p><pre><code>function Gest:swapper()
-    lil(string.format("glswapper [grab %s]", self.name))
-end</pre></code>
-<p><pre><code>function Path.path(tal, words, path, lookup)
-    for _, v in pairs(path)
-    do
-        if v.val ~= nil then
-            local pathval = v.val
-
-            if lookup ~= nil and type(pathval) == "string" then
-                pathval = lookup[pathval]
-            end
-
-            tal.val(words, pathval)
-        end
-
-        if v.dur ~= nil then
-            tal.dur(words, v.dur[1], v.dur[2])
-        end
-
-        if v.bhvr ~= nil then
-            tal.behavior(words, v.bhvr)
-        end
-    end
-end
-</pre></code>
-<p><pre><code>Warble = {}
-
-&lt;&lt;warble&gt;&gt;
-return Warble</pre></code>
-<p><pre><code>NRT = {}
-
-&lt;&lt;lpeg_constructs&gt;&gt;
-&lt;&lt;solfvals&gt;&gt;
-&lt;&lt;eval&gt;&gt;
-return NRT</pre></code>
-<p><pre><code>function Gest:done()
-    lil(string.format("gldone [grab %s]", self.name))
-end</pre></code>
-<p><pre><code>function tal.halt(words)
-    table.insert(words, "BRK")
-end</pre></code>
-<p><pre><code>function tal.behavior(words, id)
-    tal.num(words, id)
-    tal.num(words, 0x27)
-    table.insert(words, "DEO")
-end</pre></code>
-<p><pre><code>function tal.jump(words, label)
-    table.insert(words, ";" .. label)
-    table.insert(words, "JMP2")
-end</pre></code>
-<p><pre><code>function tal.interpolate(words, state)
-    tal.num(words, state)
-    tal.num(words, 0x2a)
-    table.insert(words, "DEO")
-end</pre></code>
-<p><pre><code>Whistle = {}
-
-&lt;&lt;oscillator&gt;&gt;
-return Whistle</pre></code>
-<p><pre><code>function Whistle.graph(params)
-    local sig = sig or params.sig
-    local core = core or params.core
-    local diagraf = diagraf or params.diagraf
-    local node = diagraf.Node
-    local g = diagraf.Graph:new{sig=sig, debug=params.debug}
-    local sr = sigrunes or params.sigrunes
-
-    local ng = core.nodegen(node, g)
-    local pg = core.paramgen(ng)
-
-    freq = pg(params.freq or core.paramf(440), "freq")
-
-    con = g:connector()
-    ns = ng(sr.noise)()
-    lpf = ng(sr.butlp)()
-    con(ns, lpf.input)
-    amp = pg(params.amp or core.paramf(0.8), "amp")
-    eq = ng(sr.peakeq) {
-        freq=500,
-        bw=250,
-        gain=2
-    }
-
-    con(lpf, eq.input)
-    timbre = pg(params.timbre or core.paramf(0.5), "timbre")
-    mtofr = ng(sr.mtof)
-    addr = ng(sr.add)
-    subr = ng(sr.sub)
-    mulr = ng(sr.mul)
-
-    mtof1 = mtofr()
-    con(freq, mtof1.input)
-
-    add1 = addr{b=0.1}
-    con(freq, add1.a)
-    mtof2 = mtofr()
-    con(add1, mtof2.input)
-
-    sub1 = subr{b=0.1}
-    con(freq, sub1.a)
-    mtof3 = mtofr()
-    con(sub1, mtof3.input)
-
-    sub2 = subr()
-
-    con(mtof2, sub2.a)
-    con(mtof3, sub2.b)
-
-    butbp = ng(sr.butbp)()
-    con(eq, butbp.input)
-    con(mtof1, butbp.freq)
-    con(sub2, butbp.bw)
-
-    dblin = ng(sr.dblin)({db=10})
-    mul1 = mulr {}
-    con(butbp, mul1.a)
-    con(dblin, mul1.b)
-
-
-    blsq = ng(sr.blsquare)()
-    con(mtof1, blsq.freq)
-    mul2 = mulr{b=0.5}
-    butlp = ng(sr.butlp){cutoff=300}
-    buthp = ng(sr.buthp) {cutoff=300}
-    con(blsq, mul2.a)
-    con(mul2, butlp.input)
-    con(butlp, buthp.input)
-
-    cf = ng(sr.crossfade)()
-
-    con(mul1, cf.a)
-    con(buthp, cf.b)
-    con(timbre, cf.pos)
-
-    mul3 = mulr()
-
-    con(cf, mul3.a)
-    con(amp, mul3.b)
-
-    return g
-end
-
-function Whistle.osc(params)
-    local g = Whistle.graph(params)
-    local l = g:generate_nodelist()
-    g:compute(l)
-end</pre></code>
-<p><pre><code>local Path = {}
-
-&lt;&lt;path&gt;&gt;
-return Path</pre></code>
-<p><pre><code>Êÿúÿà5-Êüÿ     »l        @	Ê     eˆ      øÇ5ÊÿúÿX	Êúÿ _.Êú     œp        ÀŞÊ     6³]*[ef783eca] 2023-07-18-20-56*:       t    Êúÿ@IÊ     \	§([[/gestlings/weight][weight]])      ¾x 
-       pë#Ê  €RÑU         È*LÊ     Êüÿ                                            Ëu .¬ÑU                Í(Ê     Êz{ÿÿÿÿÿÿÿÿ     €A@     €F@     €F@     €F@     €F@     €F@     €A@      $@            ¡         Î(Ê     Êëwÿÿÿÿÿÿÿÿ     €A@     €F@     €A@     €A@     €A@     €F@     €A@      $@  -Êü     ¢        €Î(Ê     Êz{ÿÿÿÿÿÿÿÿ     €A@     €F@     €F@     €F@     €F@     €F@     €A@      $@            £        ĞÒ(Ê     Êá2ÿÿÿÿÿÿÿÿ     €A@     €A@     €A@     €A@     €A@     €A@     €A@      $@            ¤         Ó(Ê     Ê„¤ÿÿÿÿÿÿÿÿ     €F@     €F@     €F@     €F@     €F@     €F@     €F@      $@            ¥#        0Ó(Ê     Êf­ÿÿÿÿÿÿÿÿ     €A@     €A@     €A@     €F@     €A@     €A@     €A@      $@            ¦*        `Ó(Ê     Êz{ÿÿÿÿÿÿÿÿ     €A@     €F@     €F@     €F@     €F@     €F@     €A@      $@ point      §1        Ó(Ê     Êëwÿÿÿÿÿÿÿÿ     €A@     €F@     €A@     €A@     €A@     €F@     €A@      $@            ¨8        ğÓ(Ê     Ê„¤ÿÿÿÿÿÿÿÿ     €F@     €F@     €F@     €F@     €F@     €F@     €F@      $@  -Êü     ©?         Ô(Ê     Êë[ÿÿÿÿÿÿÿÿ     €F@     €A@     €A@     €A@     €A@     €A@     €F@      $@            ªF         .Ê  G   Ôó´§SELECT time, UUID, substr(value, 2) as task, substr(state, 9) as state              «M        €Ô(Ê     Ê„¤ÿÿÿÿÿÿÿÿ     €F@     €F@     €F@     €F@     €F@     €F@     €F@      $@            ¬T        °Ô(Ê     Êf­ÿÿÿÿÿÿÿÿ     €A@     €A@     €A@     €F@     €A@     €A@     €A@      $@            ­[        àÔ(Ê     Ê„¤ÿÿÿÿÿÿÿÿ     €F@     €F@     €F@     €F@     €F@     €F@     €F@      $@            ®b        Õ(Ê     Êë[ÿÿÿÿÿÿÿÿ     €F@     €A@     €A@     €A@     €A@     €A@     €F@      $@ x          ¯i        @Õ(Ê     Ê„¤ÿÿÿÿÿÿÿÿ     €F@     €F@     €F@     €F@     €F@     €F@     €F@      $@            p °      ±   #   ±   #   ±   #   ±   "   ±   "   ±   "   ±      ±      ±      ±      ±      ±           ±w        pÕ(Ê     Êëwÿÿÿÿÿÿÿÿ     €A@     €F@     €A@     €A@     €A@     €F@     €A@      $@            Ìô@/¬ÑU         SELECT * FROM content WHERE id=13 AND program=10   ÿÿÿÿÿÿ ÿ              a        `³ùœÊ  0   03|SELECT * FROM content WHERE id=13 AND program=10     ¢
- SELECT * FROM blkref WHERE id=15 AND program=10ÿ   ÿÿÿÿÿÿ ÿ              ƒ        pµùœÊ  /   ¤ä"SELECT * FROM blkref WHERE id=15 AND program=10      ¤ SELECT * FROM blocks WHERE id=14 AND program=10ÿ%   ÿÿÿÿ    Ê              …        €·ùœÊ  /   4ÜYğSELECT * FROM blocks WHERE id=14 AND program=10      ¦ SELECT * FROM blkref WHERE id=15 AND program=10ÿ   ÿÿÿÿÿÿ ÿ              ‡#        0¹ùœÊ  /   ¤ä"SELECT * FROM blkref WHERE id=15 AND program=10      ¨( SELECT * FROM blocks WHERE id=14 AND program=10ÿ   ÿÿÿÿÿÿ ÿ   &-Êü     ‰-        P½ùœÊ  /   4ÜYğSELECT * FROM blocks WHERE id=14 AND program=10      ª2 SELECT * FROM segments WHERE id=16 AND program=10   ÿÿÿÿ    Ê              K7        0¿ùœÊ  1   ¾ğ£PSELECT * FROM segments WHERE id=16 AND program=10    ¬&lt; SELECT * FROM headers WHERE id=17 AND program=10   ÿÿÿÿÿÿ ÿ              mA        ÁùœÊ  0   ugıSELECT * FROM headers WHERE id=17 AND program=10     ®F ** 3.2. &lt;a id="label"&gt;Label&lt;/a&gt;
-ÿÿ ÿ        ğ?ÿÿÿÿÿÿÿÿ  ÿ              ¯K     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ…:Êûÿˆh/Êúÿ K-Êü     °P SELECT * FROM content WHERE id=18 AND program=10…:Êûÿˆh/Ê ÿ            ±U         ¨%Ê  ş            @   ÿÿÿ ¦*Ê   ¹9Ê                      ²Z     €øÿ°D-Ê               @   ÿÿÿ ¦*Ê  @»9Ê                      ³_        0ƒ.Ê  .   “(messages group &opt typeflag genrefs limit)
-
-      ´d     €øÿ`ª%Ê  *   ct0W(gen-tilemap filename gw gh ncols nrows)
-
-      	    µi        €/Ê     Ÿx§ÿÿÿÿÿÿÿÿH‡8Êÿúÿ8×(Êÿúÿ¸E-Êúÿ /Êüÿ            vn         ÌùœÊ  0   •ğ!¹SELECT * FROM content WHERE id=18 AND program=10     ·s     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            ¸x SELECT * FROM blkref WHERE id=19 AND program=10ÿ   ÿÿÿÿÿÿ ÿ                              Ísh/¬ÑU      €  *[82fdf14c] 2023-07-31-15-50*:  (rùœÊ  
-        w.Êÿú      ¡ 
-       €æ÷œÊ  €RÑU         ˜,,Ê     Êüÿ            ¢        G-Ê                õ)Ê           G-Êü     ƒ         ÉÊ     ŞUGÈ*[82fdf14c] 2023-07-31-15-50*:       „        @ÿÊ     "¯([[/gestlings/sigils][sigils]])      ¥         ÚïœÊ     Å®|!protogestling_mockup               ¦        ğÏÊ            do_pNÊ                      §         ûïœÊ     á+Saving/Loading Paths as Assets      ¨          ûïœÊ     @l@Symbol Set and Grammar              I$        ğöïœÊ  !   JG©ñRescale Path to Morpheme Sequence    ª(    efghĞH-Ê             CDEF ÛïœÊ           XYZ ü     «,        €ğœÊ  	           ÿÿÿÿP"+Ê           t.Êÿú     ¬0        àğœÊ     aD‘şsaving/loading paths as assets      ­4        PJ-Ê     H¥‚ºsaving/loading-paths-as-assets      N8 savingloading-paths-as-assetsÿÿÿp†4Êşÿ¸Z.Êÿúÿht.Êÿúÿ     ¯&lt;        PğœÊ     Y(Šsavingloading-paths-as-assets       °@        K-Ê     aä*symbol set and grammar              ±D        PK-Ê     (^‘¸symbol-set-and-grammar  `5-Êü     RH        °ğœÊ  !   Ê#rescale path to morpheme sequence    SL        ĞK-Ê  !   ¾M rescale-path-to-morpheme-sequence    ´P         ğœÊ     ¾¥€ˆÿÿÿÿÿÿÿÿ¸
-ğœÊúÿèğœÊúÿ            µT        ‰,Ê                 ½.Ê                      –X        L-Ê     ½ö¢­ÿÿÿÿÿÿÿÿS.Êúÿ      P@      ğ?     ·\        °ğœÊ     Q¹[#+TITLE: The Gesture Path
-  Êü 	    ¸`        ğğœÊ     ÆOÅ&lt;a id="overview"&gt;Overview&lt;/a&gt;       d        PğœÊ  #   91ãg* 1. &lt;a id="overview"&gt;Overview&lt;/a&gt;
-  ºh    ÊúÿĞI-Ê     @       Êúÿ mÊ  ĞH-Ê   u.Êÿú     »l 
-       €8Ê  €RÑU         È*LÊ     Êÿúÿ u.Êÿ      ¼p &lt;a id="creating-a-vertex"&gt;Creating a Vertex&lt;/a&gt;             ½t 
-   CT *ğµ÷œÊ  €RÑU         È*LÊ      €øÿ w.Êÿ      ^x    ME: 0ÒÊ  !   ÷çs&[[/gestlings/descript][descript]]                                    Îò1¬ÑU                Ğ$.Ê     ¹áWÿÿÿÿÿÿÿÿ%.ÊúÿèK.ÊúÿH%.Êúÿ¨%.ÊúÿØ%.Êúÿ&.Êúÿ d Êü     ¡ pv9Êıÿ;    €@ğO-Ê                                     ÿÿüÿ                 ype ü     ‚        à&.Ê     Ÿ‘¬3ÿÿÿÿÿÿÿÿ('.ÊúÿHL.ÊúÿX'.ÊúÿhL.Êúÿ¸'.Êúÿ,.Êúÿ˜,.Êúÿ     £ (gen-tilemap filename gw gh ncols nrows)
-
-)Ê  N_SRC
-      ÿÿüÿ                 i e '      ¤ °w9Êıÿ˜    €P                                          ÿÿ                   (Êú     …         ..Ê     n¢€ÿÿÿÿÿÿÿÿH..ÊúÿM.Êúÿx..Êúÿ¨..ÊúÿØ..Êúÿ/.Êúÿ8/.Êúÿ     ¦$ @[%Êıÿ˜    €P                                          ÿÿ                   E*Êü     §* * 6. &lt;a id="sndkit-patch"&gt;Sndkit Patch&lt;/a&gt;
-                ÿÿ                              ¨0 ğx9Êıÿ˜    €P                                          ÿÿ                              ‰6        €#.Ê     n¢€ÿÿÿÿÿÿÿÿÈ#.ÊúÿO.Êúÿ¸¶3Êúÿè¶3Êúÿ¨·3ÊúÿØ·3Êúÿ¸3Êúÿ     Š&lt; ,  *  /  3  * /  3  * 1* 3 0 * 3  =    )  /  4          «B @d%Êıÿš      @        ¨O-Ê          ø	Ê             ÿÿ                   (Êú     ŒH æIÑÕşÿxb+Êúÿ¸ -Êúÿø -Êúÿ8¡-ÊúÿV-Êúÿx¡-Êúÿ¸¡-ÊúÿPîEÑÕşÿĞ|IÑÕşÿp.Êşÿ     N         E-Ê     Z:-kÿÿÿÿÿÿÿÿ g/Êüÿ°I*Êüÿ0J*Êüÿ°J*Êüÿ0K*Êüÿ°,Êüÿh$ğœÊÿúÿ     T ,  *  /  3  $	 * /  3  * * 1* 4  *  /  3  $  * /  4       ¯Z 0z9Êıÿ±      @0U-Ê                                     ÿÿ                              °`        P»3Ê     ¹áWÿÿÿÿÿÿÿÿ˜»3ÊúÿA.ÊúÿÈ»3Êúÿø»3ÊúÿX¼3Êúÿˆ¼3Êúÿ ype        ±f €f%Êıÿ˜    €P                                          ÿÿ                              ²l         ¡-Ê  9   *%í¢INNER join wikizet on zetdo_priority.UUID = wikizet.UUID        
-    3r        °3Ê  B   \ù2ïSELECT * FROM blkref WHERE program == 2 AND ref == 45 AND pos == 2   ´x          	      	      	                                                   Ïqğn­ÑU         H       ˜    €P                                          ÿÿ                       €ø     ¡ €†Êıÿ5      @        ˆF$Ê  8W-Ê                     ÿÿ                   ile '      ‚        ÀğœÊ  ?   }yÁ[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-      ƒ        ğœÊ  ?   #šÔºSELECT id, type FROM resources WHERE program=%d ORDER by id ASC  –! „        @ğœÊ  ?   |-v¢SELECT id, type FROM resources WHERE program=11 ORDER by id ASC      ¥    Êıÿ2ğœÊ     ¹áWÿÿÿÿÿÿÿÿØ2ğœÊúÿˆğœÊúÿ3ğœÊúÿ83ğœÊúÿh3ğœÊúÿ˜3ğœÊúÿ            ¦$ €‹Êıÿ˜    €P                                          ÿÿ                   ‘!Ê      ‡*        `ğœÊ     n¢€ÿÿÿÿÿÿÿÿ¨ğœÊúÿø
-ğœÊúÿØğœÊúÿğœÊúÿ8ğœÊúÿhğœÊúÿ˜ğœÊúÿ     ¨0 À$+Êıÿš      @        {$Ê          ˆóÊ             ÿÿ                   ,,Ê      ©6 ĞYßœÊıÿš      @        ÈZ-Ê          hõÊ     Êÿúÿ;    @€HØZ-Ê  type    !Ê      ª&lt; ÀŒÊıÿ±      @@[-Ê                                     ÿÿ                            ‹B        àğœÊ     n¢€ÿÿÿÿÿÿÿÿ(ğœÊúÿØ
-ğœÊúÿXğœÊúÿˆğœÊúÿ¸ğœÊúÿÈğœÊúÿğœÊúÿ ÿÿÿ ¬H  '+Êıÿ˜    €P                                          ÿÿ                       €ø     ­N &lt;a id="whats-a-path"&gt;What's a "Path"?&lt;/a&gt;                  ÿÿ                   ƒ Ê  
-    T * 2. &lt;a id="whats-a-path"&gt;What's a "Path"?&lt;/a&gt;
-            ÿÿúÿ                type        ¯Z  Êıÿ˜    €P                                          ÿÿ                   ,,Ê      `        0ğœÊ     n¢€ÿÿÿÿÿÿÿÿ¨ğœÊúÿˆğœÊúÿøğœÊúÿ(ğœÊúÿXğœÊúÿˆğœÊúÿ¸ğœÊúÿ     ±f @)+Êıÿ+      @        \-Ê  8]-Ê                     ÿÿ                           ²l * 3. &lt;a id="tangled-code"&gt;Tangled Code&lt;/a&gt;
-                ÿÿ                  type ú     ³r p++Êıÿ˜    €P                                          ÿÿ                              ´x @…Êıÿ5      @        ø]-Ê  X^-Ê                     ÿÿ                              Ğğ@0¬ÑU            CT *€v-Ê     @       rogr dÊ  @v-Ê   u.Êÿ      ¡         FÊ                ğdÊ           _ Êü     ¢        0›%Ê     ªT‡;&lt;a id="compile"&gt;compile&lt;/a&gt;         £ 
-   CT *@VÊ  €RÑU         È*LÊ     Êÿúÿ f-Ê      ¤    ME: p¼Ê     E‘l¨/gestlings/mouthanim                ¥        Àß(Ê     ²=oenable/disable interpolator  ÿú         CT * ¼Ê  #   ßj[[/gestlings/mouthanim][mouthanim]]  §        ,Ê                ½.Ê                      ˆ         à`-Ê     ½6®ÿÿÿÿÿÿÿÿS.Êúÿ     @S@      ğ?     ‰$ *[299387b4] 2023-08-07-16-46*: ÿ |.Êüÿ`6-Êüÿ             ª(        €•.Ê     ‚‰E[      øÇ5Êÿúÿ˜•.Êúÿ            ‹,        ğ½Ê     Ş„á*[299387b4] 2023-08-07-16-46*:       ¬0    Êúÿ`_-Ê             Êúÿ 8Ê                      ­4 
-       àa$Ê  €RÑU         È*LÊ     Êúÿ b-Êü     ®8        €uùœÊ     ©Ì	e/gestlings/simple_path  €b-Êü     &lt; ‡      ‡   !   ‡   !   ‡      ‡      ‡      ‡           °@ [[/gestlings/simple_path][simple_path]]                     ±D        ‚,Ê                 ¾.Ê                      ’H        `c-Ê     ½ÖÏ¯ÿÿÿÿÿÿÿÿS.Êúÿ     à`@      ğ?     ³L        ĞÂÊ                JÊ                      ´P        àc-Ê                €pùœÊ                      µT        pü÷œÊ     ­­‘¥      ¨‹(Êÿúÿˆü÷œÊúÿ            ¶X         d-Ê     @           iÊ  àc-Ê        ğ     ·\         b-Ê     @           `iÊ  `_-Ê              ¸` 
-       ÀÊ  €RÑU         È*LÊ     Ê        ğ     ¹d äIÑÕşÿàB.Êşÿ`.Êúÿø`.ÊúÿPîEÑÕşÿ èIÑÕşÿ            h ,  /   *  3 /  * 3 * * 1* 3 /  * 4   »l        °ÄÊ     ÿEñê/gestlings/sdfvm_mouth              ¼p        …,Ê                °¾.Ê                      t         f-Ê     ½Ø¯ÿÿÿÿÿÿÿÿS.Êúÿ      a@      ğ?     ¾x [[/gestlings/sdfvm_mouth][sdfvm_mouth]]         }.Êÿú                                     Ñoh%­ÑU      €         ÀÊ     Ÿ‘¬3ÿÿÿÿÿÿÿÿ	ÊúÿØøÊúÿ8	ÊúÿøøÊúÿh	Êúÿ˜	ÊúÿÈ	Êúÿ Â  ¡ °ªÊıÿ¨ŒÊ  €    È° Ê  €    È¶ Ê  È¶ Ê      Ê  ¨ŒÊ  €     Ë Ê      ¢ 0ÊıÿHº Ê      Ê  ¨ŒÊ  €    H  Ê  €    Hµ Ê  Hµ Ê      Ê   ŒÊ      ƒ    Ê   Ê     n¢€ÿÿÿÿÿÿÿÿèÊúÿûÊúÿÊúÿHÊúÿxÊúÿ¨ÊúÿØÊúÿ     ¤ ğ¬Êıÿ€    È¬ Ê  €    È¬ Ê  È¬ Ê      Ê  ¨ŒÊ  €    È¼ Ê           ¥ pÊıÿ    Ê  ¨ŒÊ  €    H± Ê  €    H³ Ê  H³ Ê      Ê  ¨ŒÊ           ¦$       €Ê     ¹áWÿÿÿÿÿÿÿÿÈÊúÿÊúÿøÊúÿ(ÊúÿXÊúÿˆÊúÿ    Ê      §* @ÊıÿÈ¯ Ê  €    ÈÅ Ê  ÈÅ Ê      Ê  ¨ŒÊ  €    HÂ Ê  €     Ë Ê      ¨0 €’Êıÿ¨ŒÊ  €    Èª Ê  €    ÈÃ Ê  ÈÃ Ê      Ê  ¨ŒÊ  €     £ Ê      ©6 À‘ÊıÿH¨ Ê      Ê  ¨ŒÊ  €    ÈÂ Ê  €    ÈÈ Ê  ÈÈ Ê      Ê   ŒÊ      ª&lt;    Ê  Ê     ¹áWÿÿÿÿÿÿÿÿÊúÿ˜Êúÿ8ÊúÿhÊúÿ˜ÊúÿÈÊúÿ ¼ Ê      «B  “Êıÿ€    H¤ Ê  €    HÄ Ê  HÄ Ê      Ê  ¨ŒÊ  €    È± Ê           ŒH    Ê   Ê     Ÿ‘¬3ÿÿÿÿÿÿÿÿèÊúÿØÊúÿÊúÿøÊúÿHÊúÿxÊúÿ¨Êúÿ £  ­N 0”ÊıÿH¿ Ê  H¿ Ê      Ê  ¨ŒÊ  €    H» Ê  €    È¨ Ê  È¨ Ê      Ê      T       PÊ     Ÿ‘¬3ÿÿÿÿÿÿÿÿ˜Êúÿ8ÊúÿˆÊúÿXÊúÿ8ÊúÿøÊúÿ(Êúÿ ©  ¯Z °”Êıÿ¨ŒÊ  €    Hª Ê  €    H´ Ê  H´ Ê      Ê  ¨ŒÊ  €     Å Ê      °` p•ÊıÿÈÊ Ê      Ê  ¨ŒÊ  €    È³ Ê  €    HÀ Ê  HÀ Ê      Ê   ŒÊ      ‘f    Ê   /Ê     n¢€ÿÿÿÿÿÿÿÿH/ÊúÿxÊúÿx/Êúÿ¨/ÊúÿØ/Êúÿ0Êúÿ80Êúÿ     ²l 0™Êıÿ€    È¦ Ê  €    HŸ Ê  HŸ Ê      Ê  ¨ŒÊ  €    HÉ Ê           ³r °–Êıÿ    Ê  ¨ŒÊ  €    Hµ Ê  €    ÈÄ Ê  ÈÄ Ê      Ê  ¨ŒÊ           ´x       €6Ê     ¹áWÿÿÿÿÿÿÿÿÈ6ÊúÿÊúÿø6Êúÿ(7ÊúÿX7Êúÿˆ7Êúÿ            Òî€1¬ÑU            ME: @°Ê               0&gt;Ê                      ¡        P„#Ê     
-F'”&lt;a id="halt"&gt;halt&lt;/a&gt;  ÿ            B ** 3.5. &lt;a id="halt"&gt;halt&lt;/a&gt;
-  È….Êÿúÿø~.Êúÿ            £        °„#Ê     ¬É*Å** 3.5. &lt;a id="halt"&gt;halt&lt;/a&gt;
-      ¤    CT * o-Ê             rogr0Ê           .Ê      ¥    ME:  p-Ê     @           `Ê   o-Ê              ¦ ** 3.6. &lt;a id="dur"&gt;dur&lt;/a&gt;
-   8ˆ:ÊÿúÿøŒ.Êúÿ            §        0•#Ê     ‘~AÚ** 3.6. &lt;a id="dur"&gt;dur&lt;/a&gt;
-        ˆ          CÊ     •
-*Y*[fd11b75c] 2022-12-17-06-02*:       	$        `.Ê  #   Æ(SELECT UUID as ID, value as state   ª(        .Ê     zU"–ON wikizet.UUID = states.ID         «,        .Ê     éoÏ¤WHERE value IS '#' || '             ¬0         .Ê     Õã•òAND value LIKE '$state:%')          ­4         r-Ê     £mV[(page-amalg group)
-
-                ®8 
-   ME: õïœÊ  €RÑU         È*LÊ                     ¯&lt;        @Ê     Ø,Ç­&lt;a id="behavior"&gt;behavior&lt;/a&gt;       °@    CT *€²Ê     GË	-[[/gestlings/tasks][tasks]]         ‘D ([[/gestlings/tasks][tasks]]),şÿp~-Ê                       ²H        °Ê     0/²7&lt;a id="jump"&gt;jump&lt;/a&gt;               SL ** 3.8. &lt;a id="jump"&gt;jump&lt;/a&gt;
-  `z-Ê                      ´P        Ê     •Ğ[Ş** 3.8. &lt;a id="jump"&gt;jump&lt;/a&gt;
-      µT    CT *p°Ê     Dôÿ&([[/gestlings/tasks][tasks]]),      –X *[86788620] 2023-08-08-13-18*: ÿp†4ÊşÿX‡.Êÿúÿ    €ø      ·\        @.Ê     °&gt;Yµ&lt;a id="membuf"&gt;membuf&lt;/a&gt;  Êü 
-    8`         .Ê  "   ñÔ** 3.9. &lt;a id="membuf"&gt;membuf&lt;/a&gt;
-   ™d    CT *@¶Ê     úQ*[86788620] 2023-08-08-13-18*:       h ([[/gestlings/sigils][sigils]])ÿØDÊúÿEÊúÿ u Êü     »l        `PÊ     ”69‚&lt;a id="start"&gt;start&lt;/a&gt;  ’.Êÿú     \p        ÀPÊ  !   ªT&gt;** 3.10. &lt;a id="start"&gt;start&lt;/a&gt;
-    ½t    CT *ºÊ            rogræŞœÊ                      ¾x    ME: @v-Ê             ÿÿÿÿp¥Ê              ÿ                                      Óm	¨1¬ÑU             €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            A        ğªùœÊ  1   xeSELECT * FROM segments WHERE id=10 AND program=10    ¢
-        @q-Ê  )   ï³ÒFROM wikizet WHERE value LIKE '$state:%'        
-    £     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            ¤     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            ¥        `D*Ê               @   ÿÿÿ ¦*Ê   °9Ê           Z-Êü     ¦         E*Ê     hã1ÿÿÿÿÿÿÿÿh‡8ÊÿúÿÅ%ÊÿúÿÅ%Êÿúÿ@`*Êüÿ Z-Êü     §#        ğ¤ùœÊ  $   *êYlocal tal = {}
-
-&lt;&lt;cmds&gt;&gt;
-return tal
-                ¨(     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            ©- SELECT * FROM headers WHERE id=11 AND program=10
-   ÿÿÿÿÿÿ ÿ              j2         ­ùœÊ  0   / (´SELECT * FROM headers WHERE id=11 AND program=10     «7 * 3. &lt;a id="commands"&gt;Commands&lt;/a&gt;
- Ê        ğ?ÿÿÿÿÿÿÿÿ  Ê              ¬&lt; SELECT * FROM headers WHERE id=12 AND program=10   ÿÿÿÿÿÿ ÿ              mA         °ùœÊ  0   F]ÀSELECT * FROM headers WHERE id=12 AND program=10     ®F         E*Ê               @   ÿÿÿ ¦*Ê  @²9Ê                      K         0*Ê     ì÷êKÿÿÿÿÿÿÿÿø7ÊÿúÿÀF*Êüÿ@F*Êüÿpˆ*Êüÿ 0*Êüÿ     °P     €øÿ€0*Ê     b	ønÿÿÿÿÿÿÿÿˆ‡8Êÿúÿ`0*Êüÿ 0*ÊüÿÀ{-Êüÿ            ±U     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            ²Z     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ z-Êü     ³_ ** 3.1. &lt;a id="macro"&gt;Macro&lt;/a&gt;
-ÿÿ Ê      €øÿ   ÿÿÿÿÿÿ  € ÿ            ´d     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            µi     €øÿ€1*Ê               @   ÿÿÿ ¦*Ê  €´9Ê                      ¶n    Êûÿ€½%Ê     ux\	ÿÿÿÿÿÿÿÿh‡8Êÿúÿ€f*Êüÿà*Êüÿ    €øÿ            ·s        Ğ}-Ê     HƒÒõÿÿÿÿÿÿÿÿh‡8Êÿúÿ e*Êüÿ*Êüÿğ}-Êüÿ            ¸x     €øÿ ~-Ê     ½÷¼ÿÿÿÿÿÿÿÿh‡8ÊÿúÿÀc*Êüÿ€d*Êüÿ@~-Êüÿ                            Ôì	H2¬ÑU         &lt;a id="to-provide-some-context"&gt;To Provide Some Context&lt;/a&gt;  ¡    ÊúÿĞÊ            Êúÿğ&lt;Ê                      ¢    CT * -Ê             rogrğÊ                      £        ‹,Ê                à².Ê                      „         -Ê     ½Öğ¯ÿÿÿÿÿÿÿÿS.Êúÿ     àa@      ğ?     ¥    ME: `-Ê     @       ÿÿÿÿà:ùœÊ   -Ê              ¦        p¯ùœÊ     &lt;X|İ&lt;a id="commands"&gt;Commands&lt;/a&gt;       §        €€.Ê     t (charfill char rep)
-
-                        Ğ¯ùœÊ  #   qĞì±* 3. &lt;a id="commands"&gt;Commands&lt;/a&gt;
-  ©$        Ğ²ùœÊ     |:«b&lt;a id="macro"&gt;Macro&lt;/a&gt;             j(        0³ùœÊ      Zåˆ** 3.1. &lt;a id="macro"&gt;Macro&lt;/a&gt;
-     ,        ;Ê  #   ¼và([[/gestlings/morpheme][morpheme]])  ¬0        ,Ê            ÑÕşÿp¼.Ê                      ­4 ,  /   *  3 )  /  3 0 * 3 /  * 4          ®8 
-   ME: PÊ  €RÑU         È*LÊ                     ¯&lt;        Œ,Ê                Ğ¶.Ê                      @         ‚-Ê     ½öx°ÿÿÿÿÿÿÿÿS.Êúÿ      f@      ğ?     ±D        ËùœÊ     Ø?ˆ &lt;a id="label"&gt;Label&lt;/a&gt;  ^-Êü     rH        ğËùœÊ      w­ù”** 3.2. &lt;a id="label"&gt;Label&lt;/a&gt;
-     “L        à-Ê     ½V…°ÿÿÿÿÿÿÿÿS.Êúÿ     `f@      ğ?     ´P         .Ê     @“¤n(printhistory UUID)
-
-               µT         ÎùœÊ     8¶ŸCreates an Uxn label.
-
-             ¶X    CT *`ƒÊ     |ëŸ/gestlings/mouthsounds  €-Ê      ·\ [[/gestlings/mouthsounds][mouthsounds]]                     ¸` ** 3.3. &lt;a id="num"&gt;Num&lt;/a&gt;
-ÿÿÿÿp†4ÊşÿX‡.Êÿúÿ    €      ¹d        ğS#Ê     ˜`5§** 3.3. &lt;a id="num"&gt;Num&lt;/a&gt;
-  ü     šh *[125de2f9] 2023-08-08-15-31*: ram == şÿ    €øÿØ—.Êÿ       ›l    ME: à„Ê     –Ë{*[125de2f9] 2023-08-08-15-31*:       ¼p ** 3.4. &lt;a id="val"&gt;Val&lt;/a&gt;
-ÿÿÿÿH‡8ÊÿúÿÈ….ÊÿúÿÀ…-Ê      ½t        pj#Ê     ß	0î** 3.4. &lt;a id="val"&gt;Val&lt;/a&gt;
-  ú     x *[fd11b75c] 2022-12-17-06-02*: ÿˆÊúÿ¸…Êúÿ †-Ê                                       Õk
-˜2¬ÑU             €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            ¡ SELECT * FROM blocks WHERE id=5 AND program=10ûÿÿÿÿÿÿÿÿÿ@  ÿ              ¢
-     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ ^-Êü     £     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            ¤     €øÿ`@*Ê               @   ÿÿÿ ¦*Ê  €«9Ê                      …     €øÿˆ-Ê     Ô…£Ëÿÿÿÿÿÿÿÿ *Êüÿà*Êüÿ *Êüÿ`‘*Êüÿğ*Êüÿ     †     €øÿÀ×%Ê     Ô…£Ëÿÿÿÿÿÿÿÿ *Êüÿà*Êüÿ *Êüÿ`‘*Êüÿğ*Êüÿ     §#        Š*Ê     DÎúÿÿÿÿÿÿÿÿH‡8Êÿúÿhó%ÊÿúÿØ×%Êúÿ°Š*Êüÿ            ¨(        ğ›ùœÊ  .   $óÅSELECT * FROM blocks WHERE id=5 AND program=10      ©- SELECT * FROM blkref WHERE id=6 AND program=10øÿ    ÿÿÿÿÿÿ                 ª2     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            «7         ùœÊ  .   }LjÃSELECT * FROM blkref WHERE id=6 AND program=10      ¬&lt;     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            ­A SELECT * FROM blocks WHERE id=5 AND program=10øÿ   ÿÿÿÿ    Ê              ®F        0¡ùœÊ  .   $óÅSELECT * FROM blocks WHERE id=5 AND program=10      ¯K     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ            P æIÑÕşÿ¨Š,Êúÿp®GÑÕşÿĞ|IÑÕşÿØ‹.Êúÿ€`.Êşÿ„.ÊúÿPîEÑÕşÿ èIÑÕşÿ     ±U SELECT * FROM segments WHERE id=8 AND program=10ÿÿÿÿÿÿÿÿ                  rZ         §ùœÊ  0   4‹¦SELECT * FROM segments WHERE id=8 AND program=10     ³_ SELECT * FROM segments WHERE id=9 AND program=10   ÿÿÿÿÿÿ Ê              td        à¨ùœÊ  0   pZÀ²SELECT * FROM segments WHERE id=9 AND program=10     µi SELECT * FROM segments WHERE id=10 AND program=10   ÿÿÿÿÿÿ Ê   p-Êü     ¶n     €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ…:ÊûÿØ×%Êúÿ p-Êü     ·s         A*Ê               @   ÿÿÿ ¦*Ê  @©9Ê                      ¸x        àB*Ê     øĞxÿÿÿÿÿÿÿÿø7ÊÿúÿÀB*Êüÿ C*Êüÿ@B*Êüÿ ’-Êü                     Öê
-3¬ÑU                 ¦-Ê                 6Ê           ˜.Êÿú     ¡        0Ş÷œÊ     5~4      ¨‹(ÊÿúÿHŞ÷œÊúÿ ˜.Êÿú     ¢        À-Ê     @       in'.àdÊ   ¦-Ê   -Êü     £ 
-       `NÊ  €RÑU         È*LÊ     Êÿúÿ ˜.Êÿú     ¤        àşÊ     ş—[[/gestlings/sigils][sigils]]       …        Ê     ÷şjÈÿÿÿÿÿÿÿÿ¸ÊúÿèÊúÿx€Êúÿ     ¦         Ê     éö„&gt;added !path_grammar                g        Ê       áÄ&gt;more words added to !mseq page.     ¨  
-       ğè÷œÊ  €RÑU         ¨,,Ê     Êÿúÿ    ÿ      ©$        À-Ê                0÷)Ê                      ª(        …,Ê                à+Ê                      ‹,        @‘-Ê     ½¶²°ÿÿÿÿÿÿÿÿS.Êúÿ     Àg@      ğ?     ¬0        `‚.Ê     X£bAND value IS '#' || '               4 *[08eaa478] 2023-08-10-15-59*:  (ñ÷œÊ  Hñ÷œÊ               ®8        @™.Ê     KãaAND value like '&gt;%'                 &lt;        À®Ê     •ÛÁì*[08eaa478] 2023-08-10-15-59*:       °@ 
-   h sy 7Ê  €RÑU         È*LÊ     ds ÿ            QD    h sy0;Ê  !   uZäù[[/gestlings/morpheme][morpheme]]    ²H        àrùœÊ     zeTo Provide Some Context             ³L        @‚ùœÊ     ²=oenable/disable interpolator         ´P ÈÊúÿøÊúÿ(‚ÊúÿX‚Êúÿø=ÊúÿOPQRSTUV XYZ        µT        0ƒùœÊ                Ğa,Ê                      ¶X         ”-Ê     úZ®to provide some context             ·\        @”-Ê     .Óto-provide-some-context             ¸`        `‰ùœÊ     ²=oenable/disable interpolator         ¹d        À”-Ê     ?¹B&enable/disable-interpolator         ºh enabledisable-interpolator     (.ÊÿúÿÈ….Êÿúÿ            »l        ùœÊ     †8enabledisable-interpolator  Êü 	    ¼p        PùœÊ     ¾¥€ˆÿÿÿÿÿÿÿÿ(ùœÊúÿ˜ùœÊúÿ            ½t        `’ùœÊ     Í$c¦#+TITLE: Tal (via Lua)
-             ¾x        ğùœÊ     zeTo Provide Some Context                                             ×iğT­ÑU      €          EÊ     n¢€ÿÿÿÿÿÿÿÿhEÊúÿX1Êúÿ˜EÊúÿÈEÊúÿøEÊúÿEÊúÿXFÊúÿ   ¡ ğQÊıÿ€    ¸…!Ê  ¸…!Ê          ˜,,Ê  €     È!Ê  €    8Œ!Ê   Œ!Ê      ¢ * 5. &lt;a id="tangled-code"&gt;Tangled Code&lt;/a&gt;
-Ê          ˜,,Ê  €     H“!Ê  €         £ @TÊıÿ    Êüÿ˜,,Ê  €     H!Ê  €    ¸˜!Ê  ¸˜!Ê      Êÿúÿ˜,,Ê           ¤ pæÊıÿ¸•!Ê  ¸•!Ê      Ê  ˜,,Ê  €     Hœ!Ê  €    ¸§!Ê  ¸§!Ê      Êü     ¥       €KÊ     ¹áWÿÿÿÿÿÿÿÿÈKÊúÿx ÊúÿøKÊúÿ(LÊúÿXLÊúÿˆLÊúÿ ¤!Ê      ¦$ pVÊıÿ˜,,Ê  €     H¨!Ê  €    8‡!Ê  8‡!Ê       ÿ  ˜,,Ê  €     ‘!Ê      *    Ê  pÊ  C   ÒˆtSELECT * FROM blkref WHERE program == 12 AND ref == 11 AND pos == 2  ¨0 H—!Ê  €    ¸©!Ê  ¸©!Ê       €øÿ˜,,Ê  €     Hš!Ê  €    ¸!Ê   !Ê      ©6 °çÊıÿ€     È!Ê  €    8!Ê  8!Ê      Êÿúÿ˜,,Ê  €    Èˆ!Ê           ª&lt;    Ê  €Ê     ¹áWÿÿÿÿÿÿÿÿÈÊúÿØÊúÿøÊúÿ(ÊúÿXÊúÿˆÊúÿ          «B  éÊıÿ8†!Ê  8†!Ê       €øÿ˜,,Ê  €    H›!Ê  €    ¸«!Ê  ¸«!Ê              ŒH       `Ê     Ÿ‘¬3ÿÿÿÿÿÿÿÿ¨Êúÿ8ÊúÿØÊúÿXÊúÿ	Êúÿ8	Êúÿh	Êúÿ ¥! ­N 0êÊıÿ˜,,Ê  €     È›!Ê  €    ¸¡!Ê  ¸¡!Ê         ˜,,Ê  €     ‹!Ê      T    Ê  
-Ê     Ÿ‘¬3ÿÿÿÿÿÿÿÿX
-Êúÿ˜Êúÿˆ
-Êúÿ¸Êúÿ¸
-Êúÿè
-ÊúÿÊúÿ    ¯Z pëÊıÿ€    ¸†!Ê  ¸†!Ê      Êÿúÿ˜,,Ê  €    È¨!Ê  €    ¸›!Ê   ›!Ê      `    Ê  à	Ê     Ÿ‘¬3ÿÿÿÿÿÿÿÿÊúÿÊúÿ8Êúÿ8ÊúÿhÊúÿ˜ÊúÿÈÊúÿ ¢! ±f °XÊıÿ    Ê  ˜,,Ê  €     H!Ê  €    8›!Ê  8›!Ê       €øÿ˜,,Ê            l * 6. &lt;a id="implementation"&gt;Implementation&lt;/a&gt;
- È­!Ê  €    ¸™!Ê  ¸™!Ê      Êûÿ˜,, ³r °ìÊıÿH‰!Ê  €    ¸¬!Ê  ¸¬!Ê       €øÿ˜,,Ê  €     È—!Ê  €     ¢!Ê      ”x     €øÿ Ê     n¢€ÿÿÿÿÿÿÿÿèÊúÿ¸ÊúÿÊúÿHÊúÿxÊúÿ¨ÊúÿØÊúÿ     Øè(4¬ÑU      €         ®-Ê     A‚[œÿÿÿÿÿÿÿÿp†4ÊşÿØš(Êÿúÿ    €øÿ              -Ê     «¥óÂÿÿÿÿÿÿÿÿ¨ş7Êÿúÿ¨š(ÊÿúÿÀ-Êüÿ     ‚        à-Ê     ìVœÿÿÿÿÿÿÿÿĞc8Êşÿ    €øÿ¨š(Êÿúÿ     ƒ         Ÿ-Ê     , £¦ÿÿÿÿÿÿÿÿb8ÊşÿØš(Êÿúÿ¨š(Êÿúÿ     „        `Ÿ-Ê     ÕÑÌÁÿÿÿÿÿÿÿÿH‡8Êÿúÿ˜@ğœÊÿúÿ€Ÿ-Êüÿ     …         Ÿ-Ê     ˜o¤ÿÿÿÿÿÿÿÿp†4ÊşÿØš(Êÿúÿ¨š(Êÿúÿ     †        àŸ-Ê     …ÓÊÿÿÿÿÿÿÿÿ(©UÊÿúÿ¨š(Êÿúÿ  -Êüÿ     §        PC0Ê                 C0Ê            -Êü     ¨         `b+Ê     =êĞœzetdo_priority.UUID,                I$          -Ê  !   0µÄ¶substr(wikizet.value, 2) as task     ª(        à -Ê     @Åêjfrom zetdo_priority                 «,         V-Ê     ¨ºŠuWHERE wikizet.value LIKE '&gt;%'       ,0        `¡-Ê  "   ,Ó·ORDER BY zetdo_priority.score DESC   4 ([[/gestlings/morpho][morpho]])'UUID', 'value'      ÿ      ®8        ` -Ê                @D0Ê           ¢-Êü     ¯&lt;         ¢-Ê                0E0Ê                ğ     @        à3Ê     öqº([[/gestlings/morpho][morpho]])      ±D        `¢-Ê             ÿÿÿÿ€E0Ê           ’-Êü     ²H        à¢-Ê             ÿÿÿÿ F0Ê                      ³L         £-Ê             ÿÿÿÿpF0Ê               €ø     ´P        `£-Ê             ÿÿÿÿ æ7Ê           £-Êü     µT        0İœÊ                €ÇøœÊ                      ¶X        à£-Ê            ÿÿÿÿ€è+Ê           d+Êÿú     —\         ¤-Ê     ß:-•ÿÿÿÿÿÿÿÿ˜Ò-Êúÿ      A@      ğ?     ¸`        ñ+Ê                 à+Ê                      ™d         ¤-Ê     ½v±ÿÿÿÿÿÿÿÿS.Êúÿ     €j@      ğ?     ºh        œ.Ê     !ß\Ú(print-task r level)
-
-              »l        €Ç%Ê            ÿÿÿÿé+Ê           d+Êÿú     ¼p 
-       @§3Ê   ÿQÑU         °
-9Ê  "   Êÿúÿ ¥-Êü     ½t 
-       €¹÷œÊ   ÿQÑU         À
-9Ê  "   Êÿúÿ d+Êÿú     ¾x         5Ê            1  dÊ                                                      Ùg 4¬ÑU      €         P/Ê     $k4¾&gt;      H‡8Êÿúÿ¸¢(Êÿúÿp/Êüÿ     ¡         i+Ê            ÿÿÿÿPi+Ê  `c-Ê      ÿ      ¢         /Ê     îab I      È¡(Êÿúÿ                    £        §-Ê     îaR@I      È¡(Êÿúÿ      ğ?    ÿ      ¤        Ï.Ê     ¿±œO      8”3Êÿúÿˆ®(Êÿúÿ            ¥        õ+Ê                Àá+Ê                      †        Ğ§-Ê     ½ö€±ÿÿÿÿÿÿÿÿS.Êúÿ      n@      ğ?     §         á&Ê     @          ``Ê   £*Ê   ˜-Êü     ¨  
-       ĞîÊ  €RÑU         È*LÊ     Êüÿ ˜-Êü     ©$        ĞÊ     8å¯      xn+ÊÿúÿèÊúÿ            ª(        @j+Ê            
-   pj+Ê  Ğ§-Ê              «,        ğ/Ê             ÿÿÿÿ°-0Ê                      ¬0        P©-Ê            ÿÿÿÿ .0Ê                      4        ©-Ê     ß:¼Šÿÿÿÿÿÿÿÿ˜Ò-Êúÿ      ğ?      ğ?     ®8        0­%Ê     @       ÿÿÿÿ@6ùœÊ               €ø     ¯&lt; 
-       #Ê  €RÑU         È*LÊ     Ê              °@        €3Ê     e¶^[[/gestlings/morpho][morpho]]       ±D 
-       ğJÊ  €RÑU         È*LÊ     Êÿúÿ i+Êÿú     ²H        ğ.0Ê             ÿÿÿÿ@?0Ê           ª-Êü     “L 0       È*LÊ  ˜†=Ê  èKÊ                             ´P        «-Ê             ÿÿÿÿ?0Ê           «-Êü     µT        «-Ê                 0@0Ê                      ¶X        ğk+Ê            ÿÿÿÿ l+Ê   ¤-Ê      ÿ      ·\        Ğ«-Ê                 pA0Ê                      ¸`        P¬-Ê             ÿÿÿÿB0Ê              ÿ      ¹d        ¬-Ê                 `B0Ê                      ºh        ö+Ê                àâ+Ê                      ›l        ­-Ê     ½FÍ±ÿÿÿÿÿÿÿÿS.Êúÿ     Pp@      ğ?     ¼p        Ğ¬-Ê             ÿÿÿÿ°B0Ê                      ½t        °œ.Ê                h+Ê  @‘-Ê              x        Àš(Ê     ¿€3ÿÿÿÿÿÿÿÿH‡8ÊÿúÿØš(ÊÿúÿğÍ-Êüÿ                                     ÚæÈ4¬ÑU         &lt;&lt;vertex_shorthand_for_gesture_path&gt;&gt;ÿúÿèa+Êÿúÿxh+Êúÿ@š-Êüÿ            ¡     €øÿàŸ+Ê  %   q&jë&lt;&lt;vertex_shorthand_for_gesture_path&gt;&gt;               ¢
-        0€+Ê  %   FĞ7parsing_programs/parsing_programs.org               £ SELECT * FROM segments WHERE id=14 AND program=2    €øÿ    € ÿ            d        @ +Ê  0   M;òùSELECT * FROM segments WHERE id=14 AND program=2     ¥ SELECT * FROM segments WHERE id=15 AND program=20«-Êüÿ€¢-Ê ÿ°«-Êü     f        ğ¡+Ê  0   ©9SELECT * FROM segments WHERE id=15 AND program=2     §#     €øÿ    €øÿ˜9ÊûÿÙ-Êüÿ89ÊûÿPì)Êÿüÿ    €øÿ    €øÿ            ¨( &lt;&lt;gesture_path_as_lua_structure&gt;&gt;    €øÿ    €øÿ    €øÿ    € ÿ            ©-     €øÿ`’+Ê  %   %&gt;Ulevels/gestleton/gestleton_mapgen.org  ÿ            ª2 SELECT * FROM segments WHERE id=16 AND program=2    €øÿ    € ÿ            «7     €øÿ@Ò-Ê  &   ´ß²Gprotogestling/protogestling_mockup.lua              l&lt;     €øÿp”+Ê  0   Ï@SELECT * FROM segments WHERE id=16 AND program=2     ­A SELECT * FROM headers WHERE id=17 AND program=2ÿ…:Êûÿxh+Ê ÿ            ®F     €øÿÉ-Ê  %   Z\j‚protodiacritics/protodiacritics.janet  ÿ            K        ’+Ê  /   ¦.AUSELECT * FROM headers WHERE id=17 AND program=2      °P * 2. &lt;a id="overview"&gt;Overview&lt;/a&gt;
- ÿÿÿ H9Ê  ·,Ê                      ±U SELECT * FROM content WHERE id=18 AND program=2                             ’Z        p…+Ê  /   Æ÷Â SELECT * FROM content WHERE id=18 AND program=2      ³_ SELECT * FROM headers WHERE id=19 AND program=2                             ”d        p|+Ê  /   (
-Ğ›SELECT * FROM headers WHERE id=19 AND program=2      µi    /loc ª+Ê  (   îÒÆğTAL as a lua table of tokens, or "words"            ¶n SELECT * FROM content WHERE id=20 AND program=2ÿğè&Êüÿ0é&Ê ÿpé&Êü     —s    Êûÿ x+Ê  /   Ÿ¯¼’SELECT * FROM content WHERE id=20 AND program=2      ¸x SELECT * FROM headers WHERE id=21 AND program=2                                             Ûe0k­ÑU      €      €øÿ`ğœÊ  /   "G/çSELECT * FROM headers WHERE id=4 AND program=11      ¡     €øÿ ğœÊ  )   †Ô	Û&lt;a id="whats-a-path"&gt;What's a "Path"?&lt;/a&gt;      
-    ‚
-    Ê  `ğœÊ  /   ú`ğÊ* 2. &lt;a id="whats-a-path"&gt;What's a "Path"?&lt;/a&gt;
-  ,, £ SELECT * FROM content WHERE id=5 AND program=11ÿ¨,,Ê      € ÿ    €ø     „    Ê  ğœÊ  /   bÈ›SELECT * FROM content WHERE id=5 AND program=11      ¥ SELECT * FROM headers WHERE id=6 AND program=11      €øÿ¨,,Ê      €ø     †         ğœÊ  /   ä’™ÿSELECT * FROM headers WHERE id=6 AND program=11  Ÿ! §#     €øÿ0 ğœÊ  %   ùâP&lt;a id="tangled-code"&gt;Tangled Code&lt;/a&gt;  ÿ¨,,Ê      ¨(     €øÿğ&ğœÊ  +   ÎŸ™ç* 3. &lt;a id="tangled-code"&gt;Tangled Code&lt;/a&gt;
-         ©- SELECT * FROM blkref WHERE id=8 AND program=11  ÈŒ!Ê  ÈŒ!Ê       €ø     ª2     €øÿ 'ğœÊ  .   @˜ÔÛSELECT * FROM blkref WHERE id=8 AND program=11      «7 SELECT * FROM blocks WHERE id=7 AND program=11üÿ€     È‰!Ê  È‰!Ê      ¬&lt;    Ê  0)ğœÊ  .   ç&gt;0·SELECT * FROM blocks WHERE id=7 AND program=11      ­A SELECT * FROM blkref WHERE id=8 AND program=11øÿ    €øÿ€     Èœ!Ê      ®F        °*ğœÊ  .   @˜ÔÛSELECT * FROM blkref WHERE id=8 AND program=11      ¯K SELECT * FROM blocks WHERE id=7 AND program=11      €øÿ€ô)Ê ÿ€         °P    Ê  à*ğœÊ  .   ç&gt;0·SELECT * FROM blocks WHERE id=7 AND program=11      ±U SELECT * FROM segments WHERE id=10 AND program=11,,Ê      € ÿ    €ø     RZ    Ê  4ğœÊ  1   yeSELECT * FROM segments WHERE id=10 AND program=11    ³_ SELECT * FROM segments WHERE id=11 AND program=11    €øÿ¨,,Ê      €ø     Td       ğ5ğœÊ  1   Z3šSELECT * FROM segments WHERE id=11 AND program=11   µi SELECT * FROM segments WHERE id=12 AND program=11†!Ê       € ÿ¨,,Ê      Vn     €øÿ 8ğœÊ  1   ;YÏSELECT * FROM segments WHERE id=12 AND program=11   ·s    Ê  °ğœÊ  &   ˆ†X(local Path = {}
-
-&lt;&lt;path&gt;&gt;
-return Path
-       €ø     ¸x SELECT * FROM headers WHERE id=13 AND program=11¨,,Ê      € ÿ     €ø     €øÿ            Üä@5¬ÑU                €l+Ê                °l+Ê  €-Ê              ¡        ĞÍ-Ê     ı¸d1      Ù(Êÿúÿ˜@ğœÊÿúÿ            ¢        @m+Ê                pm+Ê  L-Ê              ƒ         ¾-Ê     ?â‘1      H‡8ÊÿúÿÈ¡(ÊÿúÿÀ¾-Êüÿ     ¤        Ğm+Ê                 n+Ê  à`-Ê              ¥         ¿-Ê     îab 3      È¡(Êÿúÿ                    ¦        `n+Ê                n+Ê  ­-Ê              §         ¿-Ê     îaR@3   )   È¡(Êÿúÿ      ğ?            ¨          o+Ê                Po+Ê  à-Ê              ‰$        v$Ê     ñ¤%$2      H‡8Êÿúÿø¡(Êÿúÿ°v$Êüÿ     ª(        ào+Ê                p+Ê  @-Ê              «,         À-Ê     ÑÏe¯4      8:Êÿúÿ˜@ğœÊÿúÿ            ¬0        pp+Ê                 p+Ê   -Ê              4         Á-Ê     ´³¡Ú4      H‡8Êÿúÿ(¢(Êÿúÿ@Á-Êüÿ     ®8         q+Ê                0q+Ê  €-Ê              ¯&lt;         Á-Ê     •àO:      ø¡(Êÿúÿ       @            @         Â-Ê     Éd£:      •5Êÿúÿ@Â-Êüÿ       @     ±D        q+Ê                Àq+Ê  	-Ê              ’H        `Â-Ê     Î£oê;      x20ÊÿúÿH (Êÿúÿ(¢(Êÿúÿ     ³L        Pr+Ê                €r+Ê   %-Ê              ”P        àÂ-Ê     GKr;      •5Êÿúÿ Ã-Êüÿ       @     µT        s+Ê                @s+Ê   f-Ê              –X        `Ã-Ê     gn®©:   	   è”5Êÿúÿ€Â-Êüÿ€Ã-Êüÿ     ·\        àÃ-Ê     ŒíÍÀ9      8D9Êÿúÿ Ä-Êüÿ            ¸`         Ä-Ê     •èO&lt;   
-   ø¡(Êÿúÿ      @            ¹d         }+Ê            3  €+Ê   H9Ê              šh        `Ä-Ê     G\3¤&lt;      è”5Êÿúÿ€Ä-Êüÿ      *@     ›l        À*Ê     õ¿ÕA      h”5Êÿúÿ      @ (Êÿúÿ et  œp         Å-Ê     “µÌäA      È”5Êÿúÿ@Å-Êüÿ       @     t        `Å-Ê     õ¿ÕB      h”5Êÿúÿ      @ (Êÿúÿ     x         Å-Ê     “µÌäB      È”5ÊÿúÿÀÅ-Êüÿ       @                                     İc€6¬ÑU      €     ÊÿúÿÀÕ-Ê     ¿˜@#      H‡8ÊÿúÿÈ­(ÊÿúÿàÕ-Êüÿ             Ğ+Ê  #   ~ì;ãcurated_lglyphs/curated_lglyphs.org  ¢        PÆ-Ê     p!m·$   %   h7Êÿúÿ8×(Êÿúÿ            £        ĞÆ-Ê     è‹$      È­(ÊÿúÿğÆ-Êüÿ            ¤        €+Ê     –8®simple_path/simple_path.org         ¥        PÇ-Ê     0õ7®simple_path/simple_path.lua         ¦        Ç-Ê     oJ%$      0Ç-Êüÿ89Êûÿ            §        À€+Ê     ,ÕSloadtiles/loadtiles.org             ¨         È-Ê     v.:1loadtiles/loadtiles.janet       
-    ‰$        ĞÇ-Ê     àVF­$      H‡8Êÿúÿ8×(ÊÿúÿğÇ-Êüÿ     ª(        ğ€+Ê     hk¥›protosigils/protosigils.org         «,        ĞÈ-Ê     ²CJprotosigils/protosigils.janet       ¬0        È-Ê     HmpGradicals/radicals.txt               4         +Ê  #   : protodiacritics/protodiacritics.org  8        Ğ‰*Ê     uH%      H‡8Êÿúÿˆ®(Êÿúÿğ‰*Êüÿ     ¯&lt;        P+Ê     0WpGradicals/radicals.org               °@        Ê-Ê     HmpGradicals/radicals.txt               ±D        PÊ-Ê     zAäradicals/radicals.janet             ’H        ĞÉ-Ê     tn (      h”5Êÿúÿ      H@      @     “L        ĞÊ-Ê     tn (      h”5Êÿúÿ      H@      @     ”P         &Ê     XÚ(      H‡8Êÿúÿ8åïœÊÿúÿ &Êÿûÿ     µT        PË-Ê     æÒ+ó)      8åïœÊÿúÿ       @            ¶X        Ë-Ê     æÒ3ó)   "   8åïœÊÿúÿ      @            —\        ĞË-Ê     	…ˆZ)      ”3Êÿúÿ°Ë-ÊüÿğË-Êüÿ     ¸`        @…+Ê     dÕmorpheme/morpheme.org               ¹d        PÌ-Ê     şÈmorpheme/morpheme.lua               šh        Ì-Ê     Ù@á€)      H‡8Êÿúÿh$ğœÊÿúÿ0Ì-Êüÿ     ›l        ĞÌ-Ê     ƒË­k+      H‡8Êÿúÿ (Êÿúÿ       @     ¼p         &Ê     TÜ›«-      (›3Êÿúÿ&Êúÿ            t        PÍ-Ê     a—S·-      H‡8ÊÿúÿH (ÊÿúÿpÍ-Êüÿ     ¾x        Í-Ê     ÎßÜ0      …6ÊÿúÿÙ(Êÿúÿ                                            Şâø6¬ÑU                ğ×-Ê                  B/Ê                      ¡        ğ‰+Ê     êŸxÛsigrunes/sigrunes.org               ¢        €Î-Ê     „“xÛsigrunes/sigrunes.lua               £        @Î-Ê                  B/Ê                      ¤         Ï-Ê                 @C/Ê                      ¥        @Ï-Ê                 Ğ/Ê                      ¦        Í.Ê                /Ê                      §        ÀÏ-Ê                °å+Ê                      ˆ          Ğ-Ê     ó­ÿÿÿÿÿÿÿÿhû(Êúÿ      F@      ğ?     ‰$        +Ê     Œé¼Şprotogestling/protogestling.org      ª(        €Ğ-Ê     §¡Ítprotogestling/protogestling.c       «,        —÷œÊ      EjY            €øÿ    €øÿ            ¬0 
-        Ñ-Ê   ÿQÑU          
-9Ê  b                   ­4        @Ñ-Ê               @ñ3Ê   H9Ê              ®8 radicals/radicals.janet         p+Ê                      ¯&lt;        °+Ê     „34Pprotogestling_mockup                °@         Ò-Ê     
-z#íprotogestling/mockup.org            ±D        p½(Ê     zAäradicals/radicals.janet             H    Êÿúÿà©Ê  #   X;[[/gestlings/sig#throw][10. Throw]]  ³L         ’+Ê     F›UÉdescript/descript.org               ´P         Ó-Ê     àUÉdescript/descript.lua               µT        €&Ê     @           à-(Ê                      ¶X        P±-Ê     K5àlevels/gestleton/mapgen.lua         ·\        ÀÓ-Ê     ó+2levels/gestleton/render.lua         ˜`        €Ó-Ê     û†‹      H‡8ÊÿúÿÙ(Êÿúÿ€Ó-Êÿüÿ     ¹d        À’+Ê     ¥çŞavatar/mouth/mouthtests.org         ºh        €Ô-Ê     €÷J avatar/mouth/mouthtests.c       
-    »l        @&Ê     v.:1loadtiles/loadtiles.janet       
-    ¼p        P“+Ê     1­Kavatar/mouth/sdfvm_mouth.org        ½t        @Õ-Ê     Ë Kavatar/mouth/sdfvm_mouth.lua        ¾x         Õ-Ê     ó¾pQ#      (M3ÊÿúÿÕ-Êúÿ                                            ßaè7¬ÑU                °“+Ê     w&lt;œ½avatar/mouth/mouthanim.org      	    ¡        0Ö-Ê     0œ½avatar/mouth/mouthanim.lua      	    ¢         @/Ê                 p@/Ê                      £        ”+Ê     .î1avatar/mouth/mouthsounds.org        ¤        ğÖ-Ê     Èá1avatar/mouth/mouthsounds.lua        ¥ 
-       `¨Ê  €RÑU         È*LÊ     Ê      ÿ      ¦        °Ö-Ê                 A/Ê                      §        °×-Ê                °A/Ê           ×-Êÿü     ¨         À›+Ê               àò*Ê                      ©$        0Ø-Ê            1 pó*Ê                      ª(        ğ›+Ê            Êûÿ ô*Ê                      «,        P©Ê     è/gestlings/sig#throw        ÿ      ¬0        0×-Ê                °°-Ê                      4        0Ù-Ê     Õéó’ÿÿÿÿÿÿÿÿx}+Êúÿ      ğ?      ğ?     ®8        pÙ-Ê                	+Ê                      ¯&lt;        Ğ”+Ê                 	+Ê                      °@         •+Ê                0
-+Ê                      ±D        0•+Ê                À
-+Ê                      ²H        `•+Ê                P+Ê                      ³L        •+Ê                à+Ê                      ´P        ğÚ-Ê                p+Ê                      µT        À•+Ê                 +Ê                      ¶X        ğ•+Ê                +Ê                      ·\         –+Ê                 +Ê                      ¸`        P–+Ê                °+Ê                      ¹d        €–+Ê                @+Ê                      ºh        °–+Ê                ğ*Ê                      »l        0›+Ê                 ğ*Ê                      ¼p        `›+Ê                0ñ*Ê                      ½t        0İ-Ê                Àñ*Ê                      ¾x        ›+Ê                Pò*Ê                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         pl­ÑU                `ş-Ê     Ş‘¤           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      6@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ¡        à-Ê     Ş‘OY           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      7@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ¢        Ğà-Ê     Ş‘”           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      8@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            £$        á-Ê     Ş‘ÁÃ           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      9@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @                            ¤0        Pâ-Ê     Ş‘y           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      :@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ¥&lt;        ã-Ê     Ş‘W.           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      ;@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ¦H        Ğã-Ê     Ş‘„ã           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      &lt;@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @                            §T        ä-Ê     Ş‘Í˜           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      =@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ¨`        På-Ê     Ş‘N           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      &gt;@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ©l        æ-Ê     Ş‘O           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      ?@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ªx        Ğæ-Ê     Ş‘˜¸           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      @@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            «„        ç-Ê     Ş=           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ     €@@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ¬        Pè-Ê     Ş‘Ém           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      A@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @                            ­œ        é-Ê     ŞrÈ           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ     €A@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ®¨        Ğé-Ê     Ş‘#           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      B@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            ¯´        ê-Ê     Ş¿}           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ     €B@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                            °À        Pë-Ê     Ş‘KØ           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      C@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @                            ±Ì        ì-Ê     Şì2           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ     €C@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @                            ²Ø        Ğì-Ê     Ş‘|           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      D@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      ğ?                            ³ä        í-Ê     ŞAè           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ     €D@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @                                                                                                                                                                                                                                                                               ˜l­ÑU      à                       `»8Ê     Ş‘`           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      @    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ¡         ğ-Ê     Ş‘`¼           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      @    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ¢        àğ-Ê     Ş‘l‘           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      @    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              £%         ñ-Ê     Ş‘hf           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      @    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ¤1        `ò-Ê     Ş‘T;           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      @    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      ğ?            à              ¥=         ó-Ê     Ş‘|           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ       @    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ¦I        àó-Ê     Ş‘ê:           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      "@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ                    à              §U         ô-Ê     Ş‘lå           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      $@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @            à              ¨a        `õ-Ê     Ş‘îO           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      &@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @            à €,Êıÿ€»8 ©m    ÊıÿPî-Ê     Ş‘ÍB   Êıÿ    €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      E@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @            à              ªy         ö-Ê     Ş‘pº           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      (@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @            à              «…         ÷-Ê     Ş‘ú$           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      *@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ¬‘        `ø-Ê     Ş‘„           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      ,@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ­         ù-Ê     Ş‘æù           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      .@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      ğ?            à              ®©        àù-Ê     Ş‘Œd           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      0@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ¯µ         ú-Ê     Ş‘¹           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      1@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @            à              °Á        `û-Ê     Ş‘Ï           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      2@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ±Í         ü-Ê     Ş‘K„           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      3@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ²Ù        àü-Ê     Ş‘9           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      4@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ      @            à              ³å         ı-Ê     Ş‘½î           €øÿ    €øÿ    €øÿ    €øÿ¸
-ğœÊúÿ      5@    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿ    €øÿèğœÊúÿ       @                                                                                                                                                                                                                                                                n­ÑU      à        UPDA   
-   '.sq d-Ê  €ëQÑU  à       ` .Ê   .Ê  0           , ro         $                    ÿÿÿÿ               "              şÿÿşÿÿ                              €                       0 9    '              ÿÿÿÿ+         .                     à        Xnùœ ÿ         ¸ ¡        ~Ê  Ú   2&gt;the core data format for gestlings will be called !descript. Eventually, an entire video file for a gestling will be defined in this file, rather than in bits and pieces of lua code like with the !protogestling_mockup     	    à              ¢% #+NAME: path
-#+BEGIN_SRC
-function Path.vertex(v)
-    x = {}
-
-    x.val = v[1]
-    x.dur = v[2]
-    x.bhvr = v[3]
-
-    return x
-end</pre></code>
-<p><pre><code>function Path.save(asset, gpath, filename)
-    asset:save(gpath, filename)
-end
-
-function Path.load(asset, filename)
-    local path_data = asset:load(filename)
-
-    return Path.data_to_path(path_data)
-end</pre></code>
-<p><pre><code>function M.subset(m, a)
-    local o = {}
-
-    for _,v in pairs(a) do
-        if m[v] == nil then
-            error("Attribute '" .. v .. "' doesn't exist.")
-        end
-        o[a] = m[a]
-    end
-
-    return o
-end</pre></code>
-<p><pre><code>function gcd(m, n)
-    while n ~= 0 do
-        local q = m
-        m = n
-        n = q % n
-    end
-    return m
-end
-
-function lcm(m, n)
-    return (m ~= 0 and n ~= 0) and
-        m * n / gcd(m, n) or 0
-end</pre></code>
-<p><pre><code>function tal.macro(words, name, program)
-    table.insert(words, "%" .. name)
-    table.insert(words, "{")
-    for _,v in pairs(program)
-    do
-        table.insert(words, v)
-    end
-    table.insert(words, "}")
-end</pre></code>
-<p><pre><code>function M.articulate(path, tal, words, seq, head)
-    local mp = {}
-
-    for _,s in pairs(seq) do
-        M.append(path, mp, s[2], s[1])
-    end
-
-
-    M.compile(tal, path, words, mp, head)
-end</pre></code>
-<p><pre><code>function tal.membuf(bufname)
-    lil(string.format("gmemnew %s", bufname))
-end</pre></code>
-<p><pre><code>function M.merge(A, B)
-    local o = {}
-
-    for k,v in pairs(A) do
-        o[k] = v
-    end
-
-    for k,v in pairs(B) do
-        o[k] = v
-    end
-
-    return o
-end</pre></code>
-<p><pre><code>{
-    v(7, {2,1}, 2),
-    v(5),
-    v(7),
+</p>
+</div>
+</body>
+</html>
