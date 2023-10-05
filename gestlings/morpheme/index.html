@@ -296,19 +296,16 @@ previously.
     end
 end
 
--- tal.label(words, "hold")
--- tal.halt(words)
--- tal.jump(words, "hold")
-
-function M.compile_noloop(tal, path, words, mp, head, lookup)
+function M.compile_noloop(tal, path, words, mp, head, lookup, multilut)
     head = head or {}
+    multilut = multilut or {}
     for label, p in pairs(mp) do
         tal.label(words, label)
         if head[label] ~= nil then
             head[label](words)
         end
-        lookup = lookup or nil
-        path.path(tal, words, p, lookup)
+        local lut = multilut[label] or lookup
+        path.path(tal, words, p, lut)
         tal.jump(words, "hold")
     end
 end</pre></code>
