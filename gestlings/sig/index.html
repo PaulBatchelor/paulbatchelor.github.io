@@ -31,27 +31,35 @@
 
 <li>
 
-<a href="/gestlings/sig#unhold">5. Unhold</a></li>
+<a href="/gestlings/sig#hold-to-external-buffer-via-cabnew">5. Hold (to external buffer via cabnew)</a></li>
 
 <li>
 
-<a href="/gestlings/sig#get">6. Get</a></li>
+<a href="/gestlings/sig#hold-data">6. Hold Data</a></li>
 
 <li>
 
-<a href="/gestlings/sig#getstr">7. Getstr</a></li>
+<a href="/gestlings/sig#unhold">7. Unhold</a></li>
 
 <li>
 
-<a href="/gestlings/sig#zero">8. zero</a></li>
+<a href="/gestlings/sig#get">8. Get</a></li>
 
 <li>
 
-<a href="/gestlings/sig#send">9. Send</a></li>
+<a href="/gestlings/sig#getstr">9. Getstr</a></li>
 
 <li>
 
-<a href="/gestlings/sig#throw">10. Throw</a></li>
+<a href="/gestlings/sig#zero">10. zero</a></li>
+
+<li>
+
+<a href="/gestlings/sig#send">11. Send</a></li>
+
+<li>
+
+<a href="/gestlings/sig#throw">12. Throw</a></li>
 
 </ul>
 
@@ -185,7 +193,94 @@ be called by <code>lil_eval</code> if they are different functions.
     self.reg = reg
 end</pre></code>
 
-<h2>5. <a id="unhold">Unhold</a></h2>
+<h2>5. <a id="hold-to-external-buffer-via-cabnew">Hold (to external buffer via cabnew)</a></h2>
+
+<p>TODO: refactor repeated code logic.
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:hold_cabnew(lil_eval)
+    -- can be a callback used to simulate holding
+    lil_eval = lil_eval or lil_default
+    if self.reg &gt;= 0 then
+        error("can't hold, already holding")
+    end
+
+    -- regnxt actually has to be called to see if it is
+    -- working
+
+    local lstr = "param [regnxt 0]"
+    -- if lil_eval ~= lil then
+    --     lil_eval(lstr)
+    -- end
+
+    lil(lstr)
+
+
+    local reg = pop()
+
+    if reg &lt; 0 then
+        error("invalid index")
+    end
+
+    -- cabnew: allocates to extbuf
+    lil_eval({"cabnew", "zz"})
+    -- hold/regset can be simulated without issue
+    lil_eval({"hold", "zz"})
+    -- lil_eval("hold zz # sig")
+    lil_eval({"regset", "zz",reg})
+
+    -- regmrk actually has to be called for it to work
+    -- local lstr = string.format("regmrk %d", reg)
+    local lstr = {"regmrk", reg}
+
+    if lil_eval ~= lil then
+        lil_eval(lstr)
+    end
+
+    lil(table.concat(lstr, " "))
+    -- lil(string.format("regset zz %d; regmrk %d", reg, reg))
+
+    self.reg = reg
+end</pre></code>
+
+<h2>6. <a id="hold-data">Hold Data</a></h2>
+
+<div><b><i>&lt;&lt;sig&gt;&gt;=</i></b></div><pre><code>function Sig:hold_data(lil_eval)
+    -- can be a callback used to simulate holding
+    lil_eval = lil_eval or lil_default
+    if self.reg &gt;= 0 then
+        error("can't hold, already holding")
+    end
+
+    -- regnxt actually has to be called to see if it is
+    -- working
+
+    local lstr = "param [regnxt 0]"
+    -- if lil_eval ~= lil then
+    --     lil_eval(lstr)
+    -- end
+
+    lil(lstr)
+
+
+    local reg = pop()
+
+    if reg &lt; 0 then
+        error("invalid index")
+    end
+
+    lil_eval({"regset", "zz",reg})
+    local lstr = {"regmrk", reg}
+
+    if lil_eval ~= lil then
+        lil_eval(lstr)
+    end
+
+    lil(table.concat(lstr, " "))
+
+    self.reg = reg
+    self.is_data = true
+end</pre></code>
+
+<h2>7. <a id="unhold">Unhold</a></h2>
 
 <p>Unholds the underlying signal (buffer), if there is one
 to be unheld.
@@ -202,14 +297,16 @@ originally used for debugging purposes.
 
     -- lil_eval(string.format("unhold [regget %d]; regclr %d",
     --    self.reg, self.reg))
-    lil_eval({"regget", self.reg})
-    lil_eval({"unhold", "zz"})
+    if self.is_data ~= true then
+        lil_eval({"regget", self.reg})
+        lil_eval({"unhold", "zz"})
+    end
     lil_eval({"regclr", self.reg})
 
     self.reg = -1
 end</pre></code>
 
-<h2>6. <a id="get">Get</a></h2>
+<h2>8. <a id="get">Get</a></h2>
 
 <p>Gets the signal and pushes it onto the buffer stack.
 </p>
@@ -232,7 +329,7 @@ end</pre></code>
     eval(s)
 end</pre></code>
 
-<h2>7. <a id="getstr">Getstr</a></h2>
+<h2>9. <a id="getstr">Getstr</a></h2>
 
 <p>This returns the string of LIL code that, once evaluated,
 would push the signal onto the stack.
@@ -246,7 +343,7 @@ would push the signal onto the stack.
     return {"regget", self.reg}
 end</pre></code>
 
-<h2>8. <a id="zero">zero</a></h2>
+<h2>10. <a id="zero">zero</a></h2>
 
 <p>Creates and holds an auxilliary cable to be used for
 sends and throws. It starts of with no signal, hence
@@ -260,7 +357,7 @@ the name "zero".
     self.hold(self)
 end</pre></code>
 
-<h2>9. <a id="send">Send</a></h2>
+<h2>11. <a id="send">Send</a></h2>
 
 <p>Pops the last signal off the stack and mixes it into
 the internal cable.
@@ -279,7 +376,7 @@ it is 0 (full scale).
         self.reg, gain))
 end</pre></code>
 
-<h2>10. <a id="throw">Throw</a></h2>
+<h2>12. <a id="throw">Throw</a></h2>
 
 <p>Like send, but instead of popping the signal off the stack,
 it dups it first, keeping a copy of the signal on
