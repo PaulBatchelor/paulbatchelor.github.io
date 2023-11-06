@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<div id="main">
+<title>distributed_systems_MIT/lec06</title>
+<h1>lec06</h1>
+<a href="/wiki/dz">dz</a> / <a href="/wiki/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/wiki/dz/distributed_systems_MIT/lec06">lec06</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+RAFT part 1
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#raft>raft</a><ul>
+<li>
+<a href=#problems_solved>problems_solved</a><ul>
+<li>
+<a href=#prevent_split_brain>prevent_split_brain</a><ul>
+<li>
+<a href=#partition>partition</a></li>
+</ul>
+</li>
+<li>
+<a href=#replication_patterns>replication_patterns</a><ul>
+<li>
+<a href=#single_entity>single_entity</a><ul>
+<li>
+<a href=#single_point_of_failure>single_point_of_failure</a></li>
+</ul>
+</li>
+<li>
+<a href=#vmware_ft>vmware_ft</a></li>
+<li>
+<a href=#GFS>GFS</a></li>
+<li>
+<a href=#MR>MR</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#time_diagram>time_diagram</a></li>
+<li>
+<a href=#automated_failover>automated_failover</a><ul>
+<li>
+<a href=#partition>partition</a></li>
+</ul>
+</li>
+<li>
+<a href=#early_systems>early_systems</a><ul>
+<li>
+<a href=#vsr>vsr</a></li>
+<li>
+<a href=#paxos>paxos</a></li>
+</ul>
+</li>
+<li>
+<a href=#library_implementation>library_implementation</a><ul>
+<li>
+<a href=#raft_layer>raft_layer</a></li>
+</ul>
+</li>
+<li>
+<a href=#logs_diverge>logs_diverge</a></li>
+<li>
+<a href=#majority_vote>majority_vote</a><ul>
+<li>
+<a href=#quorem_systems>quorem_systems</a></li>
+<li>
+<a href=#total_number>total_number</a></li>
+<li>
+<a href=#assemble_majority>assemble_majority</a></li>
+<li>
+<a href=#leader_election>leader_election</a><ul>
+<li>
+<a href=#term>term</a><ul>
+<li>
+<a href=#at_most_one>at_most_one</a></li>
+<li>
+<a href=#election_timer>election_timer</a><ul>
+<li>
+<a href=#random_split_votes>random_split_votes</a><ul>
+<li>
+<a href=#choose_new_random>choose_new_random</a></li>
+</ul>
+</li>
+<li>
+<a href=#atleast_heartbeat>atleast_heartbeat</a></li>
+<li>
+<a href=#if_expires>if_expires</a><ul>
+<li>
+<a href=#term++>term++</a><ul>
+<li>
+<a href=#request_votes>request_votes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#max_election_timer>max_election_timer</a><ul>
+<li>
+<a href=#longer_delay>longer_delay</a></li>
+<li>
+<a href=#longer_than_roundtrip>longer_than_roundtrip</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#no_one_can_append>no_one_can_append</a></li>
+</ul>
+</li>
+<li>
+<a href=#zero_leaders>zero_leaders</a><ul>
+<li>
+<a href=#failure_rest>failure_rest</a></li>
+</ul>
+</li>
+<li>
+<a href=#leader_partition_minority>leader_partition_minority</a><ul>
+<li>
+<a href=#client_no_response>client_no_response</a></li>
+</ul>
+</li>
+<li>
+<a href=#majority_rule>majority_rule</a><ul>
+<li>
+<a href=#client_no_response>client_no_response</a></li>
+<li>
+<a href=#no_one_can_append>no_one_can_append</a></li>
+</ul>
+</li>
+<li>
+<a href=#possible_no_leader>possible_no_leader</a></li>
+</ul>
+</li>
+<li>
+<a href=#odd_number>odd_number</a></li>
+<li>
+<a href=#overlap>overlap</a></li>
+</ul>
+</li>
+<li>
+<a href=#network_failures>network_failures</a><ul>
+<li>
+<a href=#append_entries_to_subset>append_entries_to_subset</a><ul>
+<li>
+<a href=#divergent_logs>divergent_logs</a><ul>
+<li>
+<a href=#log_combos>log_combos</a><ul>
+<li>
+<a href=#could_it_happen>could_it_happen</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#operation_log>operation_log</a><ul>
+<li>
+<a href=#log_focused>log_focused</a><ul>
+<li>
+<a href=#rejoin>rejoin</a></li>
+<li>
+<a href=#resend_replicas>resend_replicas</a></li>
+<li>
+<a href=#tentative_ops>tentative_ops</a></li>
+<li>
+<a href=#mechanism_ordering>mechanism_ordering</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#failure>failure</a></li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="raft">raft</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAFT
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#problems_solved>problems_solved</a>, <a href=#time_diagram>time_diagram</a>, <a href=#automated_failover>automated_failover</a>, <a href=#early_systems>early_systems</a>, <a href=#library_implementation>library_implementation</a>, <a href=#logs_diverge>logs_diverge</a>, <a href=#majority_vote>majority_vote</a>, <a href=#network_failures>network_failures</a>, <a href=#operation_log>operation_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="problems_solved">problems_solved</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Problems Solved
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#prevent_split_brain>prevent_split_brain</a>, <a href=#replication_patterns>replication_patterns</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a> (Problems that RAFT solves)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="time_diagram">time_diagram</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Time Diagram: used to visualize communications between leader/followers and client request
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="automated_failover">automated_failover</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+automated failover systmes that can partition
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#partition>partition</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="early_systems">early_systems</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Early Systems that implemented something like RAFT
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#vsr>vsr</a>, <a href=#paxos>paxos</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="library_implementation">library_implementation</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAFT is typically implemented/used as a library
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#raft_layer>raft_layer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a> (how it's typically used in practice)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="logs_diverge">logs_diverge</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+logs sometimes diverge
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a> (raft ensures identical long term)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="majority_vote">majority_vote</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAFT centers around the principle of a majority vote
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#quorem_systems>quorem_systems</a>, <a href=#total_number>total_number</a>, <a href=#assemble_majority>assemble_majority</a>, <a href=#leader_election>leader_election</a>, <a href=#odd_number>odd_number</a>, <a href=#overlap>overlap</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a> (Core principle)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="network_failures">network_failures</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Problems due to network failures
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#append_entries_to_subset>append_entries_to_subset</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="operation_log">operation_log</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Operation Log
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_focused>log_focused</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="prevent_split_brain">prevent_split_brain</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+prevent split brain
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#partition>partition</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#problems_solved>problems_solved</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="replication_patterns">replication_patterns</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Common Patterns Found in Replication Systems
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#single_entity>single_entity</a>, <a href=#vmware_ft>vmware_ft</a>, <a href=#GFS>GFS</a>, <a href=#MR>MR</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#problems_solved>problems_solved</a> (example)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="partition">partition</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partition: sides that can't communicate
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#prevent_split_brain>prevent_split_brain</a>, <a href=#automated_failover>automated_failover</a>
+</td>
+</tr>
+<tr>
+<td>
+flashcard (front)
+</td>
+<td>
+Partition (RAFT)
+</td>
+</tr>
+<tr>
+<td>
+flashcard (back)
+</td>
+<td>
+Refers to sides that can't communicate
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="vsr">vsr</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+View Stamp Replication (VSR)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#early_systems>early_systems</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="paxos">paxos</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Paxos
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#early_systems>early_systems</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="raft_layer">raft_layer</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Application Architecture has a RAFT Layer
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#library_implementation>library_implementation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="quorem_systems">quorem_systems</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Majority Vote is also known as being a "Quarom"(sp?) system
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_vote>majority_vote</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="total_number">total_number</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Out of total number of servers, not just active servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_vote>majority_vote</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="assemble_majority">assemble_majority</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Assemble majority before doing anything
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_vote>majority_vote</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="leader_election">leader_election</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leader Election
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#term>term</a>, <a href=#zero_leaders>zero_leaders</a>, <a href=#leader_partition_minority>leader_partition_minority</a>, <a href=#majority_rule>majority_rule</a>, <a href=#possible_no_leader>possible_no_leader</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_vote>majority_vote</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="odd_number">odd_number</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Odd number of servers required to prevent ties
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_vote>majority_vote</a> (required to prevent ties)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="overlap">overlap</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Any two majorities overlap for at least one server
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_vote>majority_vote</a> (This is an important property of the majority vote.)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="append_entries_to_subset">append_entries_to_subset</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What happens if a leader appends to subset of entries?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#divergent_logs>divergent_logs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#network_failures>network_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_focused">log_focused</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Focused. Why?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#rejoin>rejoin</a>, <a href=#resend_replicas>resend_replicas</a>, <a href=#tentative_ops>tentative_ops</a>, <a href=#mechanism_ordering>mechanism_ordering</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#operation_log>operation_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="single_entity">single_entity</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Single Entity to decide critical decisions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#single_point_of_failure>single_point_of_failure</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_patterns>replication_patterns</a> (The main pattern being observed)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="vmware_ft">vmware_ft</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+VMWare FT: relies on single test and set server
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_patterns>replication_patterns</a> (example)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="GFS">GFS</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GFS Replication: datat relies on single master
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_patterns>replication_patterns</a> (example)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="MR">MR</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+MapReduce: replicates communication, but controlled by single master
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_patterns>replication_patterns</a> (example)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="term">term</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Term for a leader
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#at_most_one>at_most_one</a>, <a href=#election_timer>election_timer</a>, <a href=#no_one_can_append>no_one_can_append</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_election>leader_election</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="zero_leaders">zero_leaders</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if zero leaders?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#failure_rest>failure_rest</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_election>leader_election</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="leader_partition_minority">leader_partition_minority</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if? Leader in partition with minorty due, to network failure?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_no_response>client_no_response</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_election>leader_election</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="majority_rule">majority_rule</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Majority Rule: allows election to happen if something crashes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_no_response>client_no_response</a>, <a href=#no_one_can_append>no_one_can_append</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_election>leader_election</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="possible_no_leader">possible_no_leader</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+It's possible when designing these systems to not have a leader (leaderless), but using a leader yields better performance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_election>leader_election</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="divergent_logs">divergent_logs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How does new leader sort out divergent logs?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_combos>log_combos</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#append_entries_to_subset>append_entries_to_subset</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="rejoin">rejoin</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Means to rejoin
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_focused>log_focused</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="resend_replicas">resend_replicas</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Way to resend events to replicas (leader)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_focused>log_focused</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="tentative_ops">tentative_ops</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Place to set aside tentative operations (for the follower)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_focused>log_focused</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="mechanism_ordering">mechanism_ordering</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mechanism for Ordering Operations
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_focused>log_focused</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="single_point_of_failure">single_point_of_failure</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+This is a single point of failure
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#single_entity>single_entity</a> (single entity -> single point of failure)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="at_most_one">at_most_one</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+At most one leader per term
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term>term</a> (at most one leader)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="election_timer">election_timer</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Election Timer
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#random_split_votes>random_split_votes</a>, <a href=#atleast_heartbeat>atleast_heartbeat</a>, <a href=#if_expires>if_expires</a>, <a href=#max_election_timer>max_election_timer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term>term</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_one_can_append">no_one_can_append</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No one can append entries unless they are leader for that term.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_rule>majority_rule</a>, <a href=#term>term</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="failure_rest">failure_rest</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Failed election. Reset.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zero_leaders>zero_leaders</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="client_no_response">client_no_response</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The client will never hear a response, because this leader has a minority and no append will ever happen.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_rule>majority_rule</a> (Appends from old leader can never happen due to the majority rule), <a href=#leader_partition_minority>leader_partition_minority</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_combos">log_combos</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+visualize hypothetical log combinations from different servers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#could_it_happen>could_it_happen</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#divergent_logs>divergent_logs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="random_split_votes">random_split_votes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The chance of split votes are reduced by randomizing the election timer amount
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#choose_new_random>choose_new_random</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#election_timer>election_timer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="atleast_heartbeat">atleast_heartbeat</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+At least as long as heartbeat
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#election_timer>election_timer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="if_expires">if_expires</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If election timer expires, start election
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#term++>term++</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#election_timer>election_timer</a> (start election if expires)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="max_election_timer">max_election_timer</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What should the max election timer time be?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#longer_delay>longer_delay</a>, <a href=#longer_than_roundtrip>longer_than_roundtrip</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#election_timer>election_timer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="could_it_happen">could_it_happen</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+important to ask: could it happen? Could it actually occur?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_combos>log_combos</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="choose_new_random">choose_new_random</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Choose new random number on each reset
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#random_split_votes>random_split_votes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="term++">term++</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Increment term number on new election
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#request_votes>request_votes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#if_expires>if_expires</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="longer_delay">longer_delay</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Longer delay means longer recovery time (slower client requests)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#max_election_timer>max_election_timer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="longer_than_roundtrip">longer_than_roundtrip</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Should be longer than the roundtrip latency of for making an election
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#max_election_timer>max_election_timer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="request_votes">request_votes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Request Votes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term++>term++</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="failure">failure</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If there's a failure, what did the logs see?
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Didn't connect to anything
+</td>
+</tr>
+</table><br>
+</div>
+</body>
+</html>
+</p>
+</div>
+</body>
+</html>

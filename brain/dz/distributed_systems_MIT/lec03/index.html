@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<div id="main">
+<title>distributed_systems_MIT/lec03</title>
+<h1>lec03</h1>
+<a href="/wiki/dz">dz</a> / <a href="/wiki/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/wiki/dz/distributed_systems_MIT/lec03">lec03</a>
+<p></p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#log_better>log_better</a></li>
+<li>
+<a href=#weak_consistency>weak_consistency</a><ul>
+<li>
+<a href=#nature_of_gfs>nature_of_gfs</a></li>
+<li>
+<a href=#not_strongly_consistent>not_strongly_consistent</a><ul>
+<li>
+<a href=#extra_bits>extra_bits</a><ul>
+<li>
+<a href=#two_phase_commit>two_phase_commit</a></li>
+</ul>
+</li>
+<li>
+<a href=#two_phase_commit>two_phase_commit</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#GFS>GFS</a><ul>
+<li>
+<a href=#files_autosplit>files_autosplit</a><ul>
+<li>
+<a href=#shard>shard</a><ul>
+<li>
+<a href=#chunk_server>chunk_server</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#high_speeds_parallel>high_speeds_parallel</a></li>
+<li>
+<a href=#internal_use>internal_use</a></li>
+<li>
+<a href=#record_append>record_append</a><ul>
+<li>
+<a href=#client_data_ps>client_data_ps</a><ul>
+<li>
+<a href=#primary_offset>primary_offset</a><ul>
+<li>
+<a href=#replicas_write_to_off>replicas_write_to_off</a><ul>
+<li>
+<a href=#all_replicas_ok>all_replicas_ok</a><ul>
+<li>
+<a href=#what_if_some_append>what_if_some_append</a><ul>
+<li>
+<a href=#nature_of_gfs>nature_of_gfs</a></li>
+<li>
+<a href=#records_different_order>records_different_order</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#last_chunk>last_chunk</a><ul>
+<li>
+<a href=#ask_master>ask_master</a><ul>
+<li>
+<a href=#no_primary>no_primary</a><ul>
+<li>
+<a href=#find_replicate>find_replicate</a><ul>
+<li>
+<a href=#pick_primary>pick_primary</a><ul>
+<li>
+<a href=#version_bumped>version_bumped</a><ul>
+<li>
+<a href=#tells_primary_secondary>tells_primary_secondary</a><ul>
+<li>
+<a href=#lease>lease</a><ul>
+<li>
+<a href=#primary_dead>primary_dead</a><ul>
+<li>
+<a href=#master_doesnt_pick>master_doesnt_pick</a></li>
+<li>
+<a href=#two_primaries>two_primaries</a><ul>
+<li>
+<a href=#master_doesnt_pick>master_doesnt_pick</a></li>
+<li>
+<a href=#network_partition>network_partition</a></li>
+<li>
+<a href=#split_brain_solution>split_brain_solution</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#split_brain_solution>split_brain_solution</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#primary_dead>primary_dead</a><ul>
+<li>
+<a href=#master_doesnt_pick>master_doesnt_pick</a></li>
+<li>
+<a href=#two_primaries>two_primaries</a><ul>
+<li>
+<a href=#master_doesnt_pick>master_doesnt_pick</a></li>
+<li>
+<a href=#network_partition>network_partition</a></li>
+<li>
+<a href=#split_brain_solution>split_brain_solution</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#single_data_center>single_data_center</a></li>
+<li>
+<a href=#single_master>single_master</a><ul>
+<li>
+<a href=#chunk_server>chunk_server</a></li>
+<li>
+<a href=#master_data>master_data</a><ul>
+<li>
+<a href=#filename>filename</a><ul>
+<li>
+<a href=#nv>nv</a></li>
+</ul>
+</li>
+<li>
+<a href=#handle>handle</a></li>
+<li>
+<a href=#log_checkpoint>log_checkpoint</a><ul>
+<li>
+<a href=#disk_storage>disk_storage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#why_hard>why_hard</a><ul>
+<li>
+<a href=#faults>faults</a><ul>
+<li>
+<a href=#tolerance>tolerance</a><ul>
+<li>
+<a href=#replication>replication</a><ul>
+<li>
+<a href=#almost_identical>almost_identical</a><ul>
+<li>
+<a href=#consistency>consistency</a><ul>
+<li>
+<a href=#strong_consistency>strong_consistency</a><ul>
+<li>
+<a href=#low_performance_tradeoff>low_performance_tradeoff</a></li>
+<li>
+<a href=#not_strongly_consistent>not_strongly_consistent</a><ul>
+<li>
+<a href=#extra_bits>extra_bits</a><ul>
+<li>
+<a href=#two_phase_commit>two_phase_commit</a></li>
+</ul>
+</li>
+<li>
+<a href=#two_phase_commit>two_phase_commit</a></li>
+</ul>
+</li>
+<li>
+<a href=#system_behaves>system_behaves</a></li>
+</ul>
+</li>
+<li>
+<a href=#bad_replication>bad_replication</a><ul>
+<li>
+<a href=#events_order>events_order</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#performance>performance</a><ul>
+<li>
+<a href=#sharding>sharding</a><ul>
+<li>
+<a href=#shard>shard</a><ul>
+<li>
+<a href=#chunk_server>chunk_server</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#GFS_goals>GFS_goals</a></li>
+<li>
+<a href=#auto_failure_recovery>auto_failure_recovery</a></li>
+<li>
+<a href=#big_sequence>big_sequence</a></li>
+<li>
+<a href=#big_storage>big_storage</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="GFS">GFS</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GFS (aka Google File System)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#files_autosplit>files_autosplit</a>, <a href=#high_speeds_parallel>high_speeds_parallel</a>, <a href=#internal_use>internal_use</a>, <a href=#record_append>record_append</a>, <a href=#single_data_center>single_data_center</a>, <a href=#single_master>single_master</a>, <a href=#why_hard>why_hard</a>, <a href=#GFS_goals>GFS_goals</a>, <a href=#auto_failure_recovery>auto_failure_recovery</a>, <a href=#big_sequence>big_sequence</a>, <a href=#big_storage>big_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="files_autosplit">files_autosplit</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Files Automatically Split
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#shard>shard</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="high_speeds_parallel">high_speeds_parallel</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+High Speeds, Parallel Access
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="internal_use">internal_use</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Used internally by Google
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="record_append">record_append</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How a record is appened in GFS
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_data_ps>client_data_ps</a>, <a href=#last_chunk>last_chunk</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="single_data_center">single_data_center</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Single Data Center
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="single_master">single_master</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Single Master
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#chunk_server>chunk_server</a>, <a href=#master_data>master_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="why_hard">why_hard</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Why is Big Storage hard?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#faults>faults</a>, <a href=#performance>performance</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="GFS_goals">GFS_goals</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GFS Goals: Big, Fast, Global
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="auto_failure_recovery">auto_failure_recovery</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Automatic Failure Recovery
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="big_sequence">big_sequence</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Designed for big sequential reads/writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+As opposed to random reads/reads
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="big_storage">big_storage</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Big Storage
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GFS>GFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="shard">shard</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Shard
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#chunk_server>chunk_server</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#files_autosplit>files_autosplit</a> (One of the splits of a file is called a "shard"), <a href=#sharding>sharding</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="client_data_ps">client_data_ps</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Client sends copy of data to Primary and Secondary
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#primary_offset>primary_offset</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#record_append>record_append</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="last_chunk">last_chunk</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Where is the last chunk?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ask_master>ask_master</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#record_append>record_append</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="chunk_server">chunk_server</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Chunk Server stores the actually chunks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#single_master>single_master</a> (Master knows which chunks are stored on which chunk,servers), <a href=#shard>shard</a> (Shards and chunks may be analogous)
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Are "chunks" the same thing as shards?
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="master_data">master_data</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Master Data
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#filename>filename</a>, <a href=#handle>handle</a>, <a href=#log_checkpoint>log_checkpoint</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#single_master>single_master</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="faults">faults</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Faults
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#tolerance>tolerance</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why_hard>why_hard</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="performance">performance</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Performance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sharding>sharding</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why_hard>why_hard</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="primary_offset">primary_offset</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Primary Picks Offset
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replicas_write_to_off>replicas_write_to_off</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#client_data_ps>client_data_ps</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ask_master">ask_master</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ask the Master server
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#no_primary>no_primary</a>, <a href=#primary_dead>primary_dead</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#last_chunk>last_chunk</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="filename">filename</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Filename
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nv>nv</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#master_data>master_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="handle">handle</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Handle
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#master_data>master_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_checkpoint">log_checkpoint</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+log, checkpoint
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#disk_storage>disk_storage</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#master_data>master_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="tolerance">tolerance</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fault Tolerance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#faults>faults</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sharding">sharding</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sharding
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#shard>shard</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#performance>performance</a> (I forget what sharding has to do with performance)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="replicas_write_to_off">replicas_write_to_off</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+All replicas told to write the data to that offset
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#all_replicas_ok>all_replicas_ok</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primary_offset>primary_offset</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_primary">no_primary</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No Primary?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#find_replicate>find_replicate</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ask_master>ask_master</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="primary_dead">primary_dead</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if Master server thinks the Primary is dead?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#master_doesnt_pick>master_doesnt_pick</a>, <a href=#two_primaries>two_primaries</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lease>lease</a> (this is what the lease helps with), <a href=#ask_master>ask_master</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="nv">nv</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Non-volatile storage
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#filename>filename</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="disk_storage">disk_storage</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Stored to Disk
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_checkpoint>log_checkpoint</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="replication">replication</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication as a means to add fault tolerance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#almost_identical>almost_identical</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tolerance>tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="all_replicas_ok">all_replicas_ok</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If all replicas reply back "yes", all okay
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#what_if_some_append>what_if_some_append</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replicas_write_to_off>replicas_write_to_off</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="find_replicate">find_replicate</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Find an up-to-date replicate
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#pick_primary>pick_primary</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#no_primary>no_primary</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="master_doesnt_pick">master_doesnt_pick</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The Master should NOT designate a primary
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_primaries>two_primaries</a> (Otherwise, you end up causing "Split Brain"), <a href=#primary_dead>primary_dead</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="two_primaries">two_primaries</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Two primaries in a system is known as "split brain"
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#master_doesnt_pick>master_doesnt_pick</a>, <a href=#network_partition>network_partition</a>, <a href=#split_brain_solution>split_brain_solution</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primary_dead>primary_dead</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="almost_identical">almost_identical</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"Almost Identical" inconsistency risk
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#consistency>consistency</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="what_if_some_append">what_if_some_append</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if only some append?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nature_of_gfs>nature_of_gfs</a>, <a href=#records_different_order>records_different_order</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#all_replicas_ok>all_replicas_ok</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="pick_primary">pick_primary</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Picks Primary
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#version_bumped>version_bumped</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#find_replicate>find_replicate</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="network_partition">network_partition</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+split brain can be caused by a network partition where parts of the network can transmit but maybe not receive
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_primaries>two_primaries</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="split_brain_solution">split_brain_solution</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The solution to Split Brain (two primaries) is to use a lease on a primary. After the lease is up, commands are no longer sent to that primary.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lease>lease</a>, <a href=#two_primaries>two_primaries</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="consistency">consistency</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Consistency in replications
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#strong_consistency>strong_consistency</a>, <a href=#bad_replication>bad_replication</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#almost_identical>almost_identical</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="nature_of_gfs">nature_of_gfs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+things sometimes not appending is just the nature of GFS
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#what_if_some_append>what_if_some_append</a>, <a href=#weak_consistency>weak_consistency</a> (I think this is what is meant by weak consistency here?)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="records_different_order">records_different_order</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Records in replicas can be in different orders
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#what_if_some_append>what_if_some_append</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="version_bumped">version_bumped</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Version Bumped
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#tells_primary_secondary>tells_primary_secondary</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pick_primary>pick_primary</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="strong_consistency">strong_consistency</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A strongly consistent system will be identical when duplicating data
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#low_performance_tradeoff>low_performance_tradeoff</a>, <a href=#not_strongly_consistent>not_strongly_consistent</a>, <a href=#system_behaves>system_behaves</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="bad_replication">bad_replication</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bad Replication Design
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#events_order>events_order</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="tells_primary_secondary">tells_primary_secondary</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tells Primary and Secondary Replicates to Master
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lease>lease</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#version_bumped>version_bumped</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="low_performance_tradeoff">low_performance_tradeoff</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A strongly consistent system has a low performance cost as a tradeoff.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strong_consistency>strong_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="not_strongly_consistent">not_strongly_consistent</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GFS is not strongly consistent
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#extra_bits>extra_bits</a>, <a href=#two_phase_commit>two_phase_commit</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strong_consistency>strong_consistency</a> (NOT strongly consistent), <a href=#weak_consistency>weak_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="system_behaves">system_behaves</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A strongly consistent system behaves just like it was one server
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strong_consistency>strong_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="events_order">events_order</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+no way to ensure events (writes/reads) processed in correct order
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bad_replication>bad_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="lease">lease</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leased on Primary: "you are primary for 60s"
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#primary_dead>primary_dead</a>, <a href=#split_brain_solution>split_brain_solution</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tells_primary_secondary>tells_primary_secondary</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="extra_bits">extra_bits</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GFS would need "extra bits" for strong consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#two_phase_commit>two_phase_commit</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#not_strongly_consistent>not_strongly_consistent</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="two_phase_commit">two_phase_commit</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Two-Phase Commit. A mechanism for strong consistency
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#not_strongly_consistent>not_strongly_consistent</a>, <a href=#extra_bits>extra_bits</a> (One of the things you'd add to GFS to make it,strongly consistent)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_better">log_better</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log is better than something like database or b-tree because it is more efficient
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="weak_consistency">weak_consistency</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Designed with weak consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nature_of_gfs>nature_of_gfs</a>, <a href=#not_strongly_consistent>not_strongly_consistent</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Heretical to use weak consistency for academics
+</td>
+</tr>
+</table><br>
+</div>
+</body>
+</html>
+</p>
+</div>
+</body>
+</html>

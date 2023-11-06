@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<div id="main">
+<title>distributed_systems_MIT/lec01</title>
+<h1>lec01</h1>
+<a href="/wiki/dz">dz</a> / <a href="/wiki/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/wiki/dz/distributed_systems_MIT/lec01">lec01</a>
+<p></p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#comments>comments</a><ul>
+<li>
+<a href=#lectures_papers>lectures_papers</a></li>
+<li>
+<a href=#raft>raft</a></li>
+</ul>
+</li>
+<li>
+<a href=#concur_ctrl>concur_ctrl</a></li>
+<li>
+<a href=#coop_comp>coop_comp</a></li>
+<li>
+<a href=#top>top</a><ul>
+<li>
+<a href=#challenges>challenges</a><ul>
+<li>
+<a href=#concurrency>concurrency</a></li>
+<li>
+<a href=#partial_failure>partial_failure</a></li>
+</ul>
+</li>
+<li>
+<a href=#consistency>consistency</a><ul>
+<li>
+<a href=#strong_vs_weak>strong_vs_weak</a><ul>
+<li>
+<a href=#weak_less_expensive>weak_less_expensive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#implementation>implementation</a><ul>
+<li>
+<a href=#rpc>rpc</a></li>
+<li>
+<a href=#threads>threads</a></li>
+</ul>
+</li>
+<li>
+<a href=#infra>infra</a><ul>
+<li>
+<a href=#comms>comms</a></li>
+<li>
+<a href=#comp>comp</a></li>
+<li>
+<a href=#perf_scalable>perf_scalable</a><ul>
+<li>
+<a href=#speedup>speedup</a></li>
+</ul>
+</li>
+<li>
+<a href=#storage>storage</a></li>
+</ul>
+</li>
+<li>
+<a href=#why>why</a><ul>
+<li>
+<a href=#fault_tolerance>fault_tolerance</a><ul>
+<li>
+<a href=#availability>availability</a></li>
+<li>
+<a href=#recoverability>recoverability</a></li>
+<li>
+<a href=#tools>tools</a><ul>
+<li>
+<a href=#nvstorage>nvstorage</a></li>
+<li>
+<a href=#replication>replication</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#parallelism>parallelism</a></li>
+<li>
+<a href=#physical>physical</a></li>
+<li>
+<a href=#security>security</a><ul>
+<li>
+<a href=#isolation>isolation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="top">top</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Big Topics / Top-Level
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#challenges>challenges</a>, <a href=#consistency>consistency</a>, <a href=#implementation>implementation</a>, <a href=#infra>infra</a>, <a href=#why>why</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="challenges">challenges</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Challenges
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#concurrency>concurrency</a>, <a href=#partial_failure>partial_failure</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#top>top</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="consistency">consistency</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#strong_vs_weak>strong_vs_weak</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#top>top</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="implementation">implementation</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Implementation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#rpc>rpc</a>, <a href=#threads>threads</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#top>top</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="infra">infra</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+infrastructure
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#comms>comms</a>, <a href=#comp>comp</a>, <a href=#perf_scalable>perf_scalable</a>, <a href=#storage>storage</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#top>top</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="why">why</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Why?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>, <a href=#parallelism>parallelism</a>, <a href=#physical>physical</a>, <a href=#security>security</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#top>top</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="concurrency">concurrency</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Concurrency
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#challenges>challenges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="partial_failure">partial_failure</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partial Failure
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#challenges>challenges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="strong_vs_weak">strong_vs_weak</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+String vs Weak Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#weak_less_expensive>weak_less_expensive</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="rpc">rpc</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RPC
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#implementation>implementation</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+What does RPC stand for again?
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="threads">threads</a>
+</b></td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#implementation>implementation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="comms">comms</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Comms
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#infra>infra</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="comp">comp</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+computation (I think?)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#infra>infra</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="perf_scalable">perf_scalable</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Performance is Scalable
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#speedup>speedup</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#infra>infra</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="storage">storage</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Storage
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#infra>infra</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="fault_tolerance">fault_tolerance</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fault Tolerance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#availability>availability</a>, <a href=#recoverability>recoverability</a>, <a href=#tools>tools</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why>why</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="parallelism">parallelism</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parallelism
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why>why</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="physical">physical</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Physical
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why>why</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="security">security</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Security
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#isolation>isolation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why>why</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="weak_less_expensive">weak_less_expensive</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Weak Consistency is less expensive
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strong_vs_weak>strong_vs_weak</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="speedup">speedup</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+AKA: 2x computers yields 2x speedup
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#perf_scalable>perf_scalable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="availability">availability</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Availability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="recoverability">recoverability</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Recoverability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="tools">tools</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tools
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nvstorage>nvstorage</a>, <a href=#replication>replication</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="isolation">isolation</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+isolation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#security>security</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="nvstorage">nvstorage</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Non-Volatile (NV) storage
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tools>tools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="replication">replication</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tools>tools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="concur_ctrl">concur_ctrl</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+concurrency control
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="coop_comp">coop_comp</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Co-operating computers
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="comments">comments</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+remarks and comments
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lectures_papers>lectures_papers</a>, <a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="lectures_papers">lectures_papers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lectures have papers, recommend to read beforehand
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#comments>comments</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="raft">raft</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+'Raft' for fault tolerance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#comments>comments</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+are these examples of RAFT? SQLite, RQLite, rclone?
+</td>
+</tr>
+</table><br>
+</div>
+</body>
+</html>
+</p>
+</div>
+</body>
+</html>
