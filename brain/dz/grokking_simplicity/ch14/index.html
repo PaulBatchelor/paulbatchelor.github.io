@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>grokking_simplicity/ch14</title>
+<h1>ch14</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/grokking_simplicity">grokking_simplicity</a> / <a href="/brain/dz/grokking_simplicity/ch14">ch14</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Grokking Simplicity Chapter 14: Functional Tools For Nested Data
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#update>update</a><ul>
+<li>
+<a href=#needs>needs</a><ul>
+<li>
+<a href=#func_to_modify_value>func_to_modify_value</a></li>
+<li>
+<a href=#key>key</a></li>
+<li>
+<a href=#object_to_modify>object_to_modify</a></li>
+</ul>
+</li>
+<li>
+<a href=#nested_update>nested_update</a><ul>
+<li>
+<a href=#abstraction_barriers_deeply_nested_data>abstraction_barriers_deeply_nested_data</a></li>
+<li>
+<a href=#generalized_recursive_function>generalized_recursive_function</a><ul>
+<li>
+<a href=#safe_recursion>safe_recursion</a><ul>
+<li>
+<a href=#base_case_to_stop>base_case_to_stop</a><ul>
+<li>
+<a href=#progress_towards_base_case>progress_towards_base_case</a></li>
+</ul>
+</li>
+<li>
+<a href=#one_recursive_case>one_recursive_case</a></li>
+<li>
+<a href=#progress_towards_base_case>progress_towards_base_case</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#replace_get_modify_set_with_update>replace_get_modify_set_with_update</a></li>
+<li>
+<a href=#update_definition>update_definition</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="update">update</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Update
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#needs>needs</a>, <a href=#nested_update>nested_update</a>, <a href=#replace_get_modify_set_with_update>replace_get_modify_set_with_update</a>, <a href=#update_definition>update_definition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="needs">needs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Needs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#func_to_modify_value>func_to_modify_value</a>, <a href=#key>key</a>, <a href=#object_to_modify>object_to_modify</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#update>update</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="nested_update">nested_update</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Nested Update
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#abstraction_barriers_deeply_nested_data>abstraction_barriers_deeply_nested_data</a>, <a href=#generalized_recursive_function>generalized_recursive_function</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#update>update</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="replace_get_modify_set_with_update">replace_get_modify_set_with_update</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replace get, modify, set, with update (refactoring)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#update>update</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="update_definition">update_definition</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Takes function that operates on single value and apply it in-place inside of an objection
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#update>update</a> (definition)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="func_to_modify_value">func_to_modify_value</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Function to modify value
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#needs>needs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="key">key</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#needs>needs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="object_to_modify">object_to_modify</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+object to modify
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#needs>needs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="abstraction_barriers_deeply_nested_data">abstraction_barriers_deeply_nested_data</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Abstraction barriers on deeply nested data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#nested_update>nested_update</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="generalized_recursive_function">generalized_recursive_function</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can be generalized as recursive function
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#safe_recursion>safe_recursion</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#nested_update>nested_update</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="safe_recursion">safe_recursion</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+safe recursion
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#base_case_to_stop>base_case_to_stop</a>, <a href=#one_recursive_case>one_recursive_case</a>, <a href=#progress_towards_base_case>progress_towards_base_case</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#generalized_recursive_function>generalized_recursive_function</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="base_case_to_stop">base_case_to_stop</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Base Case To Stop
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#progress_towards_base_case>progress_towards_base_case</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safe_recursion>safe_recursion</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="one_recursive_case">one_recursive_case</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+At least one recursive case
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safe_recursion>safe_recursion</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="progress_towards_base_case">progress_towards_base_case</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Progress towards base case
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safe_recursion>safe_recursion</a>, <a href=#base_case_to_stop>base_case_to_stop</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
