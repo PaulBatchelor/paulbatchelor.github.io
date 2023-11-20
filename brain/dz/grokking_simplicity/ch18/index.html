@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>grokking_simplicity/ch18</title>
+<h1>ch18</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/grokking_simplicity">grokking_simplicity</a> / <a href="/brain/dz/grokking_simplicity/ch18">ch18</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Grokking Simplicity Chapter 18: Reactive and Onion Architectures
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#cells>cells</a><ul>
+<li>
+<a href=#formula_cells>formula_cells</a><ul>
+<li>
+<a href=#calculate_derived_val>calculate_derived_val</a></li>
+<li>
+<a href=#formula_cells_aka>formula_cells_aka</a><ul>
+<li>
+<a href=#agents_elixr>agents_elixr</a></li>
+<li>
+<a href=#atoms_clojure>atoms_clojure</a></li>
+<li>
+<a href=#redux_store_recoil_atoms_react>redux_store_recoil_atoms_react</a></li>
+<li>
+<a href=#tvars_haskell>tvars_haskell</a></li>
+</ul>
+</li>
+<li>
+<a href=#no_way_to_directly_update>no_way_to_directly_update</a></li>
+</ul>
+</li>
+<li>
+<a href=#value_cells>value_cells</a><ul>
+<li>
+<a href=#state_first_class>state_first_class</a></li>
+<li>
+<a href=#update_called_with_calc>update_called_with_calc</a><ul>
+<li>
+<a href=#vc_valid_data_not_order>vc_valid_data_not_order</a></li>
+</ul>
+</li>
+<li>
+<a href=#vc_valid_data_not_order>vc_valid_data_not_order</a></li>
+<li>
+<a href=#watchers>watchers</a><ul>
+<li>
+<a href=#watchers_aka>watchers_aka</a><ul>
+<li>
+<a href=#callbacks>callbacks</a></li>
+<li>
+<a href=#listeners>listeners</a></li>
+<li>
+<a href=#observers>observers</a></li>
+</ul>
+</li>
+<li>
+<a href=#watchers_def>watchers_def</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#extracting_actions_natural_onion>extracting_actions_natural_onion</a></li>
+<li>
+<a href=#onion_arch>onion_arch</a><ul>
+<li>
+<a href=#constructs_service_real_world_interaction>constructs_service_real_world_interaction</a><ul>
+<li>
+<a href=#concentric_layers>concentric_layers</a><ul>
+<li>
+<a href=#domain_layer>domain_layer</a><ul>
+<li>
+<a href=#calcs_define_business_rules>calcs_define_business_rules</a></li>
+<li>
+<a href=#language_layer>language_layer</a><ul>
+<li>
+<a href=#language_utility_libs>language_utility_libs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#interaction_layer>interaction_layer</a><ul>
+<li>
+<a href=#actions_affect_outside_world>actions_affect_outside_world</a></li>
+<li>
+<a href=#domain_layer>domain_layer</a><ul>
+<li>
+<a href=#calcs_define_business_rules>calcs_define_business_rules</a></li>
+<li>
+<a href=#language_layer>language_layer</a><ul>
+<li>
+<a href=#language_utility_libs>language_utility_libs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#interacts_layer_exclusively>interacts_layer_exclusively</a></li>
+</ul>
+</li>
+<li>
+<a href=#language_layer>language_layer</a><ul>
+<li>
+<a href=#language_utility_libs>language_utility_libs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#dont_know_about_others>dont_know_about_others</a></li>
+<li>
+<a href=#entire_service>entire_service</a></li>
+<li>
+<a href=#facilitating_change_reuse>facilitating_change_reuse</a><ul>
+<li>
+<a href=#easy_to>easy_to</a><ul>
+<li>
+<a href=#change>change</a></li>
+<li>
+<a href=#reuse>reuse</a></li>
+</ul>
+</li>
+<li>
+<a href=#kinds_of_easy_changes>kinds_of_easy_changes</a><ul>
+<li>
+<a href=#interaction_layer_easiest>interaction_layer_easiest</a><ul>
+<li>
+<a href=#change>change</a></li>
+<li>
+<a href=#external_services>external_services</a><ul>
+<li>
+<a href=#domain_layer_easily_tested>domain_layer_easily_tested</a><ul>
+<li>
+<a href=#reuse>reuse</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#interacts_layer_exclusively>interacts_layer_exclusively</a></li>
+<li>
+<a href=#level>level</a><ul>
+<li>
+<a href=#entire_service>entire_service</a></li>
+<li>
+<a href=#individual_sequence_actions>individual_sequence_actions</a></li>
+</ul>
+</li>
+<li>
+<a href=#onion_fractal>onion_fractal</a></li>
+<li>
+<a href=#operate_world>operate_world</a></li>
+<li>
+<a href=#operates_larger_scale>operates_larger_scale</a></li>
+<li>
+<a href=#trad_vs_functional_arch>trad_vs_functional_arch</a><ul>
+<li>
+<a href=#functional_arch>functional_arch</a><ul>
+<li>
+<a href=#clean_separation_calcs_actions>clean_separation_calcs_actions</a></li>
+<li>
+<a href=#db_pulled_out_to_side>db_pulled_out_to_side</a></li>
+</ul>
+</li>
+<li>
+<a href=#trad_layered_arch>trad_layered_arch</a><ul>
+<li>
+<a href=#db_bottom>db_bottom</a><ul>
+<li>
+<a href=#db_pulled_out_to_side>db_pulled_out_to_side</a></li>
+<li>
+<a href=#everything_action_above>everything_action_above</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#reactive_arch>reactive_arch</a><ul>
+<li>
+<a href=#flips_actions>flips_actions</a></li>
+<li>
+<a href=#individual_sequence_actions>individual_sequence_actions</a></li>
+<li>
+<a href=#level>level</a><ul>
+<li>
+<a href=#entire_service>entire_service</a></li>
+<li>
+<a href=#individual_sequence_actions>individual_sequence_actions</a></li>
+</ul>
+</li>
+<li>
+<a href=#operates_larger_scale>operates_larger_scale</a></li>
+<li>
+<a href=#reactive_features>reactive_features</a><ul>
+<li>
+<a href=#decouples_effects_causes>decouples_effects_causes</a><ul>
+<li>
+<a href=#center_cause_effect>center_cause_effect</a><ul>
+<li>
+<a href=#turns_mult_into_addition>turns_mult_into_addition</a><ul>
+<li>
+<a href=#not_helpful_if>not_helpful_if</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#less_readable_code>less_readable_code</a></li>
+<li>
+<a href=#not_helpful_if>not_helpful_if</a></li>
+</ul>
+</li>
+<li>
+<a href=#flexibility_timeline>flexibility_timeline</a><ul>
+<li>
+<a href=#unwanted_orders>unwanted_orders</a></li>
+</ul>
+</li>
+<li>
+<a href=#series_of_steps_pipeline>series_of_steps_pipeline</a></li>
+</ul>
+</li>
+<li>
+<a href=#reactive_manifesto>reactive_manifesto</a></li>
+<li>
+<a href=#reactive_reconfig>reactive_reconfig</a><ul>
+<li>
+<a href=#decouples_effects_causes>decouples_effects_causes</a><ul>
+<li>
+<a href=#center_cause_effect>center_cause_effect</a><ul>
+<li>
+<a href=#turns_mult_into_addition>turns_mult_into_addition</a><ul>
+<li>
+<a href=#not_helpful_if>not_helpful_if</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#less_readable_code>less_readable_code</a></li>
+<li>
+<a href=#not_helpful_if>not_helpful_if</a></li>
+</ul>
+</li>
+<li>
+<a href=#flexibility_timeline>flexibility_timeline</a><ul>
+<li>
+<a href=#unwanted_orders>unwanted_orders</a></li>
+</ul>
+</li>
+<li>
+<a href=#treats_steps_as_pipeline>treats_steps_as_pipeline</a><ul>
+<li>
+<a href=#not_passing_data_dont_use>not_passing_data_dont_use</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#respond_to_events>respond_to_events</a><ul>
+<li>
+<a href=#do_xyz>do_xyz</a></li>
+<li>
+<a href=#event_handler>event_handler</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="onion_arch">onion_arch</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Onion Architecture
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#constructs_service_real_world_interaction>constructs_service_real_world_interaction</a>, <a href=#dont_know_about_others>dont_know_about_others</a>, <a href=#entire_service>entire_service</a>, <a href=#facilitating_change_reuse>facilitating_change_reuse</a>, <a href=#interacts_layer_exclusively>interacts_layer_exclusively</a>, <a href=#level>level</a>, <a href=#onion_fractal>onion_fractal</a>, <a href=#operate_world>operate_world</a>, <a href=#operates_larger_scale>operates_larger_scale</a>, <a href=#trad_vs_functional_arch>trad_vs_functional_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="constructs_service_real_world_interaction">constructs_service_real_world_interaction</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Constructs entire service that interacts with the real world
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#concentric_layers>concentric_layers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="dont_know_about_others">dont_know_about_others</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Don't know about other layers outside themselves
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="entire_service">entire_service</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Entire service
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a> (Level onion arch works at), <a href=#level>level</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="facilitating_change_reuse">facilitating_change_reuse</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Facilitating Change and Reuse
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#easy_to>easy_to</a>, <a href=#kinds_of_easy_changes>kinds_of_easy_changes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="interacts_layer_exclusively">interacts_layer_exclusively</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Real-world interaction happens in the interaction layer exclusively
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a>, <a href=#interaction_layer>interaction_layer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="level">level</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Levels Architectures work at
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#entire_service>entire_service</a>, <a href=#individual_sequence_actions>individual_sequence_actions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_arch>reactive_arch</a>, <a href=#onion_arch>onion_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="onion_fractal">onion_fractal</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Onion architecture is fractal at every level of abstraction in your actions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="operate_world">operate_world</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+High-level structure of functional programs that have to operate in the real world
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="operates_larger_scale">operates_larger_scale</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Onion operates on larger scale than Reactive
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a>, <a href=#reactive_arch>reactive_arch</a> (works on a larger scale than)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="trad_vs_functional_arch">trad_vs_functional_arch</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Traditional vs Functional Architecture
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#functional_arch>functional_arch</a>, <a href=#trad_layered_arch>trad_layered_arch</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#onion_arch>onion_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="concentric_layers">concentric_layers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Concentric Layers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#domain_layer>domain_layer</a>, <a href=#interaction_layer>interaction_layer</a>, <a href=#language_layer>language_layer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#constructs_service_real_world_interaction>constructs_service_real_world_interaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="easy_to">easy_to</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Easy to..
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#change>change</a>, <a href=#reuse>reuse</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#facilitating_change_reuse>facilitating_change_reuse</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="kinds_of_easy_changes">kinds_of_easy_changes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Kinds changes Onion Architecture makes easy
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#interaction_layer_easiest>interaction_layer_easiest</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#facilitating_change_reuse>facilitating_change_reuse</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="individual_sequence_actions">individual_sequence_actions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Individual Sequence of Actions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_arch>reactive_arch</a> (Level reactive arch works at), <a href=#level>level</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="functional_arch">functional_arch</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Functional Architecture
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clean_separation_calcs_actions>clean_separation_calcs_actions</a>, <a href=#db_pulled_out_to_side>db_pulled_out_to_side</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#trad_vs_functional_arch>trad_vs_functional_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="trad_layered_arch">trad_layered_arch</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Traditional Layered Architecture (Web)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_bottom>db_bottom</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#trad_vs_functional_arch>trad_vs_functional_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="domain_layer">domain_layer</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Domain
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#calcs_define_business_rules>calcs_define_business_rules</a>, <a href=#language_layer>language_layer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#interaction_layer>interaction_layer</a>, <a href=#concentric_layers>concentric_layers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="interaction_layer">interaction_layer</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+interaction
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#actions_affect_outside_world>actions_affect_outside_world</a>, <a href=#domain_layer>domain_layer</a>, <a href=#interacts_layer_exclusively>interacts_layer_exclusively</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#concentric_layers>concentric_layers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="language_layer">language_layer</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Language
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#language_utility_libs>language_utility_libs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#domain_layer>domain_layer</a>, <a href=#concentric_layers>concentric_layers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="change">change</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Easy to change
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#easy_to>easy_to</a>, <a href=#interaction_layer_easiest>interaction_layer_easiest</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reuse">reuse</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Easy to reuse
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#domain_layer_easily_tested>domain_layer_easily_tested</a>, <a href=#easy_to>easy_to</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="interaction_layer_easiest">interaction_layer_easiest</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The interaction layer is easiest to change
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#change>change</a>, <a href=#external_services>external_services</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#kinds_of_easy_changes>kinds_of_easy_changes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="clean_separation_calcs_actions">clean_separation_calcs_actions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clean separation of calculations and actions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#functional_arch>functional_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="db_pulled_out_to_side">db_pulled_out_to_side</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database pulled out to side
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#functional_arch>functional_arch</a>, <a href=#db_bottom>db_bottom</a> (By comparison, DB is at bottom in traditional arch)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="db_bottom">db_bottom</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database at Bottom
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_pulled_out_to_side>db_pulled_out_to_side</a>, <a href=#everything_action_above>everything_action_above</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#trad_layered_arch>trad_layered_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="calcs_define_business_rules">calcs_define_business_rules</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Calculations that define rules of your business
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#domain_layer>domain_layer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="actions_affect_outside_world">actions_affect_outside_world</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Actions that are affected by/affect outside world
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#interaction_layer>interaction_layer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="language_utility_libs">language_utility_libs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Language and Utility Libraries
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#language_layer>language_layer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="external_services">external_services</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+External Services
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#domain_layer_easily_tested>domain_layer_easily_tested</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#interaction_layer_easiest>interaction_layer_easiest</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="everything_action_above">everything_action_above</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Everything above is action
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_bottom>db_bottom</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="domain_layer_easily_tested">domain_layer_easily_tested</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Domain Layer Easily tested
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reuse>reuse</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#external_services>external_services</a> (no access)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="cells">cells</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cells
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#formula_cells>formula_cells</a>, <a href=#value_cells>value_cells</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="formula_cells">formula_cells</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+FormulaCell
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#calculate_derived_val>calculate_derived_val</a>, <a href=#formula_cells_aka>formula_cells_aka</a>, <a href=#no_way_to_directly_update>no_way_to_directly_update</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cells>cells</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="value_cells">value_cells</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ValueCells
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#state_first_class>state_first_class</a>, <a href=#update_called_with_calc>update_called_with_calc</a>, <a href=#vc_valid_data_not_order>vc_valid_data_not_order</a>, <a href=#watchers>watchers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cells>cells</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="calculate_derived_val">calculate_derived_val</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Calculate derived value
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#formula_cells>formula_cells</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="formula_cells_aka">formula_cells_aka</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+AKA
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#agents_elixr>agents_elixr</a>, <a href=#atoms_clojure>atoms_clojure</a>, <a href=#redux_store_recoil_atoms_react>redux_store_recoil_atoms_react</a>, <a href=#tvars_haskell>tvars_haskell</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#formula_cells>formula_cells</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_way_to_directly_update">no_way_to_directly_update</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No way to directly update. Must change upstream (value)cell. It watches.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#formula_cells>formula_cells</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="state_first_class">state_first_class</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+makes state first-class
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#value_cells>value_cells</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="update_called_with_calc">update_called_with_calc</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Update called with calculation, makes it easy to keep current value valid.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#vc_valid_data_not_order>vc_valid_data_not_order</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#value_cells>value_cells</a> (wraps a valuecell)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="vc_valid_data_not_order">vc_valid_data_not_order</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Value Cell can't guarantee order, but it can guarantee valid data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#value_cells>value_cells</a>, <a href=#update_called_with_calc>update_called_with_calc</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="watchers">watchers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Watchers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#watchers_aka>watchers_aka</a>, <a href=#watchers_def>watchers_def</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#value_cells>value_cells</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="agents_elixr">agents_elixr</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Agents (Elixr)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#formula_cells_aka>formula_cells_aka</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="atoms_clojure">atoms_clojure</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+atoms (clojure)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#formula_cells_aka>formula_cells_aka</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="redux_store_recoil_atoms_react">redux_store_recoil_atoms_react</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Redux Store, Recoil Atoms (React)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#formula_cells_aka>formula_cells_aka</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="tvars_haskell">tvars_haskell</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+TVars (Haskell)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#formula_cells_aka>formula_cells_aka</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="watchers_aka">watchers_aka</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+AKA
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#callbacks>callbacks</a>, <a href=#listeners>listeners</a>, <a href=#observers>observers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#watchers>watchers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="watchers_def">watchers_def</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+handler functions that get called when state changes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#watchers>watchers</a> (definition)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="callbacks">callbacks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Callbacks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#watchers_aka>watchers_aka</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="listeners">listeners</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Listeners
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#watchers_aka>watchers_aka</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="observers">observers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Observers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#watchers_aka>watchers_aka</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reactive_arch">reactive_arch</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reactive Architecture
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#flips_actions>flips_actions</a>, <a href=#individual_sequence_actions>individual_sequence_actions</a>, <a href=#level>level</a>, <a href=#operates_larger_scale>operates_larger_scale</a>, <a href=#reactive_features>reactive_features</a>, <a href=#reactive_manifesto>reactive_manifesto</a>, <a href=#reactive_reconfig>reactive_reconfig</a>, <a href=#respond_to_events>respond_to_events</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="flips_actions">flips_actions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Flips the way actions are sequenced
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_arch>reactive_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reactive_features">reactive_features</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reactive Architecture Features and Characteristics
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#decouples_effects_causes>decouples_effects_causes</a>, <a href=#flexibility_timeline>flexibility_timeline</a>, <a href=#series_of_steps_pipeline>series_of_steps_pipeline</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_arch>reactive_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reactive_manifesto">reactive_manifesto</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reactive Manifesto
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_arch>reactive_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reactive_reconfig">reactive_reconfig</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How Reactive Reconfigures Systems
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#decouples_effects_causes>decouples_effects_causes</a>, <a href=#flexibility_timeline>flexibility_timeline</a>, <a href=#treats_steps_as_pipeline>treats_steps_as_pipeline</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_arch>reactive_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="respond_to_events">respond_to_events</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Main organizing principle: specify what happens in response to events
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#do_xyz>do_xyz</a>, <a href=#event_handler>event_handler</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_arch>reactive_arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="decouples_effects_causes">decouples_effects_causes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Decouples Effects/Causes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#center_cause_effect>center_cause_effect</a>, <a href=#less_readable_code>less_readable_code</a>, <a href=#not_helpful_if>not_helpful_if</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_reconfig>reactive_reconfig</a>, <a href=#reactive_features>reactive_features</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="flexibility_timeline">flexibility_timeline</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Flexibility in timeline
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#unwanted_orders>unwanted_orders</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_reconfig>reactive_reconfig</a>, <a href=#reactive_features>reactive_features</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="series_of_steps_pipeline">series_of_steps_pipeline</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Series of steps to produce a pipeline
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_features>reactive_features</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="treats_steps_as_pipeline">treats_steps_as_pipeline</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Treats series of steps as pipeline
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_passing_data_dont_use>not_passing_data_dont_use</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reactive_reconfig>reactive_reconfig</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="do_xyz">do_xyz</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Do y when x. Do z when y.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#respond_to_events>respond_to_events</a> (example)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="event_handler">event_handler</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Event Handler
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#respond_to_events>respond_to_events</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="center_cause_effect">center_cause_effect</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+decoupling manages a center of cause and effect
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#turns_mult_into_addition>turns_mult_into_addition</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#decouples_effects_causes>decouples_effects_causes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="less_readable_code">less_readable_code</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Potentially less readable code?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#decouples_effects_causes>decouples_effects_causes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="not_helpful_if">not_helpful_if</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+not helpful if you don't have this in your problem
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#turns_mult_into_addition>turns_mult_into_addition</a>, <a href=#decouples_effects_causes>decouples_effects_causes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="unwanted_orders">unwanted_orders</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Could lead to unwanted orderings
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#flexibility_timeline>flexibility_timeline</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="not_passing_data_dont_use">not_passing_data_dont_use</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If your steps don't follow the pattern of passing data, this might not be a good fit
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#treats_steps_as_pipeline>treats_steps_as_pipeline</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="turns_mult_into_addition">turns_mult_into_addition</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Turns multiplication (causes * effects) into addition (causes + effects)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_helpful_if>not_helpful_if</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#center_cause_effect>center_cause_effect</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="extracting_actions_natural_onion">extracting_actions_natural_onion</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Extraction actions from calculations naturally arrives at something like the onion architecture
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
