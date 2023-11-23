@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec08</title>
+<h1>lec08</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec08">lec08</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Lecture 8, more linearizability, zookeeper
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#linearizability>linearizability</a><ul>
+<li>
+<a href=#correctness>correctness</a><ul>
+<li>
+<a href=#correct_tolerant>correct_tolerant</a></li>
+<li>
+<a href=#no_stale_data>no_stale_data</a></li>
+<li>
+<a href=#not_good_correctness>not_good_correctness</a><ul>
+<li>
+<a href=#how_to_make_safe>how_to_make_safe</a><ul>
+<li>
+<a href=#non_linearized_reads_rules>non_linearized_reads_rules</a><ul>
+<li>
+<a href=#still_useful>still_useful</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#writes_linearizable>writes_linearizable</a></li>
+</ul>
+</li>
+<li>
+<a href=#history_linearizable>history_linearizable</a><ul>
+<li>
+<a href=#no_cycles>no_cycles</a></li>
+</ul>
+</li>
+<li>
+<a href=#proof_of_order>proof_of_order</a></li>
+<li>
+<a href=#strongly_consistent_system>strongly_consistent_system</a><ul>
+<li>
+<a href=#no_stale_data>no_stale_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#writes_linearizable>writes_linearizable</a></li>
+</ul>
+</li>
+<li>
+<a href=#zookeeper>zookeeper</a><ul>
+<li>
+<a href=#consistency_guarantees>consistency_guarantees</a><ul>
+<li>
+<a href=#fifo_client_order>fifo_client_order</a><ul>
+<li>
+<a href=#writes_client_specified_order>writes_client_specified_order</a></li>
+</ul>
+</li>
+<li>
+<a href=#reads>reads</a><ul>
+<li>
+<a href=#relative_to_log>relative_to_log</a><ul>
+<li>
+<a href=#sucessive_reads>sucessive_reads</a><ul>
+<li>
+<a href=#cant_go_backwards>cant_go_backwards</a><ul>
+<li>
+<a href=#client_switches_replicas>client_switches_replicas</a><ul>
+<li>
+<a href=#zxid_tag>zxid_tag</a><ul>
+<li>
+<a href=#client_remembers>client_remembers</a><ul>
+<li>
+<a href=#replica_responds_zxid>replica_responds_zxid</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#reasonable_programming>reasonable_programming</a><ul>
+<li>
+<a href=#sync>sync</a><ul>
+<li>
+<a href=#proliferates_like_write>proliferates_like_write</a><ul>
+<li>
+<a href=#sync_before_read>sync_before_read</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#raft_like>raft_like</a><ul>
+<li>
+<a href=#up_to_date>up_to_date</a><ul>
+<li>
+<a href=#not_good_correctness>not_good_correctness</a><ul>
+<li>
+<a href=#how_to_make_safe>how_to_make_safe</a><ul>
+<li>
+<a href=#non_linearized_reads_rules>non_linearized_reads_rules</a><ul>
+<li>
+<a href=#still_useful>still_useful</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#why_zookeeper>why_zookeeper</a><ul>
+<li>
+<a href=#API_general_purpose_coordination>API_general_purpose_coordination</a></li>
+<li>
+<a href=#more_better_performance>more_better_performance</a><ul>
+<li>
+<a href=#read_from_replicas>read_from_replicas</a><ul>
+<li>
+<a href=#up_to_date>up_to_date</a><ul>
+<li>
+<a href=#not_good_correctness>not_good_correctness</a><ul>
+<li>
+<a href=#how_to_make_safe>how_to_make_safe</a><ul>
+<li>
+<a href=#non_linearized_reads_rules>non_linearized_reads_rules</a><ul>
+<li>
+<a href=#still_useful>still_useful</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#write_more_slower>write_more_slower</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="zookeeper">zookeeper</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zookeeper
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#consistency_guarantees>consistency_guarantees</a>, <a href=#raft_like>raft_like</a>, <a href=#why_zookeeper>why_zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="consistency_guarantees">consistency_guarantees</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Consistency Guarantees
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fifo_client_order>fifo_client_order</a>, <a href=#reads>reads</a>, <a href=#reasonable_programming>reasonable_programming</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zookeeper>zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="raft_like">raft_like</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAFT-like
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#up_to_date>up_to_date</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zookeeper>zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="why_zookeeper">why_zookeeper</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+why?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#API_general_purpose_coordination>API_general_purpose_coordination</a>, <a href=#more_better_performance>more_better_performance</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zookeeper>zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="fifo_client_order">fifo_client_order</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+FIFO client order: any given client operations are in that order
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#writes_client_specified_order>writes_client_specified_order</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency_guarantees>consistency_guarantees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reads">reads</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+reads
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#relative_to_log>relative_to_log</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency_guarantees>consistency_guarantees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reasonable_programming">reasonable_programming</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Possible to reasonable programming with?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sync>sync</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency_guarantees>consistency_guarantees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="up_to_date">up_to_date</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+up to date? (maybe, maybe not)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_good_correctness>not_good_correctness</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft_like>raft_like</a>, <a href=#read_from_replicas>read_from_replicas</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="API_general_purpose_coordination">API_general_purpose_coordination</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+API general purpose coordination service
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why_zookeeper>why_zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="more_better_performance">more_better_performance</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Nx -> Nx performance (does adding more nodes yield better performance?)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#read_from_replicas>read_from_replicas</a>, <a href=#write_more_slower>write_more_slower</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why_zookeeper>why_zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="writes_client_specified_order">writes_client_specified_order</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Writes: client-specified order
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fifo_client_order>fifo_client_order</a> (AKA)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="relative_to_log">relative_to_log</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+relative to log client is talking to
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sucessive_reads>sucessive_reads</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reads>reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sync">sync</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+sync operation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#proliferates_like_write>proliferates_like_write</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reasonable_programming>reasonable_programming</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="not_good_correctness">not_good_correctness</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+not good for correctness
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#how_to_make_safe>how_to_make_safe</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness>correctness</a>, <a href=#up_to_date>up_to_date</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="read_from_replicas">read_from_replicas</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+read from replicas
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#up_to_date>up_to_date</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#more_better_performance>more_better_performance</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+reading from replicas speeds things up
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_more_slower">write_more_slower</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+write: more servers -> slwoer
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#more_better_performance>more_better_performance</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+write needs to coordinate with replicas, single server
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sucessive_reads">sucessive_reads</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+occur in log. successive reads have to be in order
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cant_go_backwards>cant_go_backwards</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relative_to_log>relative_to_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="proliferates_like_write">proliferates_like_write</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Proliferates through system like write
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sync_before_read>sync_before_read</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync>sync</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="how_to_make_safe">how_to_make_safe</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to make safe?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#non_linearized_reads_rules>non_linearized_reads_rules</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#not_good_correctness>not_good_correctness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="cant_go_backwards">cant_go_backwards</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can't go backwards
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_switches_replicas>client_switches_replicas</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sucessive_reads>sucessive_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sync_before_read">sync_before_read</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+sync before a read gets data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#proliferates_like_write>proliferates_like_write</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+sync is therefore an expensive operation
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="non_linearized_reads_rules">non_linearized_reads_rules</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+non-linearized reads are in the rules of conistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#still_useful>still_useful</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#how_to_make_safe>how_to_make_safe</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+in other words, zookeeper doesn't provide guarantee for reads. A tradeoff of correctness for read performance
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="client_switches_replicas">client_switches_replicas</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+rule still holds if client switches replicas
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#zxid_tag>zxid_tag</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cant_go_backwards>cant_go_backwards</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="still_useful">still_useful</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Is this still useful?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#non_linearized_reads_rules>non_linearized_reads_rules</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="zxid_tag">zxid_tag</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ZXID tag from leader entry
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_remembers>client_remembers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#client_switches_replicas>client_switches_replicas</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="client_remembers">client_remembers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Client remembers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replica_responds_zxid>replica_responds_zxid</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zxid_tag>zxid_tag</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="replica_responds_zxid">replica_responds_zxid</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+replica responds with zxid
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#client_remembers>client_remembers</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+"highest ZXID I've ever seen"
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="linearizability">linearizability</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+linearizability
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#correctness>correctness</a>, <a href=#history_linearizable>history_linearizable</a>, <a href=#proof_of_order>proof_of_order</a>, <a href=#strongly_consistent_system>strongly_consistent_system</a>, <a href=#writes_linearizable>writes_linearizable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="correctness">correctness</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+correctness
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#correct_tolerant>correct_tolerant</a>, <a href=#no_stale_data>no_stale_data</a>, <a href=#not_good_correctness>not_good_correctness</a>, <a href=#writes_linearizable>writes_linearizable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#linearizability>linearizability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="history_linearizable">history_linearizable</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+is the history linearizable
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#no_cycles>no_cycles</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#linearizability>linearizability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="proof_of_order">proof_of_order</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+client must observe proof of only one order
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#linearizability>linearizability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="strongly_consistent_system">strongly_consistent_system</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+strongly consistent system
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#no_stale_data>no_stale_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#linearizability>linearizability</a> (important for)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="writes_linearizable">writes_linearizable</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Writes are linearizable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness>correctness</a>, <a href=#linearizability>linearizability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="correct_tolerant">correct_tolerant</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+correct applications must be tolerant of these systems
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness>correctness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_stale_data">no_stale_data</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+can't serve stale data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness>correctness</a>, <a href=#strongly_consistent_system>strongly_consistent_system</a> (a strongly consistent system can't serve stale data)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_cycles">no_cycles</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+no cycles
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#history_linearizable>history_linearizable</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
