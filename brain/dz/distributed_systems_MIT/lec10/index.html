@@ -1,0 +1,2503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec10</title>
+<h1>lec10</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec10">lec10</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Cloud replicated databases, Aurora
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#RDS>RDS</a><ul>
+<li>
+<a href=#RDS_def>RDS_def</a></li>
+</ul>
+</li>
+<li>
+<a href=#app_4_reps_complete>app_4_reps_complete</a></li>
+<li>
+<a href=#aurora>aurora</a><ul>
+<li>
+<a href=#amazon>amazon</a></li>
+<li>
+<a href=#append_only_log_writes>append_only_log_writes</a><ul>
+<li>
+<a href=#Appendtoatleast4replicastobecompleted>Appendtoatleast4replicastobecompleted</a></li>
+</ul>
+</li>
+<li>
+<a href=#aurora_description>aurora_description</a></li>
+<li>
+<a href=#backhistory>backhistory</a><ul>
+<li>
+<a href=#ec2>ec2</a><ul>
+<li>
+<a href=#ebs>ebs</a><ul>
+<li>
+<a href=#ebs_problems>ebs_problems</a><ul>
+<li>
+<a href=#large_volumes_network_traffic>large_volumes_network_traffic</a><ul>
+<li>
+<a href=#database>database</a><ul>
+<li>
+<a href=#db_tutorial>db_tutorial</a><ul>
+<li>
+<a href=#crash_recovery>crash_recovery</a><ul>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_pages>data_pages</a></li>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transaction>transaction</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#multi_ops_grouped_atomic>multi_ops_grouped_atomic</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo>redo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#not_fault_tolerant>not_fault_tolerant</a></li>
+</ul>
+</li>
+<li>
+<a href=#looks_like_regular_drive>looks_like_regular_drive</a></li>
+<li>
+<a href=#not_sharing_system>not_sharing_system</a></li>
+<li>
+<a href=#replicated_pair_storage_servers>replicated_pair_storage_servers</a></li>
+</ul>
+</li>
+<li>
+<a href=#good_for_webservers>good_for_webservers</a><ul>
+<li>
+<a href=#not_good_database>not_good_database</a><ul>
+<li>
+<a href=#data_loss_on_hardware_crash>data_loss_on_hardware_crash</a><ul>
+<li>
+<a href=#ebs>ebs</a><ul>
+<li>
+<a href=#ebs_problems>ebs_problems</a><ul>
+<li>
+<a href=#large_volumes_network_traffic>large_volumes_network_traffic</a><ul>
+<li>
+<a href=#database>database</a><ul>
+<li>
+<a href=#db_tutorial>db_tutorial</a><ul>
+<li>
+<a href=#crash_recovery>crash_recovery</a><ul>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_pages>data_pages</a></li>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transaction>transaction</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#multi_ops_grouped_atomic>multi_ops_grouped_atomic</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo>redo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#not_fault_tolerant>not_fault_tolerant</a></li>
+</ul>
+</li>
+<li>
+<a href=#looks_like_regular_drive>looks_like_regular_drive</a></li>
+<li>
+<a href=#not_sharing_system>not_sharing_system</a></li>
+<li>
+<a href=#replicated_pair_storage_servers>replicated_pair_storage_servers</a></li>
+</ul>
+</li>
+<li>
+<a href=#s3>s3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#not_good_database>not_good_database</a><ul>
+<li>
+<a href=#data_loss_on_hardware_crash>data_loss_on_hardware_crash</a><ul>
+<li>
+<a href=#ebs>ebs</a><ul>
+<li>
+<a href=#ebs_problems>ebs_problems</a><ul>
+<li>
+<a href=#large_volumes_network_traffic>large_volumes_network_traffic</a><ul>
+<li>
+<a href=#database>database</a><ul>
+<li>
+<a href=#db_tutorial>db_tutorial</a><ul>
+<li>
+<a href=#crash_recovery>crash_recovery</a><ul>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_pages>data_pages</a></li>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transaction>transaction</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#multi_ops_grouped_atomic>multi_ops_grouped_atomic</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo>redo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#not_fault_tolerant>not_fault_tolerant</a></li>
+</ul>
+</li>
+<li>
+<a href=#looks_like_regular_drive>looks_like_regular_drive</a></li>
+<li>
+<a href=#not_sharing_system>not_sharing_system</a></li>
+<li>
+<a href=#replicated_pair_storage_servers>replicated_pair_storage_servers</a></li>
+</ul>
+</li>
+<li>
+<a href=#s3>s3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#physical_storage>physical_storage</a><ul>
+<li>
+<a href=#data_loss_on_hardware_crash>data_loss_on_hardware_crash</a><ul>
+<li>
+<a href=#ebs>ebs</a><ul>
+<li>
+<a href=#ebs_problems>ebs_problems</a><ul>
+<li>
+<a href=#large_volumes_network_traffic>large_volumes_network_traffic</a><ul>
+<li>
+<a href=#database>database</a><ul>
+<li>
+<a href=#db_tutorial>db_tutorial</a><ul>
+<li>
+<a href=#crash_recovery>crash_recovery</a><ul>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_pages>data_pages</a></li>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transaction>transaction</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#multi_ops_grouped_atomic>multi_ops_grouped_atomic</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo>redo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#not_fault_tolerant>not_fault_tolerant</a></li>
+</ul>
+</li>
+<li>
+<a href=#looks_like_regular_drive>looks_like_regular_drive</a></li>
+<li>
+<a href=#not_sharing_system>not_sharing_system</a></li>
+<li>
+<a href=#replicated_pair_storage_servers>replicated_pair_storage_servers</a></li>
+</ul>
+</li>
+<li>
+<a href=#s3>s3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#big_db_handling>big_db_handling</a><ul>
+<li>
+<a href=#sharding>sharding</a><ul>
+<li>
+<a href=#protection_servers>protection_servers</a><ul>
+<li>
+<a href=#groups_of_six_servers>groups_of_six_servers</a></li>
+<li>
+<a href=#how_to_split_up_logs>how_to_split_up_logs</a><ul>
+<li>
+<a href=#pg_stores_logs_relevant_to_pages>pg_stores_logs_relevant_to_pages</a><ul>
+<li>
+<a href=#find_pg_with_data>find_pg_with_data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#logs>logs</a></li>
+<li>
+<a href=#pg_stores_logs_relevant_to_pages>pg_stores_logs_relevant_to_pages</a><ul>
+<li>
+<a href=#find_pg_with_data>find_pg_with_data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#db_server>db_server</a><ul>
+<li>
+<a href=#custom_software>custom_software</a></li>
+<li>
+<a href=#database_setup>database_setup</a><ul>
+<li>
+<a href=#log_records>log_records</a><ul>
+<li>
+<a href=#immediately_appended_log_records>immediately_appended_log_records</a><ul>
+<li>
+<a href=#old_page_log_records>old_page_log_records</a><ul>
+<li>
+<a href=#apply_log_record_to_page>apply_log_record_to_page</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#log_smaller_than_pages>log_smaller_than_pages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#storage_understand_db_entries>storage_understand_db_entries</a></li>
+</ul>
+</li>
+<li>
+<a href=#db_tutorial>db_tutorial</a><ul>
+<li>
+<a href=#crash_recovery>crash_recovery</a><ul>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_pages>data_pages</a></li>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transaction>transaction</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#multi_ops_grouped_atomic>multi_ops_grouped_atomic</a><ul>
+<li>
+<a href=#locks>locks</a></li>
+<li>
+<a href=#transactions_all_or_none>transactions_all_or_none</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo>redo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#quorum>quorum</a><ul>
+<li>
+<a href=#ft_goals>ft_goals</a><ul>
+<li>
+<a href=#fast_replication>fast_replication</a><ul>
+<li>
+<a href=#parallel_copy>parallel_copy</a><ul>
+<li>
+<a href=#chunks_of_log_protection_groups>chunks_of_log_protection_groups</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#read_2_dead_az_1_other_server>read_2_dead_az_1_other_server</a></li>
+<li>
+<a href=#ride_out_transient_slowness>ride_out_transient_slowness</a></li>
+<li>
+<a href=#storage_only>storage_only</a></li>
+<li>
+<a href=#write_one_dead_az>write_one_dead_az</a></li>
+</ul>
+</li>
+<li>
+<a href=#replication>replication</a><ul>
+<li>
+<a href=#N_rep>N_rep</a><ul>
+<li>
+<a href=#R_plus_W_equals_N_plus_one>R_plus_W_equals_N_plus_one</a><ul>
+<li>
+<a href=#guaranteed_overlap>guaranteed_overlap</a></li>
+<li>
+<a href=#variable_defaults>variable_defaults</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#R_replicas>R_replicas</a><ul>
+<li>
+<a href=#R_plus_W_equals_N_plus_one>R_plus_W_equals_N_plus_one</a><ul>
+<li>
+<a href=#guaranteed_overlap>guaranteed_overlap</a></li>
+<li>
+<a href=#variable_defaults>variable_defaults</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#W_writes>W_writes</a><ul>
+<li>
+<a href=#R_plus_W_equals_N_plus_one>R_plus_W_equals_N_plus_one</a><ul>
+<li>
+<a href=#guaranteed_overlap>guaranteed_overlap</a></li>
+<li>
+<a href=#variable_defaults>variable_defaults</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#storage_server>storage_server</a><ul>
+<li>
+<a href=#db_tracks_server_log_indexes>db_tracks_server_log_indexes</a><ul>
+<li>
+<a href=#db_read_updated_ss>db_read_updated_ss</a><ul>
+<li>
+<a href=#when_quorum_reads_used>when_quorum_reads_used</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#log_records>log_records</a><ul>
+<li>
+<a href=#immediately_appended_log_records>immediately_appended_log_records</a><ul>
+<li>
+<a href=#old_page_log_records>old_page_log_records</a><ul>
+<li>
+<a href=#apply_log_record_to_page>apply_log_record_to_page</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#log_smaller_than_pages>log_smaller_than_pages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#availability_zone>availability_zone</a><ul>
+<li>
+<a href=#data_configuration>data_configuration</a><ul>
+<li>
+<a href=#super_ft>super_ft</a></li>
+</ul>
+</li>
+<li>
+<a href=#read_2_dead_az_1_other_server>read_2_dead_az_1_other_server</a></li>
+<li>
+<a href=#write_one_dead_az>write_one_dead_az</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="aurora">aurora</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Aurora
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#amazon>amazon</a>, <a href=#append_only_log_writes>append_only_log_writes</a>, <a href=#aurora_description>aurora_description</a>, <a href=#backhistory>backhistory</a>, <a href=#big_db_handling>big_db_handling</a>, <a href=#db_server>db_server</a>, <a href=#db_tutorial>db_tutorial</a>, <a href=#quorum>quorum</a>, <a href=#storage_server>storage_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="amazon">amazon</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Amazon
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a> (Created by)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="append_only_log_writes">append_only_log_writes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Append-only log writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#Appendtoatleast4replicastobecompleted>Appendtoatleast4replicastobecompleted</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="aurora_description">aurora_description</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reliable, high performance, cloud databse
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a> (description)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="backhistory">backhistory</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Backhistory
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ec2>ec2</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a> (Backhistory before Aurora)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="big_db_handling">big_db_handling</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Big Database Handling
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sharding>sharding</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="db_server">db_server</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database server
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#custom_software>custom_software</a>, <a href=#database_setup>database_setup</a>, <a href=#storage_understand_db_entries>storage_understand_db_entries</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="db_tutorial">db_tutorial</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database Tutorial
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#crash_recovery>crash_recovery</a>, <a href=#data_pages>data_pages</a>, <a href=#locks>locks</a>, <a href=#transaction>transaction</a>, <a href=#write_ahead_log>write_ahead_log</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a> (Fundamentals to understand Aurora architecture), <a href=#database>database</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+A brief overview of how databases work. Just enough to understand Aurora
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="quorum">quorum</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Quorum
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ft_goals>ft_goals</a>, <a href=#replication>replication</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="storage_server">storage_server</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Storage Server
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_tracks_server_log_indexes>db_tracks_server_log_indexes</a>, <a href=#log_records>log_records</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aurora>aurora</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="Appendtoatleast4replicastobecompleted">Appendtoatleast4replicastobecompleted</a>
+</b></td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#append_only_log_writes>append_only_log_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ec2">ec2</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+EC2
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ebs>ebs</a>, <a href=#good_for_webservers>good_for_webservers</a>, <a href=#not_good_database>not_good_database</a>, <a href=#physical_storage>physical_storage</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backhistory>backhistory</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sharding">sharding</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+sharding
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#protection_servers>protection_servers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#big_db_handling>big_db_handling</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="custom_software">custom_software</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Custom software
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_server>db_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="database_setup">database_setup</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Setup
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_records>log_records</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_server>db_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="storage_understand_db_entries">storage_understand_db_entries</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Underlying storage system understands database entries
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_server>db_server</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+An important fact. Aurora went with a specialized filesystem rather than a generalized filesystem and got significant performance gains as a result of this.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="crash_recovery">crash_recovery</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Crash Recovery
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transactions_all_or_none>transactions_all_or_none</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_tutorial>db_tutorial</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="data_pages">data_pages</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data pages
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_tutorial>db_tutorial</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="locks">locks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Locks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_tutorial>db_tutorial</a>, <a href=#multi_ops_grouped_atomic>multi_ops_grouped_atomic</a>, <a href=#transaction>transaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="transaction">transaction</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#locks>locks</a>, <a href=#multi_ops_grouped_atomic>multi_ops_grouped_atomic</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_tutorial>db_tutorial</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_ahead_log">write_ahead_log</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write-Ahead log (WAL)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#redo>redo</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_tutorial>db_tutorial</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ft_goals">ft_goals</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fault-Tolerant Goals
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fast_replication>fast_replication</a>, <a href=#read_2_dead_az_1_other_server>read_2_dead_az_1_other_server</a>, <a href=#ride_out_transient_slowness>ride_out_transient_slowness</a>, <a href=#storage_only>storage_only</a>, <a href=#write_one_dead_az>write_one_dead_az</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#quorum>quorum</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="replication">replication</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#N_rep>N_rep</a>, <a href=#R_replicas>R_replicas</a>, <a href=#W_writes>W_writes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#quorum>quorum</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="db_tracks_server_log_indexes">db_tracks_server_log_indexes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+DB tracks server log indexes (how far along) for each server
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_read_updated_ss>db_read_updated_ss</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_server>storage_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_records">log_records</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log records anything being sent to replicas
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#immediately_appended_log_records>immediately_appended_log_records</a>, <a href=#log_smaller_than_pages>log_smaller_than_pages</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#database_setup>database_setup</a>, <a href=#storage_server>storage_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ebs">ebs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+EBS: elastic block store
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ebs_problems>ebs_problems</a>, <a href=#looks_like_regular_drive>looks_like_regular_drive</a>, <a href=#not_sharing_system>not_sharing_system</a>, <a href=#replicated_pair_storage_servers>replicated_pair_storage_servers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ec2>ec2</a> (works with), <a href=#data_loss_on_hardware_crash>data_loss_on_hardware_crash</a> (fixes)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="good_for_webservers">good_for_webservers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Good for webservers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_good_database>not_good_database</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ec2>ec2</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="not_good_database">not_good_database</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not as good for databses
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#data_loss_on_hardware_crash>data_loss_on_hardware_crash</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#good_for_webservers>good_for_webservers</a> (not as good for), <a href=#ec2>ec2</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="physical_storage">physical_storage</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Storage: physical, slice to guest
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#data_loss_on_hardware_crash>data_loss_on_hardware_crash</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ec2>ec2</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="protection_servers">protection_servers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Protection Servers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#groups_of_six_servers>groups_of_six_servers</a>, <a href=#how_to_split_up_logs>how_to_split_up_logs</a>, <a href=#logs>logs</a>, <a href=#pg_stores_logs_relevant_to_pages>pg_stores_logs_relevant_to_pages</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sharding>sharding</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="transactions_all_or_none">transactions_all_or_none</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+After crash: all transactions commited or none
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#crash_recovery>crash_recovery</a>, <a href=#multi_ops_grouped_atomic>multi_ops_grouped_atomic</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="multi_ops_grouped_atomic">multi_ops_grouped_atomic</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multiple operations grouped and declared atomic
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#locks>locks</a>, <a href=#transactions_all_or_none>transactions_all_or_none</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction>transaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="redo">redo</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+redo: do all transactions again using log
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_ahead_log>write_ahead_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="fast_replication">fast_replication</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fast replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#parallel_copy>parallel_copy</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ft_goals>ft_goals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="read_2_dead_az_1_other_server">read_2_dead_az_1_other_server</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read with 2 dead availability zones plus one other server
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#availability_zone>availability_zone</a>, <a href=#ft_goals>ft_goals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ride_out_transient_slowness">ride_out_transient_slowness</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ride out ransient slowness in replicas
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ft_goals>ft_goals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="storage_only">storage_only</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Storage Only
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ft_goals>ft_goals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_one_dead_az">write_one_dead_az</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write with one dead availability zone (AZ)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#availability_zone>availability_zone</a>, <a href=#ft_goals>ft_goals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="N_rep">N_rep</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+N rep
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#R_plus_W_equals_N_plus_one>R_plus_W_equals_N_plus_one</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="R_replicas">R_replicas</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+R replicas
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#R_plus_W_equals_N_plus_one>R_plus_W_equals_N_plus_one</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="W_writes">W_writes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+W Writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#R_plus_W_equals_N_plus_one>R_plus_W_equals_N_plus_one</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="db_read_updated_ss">db_read_updated_ss</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+On read, find up-to-date storage server and read from that
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#when_quorum_reads_used>when_quorum_reads_used</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_tracks_server_log_indexes>db_tracks_server_log_indexes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="immediately_appended_log_records">immediately_appended_log_records</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Immediately appened to list of log records
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#old_page_log_records>old_page_log_records</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_records>log_records</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_smaller_than_pages">log_smaller_than_pages</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log entries smaller than database pages
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_records>log_records</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ebs_problems">ebs_problems</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+problems with EBS
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#large_volumes_network_traffic>large_volumes_network_traffic</a>, <a href=#not_fault_tolerant>not_fault_tolerant</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ebs>ebs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="looks_like_regular_drive">looks_like_regular_drive</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Looks like a regular drive to client
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ebs>ebs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="not_sharing_system">not_sharing_system</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not a system for sharing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ebs>ebs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="replicated_pair_storage_servers">replicated_pair_storage_servers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replicated pair of storage servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ebs>ebs</a> (description)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="data_loss_on_hardware_crash">data_loss_on_hardware_crash</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If hardware crashes, data is lost
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ebs>ebs</a>, <a href=#s3>s3</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#not_good_database>not_good_database</a> (why ec2 wasn't good for datases), <a href=#physical_storage>physical_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="groups_of_six_servers">groups_of_six_servers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Groups of six servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#protection_servers>protection_servers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="how_to_split_up_logs">how_to_split_up_logs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to split up logs?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#pg_stores_logs_relevant_to_pages>pg_stores_logs_relevant_to_pages</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#protection_servers>protection_servers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="logs">logs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Logs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#protection_servers>protection_servers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="pg_stores_logs_relevant_to_pages">pg_stores_logs_relevant_to_pages</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Protection Group stores logs relevant to pages
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#find_pg_with_data>find_pg_with_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#how_to_split_up_logs>how_to_split_up_logs</a>, <a href=#protection_servers>protection_servers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="parallel_copy">parallel_copy</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parallel Copy
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#chunks_of_log_protection_groups>chunks_of_log_protection_groups</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fast_replication>fast_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="R_plus_W_equals_N_plus_one">R_plus_W_equals_N_plus_one</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+R + W = N + 1
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#guaranteed_overlap>guaranteed_overlap</a>, <a href=#variable_defaults>variable_defaults</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#N_rep>N_rep</a>, <a href=#R_replicas>R_replicas</a>, <a href=#W_writes>W_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="when_quorum_reads_used">when_quorum_reads_used</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Quorum reads used during crash recovery of DB server
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_read_updated_ss>db_read_updated_ss</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="old_page_log_records">old_page_log_records</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Old page and log records
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#apply_log_record_to_page>apply_log_record_to_page</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#immediately_appended_log_records>immediately_appended_log_records</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="large_volumes_network_traffic">large_volumes_network_traffic</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Produces large volumes of network trafic
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#database>database</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ebs_problems>ebs_problems</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="not_fault_tolerant">not_fault_tolerant</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not very fault tolerant
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ebs_problems>ebs_problems</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="s3">s3</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+S3
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_loss_on_hardware_crash>data_loss_on_hardware_crash</a> (intermediate solution)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="find_pg_with_data">find_pg_with_data</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Find protection group with data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pg_stores_logs_relevant_to_pages>pg_stores_logs_relevant_to_pages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="chunks_of_log_protection_groups">chunks_of_log_protection_groups</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Chunks of log protection groups
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#parallel_copy>parallel_copy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="guaranteed_overlap">guaranteed_overlap</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Guaranteed to overlap
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#R_plus_W_equals_N_plus_one>R_plus_W_equals_N_plus_one</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="variable_defaults">variable_defaults</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+N=6,W=4,R=3
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#R_plus_W_equals_N_plus_one>R_plus_W_equals_N_plus_one</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Defaults used by the Aurora setup
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="apply_log_record_to_page">apply_log_record_to_page</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Apply log record to page when ready req
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#old_page_log_records>old_page_log_records</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+not sure what I meant by "req" also, added that this is "quorum logic" not here
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="database">database</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+database
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_tutorial>db_tutorial</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#large_volumes_network_traffic>large_volumes_network_traffic</a> (I think this has to do with how databases send whole,pages around the network)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="RDS">RDS</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RDS
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#RDS_def>RDS_def</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="RDS_def">RDS_def</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replicated database in multiple availability zones
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDS>RDS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="app_4_reps_complete">app_4_reps_complete</a>
+</b></td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="availability_zone">availability_zone</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Availability zone
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#data_configuration>data_configuration</a>, <a href=#read_2_dead_az_1_other_server>read_2_dead_az_1_other_server</a>, <a href=#write_one_dead_az>write_one_dead_az</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="data_configuration">data_configuration</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data: 6 replicants in 3 availability zones
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#super_ft>super_ft</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#availability_zone>availability_zone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="super_ft">super_ft</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Super fault-tolerant
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_configuration>data_configuration</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

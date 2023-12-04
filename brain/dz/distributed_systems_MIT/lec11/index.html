@@ -1,0 +1,2362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec11</title>
+<h1>lec11</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec11">lec11</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Cache consistency, Fangipani
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#frangipani>frangipani</a><ul>
+<li>
+<a href=#challenges>challenges</a><ul>
+<li>
+<a href=#decentralized>decentralized</a></li>
+<li>
+<a href=#driven_by_locks>driven_by_locks</a><ul>
+<li>
+<a href=#lock_server>lock_server</a><ul>
+<li>
+<a href=#exclusive_writers_shared_readonly>exclusive_writers_shared_readonly</a></li>
+<li>
+<a href=#file_owner>file_owner</a></li>
+<li>
+<a href=#rules>rules</a><ul>
+<li>
+<a href=#no_cached_data_without_lock>no_cached_data_without_lock</a><ul>
+<li>
+<a href=#acquire_read>acquire_read</a></li>
+</ul>
+</li>
+<li>
+<a href=#write_then_release>write_then_release</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#atomicity>atomicity</a><ul>
+<li>
+<a href=#operations_feel_instant_time>operations_feel_instant_time</a></li>
+<li>
+<a href=#transactions>transactions</a><ul>
+<li>
+<a href=#distrubuted>distrubuted</a></li>
+<li>
+<a href=#lock_driven>lock_driven</a></li>
+</ul>
+</li>
+<li>
+<a href=#acquire_locks_with_operation>acquire_locks_with_operation</a><ul>
+<li>
+<a href=#all_updates>all_updates</a><ul>
+<li>
+<a href=#write_petal>write_petal</a><ul>
+<li>
+<a href=#release_locks>release_locks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#atomic_multistep_operations>atomic_multistep_operations</a></li>
+</ul>
+</li>
+<li>
+<a href=#caching>caching</a><ul>
+<li>
+<a href=#write_back>write_back</a><ul>
+<li>
+<a href=#write_local_initially>write_local_initially</a><ul>
+<li>
+<a href=#filesystem_complexity_local>filesystem_complexity_local</a><ul>
+<li>
+<a href=#nautral_scaling>nautral_scaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#caching_coherence>caching_coherence</a><ul>
+<li>
+<a href=#protocols>protocols</a><ul>
+<li>
+<a href=#grant>grant</a></li>
+<li>
+<a href=#idle>idle</a></li>
+<li>
+<a href=#release>release</a></li>
+<li>
+<a href=#request>request</a></li>
+</ul>
+</li>
+<li>
+<a href=#strong_consistency>strong_consistency</a><ul>
+<li>
+<a href=#linearizability>linearizability</a></li>
+</ul>
+</li>
+<li>
+<a href=#auto_update_cache>auto_update_cache</a></li>
+<li>
+<a href=#caching>caching</a><ul>
+<li>
+<a href=#write_back>write_back</a><ul>
+<li>
+<a href=#write_local_initially>write_local_initially</a><ul>
+<li>
+<a href=#filesystem_complexity_local>filesystem_complexity_local</a><ul>
+<li>
+<a href=#nautral_scaling>nautral_scaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#crash_recovery>crash_recovery</a><ul>
+<li>
+<a href=#crash_with_some_writes>crash_with_some_writes</a><ul>
+<li>
+<a href=#log_may_be_outdated>log_may_be_outdated</a><ul>
+<li>
+<a href=#use_version_numbers>use_version_numbers</a><ul>
+<li>
+<a href=#associate_update_with_version>associate_update_with_version</a><ul>
+<li>
+<a href=#write_data_back>write_data_back</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#cant_blindly_replay_logs>cant_blindly_replay_logs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#individual_file_servers>individual_file_servers</a></li>
+<li>
+<a href=#log_entry>log_entry</a><ul>
+<li>
+<a href=#log_data>log_data</a><ul>
+<li>
+<a href=#metadata_fs_only>metadata_fs_only</a></li>
+</ul>
+</li>
+<li>
+<a href=#log_seq_num>log_seq_num</a></li>
+<li>
+<a href=#metadata_fs_only>metadata_fs_only</a></li>
+<li>
+<a href=#on_revoke>on_revoke</a><ul>
+<li>
+<a href=#sequencing_important>sequencing_important</a></li>
+<li>
+<a href=#write_log_to_petal>write_log_to_petal</a><ul>
+<li>
+<a href=#sequencing_important>sequencing_important</a></li>
+<li>
+<a href=#write_modified_blocks>write_modified_blocks</a><ul>
+<li>
+<a href=#send_release>send_release</a><ul>
+<li>
+<a href=#sequencing_important>sequencing_important</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#per_workstation>per_workstation</a></li>
+<li>
+<a href=#stored_in_petal>stored_in_petal</a></li>
+<li>
+<a href=#version_num>version_num</a></li>
+<li>
+<a href=#array_modifications>array_modifications</a></li>
+<li>
+<a href=#block_num>block_num</a></li>
+</ul>
+</li>
+<li>
+<a href=#log_may_be_outdated>log_may_be_outdated</a><ul>
+<li>
+<a href=#use_version_numbers>use_version_numbers</a><ul>
+<li>
+<a href=#associate_update_with_version>associate_update_with_version</a><ul>
+<li>
+<a href=#write_data_back>write_data_back</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#cant_blindly_replay_logs>cant_blindly_replay_logs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#distributed_transactions>distributed_transactions</a></li>
+<li>
+<a href=#kernel_module>kernel_module</a></li>
+<li>
+<a href=#overall_design>overall_design</a><ul>
+<li>
+<a href=#challenges>challenges</a><ul>
+<li>
+<a href=#decentralized>decentralized</a></li>
+<li>
+<a href=#driven_by_locks>driven_by_locks</a><ul>
+<li>
+<a href=#lock_server>lock_server</a><ul>
+<li>
+<a href=#exclusive_writers_shared_readonly>exclusive_writers_shared_readonly</a></li>
+<li>
+<a href=#file_owner>file_owner</a></li>
+<li>
+<a href=#rules>rules</a><ul>
+<li>
+<a href=#no_cached_data_without_lock>no_cached_data_without_lock</a><ul>
+<li>
+<a href=#acquire_read>acquire_read</a></li>
+</ul>
+</li>
+<li>
+<a href=#write_then_release>write_then_release</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#atomicity>atomicity</a><ul>
+<li>
+<a href=#operations_feel_instant_time>operations_feel_instant_time</a></li>
+<li>
+<a href=#transactions>transactions</a><ul>
+<li>
+<a href=#distrubuted>distrubuted</a></li>
+<li>
+<a href=#lock_driven>lock_driven</a></li>
+</ul>
+</li>
+<li>
+<a href=#acquire_locks_with_operation>acquire_locks_with_operation</a><ul>
+<li>
+<a href=#all_updates>all_updates</a><ul>
+<li>
+<a href=#write_petal>write_petal</a><ul>
+<li>
+<a href=#release_locks>release_locks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#atomic_multistep_operations>atomic_multistep_operations</a></li>
+</ul>
+</li>
+<li>
+<a href=#caching>caching</a><ul>
+<li>
+<a href=#write_back>write_back</a><ul>
+<li>
+<a href=#write_local_initially>write_local_initially</a><ul>
+<li>
+<a href=#filesystem_complexity_local>filesystem_complexity_local</a><ul>
+<li>
+<a href=#nautral_scaling>nautral_scaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#caching_coherence>caching_coherence</a><ul>
+<li>
+<a href=#protocols>protocols</a><ul>
+<li>
+<a href=#grant>grant</a></li>
+<li>
+<a href=#idle>idle</a></li>
+<li>
+<a href=#release>release</a></li>
+<li>
+<a href=#request>request</a></li>
+</ul>
+</li>
+<li>
+<a href=#strong_consistency>strong_consistency</a><ul>
+<li>
+<a href=#linearizability>linearizability</a></li>
+</ul>
+</li>
+<li>
+<a href=#auto_update_cache>auto_update_cache</a></li>
+<li>
+<a href=#caching>caching</a><ul>
+<li>
+<a href=#write_back>write_back</a><ul>
+<li>
+<a href=#write_local_initially>write_local_initially</a><ul>
+<li>
+<a href=#filesystem_complexity_local>filesystem_complexity_local</a><ul>
+<li>
+<a href=#nautral_scaling>nautral_scaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#human_level>human_level</a></li>
+<li>
+<a href=#no_security_precautions>no_security_precautions</a></li>
+<li>
+<a href=#shared_environment>shared_environment</a></li>
+<li>
+<a href=#small_group>small_group</a></li>
+<li>
+<a href=#works_with_unix>works_with_unix</a><ul>
+<li>
+<a href=#athena>athena</a></li>
+</ul>
+</li>
+<li>
+<a href=#NFS>NFS</a></li>
+</ul>
+</li>
+<li>
+<a href=#petal>petal</a><ul>
+<li>
+<a href=#stored_in_petal>stored_in_petal</a></li>
+<li>
+<a href=#write_petal>write_petal</a><ul>
+<li>
+<a href=#release_locks>release_locks</a></li>
+</ul>
+</li>
+<li>
+<a href=#write_then_release>write_then_release</a></li>
+<li>
+<a href=#acquire_read>acquire_read</a></li>
+<li>
+<a href=#acts_like_shared_disk>acts_like_shared_disk</a><ul>
+<li>
+<a href=#virtual_disk>virtual_disk</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#caching_coherence>caching_coherence</a><ul>
+<li>
+<a href=#protocols>protocols</a><ul>
+<li>
+<a href=#grant>grant</a></li>
+<li>
+<a href=#idle>idle</a></li>
+<li>
+<a href=#release>release</a></li>
+<li>
+<a href=#request>request</a></li>
+</ul>
+</li>
+<li>
+<a href=#strong_consistency>strong_consistency</a><ul>
+<li>
+<a href=#linearizability>linearizability</a></li>
+</ul>
+</li>
+<li>
+<a href=#auto_update_cache>auto_update_cache</a></li>
+<li>
+<a href=#caching>caching</a><ul>
+<li>
+<a href=#write_back>write_back</a><ul>
+<li>
+<a href=#write_local_initially>write_local_initially</a><ul>
+<li>
+<a href=#filesystem_complexity_local>filesystem_complexity_local</a><ul>
+<li>
+<a href=#nautral_scaling>nautral_scaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#revoke>revoke</a><ul>
+<li>
+<a href=#on_revoke>on_revoke</a><ul>
+<li>
+<a href=#sequencing_important>sequencing_important</a></li>
+<li>
+<a href=#write_log_to_petal>write_log_to_petal</a><ul>
+<li>
+<a href=#sequencing_important>sequencing_important</a></li>
+<li>
+<a href=#write_modified_blocks>write_modified_blocks</a><ul>
+<li>
+<a href=#send_release>send_release</a><ul>
+<li>
+<a href=#sequencing_important>sequencing_important</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="frangipani">frangipani</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Frangipani
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#challenges>challenges</a>, <a href=#crash_recovery>crash_recovery</a>, <a href=#distributed_transactions>distributed_transactions</a>, <a href=#kernel_module>kernel_module</a>, <a href=#overall_design>overall_design</a>, <a href=#petal>petal</a>, <a href=#caching_coherence>caching_coherence</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="challenges">challenges</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Challenges
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#decentralized>decentralized</a>, <a href=#driven_by_locks>driven_by_locks</a>, <a href=#atomicity>atomicity</a>, <a href=#caching>caching</a>, <a href=#caching_coherence>caching_coherence</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#frangipani>frangipani</a>, <a href=#overall_design>overall_design</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="crash_recovery">crash_recovery</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Crash Recovery
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#crash_with_some_writes>crash_with_some_writes</a>, <a href=#individual_file_servers>individual_file_servers</a>, <a href=#log_entry>log_entry</a>, <a href=#log_may_be_outdated>log_may_be_outdated</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#frangipani>frangipani</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="distributed_transactions">distributed_transactions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Distributed Transactions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#frangipani>frangipani</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="kernel_module">kernel_module</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Kernel Module
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#frangipani>frangipani</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="overall_design">overall_design</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Overall Design
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#challenges>challenges</a>, <a href=#human_level>human_level</a>, <a href=#no_security_precautions>no_security_precautions</a>, <a href=#shared_environment>shared_environment</a>, <a href=#small_group>small_group</a>, <a href=#works_with_unix>works_with_unix</a>, <a href=#NFS>NFS</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#frangipani>frangipani</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="petal">petal</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Petal
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#stored_in_petal>stored_in_petal</a>, <a href=#write_petal>write_petal</a>, <a href=#write_then_release>write_then_release</a>, <a href=#acquire_read>acquire_read</a>, <a href=#acts_like_shared_disk>acts_like_shared_disk</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#frangipani>frangipani</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="caching_coherence">caching_coherence</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Caching Coherence
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#protocols>protocols</a>, <a href=#strong_consistency>strong_consistency</a>, <a href=#auto_update_cache>auto_update_cache</a>, <a href=#caching>caching</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#challenges>challenges</a>, <a href=#frangipani>frangipani</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="decentralized">decentralized</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Decentralized
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#challenges>challenges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="driven_by_locks">driven_by_locks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+driven by use of locks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lock_server>lock_server</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#challenges>challenges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="atomicity">atomicity</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Atomicity
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#operations_feel_instant_time>operations_feel_instant_time</a>, <a href=#transactions>transactions</a>, <a href=#acquire_locks_with_operation>acquire_locks_with_operation</a>, <a href=#atomic_multistep_operations>atomic_multistep_operations</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#challenges>challenges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="caching">caching</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Caching
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#write_back>write_back</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#challenges>challenges</a>, <a href=#caching_coherence>caching_coherence</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="crash_with_some_writes">crash_with_some_writes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Workstation crashes with locks with some writes to petal
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_may_be_outdated>log_may_be_outdated</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#crash_recovery>crash_recovery</a> (an interesting situation)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="individual_file_servers">individual_file_servers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Of Individual file-servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#crash_recovery>crash_recovery</a> (elaboration)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_entry">log_entry</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Entry
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_data>log_data</a>, <a href=#log_seq_num>log_seq_num</a>, <a href=#metadata_fs_only>metadata_fs_only</a>, <a href=#on_revoke>on_revoke</a>, <a href=#per_workstation>per_workstation</a>, <a href=#stored_in_petal>stored_in_petal</a>, <a href=#version_num>version_num</a>, <a href=#array_modifications>array_modifications</a>, <a href=#block_num>block_num</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#crash_recovery>crash_recovery</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_may_be_outdated">log_may_be_outdated</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Logs may be out of date by the time it replays logs from crashed server
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#use_version_numbers>use_version_numbers</a>, <a href=#cant_blindly_replay_logs>cant_blindly_replay_logs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#crash_with_some_writes>crash_with_some_writes</a>, <a href=#crash_recovery>crash_recovery</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="human_level">human_level</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"human" level
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#overall_design>overall_design</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_security_precautions">no_security_precautions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No security precautions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#overall_design>overall_design</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="shared_environment">shared_environment</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Shared environment
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#overall_design>overall_design</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="small_group">small_group</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+small group
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#overall_design>overall_design</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="works_with_unix">works_with_unix</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Works with existing unix workstations
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#athena>athena</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#overall_design>overall_design</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="NFS">NFS</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+NFS
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#overall_design>overall_design</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="stored_in_petal">stored_in_petal</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Stored in Petal
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>, <a href=#petal>petal</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_petal">write_petal</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write to petal
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#release_locks>release_locks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#all_updates>all_updates</a> (step), <a href=#petal>petal</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_then_release">write_then_release</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write to Petal, then release lock
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rules>rules</a>, <a href=#petal>petal</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="acquire_read">acquire_read</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Acquire lock, then read from Petal
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#petal>petal</a>, <a href=#no_cached_data_without_lock>no_cached_data_without_lock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="acts_like_shared_disk">acts_like_shared_disk</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Acts like shared disk drive
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#virtual_disk>virtual_disk</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#petal>petal</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="protocols">protocols</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Protocols
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#grant>grant</a>, <a href=#idle>idle</a>, <a href=#release>release</a>, <a href=#request>request</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#caching_coherence>caching_coherence</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="strong_consistency">strong_consistency</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Strong Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#linearizability>linearizability</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#caching_coherence>caching_coherence</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="auto_update_cache">auto_update_cache</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Automatically update cache if mods are made in another cache.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#caching_coherence>caching_coherence</a> (description)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="lock_server">lock_server</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lock Server
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#exclusive_writers_shared_readonly>exclusive_writers_shared_readonly</a>, <a href=#file_owner>file_owner</a>, <a href=#rules>rules</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#driven_by_locks>driven_by_locks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="operations_feel_instant_time">operations_feel_instant_time</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Operations that feel instant in time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomicity>atomicity</a> (description)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="transactions">transactions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transactions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#distrubuted>distrubuted</a>, <a href=#lock_driven>lock_driven</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomicity>atomicity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="acquire_locks_with_operation">acquire_locks_with_operation</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Acquire all locks with operation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#all_updates>all_updates</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomicity>atomicity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="atomic_multistep_operations">atomic_multistep_operations</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Atomic Multistep Operations
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomicity>atomicity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_back">write_back</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write-Back
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#write_local_initially>write_local_initially</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#caching>caching</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_data">log_data</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Data
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#metadata_fs_only>metadata_fs_only</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="log_seq_num">log_seq_num</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Sequence Number
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="metadata_fs_only">metadata_fs_only</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+metadata for filesystem only
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>, <a href=#log_data>log_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="on_revoke">on_revoke</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+On Revoke
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sequencing_important>sequencing_important</a>, <a href=#write_log_to_petal>write_log_to_petal</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>, <a href=#revoke>revoke</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="per_workstation">per_workstation</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Per-workstation logs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="version_num">version_num</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Version Number
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="array_modifications">array_modifications</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Array of Modifications
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="block_num">block_num</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Block Number
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry>log_entry</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="use_version_numbers">use_version_numbers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use version numbers with every piece of data in fileystem as stored in Petal
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#associate_update_with_version>associate_update_with_version</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_may_be_outdated>log_may_be_outdated</a> (solution)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="cant_blindly_replay_logs">cant_blindly_replay_logs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can't blindly replay logs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_may_be_outdated>log_may_be_outdated</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="athena">athena</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Athena AFS
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#works_with_unix>works_with_unix</a> (similar)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="release_locks">release_locks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Release the locks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_petal>write_petal</a> (step)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="virtual_disk">virtual_disk</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Virtual disk
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#acts_like_shared_disk>acts_like_shared_disk</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="grant">grant</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Grant (LS->WS)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#protocols>protocols</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="idle">idle</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Idle state for locks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#protocols>protocols</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="release">release</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Release (WS->LS)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#protocols>protocols</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="request">request</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Request (WS->LS)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#protocols>protocols</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="linearizability">linearizability</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Linearizability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strong_consistency>strong_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="exclusive_writers_shared_readonly">exclusive_writers_shared_readonly</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Exclusive for writers, shared for read-only access
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_server>lock_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="file_owner">file_owner</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+File/Owner
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_server>lock_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="rules">rules</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Rules
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#no_cached_data_without_lock>no_cached_data_without_lock</a>, <a href=#write_then_release>write_then_release</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_server>lock_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="distrubuted">distrubuted</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Distrubuted
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="lock_driven">lock_driven</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lock-Driven
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="all_updates">all_updates</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Perform All Updates
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#write_petal>write_petal</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#acquire_locks_with_operation>acquire_locks_with_operation</a> (step)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_local_initially">write_local_initially</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write to local cache initially
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#filesystem_complexity_local>filesystem_complexity_local</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_back>write_back</a> (description)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sequencing_important">sequencing_important</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sequencing is important
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_log_to_petal>write_log_to_petal</a>, <a href=#send_release>send_release</a>, <a href=#on_revoke>on_revoke</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_log_to_petal">write_log_to_petal</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write log to petal
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sequencing_important>sequencing_important</a>, <a href=#write_modified_blocks>write_modified_blocks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#on_revoke>on_revoke</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="associate_update_with_version">associate_update_with_version</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Associate update with version number in log
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#write_data_back>write_data_back</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#use_version_numbers>use_version_numbers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_cached_data_without_lock">no_cached_data_without_lock</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No cached data without lock
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#acquire_read>acquire_read</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rules>rules</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="filesystem_complexity_local">filesystem_complexity_local</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+All filesystem complexity handled locally in each client
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nautral_scaling>nautral_scaling</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_local_initially>write_local_initially</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_modified_blocks">write_modified_blocks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write Modified Blocks for lock
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#send_release>send_release</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_log_to_petal>write_log_to_petal</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="write_data_back">write_data_back</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write data back with updated version
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#associate_update_with_version>associate_update_with_version</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="nautral_scaling">nautral_scaling</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Natural scaling
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#filesystem_complexity_local>filesystem_complexity_local</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="send_release">send_release</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Send Release
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sequencing_important>sequencing_important</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_modified_blocks>write_modified_blocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="revoke">revoke</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Revoke (LS->WS)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#on_revoke>on_revoke</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
