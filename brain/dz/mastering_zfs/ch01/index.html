@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>mastering_zfs/ch01</title>
+<h1>ch01</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/mastering_zfs">mastering_zfs</a> / <a href="/brain/dz/mastering_zfs/ch01">ch01</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 1: Introducing ZFS
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#limits>limits</a><ul>
+<li>
+<a href=#one_dir>one_dir</a></li>
+<li>
+<a href=#single_pool>single_pool</a></li>
+<li>
+<a href=#storage_pools>storage_pools</a><ul>
+<li>
+<a href=#zpool>zpool</a></li>
+<li>
+<a href=#abstraction_storage_provider>abstraction_storage_provider</a></li>
+</ul>
+</li>
+<li>
+<a href=#128_bits>128_bits</a></li>
+</ul>
+</li>
+<li>
+<a href=#partitions_properties>partitions_properties</a><ul>
+<li>
+<a href=#dynamic_division_space>dynamic_division_space</a></li>
+<li>
+<a href=#no_trad_partitions>no_trad_partitions</a></li>
+<li>
+<a href=#property>property</a><ul>
+<li>
+<a href=#quota>quota</a></li>
+<li>
+<a href=#amt_space_ds_use>amt_space_ds_use</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#virtual_devices>virtual_devices</a><ul>
+<li>
+<a href=#RAID5_similarity>RAID5_similarity</a></li>
+<li>
+<a href=#VDEV>VDEV</a></li>
+</ul>
+</li>
+<li>
+<a href=#ZFS_combines>ZFS_combines</a><ul>
+<li>
+<a href=#filesystems>filesystems</a></li>
+<li>
+<a href=#volume_managers>volume_managers</a></li>
+</ul>
+</li>
+<li>
+<a href=#blocks_inodes>blocks_inodes</a><ul>
+<li>
+<a href=#ditto_blocks>ditto_blocks</a><ul>
+<li>
+<a href=#multiple_copies_index_blocks>multiple_copies_index_blocks</a></li>
+</ul>
+</li>
+<li>
+<a href=#index_nodes_on_demand>index_nodes_on_demand</a><ul>
+<li>
+<a href=#variable_sized_blocks>variable_sized_blocks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#datasets>datasets</a><ul>
+<li>
+<a href=#name>name</a><ul>
+<li>
+<a href=#pool>pool</a><ul>
+<li>
+<a href=#root_dataset>root_dataset</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#UFS>UFS</a><ul>
+<li>
+<a href=#mount>mount</a></li>
+<li>
+<a href=#combines_classic_functions>combines_classic_functions</a></li>
+<li>
+<a href=#df>df</a></li>
+</ul>
+</li>
+<li>
+<a href=#ZFS_list>ZFS_list</a><ul>
+<li>
+<a href=#mount>mount</a></li>
+<li>
+<a href=#df>df</a></li>
+</ul>
+</li>
+<li>
+<a href=#REFER>REFER</a><ul>
+<li>
+<a href=#amt_of_access_data>amt_of_access_data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="partitions_properties">partitions_properties</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partitions and properties
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dynamic_division_space>dynamic_division_space</a>, <a href=#no_trad_partitions>no_trad_partitions</a>, <a href=#property>property</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="dynamic_division_space">dynamic_division_space</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dynamic division of space
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions_properties>partitions_properties</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_trad_partitions">no_trad_partitions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No traditional partitions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions_properties>partitions_properties</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="property">property</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Property
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#quota>quota</a>, <a href=#amt_space_ds_use>amt_space_ds_use</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions_properties>partitions_properties</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="quota">quota</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Quota
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#property>property</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="amt_space_ds_use">amt_space_ds_use</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Amount of space dataset can use
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#property>property</a> (example of a kind of property)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ZFS_combines">ZFS_combines</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ZFS combines
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#filesystems>filesystems</a>, <a href=#volume_managers>volume_managers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="filesystems">filesystems</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Filesystems
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ZFS_combines>ZFS_combines</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="volume_managers">volume_managers</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Volume Mangers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ZFS_combines>ZFS_combines</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="datasets">datasets</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Datasets
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#name>name</a>, <a href=#UFS>UFS</a>, <a href=#ZFS_list>ZFS_list</a>, <a href=#REFER>REFER</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="name">name</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+name
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#pool>pool</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#datasets>datasets</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="UFS">UFS</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+UFS (unix filesystem)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mount>mount</a>, <a href=#combines_classic_functions>combines_classic_functions</a>, <a href=#df>df</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#datasets>datasets</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ZFS_list">ZFS_list</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ZFS list
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mount>mount</a>, <a href=#df>df</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#datasets>datasets</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="REFER">REFER</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+REFER
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#amt_of_access_data>amt_of_access_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#datasets>datasets</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="pool">pool</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pool (zpool)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#root_dataset>root_dataset</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#name>name</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="mount">mount</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+mount
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ZFS_list>ZFS_list</a>, <a href=#UFS>UFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="combines_classic_functions">combines_classic_functions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ZFS combines classic functions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#UFS>UFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="df">df</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+df
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ZFS_list>ZFS_list</a>, <a href=#UFS>UFS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="amt_of_access_data">amt_of_access_data</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Amount of accessible data on dataset
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#REFER>REFER</a> (description)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="root_dataset">root_dataset</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+root dataset
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pool>pool</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="blocks_inodes">blocks_inodes</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Blocks and INodes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ditto_blocks>ditto_blocks</a>, <a href=#index_nodes_on_demand>index_nodes_on_demand</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ditto_blocks">ditto_blocks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ditto Blocks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#multiple_copies_index_blocks>multiple_copies_index_blocks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blocks_inodes>blocks_inodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="index_nodes_on_demand">index_nodes_on_demand</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+index nodes generated on-demand
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#variable_sized_blocks>variable_sized_blocks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blocks_inodes>blocks_inodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="multiple_copies_index_blocks">multiple_copies_index_blocks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multiple copies of critical index blocks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ditto_blocks>ditto_blocks</a> (description)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="variable_sized_blocks">variable_sized_blocks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Variable-sized blocks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#index_nodes_on_demand>index_nodes_on_demand</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="limits">limits</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Limits
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#one_dir>one_dir</a>, <a href=#single_pool>single_pool</a>, <a href=#storage_pools>storage_pools</a>, <a href=#128_bits>128_bits</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="one_dir">one_dir</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+one directory can have 2^48 files
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#limits>limits</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="single_pool">single_pool</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Single pool can be 2^78 bytes. 256 zettabytes.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#limits>limits</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="storage_pools">storage_pools</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+2^64 storage pools
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#zpool>zpool</a>, <a href=#abstraction_storage_provider>abstraction_storage_provider</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#limits>limits</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="128_bits">128_bits</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+128 bits used to store most values
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#limits>limits</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="zpool">zpool</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zpool
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_pools>storage_pools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="abstraction_storage_provider">abstraction_storage_provider</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Abstraction atop a storage provider
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_pools>storage_pools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="virtual_devices">virtual_devices</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Virtual devices
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#RAID5_similarity>RAID5_similarity</a>, <a href=#VDEV>VDEV</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="RAID5_similarity">RAID5_similarity</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Similar to RAID5
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#virtual_devices>virtual_devices</a> (similar to)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="VDEV">VDEV</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+VDEV
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#virtual_devices>virtual_devices</a> (AKA)
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
