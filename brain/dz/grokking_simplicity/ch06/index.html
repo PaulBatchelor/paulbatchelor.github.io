@@ -20,17 +20,13 @@ Grokking Simplicty Chapter 6: Staying immutable in a mutable language
 <h2>Node Tree</h2>
 <ul>
 <li>
-<a href=#structural_sharing>structural_sharing</a></li>
-<li>
-<a href=#writes_data_mutable>writes_data_mutable</a></li>
-<li>
 <a href=#COW_discipline>COW_discipline</a></li>
 <li>
 <a href=#immutable_reads_calculations>immutable_reads_calculations</a><ul>
 <li>
-<a href=#convert_writes_reads>convert_writes_reads</a></li>
-<li>
 <a href=#mutable_reads_actions>mutable_reads_actions</a></li>
+<li>
+<a href=#convert_writes_reads>convert_writes_reads</a></li>
 </ul>
 </li>
 <li>
@@ -48,9 +44,9 @@ Grokking Simplicty Chapter 6: Staying immutable in a mutable language
 <li>
 <a href=#either_shift_refactor>either_shift_refactor</a><ul>
 <li>
-<a href=#split_up_into_2>split_up_into_2</a></li>
-<li>
 <a href=#return_2_values>return_2_values</a></li>
+<li>
+<a href=#split_up_into_2>split_up_into_2</a></li>
 </ul>
 </li>
 </ul>
@@ -59,8 +55,165 @@ Grokking Simplicty Chapter 6: Staying immutable in a mutable language
 </li>
 <li>
 <a href=#shallow_copy>shallow_copy</a></li>
+<li>
+<a href=#structural_sharing>structural_sharing</a></li>
+<li>
+<a href=#writes_data_mutable>writes_data_mutable</a></li>
 </ul>
 <h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="COW_discipline">COW_discipline</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Copy-on-write discipline: make copy, modify copy, return copy
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="immutable_reads_calculations">immutable_reads_calculations</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reads to immutable data structures are calculations
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mutable_reads_actions>mutable_reads_actions</a>, <a href=#convert_writes_reads>convert_writes_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="mutable_reads_actions">mutable_reads_actions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mutable reads are actions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#immutable_reads_calculations>immutable_reads_calculations</a> (Corollary)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="convert_writes_reads">convert_writes_reads</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+converting writes to reads makes more calculations
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#immutable_reads_calculations>immutable_reads_calculations</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+I'd like to understand this better. examples are in the book fortunately.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="nested_data_cow">nested_data_cow</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Nested data and copy-on-write make efficient use of references
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#only_parts>only_parts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="only_parts">only_parts</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+only parts of structure need to be replaced
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#nested_data_cow>nested_data_cow</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="operation">operation</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Operation can be categorized as a read or write
+</td>
+</tr>
+</table><br>
 <table border="1px">
 <tr>
 <td colspan=2><b>
@@ -134,7 +287,7 @@ Either
 children
 </td>
 <td>
-<a href=#split_up_into_2>split_up_into_2</a>, <a href=#return_2_values>return_2_values</a>
+<a href=#return_2_values>return_2_values</a>, <a href=#split_up_into_2>split_up_into_2</a>
 </td>
 </tr>
 <tr>
@@ -143,6 +296,29 @@ parents
 </td>
 <td>
 <a href=#shift>shift</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="return_2_values">return_2_values</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Return 2 values from function
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#either_shift_refactor>either_shift_refactor</a>
 </td>
 </tr>
 </table><br>
@@ -172,7 +348,7 @@ parents
 <table border="1px">
 <tr>
 <td colspan=2><b>
-<a id="return_2_values">return_2_values</a>
+<a id="shallow_copy">shallow_copy</a>
 </b></td>
 </tr>
 <tr>
@@ -180,15 +356,7 @@ parents
 content
 </td>
 <td>
-Return 2 values from function
-</td>
-</tr>
-<tr>
-<td>
-parents
-</td>
-<td>
-<a href=#either_shift_refactor>either_shift_refactor</a>
+Shallow Copy: only duplicate top-level structure of nested data
 </td>
 </tr>
 </table><br>
@@ -219,174 +387,6 @@ content
 </td>
 <td>
 Writes make data mutable
-</td>
-</tr>
-</table><br>
-<table border="1px">
-<tr>
-<td colspan=2><b>
-<a id="COW_discipline">COW_discipline</a>
-</b></td>
-</tr>
-<tr>
-<td>
-content
-</td>
-<td>
-Copy-on-write discipline: make copy, modify copy, return copy
-</td>
-</tr>
-</table><br>
-<table border="1px">
-<tr>
-<td colspan=2><b>
-<a id="immutable_reads_calculations">immutable_reads_calculations</a>
-</b></td>
-</tr>
-<tr>
-<td>
-content
-</td>
-<td>
-Reads to immutable data structures are calculations
-</td>
-</tr>
-<tr>
-<td>
-children
-</td>
-<td>
-<a href=#convert_writes_reads>convert_writes_reads</a>, <a href=#mutable_reads_actions>mutable_reads_actions</a>
-</td>
-</tr>
-</table><br>
-<table border="1px">
-<tr>
-<td colspan=2><b>
-<a id="convert_writes_reads">convert_writes_reads</a>
-</b></td>
-</tr>
-<tr>
-<td>
-content
-</td>
-<td>
-converting writes to reads makes more calculations
-</td>
-</tr>
-<tr>
-<td>
-parents
-</td>
-<td>
-<a href=#immutable_reads_calculations>immutable_reads_calculations</a>
-</td>
-</tr>
-<tr>
-<td>
-remarks
-</td>
-<td>
-I'd like to understand this better. examples are in the book fortunately.
-</td>
-</tr>
-</table><br>
-<table border="1px">
-<tr>
-<td colspan=2><b>
-<a id="mutable_reads_actions">mutable_reads_actions</a>
-</b></td>
-</tr>
-<tr>
-<td>
-content
-</td>
-<td>
-Mutable reads are actions
-</td>
-</tr>
-<tr>
-<td>
-parents
-</td>
-<td>
-<a href=#immutable_reads_calculations>immutable_reads_calculations</a> (Corollary)
-</td>
-</tr>
-</table><br>
-<table border="1px">
-<tr>
-<td colspan=2><b>
-<a id="nested_data_cow">nested_data_cow</a>
-</b></td>
-</tr>
-<tr>
-<td>
-content
-</td>
-<td>
-Nested data and copy-on-write make efficient use of references
-</td>
-</tr>
-<tr>
-<td>
-children
-</td>
-<td>
-<a href=#only_parts>only_parts</a>
-</td>
-</tr>
-</table><br>
-<table border="1px">
-<tr>
-<td colspan=2><b>
-<a id="only_parts">only_parts</a>
-</b></td>
-</tr>
-<tr>
-<td>
-content
-</td>
-<td>
-only parts of structure need to be replaced
-</td>
-</tr>
-<tr>
-<td>
-parents
-</td>
-<td>
-<a href=#nested_data_cow>nested_data_cow</a>
-</td>
-</tr>
-</table><br>
-<table border="1px">
-<tr>
-<td colspan=2><b>
-<a id="operation">operation</a>
-</b></td>
-</tr>
-<tr>
-<td>
-content
-</td>
-<td>
-Operation can be categorized as a read or write
-</td>
-</tr>
-</table><br>
-<table border="1px">
-<tr>
-<td colspan=2><b>
-<a id="shallow_copy">shallow_copy</a>
-</b></td>
-</tr>
-<tr>
-<td>
-content
-</td>
-<td>
-Shallow Copy: only duplicate top-level structure of nested data
 </td>
 </tr>
 </table><br>
