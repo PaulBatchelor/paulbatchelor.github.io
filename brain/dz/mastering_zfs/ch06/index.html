@@ -20,6 +20,60 @@ Chapter 6: Disk Space management
 <h2>Node Tree</h2>
 <ul>
 <li>
+<a href=#deduplication>deduplication</a><ul>
+<li>
+<a href=#ddup_at_fs_level>ddup_at_fs_level</a><ul>
+<li>
+<a href=#dedup_files>dedup_files</a></li>
+<li>
+<a href=#fs_block_exact_alignment>fs_block_exact_alignment</a></li>
+<li>
+<a href=#smaller_blocks_impact>smaller_blocks_impact</a></li>
+</ul>
+</li>
+<li>
+<a href=#dedup_files>dedup_files</a></li>
+<li>
+<a href=#disabling_ddup>disabling_ddup</a><ul>
+<li>
+<a href=#dedup_off>dedup_off</a></li>
+</ul>
+</li>
+<li>
+<a href=#does_not_improve_reads>does_not_improve_reads</a></li>
+<li>
+<a href=#effectiveness>effectiveness</a><ul>
+<li>
+<a href=#can_improve_cache_hit_rates>can_improve_cache_hit_rates</a></li>
+<li>
+<a href=#zdb_dash_s>zdb_dash_s</a><ul>
+<li>
+<a href=#how_well>how_well</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#enabling_ddup>enabling_ddup</a><ul>
+<li>
+<a href=#dedup_on>dedup_on</a><ul>
+<li>
+<a href=#dedup_off>dedup_off</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#memory_needs>memory_needs</a><ul>
+<li>
+<a href=#fs_block_ddup_size>fs_block_ddup_size</a></li>
+<li>
+<a href=#memory_rule_of_thumb>memory_rule_of_thumb</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
 <a href=#disk_space_details>disk_space_details</a><ul>
 <li>
 <a href=#USED>USED</a></li>
@@ -157,6 +211,18 @@ Chapter 6: Disk Space management
 <a href=#multiple_datasets_same_data>multiple_datasets_same_data</a></li>
 <li>
 <a href=#stuff_in_fs_or_dataset>stuff_in_fs_or_dataset</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zdb>zdb</a><ul>
+<li>
+<a href=#how_many_blocks_used>how_many_blocks_used</a></li>
+<li>
+<a href=#zdb_dash_s>zdb_dash_s</a><ul>
+<li>
+<a href=#how_well>how_well</a></li>
 </ul>
 </li>
 </ul>
@@ -1244,7 +1310,7 @@ content
 parents
 </td>
 <td>
-<a href=#see_where_disk_space_went>see_where_disk_space_went</a>, <a href=#zfs_list>zfs_list</a>
+<a href=#zfs_list>zfs_list</a>, <a href=#see_where_disk_space_went>see_where_disk_space_went</a>
 </td>
 </tr>
 </table><br>
@@ -1623,7 +1689,7 @@ children
 parents
 </td>
 <td>
-<a href=#compression_scenarios>compression_scenarios</a>, <a href=#comp_properties>comp_properties</a>
+<a href=#comp_properties>comp_properties</a>, <a href=#compression_scenarios>compression_scenarios</a>
 </td>
 </tr>
 </table><br>
@@ -1654,7 +1720,7 @@ children
 parents
 </td>
 <td>
-<a href=#compression_scenarios>compression_scenarios</a>, <a href=#comp_properties>comp_properties</a>
+<a href=#comp_properties>comp_properties</a>, <a href=#compression_scenarios>compression_scenarios</a>
 </td>
 </tr>
 </table><br>
@@ -1976,6 +2042,453 @@ parents
 <table border="1px">
 <tr>
 <td colspan=2><b>
+<a id="deduplication">deduplication</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+deuplication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ddup_at_fs_level>ddup_at_fs_level</a>, <a href=#dedup_files>dedup_files</a>, <a href=#disabling_ddup>disabling_ddup</a>, <a href=#does_not_improve_reads>does_not_improve_reads</a>, <a href=#effectiveness>effectiveness</a>, <a href=#enabling_ddup>enabling_ddup</a>, <a href=#memory_needs>memory_needs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="ddup_at_fs_level">ddup_at_fs_level</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ZFS deduplicates at filesystem block level
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dedup_files>dedup_files</a>, <a href=#fs_block_exact_alignment>fs_block_exact_alignment</a>, <a href=#smaller_blocks_impact>smaller_blocks_impact</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deduplication>deduplication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="dedup_files">dedup_files</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Deduplicates files
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ddup_at_fs_level>ddup_at_fs_level</a>, <a href=#deduplication>deduplication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="disabling_ddup">disabling_ddup</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Disabling
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dedup_off>dedup_off</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deduplication>deduplication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="does_not_improve_reads">does_not_improve_reads</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Does not improve disk read speeds
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deduplication>deduplication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="effectiveness">effectiveness</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Effectiveness
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#can_improve_cache_hit_rates>can_improve_cache_hit_rates</a>, <a href=#zdb_dash_s>zdb_dash_s</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deduplication>deduplication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="enabling_ddup">enabling_ddup</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Enabling
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dedup_on>dedup_on</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deduplication>deduplication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="memory_needs">memory_needs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Memory needs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fs_block_ddup_size>fs_block_ddup_size</a>, <a href=#memory_rule_of_thumb>memory_rule_of_thumb</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deduplication>deduplication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="fs_block_exact_alignment">fs_block_exact_alignment</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Filesystem blocks must line up exactly
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ddup_at_fs_level>ddup_at_fs_level</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="smaller_blocks_impact">smaller_blocks_impact</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Smaller blocks increase deduplication effectiveness as well as increasing memory requirements
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ddup_at_fs_level>ddup_at_fs_level</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="dedup_off">dedup_off</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+dedup = off
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#disabling_ddup>disabling_ddup</a>, <a href=#dedup_on>dedup_on</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="can_improve_cache_hit_rates">can_improve_cache_hit_rates</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can improve cache hit rates
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#effectiveness>effectiveness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="zdb_dash_s">zdb_dash_s</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zdb -s
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#how_well>how_well</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zdb>zdb</a>, <a href=#effectiveness>effectiveness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="dedup_on">dedup_on</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+dedup = on
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dedup_off>dedup_off</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#enabling_ddup>enabling_ddup</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="fs_block_ddup_size">fs_block_ddup_size</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+one filesystem block on deduplicated system uses approximately 320 bytes of RAM
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memory_needs>memory_needs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="memory_rule_of_thumb">memory_rule_of_thumb</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+approximately 1TB of data uses 5 gigs of RAM
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memory_needs>memory_needs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="how_well">how_well</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How well?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zdb_dash_s>zdb_dash_s</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
 <a id="zfs_cli">zfs_cli</a>
 </b></td>
 </tr>
@@ -2170,6 +2683,52 @@ parents
 </td>
 <td>
 <a href=#deleting_files_doesnt_free_space>deleting_files_doesnt_free_space</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="zdb">zdb</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zdb -b [pool] memory_needs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#how_many_blocks_used>how_many_blocks_used</a>, <a href=#zdb_dash_s>zdb_dash_s</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="how_many_blocks_used">how_many_blocks_used</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How many blocks used?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zdb>zdb</a>
 </td>
 </tr>
 </table><br>
