@@ -1,0 +1,4326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>designing_data_intensive_applications/ch02</title>
+<h1>ch02</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/designing_data_intensive_applications">designing_data_intensive_applications</a> / <a href="/brain/dz/designing_data_intensive_applications/ch02">ch02</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 2: Data Models and Query Languages
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#data_models>data_models</a><ul>
+<li>
+<a href=#represented_next_lower>represented_next_lower</a></li>
+<li>
+<a href=#general_purpose>general_purpose</a><ul>
+<li>
+<a href=#document_model>document_model</a><ul>
+<li>
+<a href=#storage_locality>storage_locality</a><ul>
+<li>
+<a href=#keep_docs_small>keep_docs_small</a><ul>
+<li>
+<a href=#writes_inplace_full>writes_inplace_full</a></li>
+</ul>
+</li>
+<li>
+<a href=#locality_relational>locality_relational</a><ul>
+<li>
+<a href=#spanner>spanner</a><ul>
+<li>
+<a href=#oracle>oracle</a></li>
+</ul>
+</li>
+<li>
+<a href=#big_table>big_table</a></li>
+<li>
+<a href=#oracle>oracle</a></li>
+</ul>
+</li>
+<li>
+<a href=#only_for_large_doc_access>only_for_large_doc_access</a></li>
+</ul>
+</li>
+<li>
+<a href=#document_reference>document_reference</a></li>
+<li>
+<a href=#doesnt_fit_in_doc_model>doesnt_fit_in_doc_model</a><ul>
+<li>
+<a href=#joins_are_weak>joins_are_weak</a></li>
+<li>
+<a href=#many_to_one>many_to_one</a><ul>
+<li>
+<a href=#similar_mto1_mtom>similar_mto1_mtom</a><ul>
+<li>
+<a href=#related_item>related_item</a><ul>
+<li>
+<a href=#unique_id>unique_id</a><ul>
+<li>
+<a href=#foreign_key>foreign_key</a></li>
+</ul>
+</li>
+<li>
+<a href=#document_reference>document_reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#normalization>normalization</a><ul>
+<li>
+<a href=#removing_duplication_db>removing_duplication_db</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#normalization>normalization</a><ul>
+<li>
+<a href=#removing_duplication_db>removing_duplication_db</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#hybrid_rel_Doc>hybrid_rel_Doc</a></li>
+<li>
+<a href=#joins_are_weak>joins_are_weak</a></li>
+<li>
+<a href=#relational_vs_doc_today>relational_vs_doc_today</a><ul>
+<li>
+<a href=#doc_pros>doc_pros</a><ul>
+<li>
+<a href=#schema_flex>schema_flex</a><ul>
+<li>
+<a href=#schemaless>schemaless</a><ul>
+<li>
+<a href=#schema_on_read>schema_on_read</a><ul>
+<li>
+<a href=#schema_on_write>schema_on_write</a></li>
+<li>
+<a href=#different_structures>different_structures</a></li>
+<li>
+<a href=#implicit_structure_interp>implicit_structure_interp</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#better_performance_locality>better_performance_locality</a></li>
+</ul>
+</li>
+<li>
+<a href=#rel_pros>rel_pros</a><ul>
+<li>
+<a href=#better_joins>better_joins</a></li>
+<li>
+<a href=#better_mm_m1>better_mm_m1</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#graph_model>graph_model</a><ul>
+<li>
+<a href=#traverse>traverse</a></li>
+<li>
+<a href=#triple_store_model>triple_store_model</a><ul>
+<li>
+<a href=#semantic_web>semantic_web</a></li>
+<li>
+<a href=#subject_predicate_object>subject_predicate_object</a></li>
+<li>
+<a href=#turtle_triples_notation>turtle_triples_notation</a><ul>
+<li>
+<a href=#RDF_data_model>RDF_data_model</a><ul>
+<li>
+<a href=#resource_description_framework>resource_description_framework</a></li>
+<li>
+<a href=#SPARQL>SPARQL</a></li>
+<li>
+<a href=#SPO>SPO</a><ul>
+<li>
+<a href=#SPO_URIs>SPO_URIs</a></li>
+</ul>
+</li>
+<li>
+<a href=#SPO_URIs>SPO_URIs</a></li>
+<li>
+<a href=#XML>XML</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#complex_many_to_many>complex_many_to_many</a></li>
+<li>
+<a href=#datalog>datalog</a><ul>
+<li>
+<a href=#sim_to_tsm>sim_to_tsm</a></li>
+<li>
+<a href=#cypher>cypher</a></li>
+<li>
+<a href=#qlist_datomic>qlist_datomic</a></li>
+</ul>
+</li>
+<li>
+<a href=#graph_queries_sql>graph_queries_sql</a><ul>
+<li>
+<a href=#recursive_common_table_expressions>recursive_common_table_expressions</a><ul>
+<li>
+<a href=#variable_length_traversal>variable_length_traversal</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#objects>objects</a><ul>
+<li>
+<a href=#vertices>vertices</a></li>
+<li>
+<a href=#edges>edges</a></li>
+</ul>
+</li>
+<li>
+<a href=#property_graph_model>property_graph_model</a><ul>
+<li>
+<a href=#cypher_query_language>cypher_query_language</a></li>
+<li>
+<a href=#pg_edge>pg_edge</a><ul>
+<li>
+<a href=#unique_id>unique_id</a><ul>
+<li>
+<a href=#foreign_key>foreign_key</a></li>
+</ul>
+</li>
+<li>
+<a href=#vert_label>vert_label</a></li>
+<li>
+<a href=#vertex>vertex</a><ul>
+<li>
+<a href=#tail>tail</a></li>
+<li>
+<a href=#head>head</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#pg_vertex>pg_vertex</a><ul>
+<li>
+<a href=#sets_of_edges>sets_of_edges</a><ul>
+<li>
+<a href=#incoming>incoming</a></li>
+<li>
+<a href=#outgoing>outgoing</a></li>
+</ul>
+</li>
+<li>
+<a href=#unique_id>unique_id</a><ul>
+<li>
+<a href=#foreign_key>foreign_key</a></li>
+</ul>
+</li>
+<li>
+<a href=#collection_of_properties>collection_of_properties</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#relational_model>relational_model</a><ul>
+<li>
+<a href=#relations>relations</a><ul>
+<li>
+<a href=#sql_table>sql_table</a></li>
+<li>
+<a href=#tuples>tuples</a><ul>
+<li>
+<a href=#sql_rows>sql_rows</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#row_id_vs_text_strings>row_id_vs_text_strings</a><ul>
+<li>
+<a href=#text_strings>text_strings</a><ul>
+<li>
+<a href=#human_readable>human_readable</a></li>
+</ul>
+</li>
+<li>
+<a href=#id>id</a><ul>
+<li>
+<a href=#removing_duplication_db>removing_duplication_db</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#schema_on_write>schema_on_write</a></li>
+<li>
+<a href=#shredding>shredding</a><ul>
+<li>
+<a href=#shredding_cumbersome>shredding_cumbersome</a></li>
+<li>
+<a href=#split_document_into_tables>split_document_into_tables</a></li>
+</ul>
+</li>
+<li>
+<a href=#unique_id>unique_id</a><ul>
+<li>
+<a href=#foreign_key>foreign_key</a></li>
+</ul>
+</li>
+<li>
+<a href=#business_data_processing>business_data_processing</a><ul>
+<li>
+<a href=#transaction_processing>transaction_processing</a></li>
+<li>
+<a href=#batch_processing>batch_processing</a></li>
+</ul>
+</li>
+<li>
+<a href=#comp_to_document_db>comp_to_document_db</a><ul>
+<li>
+<a href=#similar_mto1_mtom>similar_mto1_mtom</a><ul>
+<li>
+<a href=#related_item>related_item</a><ul>
+<li>
+<a href=#unique_id>unique_id</a><ul>
+<li>
+<a href=#foreign_key>foreign_key</a></li>
+</ul>
+</li>
+<li>
+<a href=#document_reference>document_reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#similar_to_hierarchical>similar_to_hierarchical</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_laid_out_in_open>data_laid_out_in_open</a><ul>
+<li>
+<a href=#no_complicated_paths>no_complicated_paths</a></li>
+</ul>
+</li>
+<li>
+<a href=#declarative>declarative</a><ul>
+<li>
+<a href=#allows_bts_optimizing>allows_bts_optimizing</a><ul>
+<li>
+<a href=#parallelization>parallelization</a></li>
+</ul>
+</li>
+<li>
+<a href=#parallelization>parallelization</a></li>
+<li>
+<a href=#relational_algebra>relational_algebra</a></li>
+</ul>
+</li>
+<li>
+<a href=#foreign_key>foreign_key</a></li>
+<li>
+<a href=#hybrid_rel_Doc>hybrid_rel_Doc</a></li>
+<li>
+<a href=#locality_relational>locality_relational</a><ul>
+<li>
+<a href=#spanner>spanner</a><ul>
+<li>
+<a href=#oracle>oracle</a></li>
+</ul>
+</li>
+<li>
+<a href=#big_table>big_table</a></li>
+<li>
+<a href=#oracle>oracle</a></li>
+</ul>
+</li>
+<li>
+<a href=#nosql>nosql</a><ul>
+<li>
+<a href=#object>object</a><ul>
+<li>
+<a href=#json>json</a><ul>
+<li>
+<a href=#better_locality>better_locality</a></li>
+<li>
+<a href=#lack_of_schema>lack_of_schema</a></li>
+<li>
+<a href=#one_to_many_tree_structure>one_to_many_tree_structure</a><ul>
+<li>
+<a href=#one_to_many>one_to_many</a></li>
+</ul>
+</li>
+<li>
+<a href=#reduce_IM_storage_application>reduce_IM_storage_application</a></li>
+</ul>
+</li>
+<li>
+<a href=#or_mapping_frameworks>or_mapping_frameworks</a></li>
+<li>
+<a href=#or_mismatch>or_mismatch</a><ul>
+<li>
+<a href=#impedance_mismatch>impedance_mismatch</a><ul>
+<li>
+<a href=#json>json</a><ul>
+<li>
+<a href=#better_locality>better_locality</a></li>
+<li>
+<a href=#lack_of_schema>lack_of_schema</a></li>
+<li>
+<a href=#one_to_many_tree_structure>one_to_many_tree_structure</a><ul>
+<li>
+<a href=#one_to_many>one_to_many</a></li>
+</ul>
+</li>
+<li>
+<a href=#reduce_IM_storage_application>reduce_IM_storage_application</a></li>
+</ul>
+</li>
+<li>
+<a href=#reduce_IM_storage_application>reduce_IM_storage_application</a></li>
+</ul>
+</li>
+<li>
+<a href=#or_mapping_frameworks>or_mapping_frameworks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#polyglot_persistance>polyglot_persistance</a></li>
+</ul>
+</li>
+<li>
+<a href=#or_mismatch>or_mismatch</a><ul>
+<li>
+<a href=#impedance_mismatch>impedance_mismatch</a><ul>
+<li>
+<a href=#json>json</a><ul>
+<li>
+<a href=#better_locality>better_locality</a></li>
+<li>
+<a href=#lack_of_schema>lack_of_schema</a></li>
+<li>
+<a href=#one_to_many_tree_structure>one_to_many_tree_structure</a><ul>
+<li>
+<a href=#one_to_many>one_to_many</a></li>
+</ul>
+</li>
+<li>
+<a href=#reduce_IM_storage_application>reduce_IM_storage_application</a></li>
+</ul>
+</li>
+<li>
+<a href=#reduce_IM_storage_application>reduce_IM_storage_application</a></li>
+</ul>
+</li>
+<li>
+<a href=#or_mapping_frameworks>or_mapping_frameworks</a></li>
+</ul>
+</li>
+<li>
+<a href=#polyglot_persistance>polyglot_persistance</a></li>
+<li>
+<a href=#query_optimizer>query_optimizer</a><ul>
+<li>
+<a href=#complicated_but_only_built_once>complicated_but_only_built_once</a></li>
+</ul>
+</li>
+<li>
+<a href=#relational_vs_doc_today>relational_vs_doc_today</a><ul>
+<li>
+<a href=#doc_pros>doc_pros</a><ul>
+<li>
+<a href=#schema_flex>schema_flex</a><ul>
+<li>
+<a href=#schemaless>schemaless</a><ul>
+<li>
+<a href=#schema_on_read>schema_on_read</a><ul>
+<li>
+<a href=#schema_on_write>schema_on_write</a></li>
+<li>
+<a href=#different_structures>different_structures</a></li>
+<li>
+<a href=#implicit_structure_interp>implicit_structure_interp</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#better_performance_locality>better_performance_locality</a></li>
+</ul>
+</li>
+<li>
+<a href=#rel_pros>rel_pros</a><ul>
+<li>
+<a href=#better_joins>better_joins</a></li>
+<li>
+<a href=#better_mm_m1>better_mm_m1</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#how_it_will_be_used>how_it_will_be_used</a></li>
+<li>
+<a href=#layer_one_atop_another>layer_one_atop_another</a><ul>
+<li>
+<a href=#represented_next_lower>represented_next_lower</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#many_to>many_to</a><ul>
+<li>
+<a href=#many_to_many>many_to_many</a><ul>
+<li>
+<a href=#similar_mto1_mtom>similar_mto1_mtom</a><ul>
+<li>
+<a href=#related_item>related_item</a><ul>
+<li>
+<a href=#unique_id>unique_id</a><ul>
+<li>
+<a href=#foreign_key>foreign_key</a></li>
+</ul>
+</li>
+<li>
+<a href=#document_reference>document_reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#IMS>IMS</a><ul>
+<li>
+<a href=#hierarchical_model>hierarchical_model</a><ul>
+<li>
+<a href=#network_model>network_model</a><ul>
+<li>
+<a href=#access_path>access_path</a><ul>
+<li>
+<a href=#pointers_rootrecs_links>pointers_rootrecs_links</a><ul>
+<li>
+<a href=#app_tracks_multi_paths>app_tracks_multi_paths</a><ul>
+<li>
+<a href=#querying_updating_complicated>querying_updating_complicated</a><ul>
+<li>
+<a href=#data_laid_out_in_open>data_laid_out_in_open</a><ul>
+<li>
+<a href=#no_complicated_paths>no_complicated_paths</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#record_multiple_parents>record_multiple_parents</a><ul>
+<li>
+<a href=#app_tracks_multi_paths>app_tracks_multi_paths</a><ul>
+<li>
+<a href=#querying_updating_complicated>querying_updating_complicated</a><ul>
+<li>
+<a href=#data_laid_out_in_open>data_laid_out_in_open</a><ul>
+<li>
+<a href=#no_complicated_paths>no_complicated_paths</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#network_model>network_model</a><ul>
+<li>
+<a href=#access_path>access_path</a><ul>
+<li>
+<a href=#pointers_rootrecs_links>pointers_rootrecs_links</a><ul>
+<li>
+<a href=#app_tracks_multi_paths>app_tracks_multi_paths</a><ul>
+<li>
+<a href=#querying_updating_complicated>querying_updating_complicated</a><ul>
+<li>
+<a href=#data_laid_out_in_open>data_laid_out_in_open</a><ul>
+<li>
+<a href=#no_complicated_paths>no_complicated_paths</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#record_multiple_parents>record_multiple_parents</a><ul>
+<li>
+<a href=#app_tracks_multi_paths>app_tracks_multi_paths</a><ul>
+<li>
+<a href=#querying_updating_complicated>querying_updating_complicated</a><ul>
+<li>
+<a href=#data_laid_out_in_open>data_laid_out_in_open</a><ul>
+<li>
+<a href=#no_complicated_paths>no_complicated_paths</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#record_multiple_parents>record_multiple_parents</a><ul>
+<li>
+<a href=#app_tracks_multi_paths>app_tracks_multi_paths</a><ul>
+<li>
+<a href=#querying_updating_complicated>querying_updating_complicated</a><ul>
+<li>
+<a href=#data_laid_out_in_open>data_laid_out_in_open</a><ul>
+<li>
+<a href=#no_complicated_paths>no_complicated_paths</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#many_to_one>many_to_one</a><ul>
+<li>
+<a href=#similar_mto1_mtom>similar_mto1_mtom</a><ul>
+<li>
+<a href=#related_item>related_item</a><ul>
+<li>
+<a href=#unique_id>unique_id</a><ul>
+<li>
+<a href=#foreign_key>foreign_key</a></li>
+</ul>
+</li>
+<li>
+<a href=#document_reference>document_reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#normalization>normalization</a><ul>
+<li>
+<a href=#removing_duplication_db>removing_duplication_db</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#query_languages_data>query_languages_data</a><ul>
+<li>
+<a href=#declarative>declarative</a><ul>
+<li>
+<a href=#allows_bts_optimizing>allows_bts_optimizing</a><ul>
+<li>
+<a href=#parallelization>parallelization</a></li>
+</ul>
+</li>
+<li>
+<a href=#parallelization>parallelization</a></li>
+<li>
+<a href=#relational_algebra>relational_algebra</a></li>
+</ul>
+</li>
+<li>
+<a href=#imperative>imperative</a></li>
+<li>
+<a href=#mapreduce_querying>mapreduce_querying</a><ul>
+<li>
+<a href=#couchdb>couchdb</a></li>
+<li>
+<a href=#mapreduce>mapreduce</a><ul>
+<li>
+<a href=#map>map</a><ul>
+<li>
+<a href=#pure_functions>pure_functions</a></li>
+</ul>
+</li>
+<li>
+<a href=#mapreduce_desc>mapreduce_desc</a></li>
+<li>
+<a href=#reduce>reduce</a><ul>
+<li>
+<a href=#pure_functions>pure_functions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#mongodb>mongodb</a><ul>
+<li>
+<a href=#aggregation_pipeline>aggregation_pipeline</a><ul>
+<li>
+<a href=#sql_expressiveness_with_json>sql_expressiveness_with_json</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="data_models">data_models</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data Models
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#represented_next_lower>represented_next_lower</a>, <a href=#general_purpose>general_purpose</a>, <a href=#how_it_will_be_used>how_it_will_be_used</a>, <a href=#layer_one_atop_another>layer_one_atop_another</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="represented_next_lower">represented_next_lower</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How is it represented in terms of next-lower layer?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_models>data_models</a>, <a href=#layer_one_atop_another>layer_one_atop_another</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="general_purpose">general_purpose</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+General Purpose
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#document_model>document_model</a>, <a href=#graph_model>graph_model</a>, <a href=#relational_model>relational_model</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_models>data_models</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="how_it_will_be_used">how_it_will_be_used</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Embodies assumptions on how it will be used
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_models>data_models</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="layer_one_atop_another">layer_one_atop_another</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Layering one atop another
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#represented_next_lower>represented_next_lower</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_models>data_models</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="document_model">document_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Document Model
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#storage_locality>storage_locality</a>, <a href=#document_reference>document_reference</a>, <a href=#doesnt_fit_in_doc_model>doesnt_fit_in_doc_model</a>, <a href=#hybrid_rel_Doc>hybrid_rel_Doc</a>, <a href=#joins_are_weak>joins_are_weak</a>, <a href=#relational_vs_doc_today>relational_vs_doc_today</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#general_purpose>general_purpose</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="graph_model">graph_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Graph-based model
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#traverse>traverse</a>, <a href=#triple_store_model>triple_store_model</a>, <a href=#complex_many_to_many>complex_many_to_many</a>, <a href=#datalog>datalog</a>, <a href=#graph_queries_sql>graph_queries_sql</a>, <a href=#objects>objects</a>, <a href=#property_graph_model>property_graph_model</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#general_purpose>general_purpose</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="relational_model">relational_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Relational Model
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#relations>relations</a>, <a href=#row_id_vs_text_strings>row_id_vs_text_strings</a>, <a href=#schema_on_write>schema_on_write</a>, <a href=#shredding>shredding</a>, <a href=#unique_id>unique_id</a>, <a href=#business_data_processing>business_data_processing</a>, <a href=#comp_to_document_db>comp_to_document_db</a>, <a href=#data_laid_out_in_open>data_laid_out_in_open</a>, <a href=#declarative>declarative</a>, <a href=#foreign_key>foreign_key</a>, <a href=#hybrid_rel_Doc>hybrid_rel_Doc</a>, <a href=#locality_relational>locality_relational</a>, <a href=#nosql>nosql</a> (not actually relational), <a href=#or_mismatch>or_mismatch</a>, <a href=#polyglot_persistance>polyglot_persistance</a>, <a href=#query_optimizer>query_optimizer</a>, <a href=#relational_vs_doc_today>relational_vs_doc_today</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#general_purpose>general_purpose</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="storage_locality">storage_locality</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Storage Locality
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#keep_docs_small>keep_docs_small</a>, <a href=#locality_relational>locality_relational</a>, <a href=#only_for_large_doc_access>only_for_large_doc_access</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#document_model>document_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="document_reference">document_reference</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Document Reference
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#related_item>related_item</a>, <a href=#document_model>document_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="doesnt_fit_in_doc_model">doesnt_fit_in_doc_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Doesn't fit nicely in document model
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#joins_are_weak>joins_are_weak</a>, <a href=#many_to_one>many_to_one</a>, <a href=#normalization>normalization</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#document_model>document_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="hybrid_rel_Doc">hybrid_rel_Doc</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hybrid of relational and documenta
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>, <a href=#document_model>document_model</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+not sure what this means
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="joins_are_weak">joins_are_weak</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Joins are weak
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#doesnt_fit_in_doc_model>doesnt_fit_in_doc_model</a>, <a href=#document_model>document_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="relational_vs_doc_today">relational_vs_doc_today</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Relational vs Document Model Today
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#doc_pros>doc_pros</a>, <a href=#rel_pros>rel_pros</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>, <a href=#document_model>document_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="traverse">traverse</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Traverse
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#graph_model>graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="triple_store_model">triple_store_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+triple store modle
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#semantic_web>semantic_web</a>, <a href=#subject_predicate_object>subject_predicate_object</a>, <a href=#turtle_triples_notation>turtle_triples_notation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#graph_model>graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="complex_many_to_many">complex_many_to_many</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Handles complex many-to-many relationships
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#graph_model>graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="datalog">datalog</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Datalog
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sim_to_tsm>sim_to_tsm</a>, <a href=#cypher>cypher</a>, <a href=#qlist_datomic>qlist_datomic</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#graph_model>graph_model</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+older than SPARQL, Cypher
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="graph_queries_sql">graph_queries_sql</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Graph Queries in SQL
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#recursive_common_table_expressions>recursive_common_table_expressions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#graph_model>graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="objects">objects</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Objects
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#vertices>vertices</a>, <a href=#edges>edges</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#graph_model>graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="property_graph_model">property_graph_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Property Graph Model
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cypher_query_language>cypher_query_language</a>, <a href=#pg_edge>pg_edge</a>, <a href=#pg_vertex>pg_vertex</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#graph_model>graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="relations">relations</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Relations
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sql_table>sql_table</a>, <a href=#tuples>tuples</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="row_id_vs_text_strings">row_id_vs_text_strings</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Row ID vs Text Strings
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#text_strings>text_strings</a>, <a href=#id>id</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="schema_on_write">schema_on_write</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Schema On Write
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#schema_on_read>schema_on_read</a>, <a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="shredding">shredding</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Shredding
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#shredding_cumbersome>shredding_cumbersome</a> (shredding is cumbersome), <a href=#split_document_into_tables>split_document_into_tables</a> (definition)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="unique_id">unique_id</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Unique ID
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#foreign_key>foreign_key</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#related_item>related_item</a>, <a href=#pg_edge>pg_edge</a>, <a href=#relational_model>relational_model</a>, <a href=#pg_vertex>pg_vertex</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="business_data_processing">business_data_processing</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Business data processing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transaction_processing>transaction_processing</a>, <a href=#batch_processing>batch_processing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="comp_to_document_db">comp_to_document_db</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Comparison to Document Database
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#similar_mto1_mtom>similar_mto1_mtom</a>, <a href=#similar_to_hierarchical>similar_to_hierarchical</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="data_laid_out_in_open">data_laid_out_in_open</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data laid out in the open
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#no_complicated_paths>no_complicated_paths</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>, <a href=#querying_updating_complicated>querying_updating_complicated</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="declarative">declarative</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Declarative (SQL)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#allows_bts_optimizing>allows_bts_optimizing</a>, <a href=#parallelization>parallelization</a>, <a href=#relational_algebra>relational_algebra</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#query_languages_data>query_languages_data</a>, <a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="foreign_key">foreign_key</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Foreign Key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#unique_id>unique_id</a>, <a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="locality_relational">locality_relational</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Storage Locality in Relationonal Models
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#spanner>spanner</a>, <a href=#big_table>big_table</a>, <a href=#oracle>oracle</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>, <a href=#storage_locality>storage_locality</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="nosql">nosql</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+NoSQL
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#object>object</a>, <a href=#polyglot_persistance>polyglot_persistance</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="or_mismatch">or_mismatch</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+object-relational mismatch
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#impedance_mismatch>impedance_mismatch</a>, <a href=#or_mapping_frameworks>or_mapping_frameworks</a> (Tries to smooth the gap.)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>, <a href=#object>object</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+How we want to represent things in code (objects) does not match how it is represented in the database (SQL)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="polyglot_persistance">polyglot_persistance</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Polyglot, persistance (both)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#nosql>nosql</a>, <a href=#relational_model>relational_model</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+What did I mean by this?
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="query_optimizer">query_optimizer</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Query Optimizer
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#complicated_but_only_built_once>complicated_but_only_built_once</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_model>relational_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="keep_docs_small">keep_docs_small</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Recommend to keep documents small
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#writes_inplace_full>writes_inplace_full</a> (reason for keeping documents small)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_locality>storage_locality</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="only_for_large_doc_access">only_for_large_doc_access</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Only applies if you need a large part of a document at one time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_locality>storage_locality</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="many_to_one">many_to_one</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#similar_mto1_mtom>similar_mto1_mtom</a>, <a href=#normalization>normalization</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#many_to>many_to</a>, <a href=#doesnt_fit_in_doc_model>doesnt_fit_in_doc_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="normalization">normalization</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Normalization
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#removing_duplication_db>removing_duplication_db</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#many_to_one>many_to_one</a>, <a href=#doesnt_fit_in_doc_model>doesnt_fit_in_doc_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="doc_pros">doc_pros</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Document Model Pros
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#schema_flex>schema_flex</a>, <a href=#better_performance_locality>better_performance_locality</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_vs_doc_today>relational_vs_doc_today</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="rel_pros">rel_pros</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Relational Model Pros
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#better_joins>better_joins</a>, <a href=#better_mm_m1>better_mm_m1</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relational_vs_doc_today>relational_vs_doc_today</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="semantic_web">semantic_web</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Semantic web
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#triple_store_model>triple_store_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="subject_predicate_object">subject_predicate_object</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Subject, Predicate, Object
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#triple_store_model>triple_store_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="turtle_triples_notation">turtle_triples_notation</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Turtle Triples notation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#RDF_data_model>RDF_data_model</a> (turtle is a human readable notation for RDF)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#triple_store_model>triple_store_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sim_to_tsm">sim_to_tsm</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+similar to TSM
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#datalog>datalog</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+what is "TSM" here?
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="cypher">cypher</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+cypher
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#datalog>datalog</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="qlist_datomic">qlist_datomic</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+QList, Datomic
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#datalog>datalog</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="recursive_common_table_expressions">recursive_common_table_expressions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Recursive Common Table Expressions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#variable_length_traversal>variable_length_traversal</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#graph_queries_sql>graph_queries_sql</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="vertices">vertices</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Vertices/nodes/entities
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#objects>objects</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="edges">edges</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Edges/relationships/arcs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#objects>objects</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="cypher_query_language">cypher_query_language</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cypher Query Language
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#property_graph_model>property_graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="pg_edge">pg_edge</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Property Graph Edge
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#unique_id>unique_id</a>, <a href=#vert_label>vert_label</a>, <a href=#vertex>vertex</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#property_graph_model>property_graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="pg_vertex">pg_vertex</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Property Graph Vertex
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sets_of_edges>sets_of_edges</a>, <a href=#unique_id>unique_id</a>, <a href=#collection_of_properties>collection_of_properties</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#property_graph_model>property_graph_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sql_table">sql_table</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SQL table
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relations>relations</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="tuples">tuples</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+tuples
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sql_rows>sql_rows</a> (AKA)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#relations>relations</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="text_strings">text_strings</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Text Strings
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#human_readable>human_readable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#row_id_vs_text_strings>row_id_vs_text_strings</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="id">id</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Row ID
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#removing_duplication_db>removing_duplication_db</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#row_id_vs_text_strings>row_id_vs_text_strings</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="shredding_cumbersome">shredding_cumbersome</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Shredding is cumbersome, complicates application code
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#shredding>shredding</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="split_document_into_tables">split_document_into_tables</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Splitting a document into multiple tables
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#shredding>shredding</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="transaction_processing">transaction_processing</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction Processing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#business_data_processing>business_data_processing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="batch_processing">batch_processing</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Batch Processing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#business_data_processing>business_data_processing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="similar_mto1_mtom">similar_mto1_mtom</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Similar way of representing many-to-one and many-to-many
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#related_item>related_item</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#many_to_many>many_to_many</a>, <a href=#many_to_one>many_to_one</a>, <a href=#comp_to_document_db>comp_to_document_db</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="similar_to_hierarchical">similar_to_hierarchical</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Similar to hierarchical
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#comp_to_document_db>comp_to_document_db</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="no_complicated_paths">no_complicated_paths</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No complicated paths
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_laid_out_in_open>data_laid_out_in_open</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="allows_bts_optimizing">allows_bts_optimizing</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Allows for behind-the-scenes optimizing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#parallelization>parallelization</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#declarative>declarative</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="parallelization">parallelization</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parallelization
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#declarative>declarative</a>, <a href=#allows_bts_optimizing>allows_bts_optimizing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="relational_algebra">relational_algebra</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Relational Algebra
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#declarative>declarative</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="spanner">spanner</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Google spanner: interleaved
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#oracle>oracle</a> (Similar)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#locality_relational>locality_relational</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="big_table">big_table</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Big Table: column family
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#locality_relational>locality_relational</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="oracle">oracle</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Oracle: multi-table index cluster tables
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spanner>spanner</a>, <a href=#locality_relational>locality_relational</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="object">object</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Object
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#json>json</a>, <a href=#or_mapping_frameworks>or_mapping_frameworks</a>, <a href=#or_mismatch>or_mismatch</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#nosql>nosql</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="impedance_mismatch">impedance_mismatch</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Impedance mismatch
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#json>json</a>, <a href=#reduce_IM_storage_application>reduce_IM_storage_application</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#or_mismatch>or_mismatch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="or_mapping_frameworks">or_mapping_frameworks</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Object-relational mapping frameworks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#or_mismatch>or_mismatch</a>, <a href=#object>object</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="complicated_but_only_built_once">complicated_but_only_built_once</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Complicated, but only needed to be built once, and many applications benefit from it.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#query_optimizer>query_optimizer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="writes_inplace_full">writes_inplace_full</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+in-place updates do not require rewrite (assuming the entry is the same size). A full update requires an entire rewrite
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#keep_docs_small>keep_docs_small</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="removing_duplication_db">removing_duplication_db</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Removing Duplication in database
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#id>id</a>, <a href=#normalization>normalization</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="schema_flex">schema_flex</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Schema Flexibility
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#schemaless>schemaless</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#doc_pros>doc_pros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="better_performance_locality">better_performance_locality</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Better performance (locality)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#doc_pros>doc_pros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="better_joins">better_joins</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Better support for joins
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rel_pros>rel_pros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="better_mm_m1">better_mm_m1</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Better many-to-many and many-to-one relationships
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rel_pros>rel_pros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="RDF_data_model">RDF_data_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RDF Data Model
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#resource_description_framework>resource_description_framework</a>, <a href=#SPARQL>SPARQL</a>, <a href=#SPO>SPO</a>, <a href=#SPO_URIs>SPO_URIs</a>, <a href=#XML>XML</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#turtle_triples_notation>turtle_triples_notation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="variable_length_traversal">variable_length_traversal</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Variable Length Traversal paths in query
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#recursive_common_table_expressions>recursive_common_table_expressions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="vert_label">vert_label</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Vertice Label
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pg_edge>pg_edge</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="vertex">vertex</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Vertex
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#tail>tail</a>, <a href=#head>head</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pg_edge>pg_edge</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sets_of_edges">sets_of_edges</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sets of edges
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#incoming>incoming</a>, <a href=#outgoing>outgoing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pg_vertex>pg_vertex</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="collection_of_properties">collection_of_properties</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Collection of properties (KV pairs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pg_vertex>pg_vertex</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sql_rows">sql_rows</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SQL rows
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tuples>tuples</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="human_readable">human_readable</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Human Redable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#text_strings>text_strings</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="related_item">related_item</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Related Item
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#unique_id>unique_id</a>, <a href=#document_reference>document_reference</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#similar_mto1_mtom>similar_mto1_mtom</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="json">json</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+JSON
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#better_locality>better_locality</a>, <a href=#lack_of_schema>lack_of_schema</a>, <a href=#one_to_many_tree_structure>one_to_many_tree_structure</a>, <a href=#reduce_IM_storage_application>reduce_IM_storage_application</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#object>object</a>, <a href=#impedance_mismatch>impedance_mismatch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reduce_IM_storage_application">reduce_IM_storage_application</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reduce impedance mismatch between storage and application
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#json>json</a>, <a href=#impedance_mismatch>impedance_mismatch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="schemaless">schemaless</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Schemaless
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#schema_on_read>schema_on_read</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#schema_flex>schema_flex</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="resource_description_framework">resource_description_framework</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Resource Description Framework
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDF_data_model>RDF_data_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="SPARQL">SPARQL</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SPARQL
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDF_data_model>RDF_data_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="SPO">SPO</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SPO
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#SPO_URIs>SPO_URIs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDF_data_model>RDF_data_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="SPO_URIs">SPO_URIs</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SPO URIs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDF_data_model>RDF_data_model</a>, <a href=#SPO>SPO</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="XML">XML</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+XML
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDF_data_model>RDF_data_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="tail">tail</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tail
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vertex>vertex</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="head">head</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Head
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vertex>vertex</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="incoming">incoming</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+incoming
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sets_of_edges>sets_of_edges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="outgoing">outgoing</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+outgoing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sets_of_edges>sets_of_edges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="better_locality">better_locality</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Better locality, compared to multi-table schema
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#json>json</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="lack_of_schema">lack_of_schema</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lack of schema
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#json>json</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+sometimes an advantage
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="one_to_many_tree_structure">one_to_many_tree_structure</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One-to-many relationships explicitly tree structure
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#one_to_many>one_to_many</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#json>json</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="schema_on_read">schema_on_read</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Schema On Read
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#schema_on_write>schema_on_write</a> (contrasts), <a href=#different_structures>different_structures</a>, <a href=#implicit_structure_interp>implicit_structure_interp</a> (definition)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#schemaless>schemaless</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="one_to_many">one_to_many</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One to many
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#one_to_many_tree_structure>one_to_many_tree_structure</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="different_structures">different_structures</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Adventageous if items in collection don't have similar structures
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#schema_on_read>schema_on_read</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="implicit_structure_interp">implicit_structure_interp</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Implicit structure interpretted only when read
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#schema_on_read>schema_on_read</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="many_to">many_to</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Many to...
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#many_to_many>many_to_many</a>, <a href=#many_to_one>many_to_one</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="many_to_many">many_to_many</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Many
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#similar_mto1_mtom>similar_mto1_mtom</a>, <a href=#IMS>IMS</a> (Difficult), <a href=#network_model>network_model</a>, <a href=#record_multiple_parents>record_multiple_parents</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#many_to>many_to</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="IMS">IMS</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Information Management System (IMS)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#hierarchical_model>hierarchical_model</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#many_to_many>many_to_many</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="network_model">network_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Network Model
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#access_path>access_path</a>, <a href=#record_multiple_parents>record_multiple_parents</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#hierarchical_model>hierarchical_model</a>, <a href=#many_to_many>many_to_many</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="record_multiple_parents">record_multiple_parents</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Records could have multiple parents
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#app_tracks_multi_paths>app_tracks_multi_paths</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#many_to_many>many_to_many</a>, <a href=#network_model>network_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="hierarchical_model">hierarchical_model</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hierarchical Model
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#network_model>network_model</a> (Generalization)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#IMS>IMS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="access_path">access_path</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Access path
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#pointers_rootrecs_links>pointers_rootrecs_links</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#network_model>network_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="app_tracks_multi_paths">app_tracks_multi_paths</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+App had to keep track of multiple paths
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#querying_updating_complicated>querying_updating_complicated</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#record_multiple_parents>record_multiple_parents</a>, <a href=#pointers_rootrecs_links>pointers_rootrecs_links</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="pointers_rootrecs_links">pointers_rootrecs_links</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pointers, root records, chain of links
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#app_tracks_multi_paths>app_tracks_multi_paths</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#access_path>access_path</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="querying_updating_complicated">querying_updating_complicated</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Querying and updating complicated and inflexible
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#data_laid_out_in_open>data_laid_out_in_open</a> (Contrast)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#app_tracks_multi_paths>app_tracks_multi_paths</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="query_languages_data">query_languages_data</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Query Languages for Data
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#declarative>declarative</a>, <a href=#imperative>imperative</a>, <a href=#mapreduce_querying>mapreduce_querying</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="imperative">imperative</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Imperative (CODASYL)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#query_languages_data>query_languages_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="mapreduce_querying">mapreduce_querying</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+MapReduce Querying
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#couchdb>couchdb</a>, <a href=#mapreduce>mapreduce</a>, <a href=#mongodb>mongodb</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#query_languages_data>query_languages_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="couchdb">couchdb</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+CouchDB
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mapreduce_querying>mapreduce_querying</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="mapreduce">mapreduce</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+MapReduce
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#map>map</a>, <a href=#mapreduce_desc>mapreduce_desc</a> (description), <a href=#reduce>reduce</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mapreduce_querying>mapreduce_querying</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="mongodb">mongodb</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+MongoDB
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#aggregation_pipeline>aggregation_pipeline</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mapreduce_querying>mapreduce_querying</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="map">map</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Map
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#pure_functions>pure_functions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mapreduce>mapreduce</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="mapreduce_desc">mapreduce_desc</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+programming model for processing large amounts of data in bulk across many computers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mapreduce>mapreduce</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="reduce">reduce</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reduce
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#pure_functions>pure_functions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mapreduce>mapreduce</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="aggregation_pipeline">aggregation_pipeline</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Aggregation Pipeline
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sql_expressiveness_with_json>sql_expressiveness_with_json</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mongodb>mongodb</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="pure_functions">pure_functions</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pure Functions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#map>map</a>, <a href=#reduce>reduce</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2><b>
+<a id="sql_expressiveness_with_json">sql_expressiveness_with_json</a>
+</b></td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SQL-like expressiveness with JSON-based syntax
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#aggregation_pipeline>aggregation_pipeline</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
