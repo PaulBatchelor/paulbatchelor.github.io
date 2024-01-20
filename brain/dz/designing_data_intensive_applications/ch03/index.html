@@ -20,6 +20,110 @@ Chapter 3: Storage and Retrieval
 <h2>Node Tree</h2>
 <ul>
 <li>
+<a href=#LSM_Trees>LSM_Trees</a><ul>
+<li>
+<a href=#LSM_Trees_perf>LSM_Trees_perf</a><ul>
+<li>
+<a href=#nonexist_keys_slow>nonexist_keys_slow</a><ul>
+<li>
+<a href=#bloom_filters>bloom_filters</a><ul>
+<li>
+<a href=#bloom_desc>bloom_desc</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#LSM_storage_engine>LSM_storage_engine</a></li>
+<li>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><ul>
+<li>
+<a href=#btree_vs>btree_vs</a><ul>
+<li>
+<a href=#faster_reads>faster_reads</a></li>
+<li>
+<a href=#key_exists_in_one_place>key_exists_in_one_place</a><ul>
+<li>
+<a href=#strong_transactional_semantics>strong_transactional_semantics</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_mature>more_mature</a></li>
+</ul>
+</li>
+<li>
+<a href=#lsm_tree_vs>lsm_tree_vs</a><ul>
+<li>
+<a href=#better_compression>better_compression</a></li>
+<li>
+<a href=#compaction_interference>compaction_interference</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#faster_writes>faster_writes</a></li>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#misconfigured_compaction>misconfigured_compaction</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+<li>
+<a href=#write_amplification>write_amplification</a><ul>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#cascade_SSTables>cascade_SSTables</a></li>
+<li>
+<a href=#log_structured_merge_tree>log_structured_merge_tree</a></li>
+<li>
+<a href=#secondary_key_index>secondary_key_index</a><ul>
+<li>
+<a href=#avoids_duplication>avoids_duplication</a></li>
+</ul>
+</li>
+<li>
+<a href=#term_dictionary>term_dictionary</a><ul>
+<li>
+<a href=#lucene>lucene</a></li>
+<li>
+<a href=#term_desc>term_desc</a><ul>
+<li>
+<a href=#kept_in_SSTable>kept_in_SSTable</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#uses_SSTable>uses_SSTable</a></li>
+</ul>
+</li>
+<li>
 <a href=#covering_index>covering_index</a><ul>
 <li>
 <a href=#clustered_nonclustered_compromise>clustered_nonclustered_compromise</a></li>
@@ -29,6 +133,8 @@ Chapter 3: Storage and Retrieval
 <a href=#data_warehouse>data_warehouse</a><ul>
 <li>
 <a href=#column_oriented_storage>column_oriented_storage</a><ul>
+<li>
+<a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a></li>
 <li>
 <a href=#compresses_well>compresses_well</a><ul>
 <li>
@@ -57,8 +163,6 @@ Chapter 3: Storage and Retrieval
 </li>
 </ul>
 </li>
-<li>
-<a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a></li>
 </ul>
 </li>
 <li>
@@ -122,6 +226,16 @@ Chapter 3: Storage and Retrieval
 <li>
 <a href=#keeping_everything_memory>keeping_everything_memory</a><ul>
 <li>
+<a href=#NVM>NVM</a></li>
+<li>
+<a href=#anti_caching>anti_caching</a><ul>
+<li>
+<a href=#datasets_larger_than_mem>datasets_larger_than_mem</a></li>
+<li>
+<a href=#evict_least_used>evict_least_used</a></li>
+</ul>
+</li>
+<li>
 <a href=#in_memory_db>in_memory_db</a><ul>
 <li>
 <a href=#avoids_encoding_overhead>avoids_encoding_overhead</a></li>
@@ -133,16 +247,6 @@ Chapter 3: Storage and Retrieval
 <a href=#redis_data_structs>redis_data_structs</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li>
-<a href=#NVM>NVM</a></li>
-<li>
-<a href=#anti_caching>anti_caching</a><ul>
-<li>
-<a href=#datasets_larger_than_mem>datasets_larger_than_mem</a></li>
-<li>
-<a href=#evict_least_used>evict_least_used</a></li>
 </ul>
 </li>
 </ul>
@@ -160,7 +264,11 @@ Chapter 3: Storage and Retrieval
 <li>
 <a href=#storage_engine>storage_engine</a><ul>
 <li>
+<a href=#LSM_storage_engine>LSM_storage_engine</a></li>
+<li>
 <a href=#index>index</a><ul>
+<li>
+<a href=#additional_struct_data_derived>additional_struct_data_derived</a></li>
 <li>
 <a href=#efficient_data_struct_lookup>efficient_data_struct_lookup</a></li>
 <li>
@@ -269,8 +377,6 @@ Chapter 3: Storage and Retrieval
 </li>
 </ul>
 </li>
-<li>
-<a href=#additional_struct_data_derived>additional_struct_data_derived</a></li>
 </ul>
 </li>
 <li>
@@ -278,31 +384,33 @@ Chapter 3: Storage and Retrieval
 <li>
 <a href=#log>log</a><ul>
 <li>
+<a href=#append_only>append_only</a></li>
+<li>
 <a href=#break_log_segments>break_log_segments</a><ul>
 <li>
-<a href=#merge_segments>merge_segments</a><ul>
-<li>
-<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
-<li>
-<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
-<li>
-<a href=#leveled>leveled</a><ul>
-<li>
-<a href=#leveled_elab>leveled_elab</a></li>
-</ul>
-</li>
-<li>
-<a href=#size_tiered>size_tiered</a><ul>
-<li>
-<a href=#size_tiered_elab>size_tiered_elab</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
 <a href=#SSTables>SSTables</a><ul>
+<li>
+<a href=#advantages>advantages</a><ul>
+<li>
+<a href=#merging_segments_simple>merging_segments_simple</a></li>
+<li>
+<a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a><ul>
+<li>
+<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a><ul>
+<li>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#records_grouped_compressed>records_grouped_compressed</a><ul>
+<li>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li>
 <a href=#each_key_appears_once>each_key_appears_once</a><ul>
 <li>
@@ -324,9 +432,9 @@ Chapter 3: Storage and Retrieval
 <li>
 <a href=#in_mem_tree>in_mem_tree</a><ul>
 <li>
-<a href=#redblack>redblack</a></li>
-<li>
 <a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
 </ul>
 </li>
 <li>
@@ -341,6 +449,8 @@ Chapter 3: Storage and Retrieval
 <a href=#sort_on_disk>sort_on_disk</a><ul>
 <li>
 <a href=#b_trees>b_trees</a><ul>
+<li>
+<a href=#4_level_tree>4_level_tree</a></li>
 <li>
 <a href=#balanced>balanced</a><ul>
 <li>
@@ -459,8 +569,6 @@ Chapter 3: Storage and Retrieval
 <a href=#redo_log>redo_log</a></li>
 </ul>
 </li>
-<li>
-<a href=#4_level_tree>4_level_tree</a></li>
 </ul>
 </li>
 <li>
@@ -476,9 +584,9 @@ Chapter 3: Storage and Retrieval
 <li>
 <a href=#in_mem_tree>in_mem_tree</a><ul>
 <li>
-<a href=#redblack>redblack</a></li>
-<li>
 <a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
 </ul>
 </li>
 <li>
@@ -506,9 +614,9 @@ Chapter 3: Storage and Retrieval
 <li>
 <a href=#in_mem_tree>in_mem_tree</a><ul>
 <li>
-<a href=#redblack>redblack</a></li>
-<li>
 <a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
 </ul>
 </li>
 <li>
@@ -537,34 +645,32 @@ Chapter 3: Storage and Retrieval
 <a href=#sorted_string_table>sorted_string_table</a></li>
 <li>
 <a href=#uses_SSTable>uses_SSTable</a></li>
+</ul>
+</li>
 <li>
-<a href=#advantages>advantages</a><ul>
+<a href=#merge_segments>merge_segments</a><ul>
 <li>
-<a href=#merging_segments_simple>merging_segments_simple</a></li>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
 <li>
-<a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a><ul>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
 <li>
-<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a><ul>
+<a href=#leveled>leveled</a><ul>
 <li>
-<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li>
-<a href=#records_grouped_compressed>records_grouped_compressed</a><ul>
-<li>
-<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
 </ul>
 </li>
 </ul>
 </li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#append_only>append_only</a></li>
 </ul>
 </li>
 </ul>
@@ -573,6 +679,8 @@ Chapter 3: Storage and Retrieval
 <a href=#page_oriented>page_oriented</a><ul>
 <li>
 <a href=#b_trees>b_trees</a><ul>
+<li>
+<a href=#4_level_tree>4_level_tree</a></li>
 <li>
 <a href=#balanced>balanced</a><ul>
 <li>
@@ -691,14 +799,10 @@ Chapter 3: Storage and Retrieval
 <a href=#redo_log>redo_log</a></li>
 </ul>
 </li>
-<li>
-<a href=#4_level_tree>4_level_tree</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li>
-<a href=#LSM_storage_engine>LSM_storage_engine</a></li>
 </ul>
 </li>
 <li>
@@ -712,6 +816,324 @@ Chapter 3: Storage and Retrieval
 <li>
 <a href=#transaction>transaction</a><ul>
 <li>
+<a href=#OLTP>OLTP</a><ul>
+<li>
+<a href=#OLTP_ops>OLTP_ops</a><ul>
+<li>
+<a href=#dicing>dicing</a></li>
+<li>
+<a href=#drill_down>drill_down</a></li>
+<li>
+<a href=#slicing>slicing</a></li>
+</ul>
+</li>
+<li>
+<a href=#some_oltp_traits>some_oltp_traits</a></li>
+<li>
+<a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a><ul>
+<li>
+<a href=#log_structured>log_structured</a><ul>
+<li>
+<a href=#log>log</a><ul>
+<li>
+<a href=#append_only>append_only</a></li>
+<li>
+<a href=#break_log_segments>break_log_segments</a><ul>
+<li>
+<a href=#SSTables>SSTables</a><ul>
+<li>
+<a href=#advantages>advantages</a><ul>
+<li>
+<a href=#merging_segments_simple>merging_segments_simple</a></li>
+<li>
+<a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a><ul>
+<li>
+<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a><ul>
+<li>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#records_grouped_compressed>records_grouped_compressed</a><ul>
+<li>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#each_key_appears_once>each_key_appears_once</a><ul>
+<li>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
+</ul>
+</li>
+<li>
+<a href=#how_to_sort>how_to_sort</a><ul>
+<li>
+<a href=#sort_in_memory>sort_in_memory</a><ul>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sort_on_disk>sort_on_disk</a><ul>
+<li>
+<a href=#b_trees>b_trees</a><ul>
+<li>
+<a href=#4_level_tree>4_level_tree</a></li>
+<li>
+<a href=#balanced>balanced</a><ul>
+<li>
+<a href=#n_keys_depth>n_keys_depth</a></li>
+</ul>
+</li>
+<li>
+<a href=#blocks_pages>blocks_pages</a><ul>
+<li>
+<a href=#branching_factor>branching_factor</a></li>
+<li>
+<a href=#btree_root>btree_root</a></li>
+<li>
+<a href=#fixed_size_page>fixed_size_page</a></li>
+<li>
+<a href=#leaf_page>leaf_page</a></li>
+<li>
+<a href=#orphan_page>orphan_page</a><ul>
+<li>
+<a href=#not_child_to_parent>not_child_to_parent</a></li>
+<li>
+<a href=#orphan_caused_when>orphan_caused_when</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#btree_root>btree_root</a></li>
+<li>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><ul>
+<li>
+<a href=#btree_vs>btree_vs</a><ul>
+<li>
+<a href=#faster_reads>faster_reads</a></li>
+<li>
+<a href=#key_exists_in_one_place>key_exists_in_one_place</a><ul>
+<li>
+<a href=#strong_transactional_semantics>strong_transactional_semantics</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_mature>more_mature</a></li>
+</ul>
+</li>
+<li>
+<a href=#lsm_tree_vs>lsm_tree_vs</a><ul>
+<li>
+<a href=#better_compression>better_compression</a></li>
+<li>
+<a href=#compaction_interference>compaction_interference</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#faster_writes>faster_writes</a></li>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#misconfigured_compaction>misconfigured_compaction</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+<li>
+<a href=#write_amplification>write_amplification</a><ul>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#fractal_trees>fractal_trees</a></li>
+<li>
+<a href=#identified_using_address>identified_using_address</a><ul>
+<li>
+<a href=#refs_make_tree>refs_make_tree</a></li>
+</ul>
+</li>
+<li>
+<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
+<li>
+<a href=#latches>latches</a><ul>
+<li>
+<a href=#lightweight_locks>lightweight_locks</a></li>
+</ul>
+</li>
+<li>
+<a href=#most_widely_used_index_struct>most_widely_used_index_struct</a></li>
+<li>
+<a href=#secondary_key_index>secondary_key_index</a><ul>
+<li>
+<a href=#avoids_duplication>avoids_duplication</a></li>
+</ul>
+</li>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo_log>redo_log</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sort_in_memory>sort_in_memory</a><ul>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+<li>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
+<li>
+<a href=#leveled>leveled</a><ul>
+<li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sorted_string_table>sorted_string_table</a></li>
+<li>
+<a href=#uses_SSTable>uses_SSTable</a></li>
+</ul>
+</li>
+<li>
+<a href=#merge_segments>merge_segments</a><ul>
+<li>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
+<li>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
+<li>
+<a href=#leveled>leveled</a><ul>
+<li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#update_in_place>update_in_place</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
 <a href=#commercial_transaction>commercial_transaction</a></li>
 <li>
 <a href=#data_analytics>data_analytics</a><ul>
@@ -721,6 +1143,8 @@ Chapter 3: Storage and Retrieval
 <a href=#OLAP>OLAP</a><ul>
 <li>
 <a href=#column_oriented_storage>column_oriented_storage</a><ul>
+<li>
+<a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a></li>
 <li>
 <a href=#compresses_well>compresses_well</a><ul>
 <li>
@@ -749,8 +1173,6 @@ Chapter 3: Storage and Retrieval
 </li>
 </ul>
 </li>
-<li>
-<a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a></li>
 </ul>
 </li>
 <li>
@@ -769,428 +1191,6 @@ Chapter 3: Storage and Retrieval
 </li>
 <li>
 <a href=#rw_group_logical_unit>rw_group_logical_unit</a></li>
-<li>
-<a href=#OLTP>OLTP</a><ul>
-<li>
-<a href=#some_oltp_traits>some_oltp_traits</a></li>
-<li>
-<a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a><ul>
-<li>
-<a href=#log_structured>log_structured</a><ul>
-<li>
-<a href=#log>log</a><ul>
-<li>
-<a href=#break_log_segments>break_log_segments</a><ul>
-<li>
-<a href=#merge_segments>merge_segments</a><ul>
-<li>
-<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
-<li>
-<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
-<li>
-<a href=#leveled>leveled</a><ul>
-<li>
-<a href=#leveled_elab>leveled_elab</a></li>
-</ul>
-</li>
-<li>
-<a href=#size_tiered>size_tiered</a><ul>
-<li>
-<a href=#size_tiered_elab>size_tiered_elab</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#SSTables>SSTables</a><ul>
-<li>
-<a href=#each_key_appears_once>each_key_appears_once</a><ul>
-<li>
-<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
-</ul>
-</li>
-<li>
-<a href=#how_to_sort>how_to_sort</a><ul>
-<li>
-<a href=#sort_in_memory>sort_in_memory</a><ul>
-<li>
-<a href=#memtable>memtable</a><ul>
-<li>
-<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
-<li>
-<a href=#crash_solution>crash_solution</a></li>
-</ul>
-</li>
-<li>
-<a href=#in_mem_tree>in_mem_tree</a><ul>
-<li>
-<a href=#redblack>redblack</a></li>
-<li>
-<a href=#AVL>AVL</a></li>
-</ul>
-</li>
-<li>
-<a href=#memtable_read>memtable_read</a></li>
-<li>
-<a href=#memtable_write>memtable_write</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#sort_on_disk>sort_on_disk</a><ul>
-<li>
-<a href=#b_trees>b_trees</a><ul>
-<li>
-<a href=#balanced>balanced</a><ul>
-<li>
-<a href=#n_keys_depth>n_keys_depth</a></li>
-</ul>
-</li>
-<li>
-<a href=#blocks_pages>blocks_pages</a><ul>
-<li>
-<a href=#branching_factor>branching_factor</a></li>
-<li>
-<a href=#btree_root>btree_root</a></li>
-<li>
-<a href=#fixed_size_page>fixed_size_page</a></li>
-<li>
-<a href=#leaf_page>leaf_page</a></li>
-<li>
-<a href=#orphan_page>orphan_page</a><ul>
-<li>
-<a href=#not_child_to_parent>not_child_to_parent</a></li>
-<li>
-<a href=#orphan_caused_when>orphan_caused_when</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#btree_root>btree_root</a></li>
-<li>
-<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><ul>
-<li>
-<a href=#btree_vs>btree_vs</a><ul>
-<li>
-<a href=#faster_reads>faster_reads</a></li>
-<li>
-<a href=#key_exists_in_one_place>key_exists_in_one_place</a><ul>
-<li>
-<a href=#strong_transactional_semantics>strong_transactional_semantics</a></li>
-</ul>
-</li>
-<li>
-<a href=#more_mature>more_mature</a></li>
-</ul>
-</li>
-<li>
-<a href=#lsm_tree_vs>lsm_tree_vs</a><ul>
-<li>
-<a href=#better_compression>better_compression</a></li>
-<li>
-<a href=#compaction_interference>compaction_interference</a><ul>
-<li>
-<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
-<li>
-<a href=#more_predictable>more_predictable</a><ul>
-<li>
-<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
-<li>
-<a href=#queries>queries</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#faster_writes>faster_writes</a></li>
-<li>
-<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
-<li>
-<a href=#misconfigured_compaction>misconfigured_compaction</a></li>
-</ul>
-</li>
-<li>
-<a href=#more_predictable>more_predictable</a><ul>
-<li>
-<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
-<li>
-<a href=#queries>queries</a></li>
-</ul>
-</li>
-<li>
-<a href=#write_amplification>write_amplification</a><ul>
-<li>
-<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
-<li>
-<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#fractal_trees>fractal_trees</a></li>
-<li>
-<a href=#identified_using_address>identified_using_address</a><ul>
-<li>
-<a href=#refs_make_tree>refs_make_tree</a></li>
-</ul>
-</li>
-<li>
-<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
-<li>
-<a href=#latches>latches</a><ul>
-<li>
-<a href=#lightweight_locks>lightweight_locks</a></li>
-</ul>
-</li>
-<li>
-<a href=#most_widely_used_index_struct>most_widely_used_index_struct</a></li>
-<li>
-<a href=#secondary_key_index>secondary_key_index</a><ul>
-<li>
-<a href=#avoids_duplication>avoids_duplication</a></li>
-</ul>
-</li>
-<li>
-<a href=#write_ahead_log>write_ahead_log</a><ul>
-<li>
-<a href=#redo_log>redo_log</a></li>
-</ul>
-</li>
-<li>
-<a href=#4_level_tree>4_level_tree</a></li>
-</ul>
-</li>
-<li>
-<a href=#sort_in_memory>sort_in_memory</a><ul>
-<li>
-<a href=#memtable>memtable</a><ul>
-<li>
-<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
-<li>
-<a href=#crash_solution>crash_solution</a></li>
-</ul>
-</li>
-<li>
-<a href=#in_mem_tree>in_mem_tree</a><ul>
-<li>
-<a href=#redblack>redblack</a></li>
-<li>
-<a href=#AVL>AVL</a></li>
-</ul>
-</li>
-<li>
-<a href=#memtable_read>memtable_read</a></li>
-<li>
-<a href=#memtable_write>memtable_write</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
-<li>
-<a href=#memtable>memtable</a><ul>
-<li>
-<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
-<li>
-<a href=#crash_solution>crash_solution</a></li>
-</ul>
-</li>
-<li>
-<a href=#in_mem_tree>in_mem_tree</a><ul>
-<li>
-<a href=#redblack>redblack</a></li>
-<li>
-<a href=#AVL>AVL</a></li>
-</ul>
-</li>
-<li>
-<a href=#memtable_read>memtable_read</a></li>
-<li>
-<a href=#memtable_write>memtable_write</a></li>
-</ul>
-</li>
-<li>
-<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
-<li>
-<a href=#leveled>leveled</a><ul>
-<li>
-<a href=#leveled_elab>leveled_elab</a></li>
-</ul>
-</li>
-<li>
-<a href=#size_tiered>size_tiered</a><ul>
-<li>
-<a href=#size_tiered_elab>size_tiered_elab</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#sorted_string_table>sorted_string_table</a></li>
-<li>
-<a href=#uses_SSTable>uses_SSTable</a></li>
-<li>
-<a href=#advantages>advantages</a><ul>
-<li>
-<a href=#merging_segments_simple>merging_segments_simple</a></li>
-<li>
-<a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a><ul>
-<li>
-<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a><ul>
-<li>
-<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#records_grouped_compressed>records_grouped_compressed</a><ul>
-<li>
-<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#append_only>append_only</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#update_in_place>update_in_place</a></li>
-</ul>
-</li>
-<li>
-<a href=#OLTP_ops>OLTP_ops</a><ul>
-<li>
-<a href=#dicing>dicing</a></li>
-<li>
-<a href=#drill_down>drill_down</a></li>
-<li>
-<a href=#slicing>slicing</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#LSM_Trees>LSM_Trees</a><ul>
-<li>
-<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><ul>
-<li>
-<a href=#btree_vs>btree_vs</a><ul>
-<li>
-<a href=#faster_reads>faster_reads</a></li>
-<li>
-<a href=#key_exists_in_one_place>key_exists_in_one_place</a><ul>
-<li>
-<a href=#strong_transactional_semantics>strong_transactional_semantics</a></li>
-</ul>
-</li>
-<li>
-<a href=#more_mature>more_mature</a></li>
-</ul>
-</li>
-<li>
-<a href=#lsm_tree_vs>lsm_tree_vs</a><ul>
-<li>
-<a href=#better_compression>better_compression</a></li>
-<li>
-<a href=#compaction_interference>compaction_interference</a><ul>
-<li>
-<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
-<li>
-<a href=#more_predictable>more_predictable</a><ul>
-<li>
-<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
-<li>
-<a href=#queries>queries</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#faster_writes>faster_writes</a></li>
-<li>
-<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
-<li>
-<a href=#misconfigured_compaction>misconfigured_compaction</a></li>
-</ul>
-</li>
-<li>
-<a href=#more_predictable>more_predictable</a><ul>
-<li>
-<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
-<li>
-<a href=#queries>queries</a></li>
-</ul>
-</li>
-<li>
-<a href=#write_amplification>write_amplification</a><ul>
-<li>
-<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
-<li>
-<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#cascade_SSTables>cascade_SSTables</a></li>
-<li>
-<a href=#log_structured_merge_tree>log_structured_merge_tree</a></li>
-<li>
-<a href=#secondary_key_index>secondary_key_index</a><ul>
-<li>
-<a href=#avoids_duplication>avoids_duplication</a></li>
-</ul>
-</li>
-<li>
-<a href=#term_dictionary>term_dictionary</a><ul>
-<li>
-<a href=#lucene>lucene</a></li>
-<li>
-<a href=#term_desc>term_desc</a><ul>
-<li>
-<a href=#kept_in_SSTable>kept_in_SSTable</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#uses_SSTable>uses_SSTable</a></li>
-<li>
-<a href=#LSM_Trees_perf>LSM_Trees_perf</a><ul>
-<li>
-<a href=#nonexist_keys_slow>nonexist_keys_slow</a><ul>
-<li>
-<a href=#bloom_filters>bloom_filters</a><ul>
-<li>
-<a href=#bloom_desc>bloom_desc</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#LSM_storage_engine>LSM_storage_engine</a></li>
 </ul>
 </li>
 </ul>
@@ -1214,7 +1214,7 @@ Storage Engine
 children
 </td>
 <td>
-<a href=#index>index</a>, <a href=#log_structured>log_structured</a>, <a href=#page_oriented>page_oriented</a>, <a href=#LSM_storage_engine>LSM_storage_engine</a>
+<a href=#LSM_storage_engine>LSM_storage_engine</a>, <a href=#index>index</a>, <a href=#log_structured>log_structured</a>, <a href=#page_oriented>page_oriented</a>
 </td>
 </tr>
 </table><br>
@@ -1245,7 +1245,7 @@ children
 parents
 </td>
 <td>
-<a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a>, <a href=#storage_engine>storage_engine</a>
+<a href=#storage_engine>storage_engine</a>, <a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a>
 </td>
 </tr>
 </table><br>
@@ -1299,7 +1299,7 @@ Log
 children
 </td>
 <td>
-<a href=#break_log_segments>break_log_segments</a>, <a href=#append_only>append_only</a>
+<a href=#append_only>append_only</a>, <a href=#break_log_segments>break_log_segments</a>
 </td>
 </tr>
 <tr>
@@ -1353,7 +1353,7 @@ B-Trees
 children
 </td>
 <td>
-<a href=#balanced>balanced</a>, <a href=#blocks_pages>blocks_pages</a>, <a href=#btree_root>btree_root</a>, <a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>, <a href=#fractal_trees>fractal_trees</a> (variation of b-trees (I think?)), <a href=#identified_using_address>identified_using_address</a>, <a href=#keep_kv_sorted_key>keep_kv_sorted_key</a>, <a href=#latches>latches</a>, <a href=#most_widely_used_index_struct>most_widely_used_index_struct</a>, <a href=#secondary_key_index>secondary_key_index</a>, <a href=#write_ahead_log>write_ahead_log</a>, <a href=#4_level_tree>4_level_tree</a>
+<a href=#4_level_tree>4_level_tree</a>, <a href=#balanced>balanced</a>, <a href=#blocks_pages>blocks_pages</a>, <a href=#btree_root>btree_root</a>, <a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>, <a href=#fractal_trees>fractal_trees</a> (variation of b-trees (I think?)), <a href=#identified_using_address>identified_using_address</a>, <a href=#keep_kv_sorted_key>keep_kv_sorted_key</a>, <a href=#latches>latches</a>, <a href=#most_widely_used_index_struct>most_widely_used_index_struct</a>, <a href=#secondary_key_index>secondary_key_index</a>, <a href=#write_ahead_log>write_ahead_log</a>
 </td>
 </tr>
 <tr>
@@ -1361,7 +1361,7 @@ children
 parents
 </td>
 <td>
-<a href=#sort_on_disk>sort_on_disk</a>, <a href=#page_oriented>page_oriented</a>
+<a href=#page_oriented>page_oriented</a>, <a href=#sort_on_disk>sort_on_disk</a>
 </td>
 </tr>
 </table><br>
@@ -1384,7 +1384,7 @@ Index
 children
 </td>
 <td>
-<a href=#efficient_data_struct_lookup>efficient_data_struct_lookup</a>, <a href=#hash_index>hash_index</a>, <a href=#incurs_overhead>incurs_overhead</a>, <a href=#key>key</a>, <a href=#value>value</a>, <a href=#additional_struct_data_derived>additional_struct_data_derived</a>
+<a href=#additional_struct_data_derived>additional_struct_data_derived</a>, <a href=#efficient_data_struct_lookup>efficient_data_struct_lookup</a>, <a href=#hash_index>hash_index</a>, <a href=#incurs_overhead>incurs_overhead</a>, <a href=#key>key</a>, <a href=#value>value</a>
 </td>
 </tr>
 <tr>
@@ -1415,7 +1415,7 @@ Efficient data structure for lookup
 parents
 </td>
 <td>
-<a href=#index>index</a>, <a href=#tradeoff>tradeoff</a>
+<a href=#tradeoff>tradeoff</a>, <a href=#index>index</a>
 </td>
 </tr>
 </table><br>
@@ -1438,7 +1438,7 @@ Incurs overhead, especially for writes
 parents
 </td>
 <td>
-<a href=#index>index</a>, <a href=#tradeoff>tradeoff</a>
+<a href=#tradeoff>tradeoff</a>, <a href=#index>index</a>
 </td>
 </tr>
 </table><br>
@@ -1677,7 +1677,7 @@ Break log into segments
 children
 </td>
 <td>
-<a href=#merge_segments>merge_segments</a>, <a href=#SSTables>SSTables</a>
+<a href=#SSTables>SSTables</a>, <a href=#merge_segments>merge_segments</a>
 </td>
 </tr>
 <tr>
@@ -1793,7 +1793,7 @@ children
 parents
 </td>
 <td>
-<a href=#compaction>compaction</a>, <a href=#break_log_segments>break_log_segments</a>
+<a href=#break_log_segments>break_log_segments</a>, <a href=#compaction>compaction</a>
 </td>
 </tr>
 </table><br>
@@ -1816,7 +1816,7 @@ SSTables
 children
 </td>
 <td>
-<a href=#each_key_appears_once>each_key_appears_once</a>, <a href=#how_to_sort>how_to_sort</a>, <a href=#keep_kv_sorted_key>keep_kv_sorted_key</a> (Similarity to SSTables), <a href=#memtable>memtable</a>, <a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a> (performance), <a href=#sorted_string_table>sorted_string_table</a> (decrypting the abbreviation), <a href=#uses_SSTable>uses_SSTable</a>, <a href=#advantages>advantages</a>
+<a href=#advantages>advantages</a>, <a href=#each_key_appears_once>each_key_appears_once</a>, <a href=#how_to_sort>how_to_sort</a>, <a href=#keep_kv_sorted_key>keep_kv_sorted_key</a> (Similarity to SSTables), <a href=#memtable>memtable</a>, <a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a> (performance), <a href=#sorted_string_table>sorted_string_table</a> (decrypting the abbreviation), <a href=#uses_SSTable>uses_SSTable</a>
 </td>
 </tr>
 <tr>
@@ -1932,7 +1932,7 @@ LSM-Trees
 children
 </td>
 <td>
-<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>, <a href=#cascade_SSTables>cascade_SSTables</a>, <a href=#log_structured_merge_tree>log_structured_merge_tree</a> (decrypting the abbreviation), <a href=#secondary_key_index>secondary_key_index</a> (also used with LSM-Trees), <a href=#term_dictionary>term_dictionary</a>, <a href=#uses_SSTable>uses_SSTable</a>, <a href=#LSM_Trees_perf>LSM_Trees_perf</a>, <a href=#LSM_storage_engine>LSM_storage_engine</a>
+<a href=#LSM_Trees_perf>LSM_Trees_perf</a>, <a href=#LSM_storage_engine>LSM_storage_engine</a>, <a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>, <a href=#cascade_SSTables>cascade_SSTables</a>, <a href=#log_structured_merge_tree>log_structured_merge_tree</a> (decrypting the abbreviation), <a href=#secondary_key_index>secondary_key_index</a> (also used with LSM-Trees), <a href=#term_dictionary>term_dictionary</a>, <a href=#uses_SSTable>uses_SSTable</a>
 </td>
 </tr>
 </table><br>
@@ -1955,7 +1955,7 @@ Most recent key used when dealing with multiple segments
 parents
 </td>
 <td>
-<a href=#each_key_appears_once>each_key_appears_once</a>, <a href=#merge_segments>merge_segments</a>
+<a href=#merge_segments>merge_segments</a>, <a href=#each_key_appears_once>each_key_appears_once</a>
 </td>
 </tr>
 </table><br>
@@ -2063,7 +2063,7 @@ sparse in-memory index
 parents
 </td>
 <td>
-<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a>, <a href=#records_grouped_compressed>records_grouped_compressed</a>
+<a href=#records_grouped_compressed>records_grouped_compressed</a>, <a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a>
 </td>
 </tr>
 </table><br>
@@ -2156,7 +2156,7 @@ children
 parents
 </td>
 <td>
-<a href=#sort_on_disk>sort_on_disk</a>, <a href=#how_to_sort>how_to_sort</a>
+<a href=#how_to_sort>how_to_sort</a>, <a href=#sort_on_disk>sort_on_disk</a>
 </td>
 </tr>
 </table><br>
@@ -2218,7 +2218,7 @@ children
 parents
 </td>
 <td>
-<a href=#SSTables>SSTables</a>, <a href=#sort_in_memory>sort_in_memory</a>
+<a href=#sort_in_memory>sort_in_memory</a>, <a href=#SSTables>SSTables</a>
 </td>
 </tr>
 </table><br>
@@ -2241,7 +2241,7 @@ in-memory tree
 children
 </td>
 <td>
-<a href=#redblack>redblack</a>, <a href=#AVL>AVL</a>
+<a href=#AVL>AVL</a>, <a href=#redblack>redblack</a>
 </td>
 </tr>
 <tr>
@@ -2464,7 +2464,7 @@ Uses SSTable
 parents
 </td>
 <td>
-<a href=#SSTables>SSTables</a>, <a href=#LSM_Trees>LSM_Trees</a>
+<a href=#LSM_Trees>LSM_Trees</a>, <a href=#SSTables>SSTables</a>
 </td>
 </tr>
 </table><br>
@@ -2711,7 +2711,7 @@ children
 parents
 </td>
 <td>
-<a href=#merge_segments>merge_segments</a>, <a href=#compaction>compaction</a>, <a href=#SSTables>SSTables</a>
+<a href=#SSTables>SSTables</a>, <a href=#compaction>compaction</a>, <a href=#merge_segments>merge_segments</a>
 </td>
 </tr>
 </table><br>
@@ -3019,7 +3019,7 @@ Root
 parents
 </td>
 <td>
-<a href=#b_trees>b_trees</a>, <a href=#blocks_pages>blocks_pages</a>
+<a href=#blocks_pages>blocks_pages</a>, <a href=#b_trees>b_trees</a>
 </td>
 </tr>
 </table><br>
@@ -3381,7 +3381,7 @@ children
 parents
 </td>
 <td>
-<a href=#b_trees>b_trees</a>, <a href=#LSM_Trees>LSM_Trees</a>
+<a href=#LSM_Trees>LSM_Trees</a>, <a href=#b_trees>b_trees</a>
 </td>
 </tr>
 </table><br>
@@ -3566,7 +3566,7 @@ Sustain higher throughput, lower write amplification
 parents
 </td>
 <td>
-<a href=#lsm_tree_vs>lsm_tree_vs</a>, <a href=#write_amplification>write_amplification</a>
+<a href=#write_amplification>write_amplification</a>, <a href=#lsm_tree_vs>lsm_tree_vs</a>
 </td>
 </tr>
 </table><br>
@@ -3643,7 +3643,7 @@ children
 parents
 </td>
 <td>
-<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>, <a href=#compaction_interference>compaction_interference</a>
+<a href=#compaction_interference>compaction_interference</a>, <a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>
 </td>
 </tr>
 </table><br>
@@ -3697,7 +3697,7 @@ Impacts higher percentiles
 parents
 </td>
 <td>
-<a href=#more_predictable>more_predictable</a>, <a href=#compaction_interference>compaction_interference</a>
+<a href=#compaction_interference>compaction_interference</a>, <a href=#more_predictable>more_predictable</a>
 </td>
 </tr>
 <tr>
@@ -3859,7 +3859,7 @@ children
 parents
 </td>
 <td>
-<a href=#primary_key_index>primary_key_index</a>, <a href=#b_trees>b_trees</a>, <a href=#LSM_Trees>LSM_Trees</a>
+<a href=#b_trees>b_trees</a>, <a href=#LSM_Trees>LSM_Trees</a>, <a href=#primary_key_index>primary_key_index</a>
 </td>
 </tr>
 </table><br>
@@ -4060,7 +4060,7 @@ Avoids duplication when multiple secondary indexes are present
 parents
 </td>
 <td>
-<a href=#heap_file>heap_file</a>, <a href=#secondary_key_index>secondary_key_index</a>
+<a href=#secondary_key_index>secondary_key_index</a>, <a href=#heap_file>heap_file</a>
 </td>
 </tr>
 </table><br>
@@ -4383,7 +4383,7 @@ Keeping everything in memory
 children
 </td>
 <td>
-<a href=#in_memory_db>in_memory_db</a>, <a href=#NVM>NVM</a>, <a href=#anti_caching>anti_caching</a>
+<a href=#NVM>NVM</a>, <a href=#anti_caching>anti_caching</a>, <a href=#in_memory_db>in_memory_db</a>
 </td>
 </tr>
 </table><br>
@@ -4637,7 +4637,7 @@ Transaction
 children
 </td>
 <td>
-<a href=#commercial_transaction>commercial_transaction</a> (business origins), <a href=#data_analytics>data_analytics</a>, <a href=#rw_group_logical_unit>rw_group_logical_unit</a> (description), <a href=#OLTP>OLTP</a>
+<a href=#OLTP>OLTP</a>, <a href=#commercial_transaction>commercial_transaction</a> (business origins), <a href=#data_analytics>data_analytics</a>, <a href=#rw_group_logical_unit>rw_group_logical_unit</a> (description)
 </td>
 </tr>
 </table><br>
@@ -4706,7 +4706,7 @@ Online Transaction Processing (OLTP)
 children
 </td>
 <td>
-<a href=#some_oltp_traits>some_oltp_traits</a>, <a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a>, <a href=#OLTP_ops>OLTP_ops</a>
+<a href=#OLTP_ops>OLTP_ops</a>, <a href=#some_oltp_traits>some_oltp_traits</a>, <a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a>
 </td>
 </tr>
 <tr>
@@ -5069,7 +5069,7 @@ Surround facts table like rays of a star
 parents
 </td>
 <td>
-<a href=#dimension_tables>dimension_tables</a>, <a href=#star_schema>star_schema</a>
+<a href=#star_schema>star_schema</a>, <a href=#dimension_tables>dimension_tables</a>
 </td>
 </tr>
 </table><br>
@@ -5192,7 +5192,7 @@ Column-oriented storage
 children
 </td>
 <td>
-<a href=#compresses_well>compresses_well</a>, <a href=#sort_order>sort_order</a>, <a href=#sorted_different_ways>sorted_different_ways</a>, <a href=#writing>writing</a>, <a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a>
+<a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a>, <a href=#compresses_well>compresses_well</a>, <a href=#sort_order>sort_order</a>, <a href=#sorted_different_ways>sorted_different_ways</a>, <a href=#writing>writing</a>
 </td>
 </tr>
 <tr>
@@ -5655,7 +5655,7 @@ high volume, user-facing
 parents
 </td>
 <td>
-<a href=#OLTP>OLTP</a>, <a href=#some_olap_traits>some_olap_traits</a>
+<a href=#some_olap_traits>some_olap_traits</a>, <a href=#OLTP>OLTP</a>
 </td>
 </tr>
 </table><br>
