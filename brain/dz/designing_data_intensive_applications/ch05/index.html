@@ -1,0 +1,4542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>designing_data_intensive_applications/ch05</title>
+<h1>ch05</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/designing_data_intensive_applications">designing_data_intensive_applications</a> / <a href="/brain/dz/designing_data_intensive_applications/ch05">ch05</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 5: Replication
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#replication>replication</a><ul>
+<li>
+<a href=#chain_repl>chain_repl</a></li>
+<li>
+<a href=#consensus>consensus</a></li>
+<li>
+<a href=#copy_data_multi_machines_networked>copy_data_multi_machines_networked</a></li>
+<li>
+<a href=#detecting_concurrent_writes>detecting_concurrent_writes</a><ul>
+<li>
+<a href=#happens_before>happens_before</a><ul>
+<li>
+<a href=#clients_merging_concurrent_vals>clients_merging_concurrent_vals</a><ul>
+<li>
+<a href=#siblings>siblings</a></li>
+<li>
+<a href=#union_reasonable_approach>union_reasonable_approach</a><ul>
+<li>
+<a href=#doesnt_work_with_removing>doesnt_work_with_removing</a><ul>
+<li>
+<a href=#tombstone>tombstone</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#CRDT>CRDT</a></li>
+</ul>
+</li>
+<li>
+<a href=#happens_before_AB_combos>happens_before_AB_combos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#eventual_consistency>eventual_consistency</a><ul>
+<li>
+<a href=#guarantee_less_strong_greater_eventual>guarantee_less_strong_greater_eventual</a></li>
+</ul>
+</li>
+<li>
+<a href=#guarantees>guarantees</a><ul>
+<li>
+<a href=#monotonic_reads>monotonic_reads</a><ul>
+<li>
+<a href=#guarantee_less_strong_greater_eventual>guarantee_less_strong_greater_eventual</a></li>
+<li>
+<a href=#moving_backwards_in_time>moving_backwards_in_time</a></li>
+</ul>
+</li>
+<li>
+<a href=#read_your_writes>read_your_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#handling_data_changes>handling_data_changes</a><ul>
+<li>
+<a href=#btwn_nodes>btwn_nodes</a><ul>
+<li>
+<a href=#leaderless>leaderless</a></li>
+<li>
+<a href=#multi_leader>multi_leader</a></li>
+<li>
+<a href=#single_leader>single_leader</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#leaderless_replication>leaderless_replication</a><ul>
+<li>
+<a href=#dynamo_style>dynamo_style</a></li>
+<li>
+<a href=#failover_does_not_exist>failover_does_not_exist</a><ul>
+<li>
+<a href=#potentially_stale_data>potentially_stale_data</a><ul>
+<li>
+<a href=#node_catch_up_missed_writes>node_catch_up_missed_writes</a><ul>
+<li>
+<a href=#read_repair>read_repair</a><ul>
+<li>
+<a href=#versions>versions</a><ul>
+<li>
+<a href=#version_number_per_replica>version_number_per_replica</a><ul>
+<li>
+<a href=#version_vector>version_vector</a><ul>
+<li>
+<a href=#causal_context>causal_context</a></li>
+<li>
+<a href=#collection_from_all_replicas>collection_from_all_replicas</a></li>
+<li>
+<a href=#dotted_version_vecotr>dotted_version_vecotr</a></li>
+<li>
+<a href=#vector_clock>vector_clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#anti_entropy_process>anti_entropy_process</a><ul>
+<li>
+<a href=#background_process_differences_replicas>background_process_differences_replicas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#read_requests_parallel>read_requests_parallel</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#quorum_reads_writes>quorum_reads_writes</a><ul>
+<li>
+<a href=#sloppy_quorum>sloppy_quorum</a><ul>
+<li>
+<a href=#not_in_designated_home_nodes>not_in_designated_home_nodes</a><ul>
+<li>
+<a href=#hinted_handoff>hinted_handoff</a><ul>
+<li>
+<a href=#temp_values_sent_home>temp_values_sent_home</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a></li>
+</ul>
+</li>
+<li>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a><ul>
+<li>
+<a href=#n3w2r2_one_unavail>n3w2r2_one_unavail</a><ul>
+<li>
+<a href=#n5w3r3_two_unavail>n5w3r3_two_unavail</a></li>
+</ul>
+</li>
+<li>
+<a href=#n5w3r3_two_unavail>n5w3r3_two_unavail</a></li>
+<li>
+<a href=#n_w_r>n_w_r</a></li>
+<li>
+<a href=#r_less_n_still_reads>r_less_n_still_reads</a></li>
+<li>
+<a href=#smaller_wr>smaller_wr</a><ul>
+<li>
+<a href=#stale_possible_for_greater_n>stale_possible_for_greater_n</a></li>
+</ul>
+</li>
+<li>
+<a href=#w_less_n_still_writes>w_less_n_still_writes</a></li>
+<li>
+<a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a></li>
+</ul>
+</li>
+<li>
+<a href=#assurance_of_durability>assurance_of_durability</a></li>
+</ul>
+</li>
+<li>
+<a href=#write_implementations>write_implementations</a><ul>
+<li>
+<a href=#client_writes_directly>client_writes_directly</a><ul>
+<li>
+<a href=#parallel_read_requests>parallel_read_requests</a></li>
+</ul>
+</li>
+<li>
+<a href=#coordinator_node>coordinator_node</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#monitoring_staleness>monitoring_staleness</a><ul>
+<li>
+<a href=#leaderless_more_difficult>leaderless_more_difficult</a></li>
+<li>
+<a href=#LBR_lag_metrics>LBR_lag_metrics</a></li>
+</ul>
+</li>
+<li>
+<a href=#multi_leader_replication>multi_leader_replication</a><ul>
+<li>
+<a href=#clients_offline_operation>clients_offline_operation</a></li>
+<li>
+<a href=#collab_editing>collab_editing</a></li>
+<li>
+<a href=#handling_write_conflicts>handling_write_conflicts</a><ul>
+<li>
+<a href=#avoiding_conflicts>avoiding_conflicts</a><ul>
+<li>
+<a href=#particular_record_writes_same_leader>particular_record_writes_same_leader</a><ul>
+<li>
+<a href=#breaks_when_leader_changes>breaks_when_leader_changes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#convergence_consistency>convergence_consistency</a><ul>
+<li>
+<a href=#last_write_wins>last_write_wins</a><ul>
+<li>
+<a href=#discards_concurrent_writes>discards_concurrent_writes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#same_as_conflict_resolution>same_as_conflict_resolution</a></li>
+<li>
+<a href=#write_async>write_async</a><ul>
+<li>
+<a href=#accepts_writes_independently>accepts_writes_independently</a><ul>
+<li>
+<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#write_sync>write_sync</a><ul>
+<li>
+<a href=#second_write_blocks>second_write_blocks</a><ul>
+<li>
+<a href=#single_leader>single_leader</a></li>
+</ul>
+</li>
+<li>
+<a href=#wait_for_write_before_success>wait_for_write_before_success</a><ul>
+<li>
+<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#auto_conflict_resolution>auto_conflict_resolution</a><ul>
+<li>
+<a href=#mergeable_persistant_data_structs>mergeable_persistant_data_structs</a></li>
+<li>
+<a href=#operational_transformation>operational_transformation</a></li>
+<li>
+<a href=#CRDT>CRDT</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#more_than_one_node_writes>more_than_one_node_writes</a></li>
+<li>
+<a href=#multi_datacenter_operastion>multi_datacenter_operastion</a></li>
+<li>
+<a href=#replication_topology>replication_topology</a><ul>
+<li>
+<a href=#circular_topology>circular_topology</a><ul>
+<li>
+<a href=#mysql_default>mysql_default</a></li>
+<li>
+<a href=#one_failure_interrupts_writes>one_failure_interrupts_writes</a></li>
+<li>
+<a href=#one_node_receive_forward_another>one_node_receive_forward_another</a></li>
+</ul>
+</li>
+<li>
+<a href=#star_topology>star_topology</a><ul>
+<li>
+<a href=#designated_node_writes>designated_node_writes</a></li>
+<li>
+<a href=#one_failure_interrupts_writes>one_failure_interrupts_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#all_to_all>all_to_all</a><ul>
+<li>
+<a href=#common_topology>common_topology</a></li>
+<li>
+<a href=#every_leader_writes_every_leader>every_leader_writes_every_leader</a></li>
+<li>
+<a href=#fault_tolerant>fault_tolerant</a><ul>
+<li>
+<a href=#one_failure_interrupts_writes>one_failure_interrupts_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#network_messages_overtake>network_messages_overtake</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#same_as_conflict_resolution>same_as_conflict_resolution</a></li>
+</ul>
+</li>
+<li>
+<a href=#replica>replica</a><ul>
+<li>
+<a href=#ensure_data_on_all_reps>ensure_data_on_all_reps</a><ul>
+<li>
+<a href=#leader_based_replication>leader_based_replication</a><ul>
+<li>
+<a href=#designated_leader>designated_leader</a><ul>
+<li>
+<a href=#client_reads>client_reads</a></li>
+<li>
+<a href=#client_write_sent_to_leader>client_write_sent_to_leader</a><ul>
+<li>
+<a href=#client_reads>client_reads</a></li>
+<li>
+<a href=#leader_only_writes>leader_only_writes</a></li>
+<li>
+<a href=#write_local_storage>write_local_storage</a><ul>
+<li>
+<a href=#sends_data_to_reps>sends_data_to_reps</a><ul>
+<li>
+<a href=#replication_log>replication_log</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#follower>follower</a><ul>
+<li>
+<a href=#client_reads>client_reads</a></li>
+<li>
+<a href=#new_follower>new_follower</a><ul>
+<li>
+<a href=#db_snapshot>db_snapshot</a><ul>
+<li>
+<a href=#log_seq_num>log_seq_num</a><ul>
+<li>
+<a href=#caught_up>caught_up</a></li>
+<li>
+<a href=#changes_since_snap>changes_since_snap</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sends_data_to_reps>sends_data_to_reps</a><ul>
+<li>
+<a href=#replication_log>replication_log</a></li>
+</ul>
+</li>
+<li>
+<a href=#unresponsive_follower_blocks>unresponsive_follower_blocks</a><ul>
+<li>
+<a href=#only_one_sync_follower>only_one_sync_follower</a><ul>
+<li>
+<a href=#semi_sync>semi_sync</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#handling_node_outage>handling_node_outage</a><ul>
+<li>
+<a href=#follower_failure>follower_failure</a><ul>
+<li>
+<a href=#leader_failure>leader_failure</a><ul>
+<li>
+<a href=#failover>failover</a><ul>
+<li>
+<a href=#select_follower_become_leader>select_follower_become_leader</a></li>
+<li>
+<a href=#automatic_failover>automatic_failover</a><ul>
+<li>
+<a href=#things_that_go_wrong>things_that_go_wrong</a><ul>
+<li>
+<a href=#discarded_writes>discarded_writes</a></li>
+<li>
+<a href=#split_brain>split_brain</a></li>
+<li>
+<a href=#unnecessary_failover>unnecessary_failover</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#recover_from_log>recover_from_log</a></li>
+</ul>
+</li>
+<li>
+<a href=#leader_failure>leader_failure</a><ul>
+<li>
+<a href=#failover>failover</a><ul>
+<li>
+<a href=#select_follower_become_leader>select_follower_become_leader</a></li>
+<li>
+<a href=#automatic_failover>automatic_failover</a><ul>
+<li>
+<a href=#things_that_go_wrong>things_that_go_wrong</a><ul>
+<li>
+<a href=#discarded_writes>discarded_writes</a></li>
+<li>
+<a href=#split_brain>split_brain</a></li>
+<li>
+<a href=#unnecessary_failover>unnecessary_failover</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#read_after_write_consistency>read_after_write_consistency</a><ul>
+<li>
+<a href=#cross_device_RAW>cross_device_RAW</a></li>
+<li>
+<a href=#read_your_writes>read_your_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#read_scaling_arch>read_scaling_arch</a><ul>
+<li>
+<a href=#eventual_consistency>eventual_consistency</a><ul>
+<li>
+<a href=#guarantee_less_strong_greater_eventual>guarantee_less_strong_greater_eventual</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#replication_lag>replication_lag</a><ul>
+<li>
+<a href=#transactions>transactions</a><ul>
+<li>
+<a href=#dont_think_replication_lag>dont_think_replication_lag</a></li>
+</ul>
+</li>
+<li>
+<a href=#violations_of_causality>violations_of_causality</a><ul>
+<li>
+<a href=#consistent_prefix_reads>consistent_prefix_reads</a><ul>
+<li>
+<a href=#users_see_data_in_state_that_makes_sense>users_see_data_in_state_that_makes_sense</a></li>
+<li>
+<a href=#write_seq_order_read_order>write_seq_order_read_order</a></li>
+</ul>
+</li>
+<li>
+<a href=#network_messages_overtake>network_messages_overtake</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#replication_methods>replication_methods</a><ul>
+<li>
+<a href=#logical_log>logical_log</a><ul>
+<li>
+<a href=#decouple_log_from_storage>decouple_log_from_storage</a></li>
+</ul>
+</li>
+<li>
+<a href=#statement_based>statement_based</a></li>
+<li>
+<a href=#trigger_based>trigger_based</a></li>
+<li>
+<a href=#wal_shipping>wal_shipping</a></li>
+</ul>
+</li>
+<li>
+<a href=#usually_async>usually_async</a></li>
+<li>
+<a href=#LBR_lag_metrics>LBR_lag_metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sync_async>sync_async</a><ul>
+<li>
+<a href=#sync>sync</a><ul>
+<li>
+<a href=#guaranteed_up_to_date>guaranteed_up_to_date</a></li>
+<li>
+<a href=#unresponsive_follower_blocks>unresponsive_follower_blocks</a><ul>
+<li>
+<a href=#only_one_sync_follower>only_one_sync_follower</a><ul>
+<li>
+<a href=#semi_sync>semi_sync</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#async>async</a><ul>
+<li>
+<a href=#semi_sync>semi_sync</a></li>
+<li>
+<a href=#usually_async>usually_async</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replication>replication</a><a id="replication"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#chain_repl>chain_repl</a>, <a href=#consensus>consensus</a>, <a href=#copy_data_multi_machines_networked>copy_data_multi_machines_networked</a> (description), <a href=#detecting_concurrent_writes>detecting_concurrent_writes</a>, <a href=#eventual_consistency>eventual_consistency</a>, <a href=#guarantees>guarantees</a>, <a href=#handling_data_changes>handling_data_changes</a>, <a href=#leaderless_replication>leaderless_replication</a>, <a href=#monitoring_staleness>monitoring_staleness</a>, <a href=#multi_leader_replication>multi_leader_replication</a>, <a href=#replica>replica</a>, <a href=#sync_async>sync_async</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#handling_data_changes>handling_data_changes</a><a id="handling_data_changes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Handling changes to data
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#btwn_nodes>btwn_nodes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#copy_data_multi_machines_networked>copy_data_multi_machines_networked</a><a id="copy_data_multi_machines_networked"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Keep copy of the same data on multiple machines, connected via a network
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sync_async>sync_async</a><a id="sync_async"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Synchronous vs Asynchronous
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sync>sync</a>, <a href=#async>async</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sync>sync</a><a id="sync"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+synchronous
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#guaranteed_up_to_date>guaranteed_up_to_date</a>, <a href=#unresponsive_follower_blocks>unresponsive_follower_blocks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync_async>sync_async</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#async>async</a><a id="async"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+asynchronous
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#semi_sync>semi_sync</a>, <a href=#usually_async>usually_async</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync_async>sync_async</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#eventual_consistency>eventual_consistency</a><a id="eventual_consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Eventual Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#guarantee_less_strong_greater_eventual>guarantee_less_strong_greater_eventual</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_scaling_arch>read_scaling_arch</a>, <a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#btwn_nodes>btwn_nodes</a><a id="btwn_nodes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Between Nodes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leaderless>leaderless</a>, <a href=#multi_leader>multi_leader</a>, <a href=#single_leader>single_leader</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_data_changes>handling_data_changes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#single_leader>single_leader</a><a id="single_leader"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Single Leader
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#second_write_blocks>second_write_blocks</a>, <a href=#btwn_nodes>btwn_nodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multi_leader>multi_leader</a><a id="multi_leader"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+multi-leader
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#btwn_nodes>btwn_nodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leaderless>leaderless</a><a id="leaderless"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leaderless
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#btwn_nodes>btwn_nodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#guarantees>guarantees</a><a id="guarantees"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+guarantees
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#monotonic_reads>monotonic_reads</a>, <a href=#read_your_writes>read_your_writes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_your_writes>read_your_writes</a><a id="read_your_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+read-your-writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_after_write_consistency>read_after_write_consistency</a>, <a href=#guarantees>guarantees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#monotonic_reads>monotonic_reads</a><a id="monotonic_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+monotonic reads
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#guarantee_less_strong_greater_eventual>guarantee_less_strong_greater_eventual</a>, <a href=#moving_backwards_in_time>moving_backwards_in_time</a> (monotonic reads prevent this)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#guarantees>guarantees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replica>replica</a><a id="replica"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replica
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ensure_data_on_all_reps>ensure_data_on_all_reps</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ensure_data_on_all_reps>ensure_data_on_all_reps</a><a id="ensure_data_on_all_reps"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to ensure data ends up on all replicas?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leader_based_replication>leader_based_replication</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replica>replica</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leader_based_replication>leader_based_replication</a><a id="leader_based_replication"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leader-based replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#designated_leader>designated_leader</a>, <a href=#follower>follower</a>, <a href=#handling_node_outage>handling_node_outage</a>, <a href=#read_after_write_consistency>read_after_write_consistency</a>, <a href=#read_scaling_arch>read_scaling_arch</a>, <a href=#replication_lag>replication_lag</a>, <a href=#replication_methods>replication_methods</a>, <a href=#usually_async>usually_async</a>, <a href=#LBR_lag_metrics>LBR_lag_metrics</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ensure_data_on_all_reps>ensure_data_on_all_reps</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#designated_leader>designated_leader</a><a id="designated_leader"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Designated leader/primary/master
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_reads>client_reads</a>, <a href=#client_write_sent_to_leader>client_write_sent_to_leader</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#follower>follower</a><a id="follower"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Followers/read replicas/slaves/secondaries/hot standby
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_reads>client_reads</a>, <a href=#new_follower>new_follower</a>, <a href=#sends_data_to_reps>sends_data_to_reps</a>, <a href=#unresponsive_follower_blocks>unresponsive_follower_blocks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#client_write_sent_to_leader>client_write_sent_to_leader</a><a id="client_write_sent_to_leader"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Client write requests sent to leader
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_reads>client_reads</a>, <a href=#leader_only_writes>leader_only_writes</a>, <a href=#write_local_storage>write_local_storage</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#designated_leader>designated_leader</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_local_storage>write_local_storage</a><a id="write_local_storage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write to local storage
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sends_data_to_reps>sends_data_to_reps</a> (then)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#client_write_sent_to_leader>client_write_sent_to_leader</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sends_data_to_reps>sends_data_to_reps</a><a id="sends_data_to_reps"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sends data changes to other replicas
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replication_log>replication_log</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_local_storage>write_local_storage</a>, <a href=#follower>follower</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replication_log>replication_log</a><a id="replication_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication Log / Change Stream
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sends_data_to_reps>sends_data_to_reps</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leader_only_writes>leader_only_writes</a><a id="leader_only_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Client write queries only accepted by leader
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#client_write_sent_to_leader>client_write_sent_to_leader</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#client_reads>client_reads</a><a id="client_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Client Reads: query leader or followers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#follower>follower</a>, <a href=#designated_leader>designated_leader</a>, <a href=#client_write_sent_to_leader>client_write_sent_to_leader</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#guaranteed_up_to_date>guaranteed_up_to_date</a><a id="guaranteed_up_to_date"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+guaranteed to have up-to-date copy
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync>sync</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#unresponsive_follower_blocks>unresponsive_follower_blocks</a><a id="unresponsive_follower_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Unresponsive follower doesn't process write, blocks all writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#only_one_sync_follower>only_one_sync_follower</a> (mitigation)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync>sync</a>, <a href=#follower>follower</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#only_one_sync_follower>only_one_sync_follower</a><a id="only_one_sync_follower"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Only one synchronous follower
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#semi_sync>semi_sync</a> (terminology)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#unresponsive_follower_blocks>unresponsive_follower_blocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#semi_sync>semi_sync</a><a id="semi_sync"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+semi-synchronous
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#async>async</a>, <a href=#only_one_sync_follower>only_one_sync_follower</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#usually_async>usually_async</a><a id="usually_async"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Usually asynchronous
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#async>async</a>, <a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#new_follower>new_follower</a><a id="new_follower"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+New Follower setup
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_snapshot>db_snapshot</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#follower>follower</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#db_snapshot>db_snapshot</a><a id="db_snapshot"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database Snapshot (from leader)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_seq_num>log_seq_num</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#new_follower>new_follower</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_seq_num>log_seq_num</a><a id="log_seq_num"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Sequence Number/binlog coordinates
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#caught_up>caught_up</a>, <a href=#changes_since_snap>changes_since_snap</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_snapshot>db_snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#changes_since_snap>changes_since_snap</a><a id="changes_since_snap"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Changes Since Snapshot
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_seq_num>log_seq_num</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#caught_up>caught_up</a><a id="caught_up"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Caught Up
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_seq_num>log_seq_num</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#chain_repl>chain_repl</a><a id="chain_repl"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Chain replication
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#consensus>consensus</a><a id="consensus"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Consensus
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#handling_node_outage>handling_node_outage</a><a id="handling_node_outage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Handling node outage
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#follower_failure>follower_failure</a>, <a href=#leader_failure>leader_failure</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#follower_failure>follower_failure</a><a id="follower_failure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+follower failure
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leader_failure>leader_failure</a> (Trickier), <a href=#recover_from_log>recover_from_log</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_node_outage>handling_node_outage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#recover_from_log>recover_from_log</a><a id="recover_from_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Recover From Log
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#follower_failure>follower_failure</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leader_failure>leader_failure</a><a id="leader_failure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leader Failure
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#failover>failover</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#follower_failure>follower_failure</a>, <a href=#handling_node_outage>handling_node_outage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#failover>failover</a><a id="failover"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Failover
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#select_follower_become_leader>select_follower_become_leader</a> (description), <a href=#automatic_failover>automatic_failover</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_failure>leader_failure</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#select_follower_become_leader>select_follower_become_leader</a><a id="select_follower_become_leader"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Selecto Follower to become leader
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#failover>failover</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#automatic_failover>automatic_failover</a><a id="automatic_failover"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Automatic Failover
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#things_that_go_wrong>things_that_go_wrong</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#failover>failover</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#things_that_go_wrong>things_that_go_wrong</a><a id="things_that_go_wrong"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+things that go wrong
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#discarded_writes>discarded_writes</a>, <a href=#split_brain>split_brain</a>, <a href=#unnecessary_failover>unnecessary_failover</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#automatic_failover>automatic_failover</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#split_brain>split_brain</a><a id="split_brain"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Split Brain
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#things_that_go_wrong>things_that_go_wrong</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#discarded_writes>discarded_writes</a><a id="discarded_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Discarded Writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#things_that_go_wrong>things_that_go_wrong</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#unnecessary_failover>unnecessary_failover</a><a id="unnecessary_failover"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Unncessary Failover (timeout too small)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#things_that_go_wrong>things_that_go_wrong</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replication_methods>replication_methods</a><a id="replication_methods"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication Methods
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#logical_log>logical_log</a>, <a href=#statement_based>statement_based</a>, <a href=#trigger_based>trigger_based</a>, <a href=#wal_shipping>wal_shipping</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#trigger_based>trigger_based</a><a id="trigger_based"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Trigger-Based Replication
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_methods>replication_methods</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#statement_based>statement_based</a><a id="statement_based"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Statement-based Replication
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_methods>replication_methods</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#logical_log>logical_log</a><a id="logical_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Logical Log
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#decouple_log_from_storage>decouple_log_from_storage</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_methods>replication_methods</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wal_shipping>wal_shipping</a><a id="wal_shipping"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+WAL Shipping
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_methods>replication_methods</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_scaling_arch>read_scaling_arch</a><a id="read_scaling_arch"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read Scaling Architecture
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#eventual_consistency>eventual_consistency</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#decouple_log_from_storage>decouple_log_from_storage</a><a id="decouple_log_from_storage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Decouple replication log from storage engine
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#logical_log>logical_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_after_write_consistency>read_after_write_consistency</a><a id="read_after_write_consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read after write consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cross_device_RAW>cross_device_RAW</a>, <a href=#read_your_writes>read_your_writes</a> (AKA)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cross_device_RAW>cross_device_RAW</a><a id="cross_device_RAW"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+cross device read-after-write consistency
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_after_write_consistency>read_after_write_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replication_lag>replication_lag</a><a id="replication_lag"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication lag
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transactions>transactions</a>, <a href=#violations_of_causality>violations_of_causality</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#moving_backwards_in_time>moving_backwards_in_time</a><a id="moving_backwards_in_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Moving backwards in time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monotonic_reads>monotonic_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#guarantee_less_strong_greater_eventual>guarantee_less_strong_greater_eventual</a><a id="guarantee_less_strong_greater_eventual"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lesser guarantee than strong consistency. Stronger guarantee than eventual consistency
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#eventual_consistency>eventual_consistency</a>, <a href=#monotonic_reads>monotonic_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#violations_of_causality>violations_of_causality</a><a id="violations_of_causality"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Violations of Causality
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#consistent_prefix_reads>consistent_prefix_reads</a> (solution), <a href=#network_messages_overtake>network_messages_overtake</a> (causality problem)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_lag>replication_lag</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#consistent_prefix_reads>consistent_prefix_reads</a><a id="consistent_prefix_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+consistent prefix reads
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#users_see_data_in_state_that_makes_sense>users_see_data_in_state_that_makes_sense</a> (description that popped up in summary of chapter), <a href=#write_seq_order_read_order>write_seq_order_read_order</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#violations_of_causality>violations_of_causality</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_seq_order_read_order>write_seq_order_read_order</a><a id="write_seq_order_read_order"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If sequence of writres happen in certain order, anyone reading those writes will read them in same order
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistent_prefix_reads>consistent_prefix_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transactions>transactions</a><a id="transactions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+transactions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dont_think_replication_lag>dont_think_replication_lag</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_lag>replication_lag</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dont_think_replication_lag>dont_think_replication_lag</a><a id="dont_think_replication_lag"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Designed so that programmers don't have to think about replication lag.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multi_leader_replication>multi_leader_replication</a><a id="multi_leader_replication"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multi-leader replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clients_offline_operation>clients_offline_operation</a>, <a href=#collab_editing>collab_editing</a>, <a href=#handling_write_conflicts>handling_write_conflicts</a>, <a href=#more_than_one_node_writes>more_than_one_node_writes</a>, <a href=#multi_datacenter_operastion>multi_datacenter_operastion</a>, <a href=#replication_topology>replication_topology</a>, <a href=#same_as_conflict_resolution>same_as_conflict_resolution</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_than_one_node_writes>more_than_one_node_writes</a><a id="more_than_one_node_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More than one node can accept writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_leader_replication>multi_leader_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multi_datacenter_operastion>multi_datacenter_operastion</a><a id="multi_datacenter_operastion"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multi Datacenter Operation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_leader_replication>multi_leader_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clients_offline_operation>clients_offline_operation</a><a id="clients_offline_operation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clients with offline operation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_leader_replication>multi_leader_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#collab_editing>collab_editing</a><a id="collab_editing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Collaborative Editing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_leader_replication>multi_leader_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#handling_write_conflicts>handling_write_conflicts</a><a id="handling_write_conflicts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Handling Write Conflicts
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#avoiding_conflicts>avoiding_conflicts</a>, <a href=#convergence_consistency>convergence_consistency</a>, <a href=#same_as_conflict_resolution>same_as_conflict_resolution</a>, <a href=#write_async>write_async</a>, <a href=#write_sync>write_sync</a>, <a href=#auto_conflict_resolution>auto_conflict_resolution</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_leader_replication>multi_leader_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_sync>write_sync</a><a id="write_sync"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Synchronous Writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#second_write_blocks>second_write_blocks</a>, <a href=#wait_for_write_before_success>wait_for_write_before_success</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_write_conflicts>handling_write_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_async>write_async</a><a id="write_async"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Asynchronous Writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#accepts_writes_independently>accepts_writes_independently</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_write_conflicts>handling_write_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#second_write_blocks>second_write_blocks</a><a id="second_write_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Second write: block and wait, or abort
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#single_leader>single_leader</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_sync>write_sync</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#accepts_writes_independently>accepts_writes_independently</a><a id="accepts_writes_independently"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Accepts writes independently
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a> (by contrast, asynchronous works better with MLR)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_async>write_async</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wait_for_write_before_success>wait_for_write_before_success</a><a id="wait_for_write_before_success"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wait for write to be replicated before success
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_sync>write_sync</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a><a id="defeats_multi_leader_advantage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Defeats advantage of multi-leader replication
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#wait_for_write_before_success>wait_for_write_before_success</a>, <a href=#accepts_writes_independently>accepts_writes_independently</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#avoiding_conflicts>avoiding_conflicts</a><a id="avoiding_conflicts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Avoiding Conflicts
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#particular_record_writes_same_leader>particular_record_writes_same_leader</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_write_conflicts>handling_write_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#particular_record_writes_same_leader>particular_record_writes_same_leader</a><a id="particular_record_writes_same_leader"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ensure all writes for a particular record go through the same leader
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#breaks_when_leader_changes>breaks_when_leader_changes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#avoiding_conflicts>avoiding_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#breaks_when_leader_changes>breaks_when_leader_changes</a><a id="breaks_when_leader_changes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Breaks down when leader changes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#particular_record_writes_same_leader>particular_record_writes_same_leader</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#convergence_consistency>convergence_consistency</a><a id="convergence_consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Convergence Towards Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#last_write_wins>last_write_wins</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_write_conflicts>handling_write_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#last_write_wins>last_write_wins</a><a id="last_write_wins"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Last Write Wins
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#discards_concurrent_writes>discards_concurrent_writes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#convergence_consistency>convergence_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#auto_conflict_resolution>auto_conflict_resolution</a><a id="auto_conflict_resolution"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Automatic Conflict Resolution
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mergeable_persistant_data_structs>mergeable_persistant_data_structs</a>, <a href=#operational_transformation>operational_transformation</a>, <a href=#CRDT>CRDT</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_write_conflicts>handling_write_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mergeable_persistant_data_structs>mergeable_persistant_data_structs</a><a id="mergeable_persistant_data_structs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mergeable Persistant Data Structures
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#auto_conflict_resolution>auto_conflict_resolution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#CRDT>CRDT</a><a id="CRDT"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Conflict-free Replicated Data Types (CRDT)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clients_merging_concurrent_vals>clients_merging_concurrent_vals</a>, <a href=#auto_conflict_resolution>auto_conflict_resolution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#operational_transformation>operational_transformation</a><a id="operational_transformation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Operational Transformation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#auto_conflict_resolution>auto_conflict_resolution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replication_topology>replication_topology</a><a id="replication_topology"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication Topology
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#circular_topology>circular_topology</a>, <a href=#star_topology>star_topology</a>, <a href=#all_to_all>all_to_all</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_leader_replication>multi_leader_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#all_to_all>all_to_all</a><a id="all_to_all"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+All to all
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#common_topology>common_topology</a>, <a href=#every_leader_writes_every_leader>every_leader_writes_every_leader</a> (description), <a href=#fault_tolerant>fault_tolerant</a>, <a href=#network_messages_overtake>network_messages_overtake</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_topology>replication_topology</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#every_leader_writes_every_leader>every_leader_writes_every_leader</a><a id="every_leader_writes_every_leader"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Every leader sends writes to every other leader
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#all_to_all>all_to_all</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fault_tolerant>fault_tolerant</a><a id="fault_tolerant"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fault Tolerant
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#one_failure_interrupts_writes>one_failure_interrupts_writes</a> (not fault tolerant)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#all_to_all>all_to_all</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#common_topology>common_topology</a><a id="common_topology"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Most common topology used
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#all_to_all>all_to_all</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#circular_topology>circular_topology</a><a id="circular_topology"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Circular Topology
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mysql_default>mysql_default</a>, <a href=#one_failure_interrupts_writes>one_failure_interrupts_writes</a>, <a href=#one_node_receive_forward_another>one_node_receive_forward_another</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_topology>replication_topology</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mysql_default>mysql_default</a><a id="mysql_default"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+MySQL default
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#circular_topology>circular_topology</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#one_node_receive_forward_another>one_node_receive_forward_another</a><a id="one_node_receive_forward_another"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Receives writes from one node, forwards writes to another node
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#circular_topology>circular_topology</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#star_topology>star_topology</a><a id="star_topology"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Star Topology
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#designated_node_writes>designated_node_writes</a> (description), <a href=#one_failure_interrupts_writes>one_failure_interrupts_writes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_topology>replication_topology</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#designated_node_writes>designated_node_writes</a><a id="designated_node_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One designated root node writes to all other nodes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#star_topology>star_topology</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#one_failure_interrupts_writes>one_failure_interrupts_writes</a><a id="one_failure_interrupts_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One node failure can interrupt write flows
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerant>fault_tolerant</a>, <a href=#star_topology>star_topology</a>, <a href=#circular_topology>circular_topology</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_messages_overtake>network_messages_overtake</a><a id="network_messages_overtake"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Some network links may be faster, messages may overtake others
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#all_to_all>all_to_all</a>, <a href=#violations_of_causality>violations_of_causality</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leaderless_replication>leaderless_replication</a><a id="leaderless_replication"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leaderless replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dynamo_style>dynamo_style</a> (AKA), <a href=#failover_does_not_exist>failover_does_not_exist</a>, <a href=#quorum_reads_writes>quorum_reads_writes</a>, <a href=#write_implementations>write_implementations</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dynamo_style>dynamo_style</a><a id="dynamo_style"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dynamo-style
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leaderless_replication>leaderless_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_implementations>write_implementations</a><a id="write_implementations"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write Implementations
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_writes_directly>client_writes_directly</a>, <a href=#coordinator_node>coordinator_node</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leaderless_replication>leaderless_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#client_writes_directly>client_writes_directly</a><a id="client_writes_directly"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+client writes directly to several replicas
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#parallel_read_requests>parallel_read_requests</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_implementations>write_implementations</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#parallel_read_requests>parallel_read_requests</a><a id="parallel_read_requests"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parallel Read Requests
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#client_writes_directly>client_writes_directly</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#coordinator_node>coordinator_node</a><a id="coordinator_node"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Coordinator node, manages writes to replicas on behalf of client
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_implementations>write_implementations</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#failover_does_not_exist>failover_does_not_exist</a><a id="failover_does_not_exist"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Failover does not exist
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#potentially_stale_data>potentially_stale_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leaderless_replication>leaderless_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#potentially_stale_data>potentially_stale_data</a><a id="potentially_stale_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Potentially stale data
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#node_catch_up_missed_writes>node_catch_up_missed_writes</a>, <a href=#read_requests_parallel>read_requests_parallel</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#failover_does_not_exist>failover_does_not_exist</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_requests_parallel>read_requests_parallel</a><a id="read_requests_parallel"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read requests sent to many nodes in parallel
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#potentially_stale_data>potentially_stale_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#node_catch_up_missed_writes>node_catch_up_missed_writes</a><a id="node_catch_up_missed_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+how does node catch up on missed writes?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#read_repair>read_repair</a>, <a href=#anti_entropy_process>anti_entropy_process</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#potentially_stale_data>potentially_stale_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_repair>read_repair</a><a id="read_repair"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read Repair
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#versions>versions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#node_catch_up_missed_writes>node_catch_up_missed_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#versions>versions</a><a id="versions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Versions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#version_number_per_replica>version_number_per_replica</a> ([I think this connection makes sense?])
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_repair>read_repair</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#anti_entropy_process>anti_entropy_process</a><a id="anti_entropy_process"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+anti-entropy process
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#background_process_differences_replicas>background_process_differences_replicas</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#node_catch_up_missed_writes>node_catch_up_missed_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#background_process_differences_replicas>background_process_differences_replicas</a><a id="background_process_differences_replicas"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Background process that looks for differences between replicas
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#anti_entropy_process>anti_entropy_process</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#quorum_reads_writes>quorum_reads_writes</a><a id="quorum_reads_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Quorum reads and writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sloppy_quorum>sloppy_quorum</a>, <a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>, <a href=#assurance_of_durability>assurance_of_durability</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leaderless_replication>leaderless_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a><a id="w_plus_r_greater_n"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+w + r &gt; n
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#n3w2r2_one_unavail>n3w2r2_one_unavail</a>, <a href=#n5w3r3_two_unavail>n5w3r3_two_unavail</a>, <a href=#n_w_r>n_w_r</a>, <a href=#r_less_n_still_reads>r_less_n_still_reads</a>, <a href=#smaller_wr>smaller_wr</a>, <a href=#w_less_n_still_writes>w_less_n_still_writes</a>, <a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a> (the "n" in this equation)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#quorum_reads_writes>quorum_reads_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#w_less_n_still_writes>w_less_n_still_writes</a><a id="w_less_n_still_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+if w &lt; n, can still process writes if node is unavailable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#n_w_r>n_w_r</a><a id="n_w_r"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+n replicas, w successfully confirmed writes, at least r  nodes queried for each read
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#r_less_n_still_reads>r_less_n_still_reads</a><a id="r_less_n_still_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+if r &lt; n, can still process reads if node is unavailable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#n3w2r2_one_unavail>n3w2r2_one_unavail</a><a id="n3w2r2_one_unavail"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+n=3, w=2, r=2 can tolerate one unavailable node
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#n5w3r3_two_unavail>n5w3r3_two_unavail</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#n5w3r3_two_unavail>n5w3r3_two_unavail</a><a id="n5w3r3_two_unavail"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+n=5, w=3, r=3 can tolerate two unavailable nodes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#n3w2r2_one_unavail>n3w2r2_one_unavail</a>, <a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#smaller_wr>smaller_wr</a><a id="smaller_wr"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+w+r &lt; n stale values more likely, but lower latency and higher availablility
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#stale_possible_for_greater_n>stale_possible_for_greater_n</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stale_possible_for_greater_n>stale_possible_for_greater_n</a><a id="stale_possible_for_greater_n"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+stale is also possible for w+r &gt; n in certain situations
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#smaller_wr>smaller_wr</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#monitoring_staleness>monitoring_staleness</a><a id="monitoring_staleness"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Monitoring staleness
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leaderless_more_difficult>leaderless_more_difficult</a>, <a href=#LBR_lag_metrics>LBR_lag_metrics</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#LBR_lag_metrics>LBR_lag_metrics</a><a id="LBR_lag_metrics"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leader-based replication: uses metrics for the replication lag
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monitoring_staleness>monitoring_staleness</a>, <a href=#leader_based_replication>leader_based_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leaderless_more_difficult>leaderless_more_difficult</a><a id="leaderless_more_difficult"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leaderless: more difficult
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monitoring_staleness>monitoring_staleness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#assurance_of_durability>assurance_of_durability</a><a id="assurance_of_durability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Quorum is an assurance of durability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#quorum_reads_writes>quorum_reads_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sloppy_quorum>sloppy_quorum</a><a id="sloppy_quorum"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sloppy Quorum
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_in_designated_home_nodes>not_in_designated_home_nodes</a>, <a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#quorum_reads_writes>quorum_reads_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a><a id="accept_writes_reachable_nodes_atypical"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Accepts writes, write to reachable nodes where value doesn't typically live (not in "n")
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>, <a href=#sloppy_quorum>sloppy_quorum</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_in_designated_home_nodes>not_in_designated_home_nodes</a><a id="not_in_designated_home_nodes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Nodes not in designated "home" nodes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#hinted_handoff>hinted_handoff</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sloppy_quorum>sloppy_quorum</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hinted_handoff>hinted_handoff</a><a id="hinted_handoff"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hinted Handoff
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#temp_values_sent_home>temp_values_sent_home</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#not_in_designated_home_nodes>not_in_designated_home_nodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#temp_values_sent_home>temp_values_sent_home</a><a id="temp_values_sent_home"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Temporarily accepted values on node sent to "home" node when it comes back online
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#hinted_handoff>hinted_handoff</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#detecting_concurrent_writes>detecting_concurrent_writes</a><a id="detecting_concurrent_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Detecting Concurrent Writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#happens_before>happens_before</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#discards_concurrent_writes>discards_concurrent_writes</a><a id="discards_concurrent_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Discards concurrent writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#last_write_wins>last_write_wins</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#happens_before>happens_before</a><a id="happens_before"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Happens-before
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clients_merging_concurrent_vals>clients_merging_concurrent_vals</a>, <a href=#happens_before_AB_combos>happens_before_AB_combos</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#detecting_concurrent_writes>detecting_concurrent_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#happens_before_AB_combos>happens_before_AB_combos</a><a id="happens_before_AB_combos"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A happens before B, B happens before A, A and B are concurrent
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#happens_before>happens_before</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clients_merging_concurrent_vals>clients_merging_concurrent_vals</a><a id="clients_merging_concurrent_vals"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clients merging concurrently written values
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#siblings>siblings</a>, <a href=#union_reasonable_approach>union_reasonable_approach</a>, <a href=#CRDT>CRDT</a> (CRDTs for auto-merge (Riak))
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#happens_before>happens_before</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#same_as_conflict_resolution>same_as_conflict_resolution</a><a id="same_as_conflict_resolution"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Essentially same as conflict resolution in multi-leader replication
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_write_conflicts>handling_write_conflicts</a>, <a href=#multi_leader_replication>multi_leader_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#siblings>siblings</a><a id="siblings"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Concurrent values sometimes called "siblings" (Riak)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clients_merging_concurrent_vals>clients_merging_concurrent_vals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#union_reasonable_approach>union_reasonable_approach</a><a id="union_reasonable_approach"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reasonable approach is to take a union
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#doesnt_work_with_removing>doesnt_work_with_removing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clients_merging_concurrent_vals>clients_merging_concurrent_vals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#doesnt_work_with_removing>doesnt_work_with_removing</a><a id="doesnt_work_with_removing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Doesn't work with removing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#tombstone>tombstone</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#union_reasonable_approach>union_reasonable_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tombstone>tombstone</a><a id="tombstone"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tombstone: deletion marker indicating item has been removed.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#doesnt_work_with_removing>doesnt_work_with_removing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#version_vector>version_vector</a><a id="version_vector"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Version Vector
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#causal_context>causal_context</a>, <a href=#collection_from_all_replicas>collection_from_all_replicas</a>, <a href=#dotted_version_vecotr>dotted_version_vecotr</a> (variation on version vector), <a href=#vector_clock>vector_clock</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#version_number_per_replica>version_number_per_replica</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#collection_from_all_replicas>collection_from_all_replicas</a><a id="collection_from_all_replicas"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+collection of version numbers from all replicas
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#version_vector>version_vector</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#version_number_per_replica>version_number_per_replica</a><a id="version_number_per_replica"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Version Number per replica
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#version_vector>version_vector</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#versions>versions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dotted_version_vecotr>dotted_version_vecotr</a><a id="dotted_version_vecotr"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dotted Version Vector (Riak)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#version_vector>version_vector</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#vector_clock>vector_clock</a><a id="vector_clock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Vector Clock: almost like version vector
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#version_vector>version_vector</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#users_see_data_in_state_that_makes_sense>users_see_data_in_state_that_makes_sense</a><a id="users_see_data_in_state_that_makes_sense"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Users should see data in a state that makes sense
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistent_prefix_reads>consistent_prefix_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#causal_context>causal_context</a><a id="causal_context"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Causal context: version vector encoded as string sent to client
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#version_vector>version_vector</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
