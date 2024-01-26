@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec15</title>
+<h1>lec15</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec15">lec15</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Lecture 15: Spark
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#spark>spark</a><ul>
+<li>
+<a href=#HDFS>HDFS</a><ul>
+<li>
+<a href=#input_assumed_ft>input_assumed_ft</a></li>
+</ul>
+</li>
+<li>
+<a href=#driver>driver</a></li>
+<li>
+<a href=#fault_tolerance>fault_tolerance</a><ul>
+<li>
+<a href=#driveer_not_replicated>driveer_not_replicated</a></li>
+<li>
+<a href=#failed_worker_wide_deps>failed_worker_wide_deps</a><ul>
+<li>
+<a href=#recompute_days_worth>recompute_days_worth</a><ul>
+<li>
+<a href=#checkpoints>checkpoints</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#input_assumed_ft>input_assumed_ft</a></li>
+<li>
+<a href=#not_bulletproof>not_bulletproof</a><ul>
+<li>
+<a href=#driveer_not_replicated>driveer_not_replicated</a></li>
+</ul>
+</li>
+<li>
+<a href=#tolerate_common_errors>tolerate_common_errors</a></li>
+</ul>
+</li>
+<li>
+<a href=#mapreduce_successor>mapreduce_successor</a><ul>
+<li>
+<a href=#generalizes_mapreduce>generalizes_mapreduce</a></li>
+</ul>
+</li>
+<li>
+<a href=#pagerank>pagerank</a><ul>
+<li>
+<a href=#difficult_in_MR>difficult_in_MR</a></li>
+<li>
+<a href=#estimates_page_importance>estimates_page_importance</a></li>
+<li>
+<a href=#spark_exec>spark_exec</a><ul>
+<li>
+<a href=#cache>cache</a><ul>
+<li>
+<a href=#persist_data>persist_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#collect>collect</a></li>
+<li>
+<a href=#distinct>distinct</a><ul>
+<li>
+<a href=#info_all_workers>info_all_workers</a></li>
+</ul>
+</li>
+<li>
+<a href=#exec_looks_like>exec_looks_like</a><ul>
+<li>
+<a href=#optimization>optimization</a><ul>
+<li>
+<a href=#looks_at_lineage_graph>looks_at_lineage_graph</a></li>
+</ul>
+</li>
+<li>
+<a href=#transformations>transformations</a><ul>
+<li>
+<a href=#narrow>narrow</a><ul>
+<li>
+<a href=#individual_workers>individual_workers</a></li>
+<li>
+<a href=#wide>wide</a><ul>
+<li>
+<a href=#distinct>distinct</a><ul>
+<li>
+<a href=#info_all_workers>info_all_workers</a></li>
+</ul>
+</li>
+<li>
+<a href=#expensive>expensive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#wide>wide</a><ul>
+<li>
+<a href=#distinct>distinct</a><ul>
+<li>
+<a href=#info_all_workers>info_all_workers</a></li>
+</ul>
+</li>
+<li>
+<a href=#expensive>expensive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#group_by_key>group_by_key</a></li>
+<li>
+<a href=#join>join</a></li>
+<li>
+<a href=#map_values>map_values</a></li>
+<li>
+<a href=#persist_data>persist_data</a></li>
+<li>
+<a href=#readfile>readfile</a><ul>
+<li>
+<a href=#doesnt_read>doesnt_read</a><ul>
+<li>
+<a href=#doesnt_process_data>doesnt_process_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#lineage_graph>lineage_graph</a><ul>
+<li>
+<a href=#doesnt_read>doesnt_read</a><ul>
+<li>
+<a href=#doesnt_process_data>doesnt_process_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#looks_at_lineage_graph>looks_at_lineage_graph</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#reduce_by_key>reduce_by_key</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#spark_exec>spark_exec</a><ul>
+<li>
+<a href=#cache>cache</a><ul>
+<li>
+<a href=#persist_data>persist_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#collect>collect</a></li>
+<li>
+<a href=#distinct>distinct</a><ul>
+<li>
+<a href=#info_all_workers>info_all_workers</a></li>
+</ul>
+</li>
+<li>
+<a href=#exec_looks_like>exec_looks_like</a><ul>
+<li>
+<a href=#optimization>optimization</a><ul>
+<li>
+<a href=#looks_at_lineage_graph>looks_at_lineage_graph</a></li>
+</ul>
+</li>
+<li>
+<a href=#transformations>transformations</a><ul>
+<li>
+<a href=#narrow>narrow</a><ul>
+<li>
+<a href=#individual_workers>individual_workers</a></li>
+<li>
+<a href=#wide>wide</a><ul>
+<li>
+<a href=#distinct>distinct</a><ul>
+<li>
+<a href=#info_all_workers>info_all_workers</a></li>
+</ul>
+</li>
+<li>
+<a href=#expensive>expensive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#wide>wide</a><ul>
+<li>
+<a href=#distinct>distinct</a><ul>
+<li>
+<a href=#info_all_workers>info_all_workers</a></li>
+</ul>
+</li>
+<li>
+<a href=#expensive>expensive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#group_by_key>group_by_key</a></li>
+<li>
+<a href=#join>join</a></li>
+<li>
+<a href=#map_values>map_values</a></li>
+<li>
+<a href=#persist_data>persist_data</a></li>
+<li>
+<a href=#readfile>readfile</a><ul>
+<li>
+<a href=#doesnt_read>doesnt_read</a><ul>
+<li>
+<a href=#doesnt_process_data>doesnt_process_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#lineage_graph>lineage_graph</a><ul>
+<li>
+<a href=#doesnt_read>doesnt_read</a><ul>
+<li>
+<a href=#doesnt_process_data>doesnt_process_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#looks_at_lineage_graph>looks_at_lineage_graph</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#reduce_by_key>reduce_by_key</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#spark>spark</a><a id="spark"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+spark
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#HDFS>HDFS</a>, <a href=#driver>driver</a>, <a href=#fault_tolerance>fault_tolerance</a>, <a href=#mapreduce_successor>mapreduce_successor</a>, <a href=#pagerank>pagerank</a>, <a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mapreduce_successor>mapreduce_successor</a><a id="mapreduce_successor"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Successor to MapReduce
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#generalizes_mapreduce>generalizes_mapreduce</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark>spark</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#generalizes_mapreduce>generalizes_mapreduce</a><a id="generalizes_mapreduce"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Generalizes map + reduce steps
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mapreduce_successor>mapreduce_successor</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pagerank>pagerank</a><a id="pagerank"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pagerank algorithm
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#difficult_in_MR>difficult_in_MR</a>, <a href=#estimates_page_importance>estimates_page_importance</a> (description), <a href=#spark_exec>spark_exec</a> (demo: pagerank implemented in Spark)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark>spark</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#estimates_page_importance>estimates_page_importance</a><a id="estimates_page_importance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Estimates importance of page
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pagerank>pagerank</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#difficult_in_MR>difficult_in_MR</a><a id="difficult_in_MR"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+difficult to implement in MapReduce
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pagerank>pagerank</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#driver>driver</a><a id="driver"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+driver: computer than runs program
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark>spark</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#spark_exec>spark_exec</a><a id="spark_exec"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How does spark execute?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cache>cache</a>, <a href=#collect>collect</a>, <a href=#distinct>distinct</a>, <a href=#exec_looks_like>exec_looks_like</a>, <a href=#group_by_key>group_by_key</a>, <a href=#join>join</a>, <a href=#map_values>map_values</a>, <a href=#persist_data>persist_data</a>, <a href=#readfile>readfile</a>, <a href=#reduce_by_key>reduce_by_key</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pagerank>pagerank</a>, <a href=#spark>spark</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#distinct>distinct</a><a id="distinct"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+distinct
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#info_all_workers>info_all_workers</a> (distinct is a wide operation)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>, <a href=#wide>wide</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#readfile>readfile</a><a id="readfile"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read File
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#doesnt_read>doesnt_read</a>, <a href=#lineage_graph>lineage_graph</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lineage_graph>lineage_graph</a><a id="lineage_graph"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+lineage graph
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#doesnt_read>doesnt_read</a>, <a href=#looks_at_lineage_graph>looks_at_lineage_graph</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#readfile>readfile</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#doesnt_read>doesnt_read</a><a id="doesnt_read"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Doesn't initialy read, only produces lineage graph
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#doesnt_process_data>doesnt_process_data</a> (AKA)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#readfile>readfile</a>, <a href=#lineage_graph>lineage_graph</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#join>join</a><a id="join"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+join
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#group_by_key>group_by_key</a><a id="group_by_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+group-by ke
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#collect>collect</a><a id="collect"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+collect
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cache>cache</a><a id="cache"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+cache
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#persist_data>persist_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#persist_data>persist_data</a><a id="persist_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Persist Data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>, <a href=#cache>cache</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reduce_by_key>reduce_by_key</a><a id="reduce_by_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+reduce by key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#map_values>map_values</a><a id="map_values"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+map values
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#doesnt_process_data>doesnt_process_data</a><a id="doesnt_process_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+doesn't process data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#doesnt_read>doesnt_read</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#exec_looks_like>exec_looks_like</a><a id="exec_looks_like"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What does execution look like?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#optimization>optimization</a>, <a href=#transformations>transformations</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark_exec>spark_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transformations>transformations</a><a id="transformations"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transformations
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#narrow>narrow</a>, <a href=#wide>wide</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#exec_looks_like>exec_looks_like</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#narrow>narrow</a><a id="narrow"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+narrow
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#individual_workers>individual_workers</a>, <a href=#wide>wide</a> (vs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transformations>transformations</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wide>wide</a><a id="wide"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+wide
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#distinct>distinct</a> (distinct is wide transformation), <a href=#expensive>expensive</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transformations>transformations</a>, <a href=#narrow>narrow</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#individual_workers>individual_workers</a><a id="individual_workers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Individual Workers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#narrow>narrow</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#expensive>expensive</a><a id="expensive"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Expensive
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#wide>wide</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#info_all_workers>info_all_workers</a><a id="info_all_workers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Needs to know info from all workers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#distinct>distinct</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#optimization>optimization</a><a id="optimization"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Optimization
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#looks_at_lineage_graph>looks_at_lineage_graph</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#exec_looks_like>exec_looks_like</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#looks_at_lineage_graph>looks_at_lineage_graph</a><a id="looks_at_lineage_graph"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Looks at lineage graph
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#optimization>optimization</a>, <a href=#lineage_graph>lineage_graph</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fault_tolerance>fault_tolerance</a><a id="fault_tolerance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+spark
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#driveer_not_replicated>driveer_not_replicated</a>, <a href=#failed_worker_wide_deps>failed_worker_wide_deps</a>, <a href=#input_assumed_ft>input_assumed_ft</a>, <a href=#not_bulletproof>not_bulletproof</a>, <a href=#tolerate_common_errors>tolerate_common_errors</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark>spark</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tolerate_common_errors>tolerate_common_errors</a><a id="tolerate_common_errors"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tolerate common errors
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#HDFS>HDFS</a><a id="HDFS"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+HDFS
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#input_assumed_ft>input_assumed_ft</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spark>spark</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#input_assumed_ft>input_assumed_ft</a><a id="input_assumed_ft"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Input assumed to be fault-tolerant via HDFS
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#HDFS>HDFS</a>, <a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_bulletproof>not_bulletproof</a><a id="not_bulletproof"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Doesn't have to be bullet-proof
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#driveer_not_replicated>driveer_not_replicated</a> (for example)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#driveer_not_replicated>driveer_not_replicated</a><a id="driveer_not_replicated"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Driver machine not replicated
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#not_bulletproof>not_bulletproof</a>, <a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#failed_worker_wide_deps>failed_worker_wide_deps</a><a id="failed_worker_wide_deps"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Failed Worker, Wide dependencies
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#recompute_days_worth>recompute_days_worth</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#recompute_days_worth>recompute_days_worth</a><a id="recompute_days_worth"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can end up recomputing a days worth of computation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#checkpoints>checkpoints</a> (mitigations against)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#failed_worker_wide_deps>failed_worker_wide_deps</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#checkpoints>checkpoints</a><a id="checkpoints"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Checkpoints for specific transformation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#recompute_days_worth>recompute_days_worth</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

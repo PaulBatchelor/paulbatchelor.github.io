@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec20</title>
+<h1>lec20</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec20">lec20</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Lecture 19: Blockstack
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#blockstack>blockstack</a><ul>
+<li>
+<a href=#non_crypto_blockchain>non_crypto_blockchain</a></li>
+<li>
+<a href=#possible_fixes>possible_fixes</a><ul>
+<li>
+<a href=#remove_decentralized>remove_decentralized</a></li>
+<li>
+<a href=#remove_readable>remove_readable</a></li>
+</ul>
+</li>
+<li>
+<a href=#what_goes_wrong>what_goes_wrong</a><ul>
+<li>
+<a href=#some_data_not_user_owned>some_data_not_user_owned</a><ul>
+<li>
+<a href=#reddit>reddit</a></li>
+<li>
+<a href=#ebay>ebay</a></li>
+</ul>
+</li>
+<li>
+<a href=#brittle>brittle</a></li>
+<li>
+<a href=#enforce_shared_data_some_users>enforce_shared_data_some_users</a><ul>
+<li>
+<a href=#complex_multiuser>complex_multiuser</a></li>
+</ul>
+</li>
+<li>
+<a href=#less_flexible_db>less_flexible_db</a></li>
+</ul>
+</li>
+<li>
+<a href=#bitcoin>bitcoin</a><ul>
+<li>
+<a href=#bitcoin_transaction_log>bitcoin_transaction_log</a><ul>
+<li>
+<a href=#naming_reservation>naming_reservation</a><ul>
+<li>
+<a href=#fees_for_name_reg>fees_for_name_reg</a><ul>
+<li>
+<a href=#fees_prevent_abuse>fees_prevent_abuse</a></li>
+</ul>
+</li>
+<li>
+<a href=#first_come_first_serve>first_come_first_serve</a></li>
+</ul>
+</li>
+<li>
+<a href=#naming_on_bitcoin>naming_on_bitcoin</a></li>
+</ul>
+</li>
+<li>
+<a href=#is_bitcoin_needed>is_bitcoin_needed</a><ul>
+<li>
+<a href=#cert_transparency_instead>cert_transparency_instead</a><ul>
+<li>
+<a href=#ownership_conflicts>ownership_conflicts</a></li>
+<li>
+<a href=#probably_not>probably_not</a><ul>
+<li>
+<a href=#ownership_conflicts>ownership_conflicts</a></li>
+</ul>
+</li>
+<li>
+<a href=#fees_prevent_abuse>fees_prevent_abuse</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#blockstack_browser>blockstack_browser</a><ul>
+<li>
+<a href=#per_app_private_key>per_app_private_key</a></li>
+<li>
+<a href=#manages_master_privkey>manages_master_privkey</a></li>
+</ul>
+</li>
+<li>
+<a href=#build_public_key_infrastructure>build_public_key_infrastructure</a></li>
+<li>
+<a href=#convenient_programmers>convenient_programmers</a><ul>
+<li>
+<a href=#more_difficult>more_difficult</a></li>
+</ul>
+</li>
+<li>
+<a href=#decentralized>decentralized</a><ul>
+<li>
+<a href=#remove_decentralized>remove_decentralized</a></li>
+<li>
+<a href=#arch>arch</a><ul>
+<li>
+<a href=#app_code_runs_client>app_code_runs_client</a></li>
+<li>
+<a href=#cloud_storage>cloud_storage</a><ul>
+<li>
+<a href=#storage_instead_of_html>storage_instead_of_html</a><ul>
+<li>
+<a href=#needs_access_control_permissions>needs_access_control_permissions</a><ul>
+<li>
+<a href=#subsidiary_permissions>subsidiary_permissions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#trust_storage_service>trust_storage_service</a></li>
+<li>
+<a href=#apps_read_allowed_data>apps_read_allowed_data</a></li>
+<li>
+<a href=#encrypted_data_cloud>encrypted_data_cloud</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#current_websites>current_websites</a><ul>
+<li>
+<a href=#snooping>snooping</a></li>
+<li>
+<a href=#interface_website_browsers>interface_website_browsers</a><ul>
+<li>
+<a href=#storage_instead_of_html>storage_instead_of_html</a><ul>
+<li>
+<a href=#needs_access_control_permissions>needs_access_control_permissions</a><ul>
+<li>
+<a href=#subsidiary_permissions>subsidiary_permissions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#little_control_data>little_control_data</a><ul>
+<li>
+<a href=#snooping>snooping</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#fees_for_name_reg>fees_for_name_reg</a><ul>
+<li>
+<a href=#fees_prevent_abuse>fees_prevent_abuse</a></li>
+</ul>
+</li>
+<li>
+<a href=#fork_detection>fork_detection</a></li>
+<li>
+<a href=#gaia_servers>gaia_servers</a></li>
+<li>
+<a href=#naming>naming</a><ul>
+<li>
+<a href=#naming_props>naming_props</a><ul>
+<li>
+<a href=#unique>unique</a></li>
+<li>
+<a href=#zuko_trianlge_property>zuko_trianlge_property</a></li>
+<li>
+<a href=#bitcoin_transaction_log>bitcoin_transaction_log</a><ul>
+<li>
+<a href=#naming_reservation>naming_reservation</a><ul>
+<li>
+<a href=#fees_for_name_reg>fees_for_name_reg</a><ul>
+<li>
+<a href=#fees_prevent_abuse>fees_prevent_abuse</a></li>
+</ul>
+</li>
+<li>
+<a href=#first_come_first_serve>first_come_first_serve</a></li>
+</ul>
+</li>
+<li>
+<a href=#naming_on_bitcoin>naming_on_bitcoin</a></li>
+</ul>
+</li>
+<li>
+<a href=#decentralized>decentralized</a><ul>
+<li>
+<a href=#remove_decentralized>remove_decentralized</a></li>
+<li>
+<a href=#arch>arch</a><ul>
+<li>
+<a href=#app_code_runs_client>app_code_runs_client</a></li>
+<li>
+<a href=#cloud_storage>cloud_storage</a><ul>
+<li>
+<a href=#storage_instead_of_html>storage_instead_of_html</a><ul>
+<li>
+<a href=#needs_access_control_permissions>needs_access_control_permissions</a><ul>
+<li>
+<a href=#subsidiary_permissions>subsidiary_permissions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#trust_storage_service>trust_storage_service</a></li>
+<li>
+<a href=#apps_read_allowed_data>apps_read_allowed_data</a></li>
+<li>
+<a href=#encrypted_data_cloud>encrypted_data_cloud</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#current_websites>current_websites</a><ul>
+<li>
+<a href=#snooping>snooping</a></li>
+<li>
+<a href=#interface_website_browsers>interface_website_browsers</a><ul>
+<li>
+<a href=#storage_instead_of_html>storage_instead_of_html</a><ul>
+<li>
+<a href=#needs_access_control_permissions>needs_access_control_permissions</a><ul>
+<li>
+<a href=#subsidiary_permissions>subsidiary_permissions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#little_control_data>little_control_data</a><ul>
+<li>
+<a href=#snooping>snooping</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#human_readable>human_readable</a><ul>
+<li>
+<a href=#bigger_system_readable_less_valuable>bigger_system_readable_less_valuable</a><ul>
+<li>
+<a href=#remove_readable>remove_readable</a></li>
+<li>
+<a href=#deceptive_defective>deceptive_defective</a><ul>
+<li>
+<a href=#how_to_find_names>how_to_find_names</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#deceptive_defective>deceptive_defective</a><ul>
+<li>
+<a href=#how_to_find_names>how_to_find_names</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#usernames>usernames</a></li>
+<li>
+<a href=#PKI>PKI</a></li>
+<li>
+<a href=#map_location>map_location</a><ul>
+<li>
+<a href=#map_public_key>map_public_key</a><ul>
+<li>
+<a href=#ACL>ACL</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#map_public_key>map_public_key</a><ul>
+<li>
+<a href=#ACL>ACL</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#blockstack>blockstack</a><a id="blockstack"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+blockstack
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#non_crypto_blockchain>non_crypto_blockchain</a>, <a href=#possible_fixes>possible_fixes</a>, <a href=#what_goes_wrong>what_goes_wrong</a>, <a href=#bitcoin>bitcoin</a>, <a href=#blockstack_browser>blockstack_browser</a>, <a href=#build_public_key_infrastructure>build_public_key_infrastructure</a>, <a href=#convenient_programmers>convenient_programmers</a>, <a href=#decentralized>decentralized</a>, <a href=#fees_for_name_reg>fees_for_name_reg</a>, <a href=#fork_detection>fork_detection</a>, <a href=#gaia_servers>gaia_servers</a>, <a href=#naming>naming</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#non_crypto_blockchain>non_crypto_blockchain</a><a id="non_crypto_blockchain"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+non-cryptocurrency use of blockchain
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#build_public_key_infrastructure>build_public_key_infrastructure</a><a id="build_public_key_infrastructure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to build a naming / public key infrastructure?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#decentralized>decentralized</a><a id="decentralized"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+decentralized
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#remove_decentralized>remove_decentralized</a>, <a href=#arch>arch</a>, <a href=#current_websites>current_websites</a> (vs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming_props>naming_props</a>, <a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#arch>arch</a><a id="arch"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Architecture
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#app_code_runs_client>app_code_runs_client</a>, <a href=#cloud_storage>cloud_storage</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#decentralized>decentralized</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#current_websites>current_websites</a><a id="current_websites"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+current websites
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#snooping>snooping</a>, <a href=#interface_website_browsers>interface_website_browsers</a>, <a href=#little_control_data>little_control_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#decentralized>decentralized</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#little_control_data>little_control_data</a><a id="little_control_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+not much control over data websites get to see
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#snooping>snooping</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#current_websites>current_websites</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snooping>snooping</a><a id="snooping"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+snooping
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#little_control_data>little_control_data</a>, <a href=#current_websites>current_websites</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#interface_website_browsers>interface_website_browsers</a><a id="interface_website_browsers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Main interface is between entire website and browsers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#storage_instead_of_html>storage_instead_of_html</a> (vs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#current_websites>current_websites</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#app_code_runs_client>app_code_runs_client</a><a id="app_code_runs_client"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Application code runs on client
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#arch>arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cloud_storage>cloud_storage</a><a id="cloud_storage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cloud storage system to store data
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#storage_instead_of_html>storage_instead_of_html</a>, <a href=#trust_storage_service>trust_storage_service</a>, <a href=#apps_read_allowed_data>apps_read_allowed_data</a>, <a href=#encrypted_data_cloud>encrypted_data_cloud</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#arch>arch</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#storage_instead_of_html>storage_instead_of_html</a><a id="storage_instead_of_html"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Storage interface is main interface instead of HTML
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#needs_access_control_permissions>needs_access_control_permissions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cloud_storage>cloud_storage</a>, <a href=#interface_website_browsers>interface_website_browsers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#needs_access_control_permissions>needs_access_control_permissions</a><a id="needs_access_control_permissions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Needs reasonably powerful access control and permissions.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#subsidiary_permissions>subsidiary_permissions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_instead_of_html>storage_instead_of_html</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#apps_read_allowed_data>apps_read_allowed_data</a><a id="apps_read_allowed_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Applications read data they are allowed to read
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cloud_storage>cloud_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#subsidiary_permissions>subsidiary_permissions</a><a id="subsidiary_permissions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Subsidiary Permissions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#needs_access_control_permissions>needs_access_control_permissions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#encrypted_data_cloud>encrypted_data_cloud</a><a id="encrypted_data_cloud"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Encrypted data on the cloud
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cloud_storage>cloud_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#what_goes_wrong>what_goes_wrong</a><a id="what_goes_wrong"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What goes wrong?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#some_data_not_user_owned>some_data_not_user_owned</a>, <a href=#brittle>brittle</a>, <a href=#enforce_shared_data_some_users>enforce_shared_data_some_users</a>, <a href=#less_flexible_db>less_flexible_db</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#some_data_not_user_owned>some_data_not_user_owned</a><a id="some_data_not_user_owned"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Some data not owned by users
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reddit>reddit</a> (example), <a href=#ebay>ebay</a> (example)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#what_goes_wrong>what_goes_wrong</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reddit>reddit</a><a id="reddit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reddit front page
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#some_data_not_user_owned>some_data_not_user_owned</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ebay>ebay</a><a id="ebay"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ebay bidding (would reveal bid)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#some_data_not_user_owned>some_data_not_user_owned</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#less_flexible_db>less_flexible_db</a><a id="less_flexible_db"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Less flexible than database
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#what_goes_wrong>what_goes_wrong</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#enforce_shared_data_some_users>enforce_shared_data_some_users</a><a id="enforce_shared_data_some_users"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to enforce data to only some users?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#complex_multiuser>complex_multiuser</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#what_goes_wrong>what_goes_wrong</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#complex_multiuser>complex_multiuser</a><a id="complex_multiuser"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Complex multi-user app: cryptography becomes hard to use
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#enforce_shared_data_some_users>enforce_shared_data_some_users</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#naming>naming</a><a id="naming"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+naming
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#naming_props>naming_props</a>, <a href=#usernames>usernames</a> (specifically, names for humans, usernames), <a href=#PKI>PKI</a>, <a href=#map_location>map_location</a>, <a href=#map_public_key>map_public_key</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#usernames>usernames</a><a id="usernames"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Usernames, human users
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming>naming</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#map_location>map_location</a><a id="map_location"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Map names to data location
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#map_public_key>map_public_key</a> (related)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming>naming</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#map_public_key>map_public_key</a><a id="map_public_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Map names to public key
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ACL>ACL</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming>naming</a>, <a href=#map_location>map_location</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ACL>ACL</a><a id="ACL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ACL: access control list
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#map_public_key>map_public_key</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#PKI>PKI</a><a id="PKI"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+PKI: public key infrastructure
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming>naming</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#unique>unique</a><a id="unique"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Unique (Global Meaning)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming_props>naming_props</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#naming_props>naming_props</a><a id="naming_props"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ideal Naming Properties
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#unique>unique</a>, <a href=#zuko_trianlge_property>zuko_trianlge_property</a> (AKA), <a href=#bitcoin_transaction_log>bitcoin_transaction_log</a> (implementation of these properties), <a href=#decentralized>decentralized</a>, <a href=#human_readable>human_readable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming>naming</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#human_readable>human_readable</a><a id="human_readable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Human Readale
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bigger_system_readable_less_valuable>bigger_system_readable_less_valuable</a>, <a href=#deceptive_defective>deceptive_defective</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming_props>naming_props</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bitcoin_transaction_log>bitcoin_transaction_log</a><a id="bitcoin_transaction_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Uses bitcoins single ordered log of transcations
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#naming_reservation>naming_reservation</a>, <a href=#naming_on_bitcoin>naming_on_bitcoin</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming_props>naming_props</a>, <a href=#bitcoin>bitcoin</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#naming_on_bitcoin>naming_on_bitcoin</a><a id="naming_on_bitcoin"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Naming on bitcoin
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bitcoin_transaction_log>bitcoin_transaction_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#naming_reservation>naming_reservation</a><a id="naming_reservation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Naming Reservation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fees_for_name_reg>fees_for_name_reg</a>, <a href=#first_come_first_serve>first_come_first_serve</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bitcoin_transaction_log>bitcoin_transaction_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#first_come_first_serve>first_come_first_serve</a><a id="first_come_first_serve"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+First come, first serve
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming_reservation>naming_reservation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zuko_trianlge_property>zuko_trianlge_property</a><a id="zuko_trianlge_property"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Zukos Triangle Property
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#naming_props>naming_props</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bigger_system_readable_less_valuable>bigger_system_readable_less_valuable</a><a id="bigger_system_readable_less_valuable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The bigger the system, the less valuable human readable property is
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#remove_readable>remove_readable</a>, <a href=#deceptive_defective>deceptive_defective</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#human_readable>human_readable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#deceptive_defective>deceptive_defective</a><a id="deceptive_defective"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can be deceptive, defective
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#how_to_find_names>how_to_find_names</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bigger_system_readable_less_valuable>bigger_system_readable_less_valuable</a>, <a href=#human_readable>human_readable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#possible_fixes>possible_fixes</a><a id="possible_fixes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Possible Fixes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#remove_decentralized>remove_decentralized</a>, <a href=#remove_readable>remove_readable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#remove_readable>remove_readable</a><a id="remove_readable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Remove Human readble property, just use keys
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#possible_fixes>possible_fixes</a>, <a href=#bigger_system_readable_less_valuable>bigger_system_readable_less_valuable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#remove_decentralized>remove_decentralized</a><a id="remove_decentralized"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Remove decentralized aspect
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#possible_fixes>possible_fixes</a>, <a href=#decentralized>decentralized</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fork_detection>fork_detection</a><a id="fork_detection"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fork detection on name servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#how_to_find_names>how_to_find_names</a><a id="how_to_find_names"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to find names? (name lookup)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deceptive_defective>deceptive_defective</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#blockstack_browser>blockstack_browser</a><a id="blockstack_browser"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Blockstack browser
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#per_app_private_key>per_app_private_key</a>, <a href=#manages_master_privkey>manages_master_privkey</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#gaia_servers>gaia_servers</a><a id="gaia_servers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GAIA servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#per_app_private_key>per_app_private_key</a><a id="per_app_private_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Per-app private key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack_browser>blockstack_browser</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#manages_master_privkey>manages_master_privkey</a><a id="manages_master_privkey"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Manages masters private key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack_browser>blockstack_browser</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fees_for_name_reg>fees_for_name_reg</a><a id="fees_for_name_reg"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Require frees for name registration as deterrant against malicious use.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fees_prevent_abuse>fees_prevent_abuse</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>, <a href=#naming_reservation>naming_reservation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#brittle>brittle</a><a id="brittle"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Brittle (from user standpoint): no way to retrieve key if lost.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#what_goes_wrong>what_goes_wrong</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#is_bitcoin_needed>is_bitcoin_needed</a><a id="is_bitcoin_needed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Does it need to use bitcoin?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cert_transparency_instead>cert_transparency_instead</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bitcoin>bitcoin</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bitcoin>bitcoin</a><a id="bitcoin"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+bitcoin
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bitcoin_transaction_log>bitcoin_transaction_log</a>, <a href=#is_bitcoin_needed>is_bitcoin_needed</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cert_transparency_instead>cert_transparency_instead</a><a id="cert_transparency_instead"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use certificate transparency instead to enforce adequate rules about naming?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ownership_conflicts>ownership_conflicts</a>, <a href=#probably_not>probably_not</a>, <a href=#fees_prevent_abuse>fees_prevent_abuse</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#is_bitcoin_needed>is_bitcoin_needed</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#probably_not>probably_not</a><a id="probably_not"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Guess: probably not
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ownership_conflicts>ownership_conflicts</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cert_transparency_instead>cert_transparency_instead</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ownership_conflicts>ownership_conflicts</a><a id="ownership_conflicts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Doesn't resolve ownership conflicts
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#probably_not>probably_not</a>, <a href=#cert_transparency_instead>cert_transparency_instead</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fees_prevent_abuse>fees_prevent_abuse</a><a id="fees_prevent_abuse"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fees important for preventing abuse
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fees_for_name_reg>fees_for_name_reg</a>, <a href=#cert_transparency_instead>cert_transparency_instead</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#convenient_programmers>convenient_programmers</a><a id="convenient_programmers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Convenient for programmers?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#more_difficult>more_difficult</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockstack>blockstack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_difficult>more_difficult</a><a id="more_difficult"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A lot more difficult
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#convenient_programmers>convenient_programmers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#trust_storage_service>trust_storage_service</a><a id="trust_storage_service"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Have to trust storage service to store data correctly
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cloud_storage>cloud_storage</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

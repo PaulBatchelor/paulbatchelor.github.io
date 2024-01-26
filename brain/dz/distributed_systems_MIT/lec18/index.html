@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec18</title>
+<h1>lec18</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec18">lec18</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Lecture 18: Fork consistency, certificate transparency
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#certificate_transparency>certificate_transparency</a><ul>
+<li>
+<a href=#gossip>gossip</a><ul>
+<li>
+<a href=#compare_tree_heads>compare_tree_heads</a></li>
+<li>
+<a href=#drop_heads_into_pool_for_inspection>drop_heads_into_pool_for_inspection</a></li>
+</ul>
+</li>
+<li>
+<a href=#log_server>log_server</a><ul>
+<li>
+<a href=#is_cert_in_log>is_cert_in_log</a><ul>
+<li>
+<a href=#user_request>user_request</a></li>
+</ul>
+</li>
+<li>
+<a href=#monitor>monitor</a><ul>
+<li>
+<a href=#depends_browsers_see_what_monitor_sees>depends_browsers_see_what_monitor_sees</a><ul>
+<li>
+<a href=#log_contents>log_contents</a></li>
+</ul>
+</li>
+<li>
+<a href=#knows_correct_certs>knows_correct_certs</a></li>
+<li>
+<a href=#periodically_talks_log_server>periodically_talks_log_server</a></li>
+<li>
+<a href=#revocation_system>revocation_system</a></li>
+</ul>
+</li>
+<li>
+<a href=#periodically_talks_log_server>periodically_talks_log_server</a></li>
+<li>
+<a href=#prove_things>prove_things</a><ul>
+<li>
+<a href=#log_consistency_proof>log_consistency_proof</a><ul>
+<li>
+<a href=#log_consistency_proof_description>log_consistency_proof_description</a></li>
+</ul>
+</li>
+<li>
+<a href=#proof_of_inclusion>proof_of_inclusion</a><ul>
+<li>
+<a href=#returns_location_hash>returns_location_hash</a></li>
+<li>
+<a href=#tree_head_bogus>tree_head_bogus</a><ul>
+<li>
+<a href=#fork_attack>fork_attack</a><ul>
+<li>
+<a href=#equivocation>equivocation</a></li>
+<li>
+<a href=#fork_consistency>fork_consistency</a><ul>
+<li>
+<a href=#stay_on_fork>stay_on_fork</a><ul>
+<li>
+<a href=#track_failed_proofs>track_failed_proofs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#gossip>gossip</a><ul>
+<li>
+<a href=#compare_tree_heads>compare_tree_heads</a></li>
+<li>
+<a href=#drop_heads_into_pool_for_inspection>drop_heads_into_pool_for_inspection</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#open_system>open_system</a><ul>
+<li>
+<a href=#mutually_distrusting_system>mutually_distrusting_system</a></li>
+<li>
+<a href=#talking_to_right_computer>talking_to_right_computer</a><ul>
+<li>
+<a href=#mostly_unsolveable>mostly_unsolveable</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#audit_system>audit_system</a><ul>
+<li>
+<a href=#log_system>log_system</a><ul>
+<li>
+<a href=#depends_browsers_see_what_monitor_sees>depends_browsers_see_what_monitor_sees</a><ul>
+<li>
+<a href=#log_contents>log_contents</a></li>
+</ul>
+</li>
+<li>
+<a href=#no_forks>no_forks</a></li>
+<li>
+<a href=#prevent_equivocation>prevent_equivocation</a></li>
+<li>
+<a href=#untrusted>untrusted</a></li>
+<li>
+<a href=#append_only>append_only</a></li>
+</ul>
+</li>
+<li>
+<a href=#public_for_investigation>public_for_investigation</a><ul>
+<li>
+<a href=#bogus_still_possible>bogus_still_possible</a><ul>
+<li>
+<a href=#not_preventative>not_preventative</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#merkle_tree>merkle_tree</a><ul>
+<li>
+<a href=#cryptographic_hashes>cryptographic_hashes</a></li>
+<li>
+<a href=#prove_things>prove_things</a><ul>
+<li>
+<a href=#log_consistency_proof>log_consistency_proof</a><ul>
+<li>
+<a href=#log_consistency_proof_description>log_consistency_proof_description</a></li>
+</ul>
+</li>
+<li>
+<a href=#proof_of_inclusion>proof_of_inclusion</a><ul>
+<li>
+<a href=#returns_location_hash>returns_location_hash</a></li>
+<li>
+<a href=#tree_head_bogus>tree_head_bogus</a><ul>
+<li>
+<a href=#fork_attack>fork_attack</a><ul>
+<li>
+<a href=#equivocation>equivocation</a></li>
+<li>
+<a href=#fork_consistency>fork_consistency</a><ul>
+<li>
+<a href=#stay_on_fork>stay_on_fork</a><ul>
+<li>
+<a href=#track_failed_proofs>track_failed_proofs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#gossip>gossip</a><ul>
+<li>
+<a href=#compare_tree_heads>compare_tree_heads</a></li>
+<li>
+<a href=#drop_heads_into_pool_for_inspection>drop_heads_into_pool_for_inspection</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#signed_tree_head>signed_tree_head</a></li>
+<li>
+<a href=#tree_of_hashes>tree_of_hashes</a><ul>
+<li>
+<a href=#log_grows_tree_head_higher>log_grows_tree_head_higher</a></li>
+</ul>
+</li>
+<li>
+<a href=#trustworthy_log_summary>trustworthy_log_summary</a></li>
+<li>
+<a href=#built_on_top_of_logs>built_on_top_of_logs</a></li>
+</ul>
+</li>
+<li>
+<a href=#90s_web>90s_web</a><ul>
+<li>
+<a href=#mid_90s>mid_90s</a><ul>
+<li>
+<a href=#certificates>certificates</a><ul>
+<li>
+<a href=#certificate_authority>certificate_authority</a><ul>
+<li>
+<a href=#now_hundreds_CA>now_hundreds_CA</a><ul>
+<li>
+<a href=#bogus_certs>bogus_certs</a><ul>
+<li>
+<a href=#solutions_fixes>solutions_fixes</a><ul>
+<li>
+<a href=#db_valid_certs>db_valid_certs</a><ul>
+<li>
+<a href=#certs_change>certs_change</a></li>
+<li>
+<a href=#no_single_point_trust>no_single_point_trust</a></li>
+<li>
+<a href=#still_unclear_distinguish_valid>still_unclear_distinguish_valid</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#unclear_how_to_fix>unclear_how_to_fix</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#ssl_tls_https>ssl_tls_https</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#pre_1995_web_security>pre_1995_web_security</a><ul>
+<li>
+<a href=#man_in_the_middle_attack>man_in_the_middle_attack</a><ul>
+<li>
+<a href=#intercepts_dns_packets>intercepts_dns_packets</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#certificate_transparency>certificate_transparency</a><a id="certificate_transparency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Certificate Transparency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#gossip>gossip</a>, <a href=#log_server>log_server</a>, <a href=#open_system>open_system</a>, <a href=#audit_system>audit_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mutually_distrusting_system>mutually_distrusting_system</a><a id="mutually_distrusting_system"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+mutually distrusting system
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#open_system>open_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#open_system>open_system</a><a id="open_system"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Open System
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mutually_distrusting_system>mutually_distrusting_system</a>, <a href=#talking_to_right_computer>talking_to_right_computer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#certificate_transparency>certificate_transparency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#talking_to_right_computer>talking_to_right_computer</a><a id="talking_to_right_computer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Are you talking to the right computer
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mostly_unsolveable>mostly_unsolveable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#open_system>open_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mostly_unsolveable>mostly_unsolveable</a><a id="mostly_unsolveable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mostly Unsolveable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#talking_to_right_computer>talking_to_right_computer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#90s_web>90s_web</a><a id="90s_web"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+90s web security
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mid_90s>mid_90s</a>, <a href=#pre_1995_web_security>pre_1995_web_security</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pre_1995_web_security>pre_1995_web_security</a><a id="pre_1995_web_security"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pre-1995 web security
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#man_in_the_middle_attack>man_in_the_middle_attack</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#90s_web>90s_web</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#man_in_the_middle_attack>man_in_the_middle_attack</a><a id="man_in_the_middle_attack"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Man-in-the-middle attack
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#intercepts_dns_packets>intercepts_dns_packets</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pre_1995_web_security>pre_1995_web_security</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#intercepts_dns_packets>intercepts_dns_packets</a><a id="intercepts_dns_packets"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+intercepts DNS packets
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#man_in_the_middle_attack>man_in_the_middle_attack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mid_90s>mid_90s</a><a id="mid_90s"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mid-90s security
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#certificates>certificates</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#90s_web>90s_web</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ssl_tls_https>ssl_tls_https</a><a id="ssl_tls_https"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SSL, TLS, HTTPS
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#certificates>certificates</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#certificate_authority>certificate_authority</a><a id="certificate_authority"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Certificate Authority
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#now_hundreds_CA>now_hundreds_CA</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#certificates>certificates</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#certificates>certificates</a><a id="certificates"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Certificates
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#certificate_authority>certificate_authority</a>, <a href=#ssl_tls_https>ssl_tls_https</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mid_90s>mid_90s</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#now_hundreds_CA>now_hundreds_CA</a><a id="now_hundreds_CA"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Now: hundreds of CAs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bogus_certs>bogus_certs</a> (problem)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#certificate_authority>certificate_authority</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bogus_certs>bogus_certs</a><a id="bogus_certs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bogus Certificates
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#solutions_fixes>solutions_fixes</a>, <a href=#unclear_how_to_fix>unclear_how_to_fix</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#now_hundreds_CA>now_hundreds_CA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#unclear_how_to_fix>unclear_how_to_fix</a><a id="unclear_how_to_fix"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Unclear how to fix
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bogus_certs>bogus_certs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#solutions_fixes>solutions_fixes</a><a id="solutions_fixes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+(possible) Solutions / Fixes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_valid_certs>db_valid_certs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bogus_certs>bogus_certs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#db_valid_certs>db_valid_certs</a><a id="db_valid_certs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database of Valid Certificates
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#certs_change>certs_change</a>, <a href=#no_single_point_trust>no_single_point_trust</a>, <a href=#still_unclear_distinguish_valid>still_unclear_distinguish_valid</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#solutions_fixes>solutions_fixes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#still_unclear_distinguish_valid>still_unclear_distinguish_valid</a><a id="still_unclear_distinguish_valid"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Still unclear how to distinguish valid
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_valid_certs>db_valid_certs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_single_point_trust>no_single_point_trust</a><a id="no_single_point_trust"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No single point of trust
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_valid_certs>db_valid_certs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#certs_change>certs_change</a><a id="certs_change"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Certs change
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_valid_certs>db_valid_certs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#audit_system>audit_system</a><a id="audit_system"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Audit System
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_system>log_system</a>, <a href=#public_for_investigation>public_for_investigation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#certificate_transparency>certificate_transparency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#public_for_investigation>public_for_investigation</a><a id="public_for_investigation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Causes all info to be public for investigation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bogus_still_possible>bogus_still_possible</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#audit_system>audit_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bogus_still_possible>bogus_still_possible</a><a id="bogus_still_possible"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bogus Still possible
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_preventative>not_preventative</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#public_for_investigation>public_for_investigation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_preventative>not_preventative</a><a id="not_preventative"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not preventative
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bogus_still_possible>bogus_still_possible</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_system>log_system</a><a id="log_system"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log system
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#depends_browsers_see_what_monitor_sees>depends_browsers_see_what_monitor_sees</a>, <a href=#no_forks>no_forks</a>, <a href=#prevent_equivocation>prevent_equivocation</a>, <a href=#untrusted>untrusted</a>, <a href=#append_only>append_only</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#audit_system>audit_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#append_only>append_only</a><a id="append_only"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Append-only
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_system>log_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_forks>no_forks</a><a id="no_forks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No Forks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_system>log_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#untrusted>untrusted</a><a id="untrusted"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Untrusted
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_system>log_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_server>log_server</a><a id="log_server"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Certificate Transparency Log Server / Service
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#is_cert_in_log>is_cert_in_log</a>, <a href=#monitor>monitor</a>, <a href=#periodically_talks_log_server>periodically_talks_log_server</a>, <a href=#prove_things>prove_things</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#certificate_transparency>certificate_transparency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#is_cert_in_log>is_cert_in_log</a><a id="is_cert_in_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Is cert in log?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#user_request>user_request</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_server>log_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#user_request>user_request</a><a id="user_request"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+User Request
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#is_cert_in_log>is_cert_in_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#monitor>monitor</a><a id="monitor"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Monitor
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#depends_browsers_see_what_monitor_sees>depends_browsers_see_what_monitor_sees</a>, <a href=#knows_correct_certs>knows_correct_certs</a>, <a href=#periodically_talks_log_server>periodically_talks_log_server</a>, <a href=#revocation_system>revocation_system</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_server>log_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#knows_correct_certs>knows_correct_certs</a><a id="knows_correct_certs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Knows what corrects certs are
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monitor>monitor</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#periodically_talks_log_server>periodically_talks_log_server</a><a id="periodically_talks_log_server"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Periodically talks to log server
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_server>log_server</a>, <a href=#monitor>monitor</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#depends_browsers_see_what_monitor_sees>depends_browsers_see_what_monitor_sees</a><a id="depends_browsers_see_what_monitor_sees"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Depends on browsers seeing what monitor sees
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_contents>log_contents</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monitor>monitor</a>, <a href=#log_system>log_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_contents>log_contents</a><a id="log_contents"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Contents
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#depends_browsers_see_what_monitor_sees>depends_browsers_see_what_monitor_sees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#prevent_equivocation>prevent_equivocation</a><a id="prevent_equivocation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Prevent Equivocation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_system>log_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#merkle_tree>merkle_tree</a><a id="merkle_tree"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Merkle Tree
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cryptographic_hashes>cryptographic_hashes</a>, <a href=#prove_things>prove_things</a>, <a href=#signed_tree_head>signed_tree_head</a>, <a href=#tree_of_hashes>tree_of_hashes</a>, <a href=#trustworthy_log_summary>trustworthy_log_summary</a>, <a href=#built_on_top_of_logs>built_on_top_of_logs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#built_on_top_of_logs>built_on_top_of_logs</a><a id="built_on_top_of_logs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Built on top of logs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#merkle_tree>merkle_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cryptographic_hashes>cryptographic_hashes</a><a id="cryptographic_hashes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cryptographic hashes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#merkle_tree>merkle_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#prove_things>prove_things</a><a id="prove_things"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Forces log server to prove certain things
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_consistency_proof>log_consistency_proof</a>, <a href=#proof_of_inclusion>proof_of_inclusion</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_server>log_server</a>, <a href=#merkle_tree>merkle_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#proof_of_inclusion>proof_of_inclusion</a><a id="proof_of_inclusion"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Proof of Inclusion
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#returns_location_hash>returns_location_hash</a>, <a href=#tree_head_bogus>tree_head_bogus</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#prove_things>prove_things</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#returns_location_hash>returns_location_hash</a><a id="returns_location_hash"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log server returns location of hash, and the hash of the other element.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#proof_of_inclusion>proof_of_inclusion</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tree_of_hashes>tree_of_hashes</a><a id="tree_of_hashes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+tree of hashes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_grows_tree_head_higher>log_grows_tree_head_higher</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#merkle_tree>merkle_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#trustworthy_log_summary>trustworthy_log_summary</a><a id="trustworthy_log_summary"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Trustworthy summary of logs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#merkle_tree>merkle_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_grows_tree_head_higher>log_grows_tree_head_higher</a><a id="log_grows_tree_head_higher"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log grows, tree heads higher
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tree_of_hashes>tree_of_hashes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#signed_tree_head>signed_tree_head</a><a id="signed_tree_head"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Signed Tree Head (STH)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#merkle_tree>merkle_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#revocation_system>revocation_system</a><a id="revocation_system"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Revocation system for certificates
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monitor>monitor</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tree_head_bogus>tree_head_bogus</a><a id="tree_head_bogus"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+what if tree head is bogus?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fork_attack>fork_attack</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#proof_of_inclusion>proof_of_inclusion</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fork_attack>fork_attack</a><a id="fork_attack"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fork Attack
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#equivocation>equivocation</a>, <a href=#fork_consistency>fork_consistency</a>, <a href=#gossip>gossip</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tree_head_bogus>tree_head_bogus</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#equivocation>equivocation</a><a id="equivocation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Equivocation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fork_attack>fork_attack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#gossip>gossip</a><a id="gossip"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+gossip
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#compare_tree_heads>compare_tree_heads</a>, <a href=#drop_heads_into_pool_for_inspection>drop_heads_into_pool_for_inspection</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fork_attack>fork_attack</a>, <a href=#certificate_transparency>certificate_transparency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#compare_tree_heads>compare_tree_heads</a><a id="compare_tree_heads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Compare tree heads
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#gossip>gossip</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#drop_heads_into_pool_for_inspection>drop_heads_into_pool_for_inspection</a><a id="drop_heads_into_pool_for_inspection"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Participants drop off heads into pool that is inspected for inconsistencies and divergent forks in logs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#gossip>gossip</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_consistency_proof>log_consistency_proof</a><a id="log_consistency_proof"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Consistency Proof
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_consistency_proof_description>log_consistency_proof_description</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#prove_things>prove_things</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_consistency_proof_description>log_consistency_proof_description</a><a id="log_consistency_proof_description"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Input: 2 signed tree heads H1 and H2. Is H1's log a prefix of H2's log?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_consistency_proof>log_consistency_proof</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stay_on_fork>stay_on_fork</a><a id="stay_on_fork"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If the browser's been forked, it needs to stay on that fork
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#track_failed_proofs>track_failed_proofs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fork_consistency>fork_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fork_consistency>fork_consistency</a><a id="fork_consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fork Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#stay_on_fork>stay_on_fork</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fork_attack>fork_attack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#track_failed_proofs>track_failed_proofs</a><a id="track_failed_proofs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Keep track of failed proofs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#stay_on_fork>stay_on_fork</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
