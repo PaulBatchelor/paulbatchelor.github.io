@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<title>ZFS cheatsheet</title>
+<h1>ZFS cheatsheet</h1>
+<p>Plug in USB device, then run
+</p>
+<pre><code>zpool import</pre></code>
+<p></p>
+<p>It will list available pools
+</p>
+<p>then import a pool
+</p>
+<pre><code>zpool import paulmedia</pre></code>
+<p></p>
+<p>when done run
+</p>
+<pre><code>zpool export paulmedia</pre></code>
+<p></p>
+<p>scrub
+</p>
+<pre><code>zpool scrub </pre></code>
+<p></p>
+<p>check on status of scrub
+</p>
+<pre><code>zpool status</pre></code>
+<p></p>
+<p>Pools are mounted in the root directory. paulmedia would be
+in <code>/paulmedia</code>.
+</p>
+<p>Some information about the pool, such as storage use, can
+be done with:
+</p>
+<pre><code>zpool list paulmedia</pre></code>
+<p></p>
+<p>Get feature/property information of a pool
+</p>
+<pre><code>zfs get all paulmedia</pre></code>
+<p></p>
+<p>Creating a new ZFS pool for replication.
+</p>
+<p>First use parted to initialize the partition with a GUID.
+</p>
+<p>gparted
+print
+rm 1
+rm 2
+quit
+</p>
+<p>mkpart "paulbackup" ext4 0% 100%
+quit
+</p>
+<p>create pool "snaps" from paulbackup
+</p>
+<p>zpool create snaps paulbackup
+</p>
+<p>in case you want to destroy the pool and start over
+zpool destroy snaps
+</p>
+<p>zfs snapshot paulmedia/shows@init
+zfs send paulmedia/shows@init | zfs receive snaps/shows@init
+</p>
+<p>incremental
+zfs send -i paulmedia/shows@init paulmedia/shows@next | zfs receive -dF snaps/shows
+</p>
+<p>The -i flag is the reference snapshot from a previous snapshot,
+the argument after that is the snapshot to send
+</p>
+<p>list snapshots
+</p>
+<p>zfs list -t snapshot
+</p>
+<p>set lz4 compression on snaps
+zfs set compression=lz4 snaps
+</p>
+</div>
+</body>
+</html>
