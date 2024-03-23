@@ -20,13 +20,89 @@ A study of the C implementation of the ilo virtual machine for Konilo.
 <h2>Node Tree</h2>
 <ul>
 <li>
-<a href=#stub>stub</a></li>
+<a href=#macros>macros</a><ul>
+<li>
+<a href=#macro_I>macro_I</a></li>
+<li>
+<a href=#macro_T>macro_T</a></li>
+<li>
+<a href=#macro_V>macro_V</a></li>
+<li>
+<a href=#macro_C>macro_C</a></li>
+</ul>
+</li>
+<li>
+<a href=#pop>pop</a></li>
+<li>
+<a href=#push>push</a></li>
+<li>
+<a href=#read_block>read_block</a></li>
+<li>
+<a href=#save_image>save_image</a></li>
+<li>
+<a href=#save_ip>save_ip</a></li>
+<li>
+<a href=#symmetric>symmetric</a></li>
+<li>
+<a href=#write_block>write_block</a></li>
+<li>
+<a href=#block_common>block_common</a></li>
+<li>
+<a href=#global_vars>global_vars</a><ul>
+<li>
+<a href=#misc_global_vars>misc_global_vars</a></li>
+<li>
+<a href=#as>as</a><ul>
+<li>
+<a href=#macro_R>macro_R</a></li>
+</ul>
+</li>
+<li>
+<a href=#rom>rom</a></li>
+<li>
+<a href=#rp>rp</a><ul>
+<li>
+<a href=#macro_R>macro_R</a></li>
+</ul>
+</li>
+<li>
+<a href=#ds>ds</a><ul>
+<li>
+<a href=#macro_N>macro_N</a><ul>
+<li>
+<a href=#macro_T>macro_T</a></li>
+</ul>
+</li>
+<li>
+<a href=#macro_T>macro_T</a></li>
+</ul>
+</li>
+<li>
+<a href=#blocks>blocks</a></li>
+<li>
+<a href=#sp>sp</a><ul>
+<li>
+<a href=#macro_N>macro_N</a><ul>
+<li>
+<a href=#macro_T>macro_T</a></li>
+</ul>
+</li>
+<li>
+<a href=#macro_T>macro_T</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#instructions>instructions</a></li>
+<li>
+<a href=#load_image>load_image</a></li>
 </ul>
 <h2>Nodes</h2>
 <table border="1px">
 <tr>
 <td colspan=2>
-<a href=#stub>stub</a><a id="stub"></a>
+<a href=#macros>macros</a><a id="macros"></a>
 </td>
 </tr>
 <tr>
@@ -34,7 +110,239 @@ A study of the C implementation of the ilo virtual machine for Konilo.
 content
 </td>
 <td>
-Stub, please delete later
+a set of single-letter macros. reminds me of abbreviations found in the kona codebase
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#macro_I>macro_I</a>, <a href=#macro_T>macro_T</a>, <a href=#macro_V>macro_V</a>, <a href=#macro_C>macro_C</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#macro_T>macro_T</a><a id="macro_T"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+T: global. top of datastack (sp).
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#macros>macros</a>, <a href=#macro_N>macro_N</a>, <a href=#sp>sp</a>, <a href=#ds>ds</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#global_vars>global_vars</a><a id="global_vars"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Global variables
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#misc_global_vars>misc_global_vars</a>, <a href=#as>as</a>, <a href=#rom>rom</a>, <a href=#rp>rp</a>, <a href=#ds>ds</a>, <a href=#blocks>blocks</a>, <a href=#sp>sp</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sp>sp</a><a id="sp"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+sp stack pointer variable
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#macro_N>macro_N</a> (uses stack pointer), <a href=#macro_T>macro_T</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_vars>global_vars</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#macro_N>macro_N</a><a id="macro_N"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+N: global. next on data stack. (sp - 1)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#macro_T>macro_T</a> (related)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sp>sp</a>, <a href=#ds>ds</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#macro_R>macro_R</a><a id="macro_R"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+R: top of address stack. (rp)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#as>as</a>, <a href=#rp>rp</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ds>ds</a><a id="ds"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ds: data stack global. integer array size 33.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#macro_N>macro_N</a>, <a href=#macro_T>macro_T</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_vars>global_vars</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#as>as</a><a id="as"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+as: address stack. int array size 257
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#macro_R>macro_R</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_vars>global_vars</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rp>rp</a><a id="rp"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+rp: address stack pointer.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#macro_R>macro_R</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_vars>global_vars</a>
 </td>
 </tr>
 <tr>
@@ -42,7 +350,295 @@ Stub, please delete later
 remarks
 </td>
 <td>
-Only created to make this show up in HTML
+wonder what the "r" stands for? My best guess is that it means "return", as in "return stack pointer".
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#macro_V>macro_V</a><a id="macro_V"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+V: macro for "void"
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#macros>macros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#macro_I>macro_I</a><a id="macro_I"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+I: macro for "int"
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#macros>macros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#macro_C>macro_C</a><a id="macro_C"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+C: macro for "char"
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#macros>macros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#blocks>blocks</a><a id="blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+blocks: name of blocks file (ilo.blocks).
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_vars>global_vars</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rom>rom</a><a id="rom"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+rom: name of image (ilo.rom)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_vars>global_vars</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#misc_global_vars>misc_global_vars</a><a id="misc_global_vars"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"the other variables are used by the various functions for misc. purposes"
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_vars>global_vars</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#push>push</a><a id="push"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+push() function. takes in one integer value as arg.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pop>pop</a><a id="pop"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+pop() function. returns int.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#load_image>load_image</a><a id="load_image"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+load_image()
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#save_image>save_image</a><a id="save_image"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+save_image()
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#block_common>block_common</a><a id="block_common"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+block_common()
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_block>read_block</a><a id="read_block"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+read_block()
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_block>write_block</a><a id="write_block"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+write_block()
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#save_ip>save_ip</a><a id="save_ip"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+save_ip()
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#symmetric>symmetric</a><a id="symmetric"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+symmetric
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#instructions>instructions</a><a id="instructions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+instructions
 </td>
 </tr>
 </table><br>
