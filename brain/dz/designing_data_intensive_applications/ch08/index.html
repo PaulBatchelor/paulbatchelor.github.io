@@ -1,0 +1,3293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>designing_data_intensive_applications/ch08</title>
+<h1>ch08</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/designing_data_intensive_applications">designing_data_intensive_applications</a> / <a href="/brain/dz/designing_data_intensive_applications/ch08">ch08</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 8: The Trouble With Distributed Systems
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#rapid_feedback>rapid_feedback</a><ul>
+<li>
+<a href=#certain_response_success>certain_response_success</a></li>
+</ul>
+</li>
+<li>
+<a href=#timing_assumptions>timing_assumptions</a><ul>
+<li>
+<a href=#partially_synchronous>partially_synchronous</a></li>
+<li>
+<a href=#synchronous>synchronous</a></li>
+<li>
+<a href=#asynchronous>asynchronous</a></li>
+</ul>
+</li>
+<li>
+<a href=#NTP>NTP</a><ul>
+<li>
+<a href=#slew>slew</a><ul>
+<li>
+<a href=#NTP_slew_amount>NTP_slew_amount</a></li>
+</ul>
+</li>
+<li>
+<a href=#smearing>smearing</a></li>
+<li>
+<a href=#time_of_day_clock>time_of_day_clock</a><ul>
+<li>
+<a href=#unsuitable_for_measuing_duration>unsuitable_for_measuing_duration</a></li>
+<li>
+<a href=#clock_sync_global_snapshots>clock_sync_global_snapshots</a></li>
+<li>
+<a href=#monotonic_clock>monotonic_clock</a><ul>
+<li>
+<a href=#slew>slew</a><ul>
+<li>
+<a href=#NTP_slew_amount>NTP_slew_amount</a></li>
+</ul>
+</li>
+<li>
+<a href=#timediff_yields_duration_absolute_meaningless>timediff_yields_duration_absolute_meaningless</a></li>
+<li>
+<a href=#unsuitable_for_measuing_duration>unsuitable_for_measuing_duration</a></li>
+<li>
+<a href=#different_timers_per_CPU>different_timers_per_CPU</a></li>
+<li>
+<a href=#drift>drift</a><ul>
+<li>
+<a href=#smearing>smearing</a></li>
+<li>
+<a href=#timestamps_for_ordering_can_fail>timestamps_for_ordering_can_fail</a></li>
+<li>
+<a href=#200ppm_drift>200ppm_drift</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#NTP_accuracy_limited_by_network_roundtrip>NTP_accuracy_limited_by_network_roundtrip</a></li>
+<li>
+<a href=#NTP_slew_amount>NTP_slew_amount</a></li>
+</ul>
+</li>
+<li>
+<a href=#clocks>clocks</a><ul>
+<li>
+<a href=#smearing>smearing</a></li>
+<li>
+<a href=#time_of_day_clock>time_of_day_clock</a><ul>
+<li>
+<a href=#unsuitable_for_measuing_duration>unsuitable_for_measuing_duration</a></li>
+<li>
+<a href=#clock_sync_global_snapshots>clock_sync_global_snapshots</a></li>
+<li>
+<a href=#monotonic_clock>monotonic_clock</a><ul>
+<li>
+<a href=#slew>slew</a><ul>
+<li>
+<a href=#NTP_slew_amount>NTP_slew_amount</a></li>
+</ul>
+</li>
+<li>
+<a href=#timediff_yields_duration_absolute_meaningless>timediff_yields_duration_absolute_meaningless</a></li>
+<li>
+<a href=#unsuitable_for_measuing_duration>unsuitable_for_measuing_duration</a></li>
+<li>
+<a href=#different_timers_per_CPU>different_timers_per_CPU</a></li>
+<li>
+<a href=#drift>drift</a><ul>
+<li>
+<a href=#smearing>smearing</a></li>
+<li>
+<a href=#timestamps_for_ordering_can_fail>timestamps_for_ordering_can_fail</a></li>
+<li>
+<a href=#200ppm_drift>200ppm_drift</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#clock_issues>clock_issues</a><ul>
+<li>
+<a href=#process_pauses>process_pauses</a><ul>
+<li>
+<a href=#preempt_thread>preempt_thread</a></li>
+<li>
+<a href=#steal_time>steal_time</a></li>
+<li>
+<a href=#thrashing>thrashing</a></li>
+<li>
+<a href=#GC_brief_planned_outages>GC_brief_planned_outages</a></li>
+<li>
+<a href=#hard_realtime_systems>hard_realtime_systems</a><ul>
+<li>
+<a href=#RTOS>RTOS</a><ul>
+<li>
+<a href=#GC_brief_planned_outages>GC_brief_planned_outages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#VM_suspended>VM_suspended</a></li>
+<li>
+<a href=#different_timers_per_CPU>different_timers_per_CPU</a></li>
+<li>
+<a href=#drift>drift</a><ul>
+<li>
+<a href=#smearing>smearing</a></li>
+<li>
+<a href=#timestamps_for_ordering_can_fail>timestamps_for_ordering_can_fail</a></li>
+<li>
+<a href=#200ppm_drift>200ppm_drift</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#clock_reading_confidence_interval>clock_reading_confidence_interval</a><ul>
+<li>
+<a href=#truetime_google>truetime_google</a><ul>
+<li>
+<a href=#clock_sync_global_snapshots>clock_sync_global_snapshots</a></li>
+</ul>
+</li>
+<li>
+<a href=#uncertainy_bound>uncertainy_bound</a></li>
+</ul>
+</li>
+<li>
+<a href=#describing_points_in_time>describing_points_in_time</a></li>
+<li>
+<a href=#drift>drift</a><ul>
+<li>
+<a href=#smearing>smearing</a></li>
+<li>
+<a href=#timestamps_for_ordering_can_fail>timestamps_for_ordering_can_fail</a></li>
+<li>
+<a href=#200ppm_drift>200ppm_drift</a></li>
+</ul>
+</li>
+<li>
+<a href=#measuring_duration>measuring_duration</a><ul>
+<li>
+<a href=#describing_points_in_time>describing_points_in_time</a></li>
+</ul>
+</li>
+<li>
+<a href=#monotonic_clock>monotonic_clock</a><ul>
+<li>
+<a href=#slew>slew</a><ul>
+<li>
+<a href=#NTP_slew_amount>NTP_slew_amount</a></li>
+</ul>
+</li>
+<li>
+<a href=#timediff_yields_duration_absolute_meaningless>timediff_yields_duration_absolute_meaningless</a></li>
+<li>
+<a href=#unsuitable_for_measuing_duration>unsuitable_for_measuing_duration</a></li>
+<li>
+<a href=#different_timers_per_CPU>different_timers_per_CPU</a></li>
+<li>
+<a href=#drift>drift</a><ul>
+<li>
+<a href=#smearing>smearing</a></li>
+<li>
+<a href=#timestamps_for_ordering_can_fail>timestamps_for_ordering_can_fail</a></li>
+<li>
+<a href=#200ppm_drift>200ppm_drift</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#node_clock_not_accurate>node_clock_not_accurate</a></li>
+</ul>
+</li>
+<li>
+<a href=#faults_partial_failures>faults_partial_failures</a><ul>
+<li>
+<a href=#partial_failure>partial_failure</a><ul>
+<li>
+<a href=#makes_dist_systems_difficult>makes_dist_systems_difficult</a></li>
+<li>
+<a href=#nondeterministic>nondeterministic</a></li>
+</ul>
+</li>
+<li>
+<a href=#unreliable_networks>unreliable_networks</a><ul>
+<li>
+<a href=#APN>APN</a><ul>
+<li>
+<a href=#sync_async_networks>sync_async_networks</a><ul>
+<li>
+<a href=#synchronous>synchronous</a></li>
+<li>
+<a href=#ISDN_network>ISDN_network</a></li>
+<li>
+<a href=#bursty_traffic>bursty_traffic</a></li>
+<li>
+<a href=#circuit>circuit</a><ul>
+<li>
+<a href=#synchronous>synchronous</a></li>
+<li>
+<a href=#ISDN_network>ISDN_network</a></li>
+</ul>
+</li>
+<li>
+<a href=#emulating_circuit_switching>emulating_circuit_switching</a><ul>
+<li>
+<a href=#quality_of_service>quality_of_service</a></li>
+<li>
+<a href=#admission_control>admission_control</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#unbounded_delay>unbounded_delay</a><ul>
+<li>
+<a href=#variable_delays_dynamic_partitioning>variable_delays_dynamic_partitioning</a><ul>
+<li>
+<a href=#static_partitioning>static_partitioning</a><ul>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a></li>
+</ul>
+</li>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a></li>
+</ul>
+</li>
+<li>
+<a href=#no_correct_timeout>no_correct_timeout</a></li>
+</ul>
+</li>
+<li>
+<a href=#impossible_determine_why_request_not_received>impossible_determine_why_request_not_received</a><ul>
+<li>
+<a href=#timeout>timeout</a><ul>
+<li>
+<a href=#unbounded_delay>unbounded_delay</a><ul>
+<li>
+<a href=#variable_delays_dynamic_partitioning>variable_delays_dynamic_partitioning</a><ul>
+<li>
+<a href=#static_partitioning>static_partitioning</a><ul>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a></li>
+</ul>
+</li>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a></li>
+</ul>
+</li>
+<li>
+<a href=#no_correct_timeout>no_correct_timeout</a></li>
+</ul>
+</li>
+<li>
+<a href=#flow_control>flow_control</a></li>
+<li>
+<a href=#how_long_to_declare_dead>how_long_to_declare_dead</a></li>
+<li>
+<a href=#ideal_timeout>ideal_timeout</a></li>
+<li>
+<a href=#jitter>jitter</a></li>
+<li>
+<a href=#network_congestion>network_congestion</a></li>
+<li>
+<a href=#no_correct_timeout>no_correct_timeout</a></li>
+<li>
+<a href=#noisy_neighbor>noisy_neighbor</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#impossible_determine_why_request_not_received>impossible_determine_why_request_not_received</a><ul>
+<li>
+<a href=#timeout>timeout</a><ul>
+<li>
+<a href=#unbounded_delay>unbounded_delay</a><ul>
+<li>
+<a href=#variable_delays_dynamic_partitioning>variable_delays_dynamic_partitioning</a><ul>
+<li>
+<a href=#static_partitioning>static_partitioning</a><ul>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a></li>
+</ul>
+</li>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a></li>
+</ul>
+</li>
+<li>
+<a href=#no_correct_timeout>no_correct_timeout</a></li>
+</ul>
+</li>
+<li>
+<a href=#flow_control>flow_control</a></li>
+<li>
+<a href=#how_long_to_declare_dead>how_long_to_declare_dead</a></li>
+<li>
+<a href=#ideal_timeout>ideal_timeout</a></li>
+<li>
+<a href=#jitter>jitter</a></li>
+<li>
+<a href=#network_congestion>network_congestion</a></li>
+<li>
+<a href=#no_correct_timeout>no_correct_timeout</a></li>
+<li>
+<a href=#noisy_neighbor>noisy_neighbor</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#network_faults_practice>network_faults_practice</a><ul>
+<li>
+<a href=#how_software_reacts_to_network_problems>how_software_reacts_to_network_problems</a></li>
+<li>
+<a href=#network_fault>network_fault</a></li>
+<li>
+<a href=#network_partition>network_partition</a><ul>
+<li>
+<a href=#network_fault>network_fault</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#detecting_faults>detecting_faults</a></li>
+<li>
+<a href=#deterministic>deterministic</a><ul>
+<li>
+<a href=#nondeterministic>nondeterministic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#knowledge_truth_and_lies>knowledge_truth_and_lies</a><ul>
+<li>
+<a href=#system_model>system_model</a><ul>
+<li>
+<a href=#correctness>correctness</a><ul>
+<li>
+<a href=#proving_correct_doesnt_mean_implementation_correct>proving_correct_doesnt_mean_implementation_correct</a></li>
+<li>
+<a href=#correctness_properties>correctness_properties</a><ul>
+<li>
+<a href=#safety>safety</a><ul>
+<li>
+<a href=#nothing_bad_happens>nothing_bad_happens</a></li>
+<li>
+<a href=#on_violation_point_to_time>on_violation_point_to_time</a></li>
+<li>
+<a href=#uniqueness>uniqueness</a></li>
+<li>
+<a href=#monotonic_sequence>monotonic_sequence</a></li>
+</ul>
+</li>
+<li>
+<a href=#fencing_tokens_lock>fencing_tokens_lock</a><ul>
+<li>
+<a href=#uniqueness>uniqueness</a></li>
+</ul>
+</li>
+<li>
+<a href=#liveness>liveness</a><ul>
+<li>
+<a href=#satisfied_in_future>satisfied_in_future</a></li>
+<li>
+<a href=#something_good_eventually_happens>something_good_eventually_happens</a></li>
+<li>
+<a href=#availability>availability</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#node_failures>node_failures</a><ul>
+<li>
+<a href=#byzantine_arbitrary_faults>byzantine_arbitrary_faults</a></li>
+<li>
+<a href=#crash_recoevery_faults>crash_recoevery_faults</a></li>
+<li>
+<a href=#crash_stop_faults>crash_stop_faults</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#truth_defined_by_majority>truth_defined_by_majority</a><ul>
+<li>
+<a href=#quorum>quorum</a></li>
+<li>
+<a href=#consensus_algos>consensus_algos</a></li>
+<li>
+<a href=#node_cant_trust_judgement_of_situation>node_cant_trust_judgement_of_situation</a></li>
+</ul>
+</li>
+<li>
+<a href=#byzantine_fault>byzantine_fault</a><ul>
+<li>
+<a href=#relevant_p2p>relevant_p2p</a></li>
+<li>
+<a href=#byz_fault_tolerant>byz_fault_tolerant</a><ul>
+<li>
+<a href=#relevant_p2p>relevant_p2p</a></li>
+<li>
+<a href=#byz_ft_protocols_complicated>byz_ft_protocols_complicated</a></li>
+</ul>
+</li>
+<li>
+<a href=#byz_ft_protocols_complicated>byz_ft_protocols_complicated</a></li>
+<li>
+<a href=#consensus_in_untrusted_environment>consensus_in_untrusted_environment</a><ul>
+<li>
+<a href=#byzantine_generals_problem>byzantine_generals_problem</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#fencing>fencing</a><ul>
+<li>
+<a href=#fencing_token>fencing_token</a><ul>
+<li>
+<a href=#fencing_tokens_lock>fencing_tokens_lock</a><ul>
+<li>
+<a href=#uniqueness>uniqueness</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#large_scale_computing_philosophies>large_scale_computing_philosophies</a><ul>
+<li>
+<a href=#HPC>HPC</a><ul>
+<li>
+<a href=#checkpoint_and_crash>checkpoint_and_crash</a></li>
+</ul>
+</li>
+<li>
+<a href=#cloud_and_super_computing>cloud_and_super_computing</a><ul>
+<li>
+<a href=#thousands_of_nodes_something_wrong>thousands_of_nodes_something_wrong</a></li>
+<li>
+<a href=#HPC>HPC</a><ul>
+<li>
+<a href=#checkpoint_and_crash>checkpoint_and_crash</a></li>
+</ul>
+</li>
+<li>
+<a href=#cloud_computing>cloud_computing</a><ul>
+<li>
+<a href=#reliable_system_unreliable_components>reliable_system_unreliable_components</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#faults_partial_failures>faults_partial_failures</a><a id="faults_partial_failures"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Faults and Partial Failures
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#partial_failure>partial_failure</a>, <a href=#unreliable_networks>unreliable_networks</a>, <a href=#detecting_faults>detecting_faults</a>, <a href=#deterministic>deterministic</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#deterministic>deterministic</a><a id="deterministic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Deterministic: same opereration produces same result
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nondeterministic>nondeterministic</a> (vs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#faults_partial_failures>faults_partial_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partial_failure>partial_failure</a><a id="partial_failure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partial Failure: parts of distributed system broken in unpredictable way, other parts working fine
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#makes_dist_systems_difficult>makes_dist_systems_difficult</a>, <a href=#nondeterministic>nondeterministic</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#faults_partial_failures>faults_partial_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#nondeterministic>nondeterministic</a><a id="nondeterministic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+nondeterministic
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partial_failure>partial_failure</a>, <a href=#deterministic>deterministic</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#makes_dist_systems_difficult>makes_dist_systems_difficult</a><a id="makes_dist_systems_difficult"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What makes distributed systems hard to work with
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partial_failure>partial_failure</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#large_scale_computing_philosophies>large_scale_computing_philosophies</a><a id="large_scale_computing_philosophies"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Large-scale computing philosophies
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#HPC>HPC</a>, <a href=#cloud_and_super_computing>cloud_and_super_computing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cloud_and_super_computing>cloud_and_super_computing</a><a id="cloud_and_super_computing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cloud computing and supercomputing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#thousands_of_nodes_something_wrong>thousands_of_nodes_something_wrong</a>, <a href=#HPC>HPC</a> (vs), <a href=#cloud_computing>cloud_computing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#large_scale_computing_philosophies>large_scale_computing_philosophies</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#HPC>HPC</a><a id="HPC"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+High Performance Computing (HPC)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#checkpoint_and_crash>checkpoint_and_crash</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#large_scale_computing_philosophies>large_scale_computing_philosophies</a>, <a href=#cloud_and_super_computing>cloud_and_super_computing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#checkpoint_and_crash>checkpoint_and_crash</a><a id="checkpoint_and_crash"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use checkpoints, let everything crash
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#HPC>HPC</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cloud_computing>cloud_computing</a><a id="cloud_computing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cloud Computing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reliable_system_unreliable_components>reliable_system_unreliable_components</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cloud_and_super_computing>cloud_and_super_computing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#thousands_of_nodes_something_wrong>thousands_of_nodes_something_wrong</a><a id="thousands_of_nodes_something_wrong"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+When a system has thousands of nodes, it is safe to assume something is wrong.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cloud_and_super_computing>cloud_and_super_computing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reliable_system_unreliable_components>reliable_system_unreliable_components</a><a id="reliable_system_unreliable_components"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reliable system form unreliable components
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cloud_computing>cloud_computing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#unreliable_networks>unreliable_networks</a><a id="unreliable_networks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Unreliable Networks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#APN>APN</a>, <a href=#impossible_determine_why_request_not_received>impossible_determine_why_request_not_received</a>, <a href=#network_faults_practice>network_faults_practice</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#faults_partial_failures>faults_partial_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#APN>APN</a><a id="APN"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Asynchronous Packet Networks (APN)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sync_async_networks>sync_async_networks</a>, <a href=#unbounded_delay>unbounded_delay</a>, <a href=#impossible_determine_why_request_not_received>impossible_determine_why_request_not_received</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#unreliable_networks>unreliable_networks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#impossible_determine_why_request_not_received>impossible_determine_why_request_not_received</a><a id="impossible_determine_why_request_not_received"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Impossible to determine why you don't receive request from APN
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#timeout>timeout</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#unreliable_networks>unreliable_networks</a>, <a href=#APN>APN</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#timeout>timeout</a><a id="timeout"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Timeout: after some time, give up waiting and assume response won't arrive
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#unbounded_delay>unbounded_delay</a>, <a href=#flow_control>flow_control</a>, <a href=#how_long_to_declare_dead>how_long_to_declare_dead</a>, <a href=#ideal_timeout>ideal_timeout</a>, <a href=#jitter>jitter</a>, <a href=#network_congestion>network_congestion</a>, <a href=#no_correct_timeout>no_correct_timeout</a>, <a href=#noisy_neighbor>noisy_neighbor</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#impossible_determine_why_request_not_received>impossible_determine_why_request_not_received</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_faults_practice>network_faults_practice</a><a id="network_faults_practice"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Network Faults in Practice
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#how_software_reacts_to_network_problems>how_software_reacts_to_network_problems</a>, <a href=#network_fault>network_fault</a>, <a href=#network_partition>network_partition</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#unreliable_networks>unreliable_networks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_partition>network_partition</a><a id="network_partition"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Network Partition / Netsplit: One part of network cut off from the rest of network due to a network fault
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#network_fault>network_fault</a> (AKA)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#network_faults_practice>network_faults_practice</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_fault>network_fault</a><a id="network_fault"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Network Fault
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#network_faults_practice>network_faults_practice</a>, <a href=#network_partition>network_partition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#how_software_reacts_to_network_problems>how_software_reacts_to_network_problems</a><a id="how_software_reacts_to_network_problems"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Need to know how your software reacts to network problems and that the system can recover from them
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#network_faults_practice>network_faults_practice</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#detecting_faults>detecting_faults</a><a id="detecting_faults"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Detecting Faults
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#faults_partial_failures>faults_partial_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rapid_feedback>rapid_feedback</a><a id="rapid_feedback"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Rapid Feedback about a node being down is useful, but can't count on it
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#certain_response_success>certain_response_success</a> (the only way to know for sure)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#certain_response_success>certain_response_success</a><a id="certain_response_success"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Certainty that response that response was successful: positive response from application itself
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rapid_feedback>rapid_feedback</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#how_long_to_declare_dead>how_long_to_declare_dead</a><a id="how_long_to_declare_dead"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How long to wait before declaring a node is dead?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timeout>timeout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#unbounded_delay>unbounded_delay</a><a id="unbounded_delay"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Unbounded Delay: deliver packets as quickly as possible, no upper limit on packet arrival time.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#variable_delays_dynamic_partitioning>variable_delays_dynamic_partitioning</a>, <a href=#no_correct_timeout>no_correct_timeout</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timeout>timeout</a>, <a href=#APN>APN</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ideal_timeout>ideal_timeout</a><a id="ideal_timeout"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ideal Timeout: 2d + r, where d is time to deliver, and r is the time it takes to handle request on non-failed node.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timeout>timeout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_congestion>network_congestion</a><a id="network_congestion"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Network Congestion: packets have to wait in queue for a slot
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timeout>timeout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#flow_control>flow_control</a><a id="flow_control"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+flow control / congestion avboidance / backpressure: (TCP) node limits rate of sending in order to avoid overloading newtwork link or receiving node
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timeout>timeout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#noisy_neighbor>noisy_neighbor</a><a id="noisy_neighbor"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Noisy Neighbor: delays caused by other customer using shared resources.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timeout>timeout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#jitter>jitter</a><a id="jitter"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Jitter: systems can continuously monitor response times and their variability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timeout>timeout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sync_async_networks>sync_async_networks</a><a id="sync_async_networks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Synchronous vs Asynchronous Networks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#synchronous>synchronous</a>, <a href=#ISDN_network>ISDN_network</a>, <a href=#bursty_traffic>bursty_traffic</a>, <a href=#circuit>circuit</a>, <a href=#emulating_circuit_switching>emulating_circuit_switching</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#APN>APN</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#circuit>circuit</a><a id="circuit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Circuit: (in telephone systems) fixed, guaranteed amount of bandwidth allocated for a call
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#synchronous>synchronous</a>, <a href=#ISDN_network>ISDN_network</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync_async_networks>sync_async_networks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#synchronous>synchronous</a><a id="synchronous"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Synchronous: no queuing, 16 bits of space are already reserved.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#circuit>circuit</a>, <a href=#timing_assumptions>timing_assumptions</a>, <a href=#sync_async_networks>sync_async_networks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ISDN_network>ISDN_network</a><a id="ISDN_network"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ISDN Network
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#circuit>circuit</a>, <a href=#sync_async_networks>sync_async_networks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bursty_traffic>bursty_traffic</a><a id="bursty_traffic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Internet and datacenter networks optimized for bursty traffic instead of constant bitrate
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync_async_networks>sync_async_networks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#quality_of_service>quality_of_service</a><a id="quality_of_service"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Quality of Service: priority scheduling of packets
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#emulating_circuit_switching>emulating_circuit_switching</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#emulating_circuit_switching>emulating_circuit_switching</a><a id="emulating_circuit_switching"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Emulating circuit switching on asynchronous network or statistically bounded delay
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#quality_of_service>quality_of_service</a>, <a href=#admission_control>admission_control</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync_async_networks>sync_async_networks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#admission_control>admission_control</a><a id="admission_control"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Admission Control: rate limit senders
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#emulating_circuit_switching>emulating_circuit_switching</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#variable_delays_dynamic_partitioning>variable_delays_dynamic_partitioning</a><a id="variable_delays_dynamic_partitioning"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More generally, you can think of variable delays as a consequence of dynamic partitioning
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#static_partitioning>static_partitioning</a> (dynamic vs static partitioning), <a href=#dynamic_partitioning>dynamic_partitioning</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#unbounded_delay>unbounded_delay</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#static_partitioning>static_partitioning</a><a id="static_partitioning"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Static Partitioning: latency guarantees, reducied utilization (less expensive)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dynamic_partitioning>dynamic_partitioning</a> (vs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#variable_delays_dynamic_partitioning>variable_delays_dynamic_partitioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_correct_timeout>no_correct_timeout</a><a id="no_correct_timeout"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No correct timeout, determined experimentally
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timeout>timeout</a>, <a href=#unbounded_delay>unbounded_delay</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dynamic_partitioning>dynamic_partitioning</a><a id="dynamic_partitioning"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dynamic Partitioning: multi-tenancy, better utilization (cheaper), but variable delays
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#variable_delays_dynamic_partitioning>variable_delays_dynamic_partitioning</a>, <a href=#static_partitioning>static_partitioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clocks>clocks</a><a id="clocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+clocks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#smearing>smearing</a>, <a href=#time_of_day_clock>time_of_day_clock</a>, <a href=#clock_issues>clock_issues</a>, <a href=#clock_reading_confidence_interval>clock_reading_confidence_interval</a>, <a href=#describing_points_in_time>describing_points_in_time</a>, <a href=#drift>drift</a>, <a href=#measuring_duration>measuring_duration</a>, <a href=#monotonic_clock>monotonic_clock</a>, <a href=#node_clock_not_accurate>node_clock_not_accurate</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#measuring_duration>measuring_duration</a><a id="measuring_duration"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Measuring Duration
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#describing_points_in_time>describing_points_in_time</a> (related)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks>clocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#describing_points_in_time>describing_points_in_time</a><a id="describing_points_in_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Describing points in time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks>clocks</a>, <a href=#measuring_duration>measuring_duration</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#node_clock_not_accurate>node_clock_not_accurate</a><a id="node_clock_not_accurate"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Each node has its own hardware clock (quartz, usually),  not perfectly accurate
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks>clocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#time_of_day_clock>time_of_day_clock</a><a id="time_of_day_clock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Time-of-Day Clock: returns current calendar date
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#unsuitable_for_measuing_duration>unsuitable_for_measuing_duration</a>, <a href=#clock_sync_global_snapshots>clock_sync_global_snapshots</a>, <a href=#monotonic_clock>monotonic_clock</a> (vs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks>clocks</a>, <a href=#NTP>NTP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#monotonic_clock>monotonic_clock</a><a id="monotonic_clock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Monotonic Clock: Clock that is guaranteed to move forward in time. Suitable for measuring durations.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#slew>slew</a>, <a href=#timediff_yields_duration_absolute_meaningless>timediff_yields_duration_absolute_meaningless</a>, <a href=#unsuitable_for_measuing_duration>unsuitable_for_measuing_duration</a> (used for measuring elapsed time), <a href=#different_timers_per_CPU>different_timers_per_CPU</a>, <a href=#drift>drift</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#time_of_day_clock>time_of_day_clock</a>, <a href=#clocks>clocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#unsuitable_for_measuing_duration>unsuitable_for_measuing_duration</a><a id="unsuitable_for_measuing_duration"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Time jumps (backwards) and (often) ignoring leap seconds make time-of-day clock unsuitable for measuring elapsed time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#time_of_day_clock>time_of_day_clock</a>, <a href=#monotonic_clock>monotonic_clock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#NTP>NTP</a><a id="NTP"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+NTP: network time protocol, syncs clocks according to time reported by group of servers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#slew>slew</a> (NTP uses slew), <a href=#smearing>smearing</a> (how NTP handles leap seconds), <a href=#time_of_day_clock>time_of_day_clock</a> (synced with), <a href=#NTP_accuracy_limited_by_network_roundtrip>NTP_accuracy_limited_by_network_roundtrip</a>, <a href=#NTP_slew_amount>NTP_slew_amount</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#timediff_yields_duration_absolute_meaningless>timediff_yields_duration_absolute_meaningless</a><a id="timediff_yields_duration_absolute_meaningless"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Difference between times gives duration elapsed, absolute value is meaningless
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monotonic_clock>monotonic_clock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#different_timers_per_CPU>different_timers_per_CPU</a><a id="different_timers_per_CPU"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Different timers per CPU: unsynchronized. OS compensates, but take monoticity guarantee with grain of salt
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monotonic_clock>monotonic_clock</a>, <a href=#clock_issues>clock_issues</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#slew>slew</a><a id="slew"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Slew: to adjust the rate a monotonic clock moves forward.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#NTP_slew_amount>NTP_slew_amount</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#monotonic_clock>monotonic_clock</a>, <a href=#NTP>NTP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#NTP_slew_amount>NTP_slew_amount</a><a id="NTP_slew_amount"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+NTP slew rate up to +/- 0.05%, but no forward/backward jumps
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#slew>slew</a>, <a href=#NTP>NTP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#drift>drift</a><a id="drift"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Drift: clock runs slower/faster than it should
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#smearing>smearing</a>, <a href=#timestamps_for_ordering_can_fail>timestamps_for_ordering_can_fail</a>, <a href=#200ppm_drift>200ppm_drift</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks>clocks</a>, <a href=#clock_issues>clock_issues</a>, <a href=#monotonic_clock>monotonic_clock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#200ppm_drift>200ppm_drift</a><a id="200ppm_drift"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Google assumes 200ppm drift for their servers. 6ms drift for a node resynchronized every 30s, 17s for a node resynchronized once a day
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#drift>drift</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#smearing>smearing</a><a id="smearing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Smearing: performing leap second gradually over course of day.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks>clocks</a>, <a href=#drift>drift</a>, <a href=#NTP>NTP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#timestamps_for_ordering_can_fail>timestamps_for_ordering_can_fail</a><a id="timestamps_for_ordering_can_fail"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Timestamps for ordering events across multiple nodes can fail due to skew.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#drift>drift</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#NTP_accuracy_limited_by_network_roundtrip>NTP_accuracy_limited_by_network_roundtrip</a><a id="NTP_accuracy_limited_by_network_roundtrip"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+NTP accuracy limited by network roundtrip time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#NTP>NTP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clock_reading_confidence_interval>clock_reading_confidence_interval</a><a id="clock_reading_confidence_interval"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clock Reading: less a point in time, more of a range with confidence interval
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#truetime_google>truetime_google</a>, <a href=#uncertainy_bound>uncertainy_bound</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks>clocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#uncertainy_bound>uncertainy_bound</a><a id="uncertainy_bound"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Uncertainty bound computed based on time source
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clock_reading_confidence_interval>clock_reading_confidence_interval</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#truetime_google>truetime_google</a><a id="truetime_google"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+TrueTime (Google Spanner): explicitely reports confidence interval on local clock
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clock_sync_global_snapshots>clock_sync_global_snapshots</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clock_reading_confidence_interval>clock_reading_confidence_interval</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clock_sync_global_snapshots>clock_sync_global_snapshots</a><a id="clock_sync_global_snapshots"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clock sync for global snapshots (synched time-of-day-clocks used as transaction IDs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#time_of_day_clock>time_of_day_clock</a>, <a href=#truetime_google>truetime_google</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clock_issues>clock_issues</a><a id="clock_issues"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clock Issues
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#process_pauses>process_pauses</a>, <a href=#VM_suspended>VM_suspended</a>, <a href=#different_timers_per_CPU>different_timers_per_CPU</a>, <a href=#drift>drift</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks>clocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#process_pauses>process_pauses</a><a id="process_pauses"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+process pauses
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#preempt_thread>preempt_thread</a>, <a href=#steal_time>steal_time</a>, <a href=#thrashing>thrashing</a>, <a href=#GC_brief_planned_outages>GC_brief_planned_outages</a>, <a href=#hard_realtime_systems>hard_realtime_systems</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clock_issues>clock_issues</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#VM_suspended>VM_suspended</a><a id="VM_suspended"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+VM Suspended
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clock_issues>clock_issues</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#preempt_thread>preempt_thread</a><a id="preempt_thread"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Preempt running thread at any moment and resume it without any noticing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#process_pauses>process_pauses</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#thrashing>thrashing</a><a id="thrashing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+thrashing: OS spends most time swapping pages in/out of memory
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#process_pauses>process_pauses</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#steal_time>steal_time</a><a id="steal_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+steal_time: CPU time spent in another thread
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#process_pauses>process_pauses</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hard_realtime_systems>hard_realtime_systems</a><a id="hard_realtime_systems"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hard Realtime Systems: specified deadline by which software must respond
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#RTOS>RTOS</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#process_pauses>process_pauses</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#RTOS>RTOS</a><a id="RTOS"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Real-Time Operating System (RTOS): allows processes to be scheduled with a guaranteed allocation of CPU time in specified intervals
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#GC_brief_planned_outages>GC_brief_planned_outages</a> (GC)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#hard_realtime_systems>hard_realtime_systems</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#GC_brief_planned_outages>GC_brief_planned_outages</a><a id="GC_brief_planned_outages"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Garbage collection: emerging idewa to treat GC pauses like brief planned outages, let other nodes handle requests
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RTOS>RTOS</a>, <a href=#process_pauses>process_pauses</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#knowledge_truth_and_lies>knowledge_truth_and_lies</a><a id="knowledge_truth_and_lies"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Knowledge, Truth, and Lies
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#system_model>system_model</a>, <a href=#truth_defined_by_majority>truth_defined_by_majority</a>, <a href=#byzantine_fault>byzantine_fault</a>, <a href=#fencing>fencing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#system_model>system_model</a><a id="system_model"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+System Model: assumptions about behavior in distrubuted systems.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#correctness>correctness</a>, <a href=#node_failures>node_failures</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#knowledge_truth_and_lies>knowledge_truth_and_lies</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#truth_defined_by_majority>truth_defined_by_majority</a><a id="truth_defined_by_majority"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Truth defined by majority
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#quorum>quorum</a>, <a href=#consensus_algos>consensus_algos</a>, <a href=#node_cant_trust_judgement_of_situation>node_cant_trust_judgement_of_situation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#knowledge_truth_and_lies>knowledge_truth_and_lies</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#node_cant_trust_judgement_of_situation>node_cant_trust_judgement_of_situation</a><a id="node_cant_trust_judgement_of_situation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A node can't trust its own judgement of a situation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#truth_defined_by_majority>truth_defined_by_majority</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#quorum>quorum</a><a id="quorum"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Quorum: voting amongst the nodes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#truth_defined_by_majority>truth_defined_by_majority</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#consensus_algos>consensus_algos</a><a id="consensus_algos"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Consensus Algorithms
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#truth_defined_by_majority>truth_defined_by_majority</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fencing>fencing</a><a id="fencing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fencing: in locking/leasing to protect access to a resource, a way to ensure nodes under false belief of ownership can't disrupt rest of system.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fencing_token>fencing_token</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#knowledge_truth_and_lies>knowledge_truth_and_lies</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fencing_token>fencing_token</a><a id="fencing_token"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fencing Token: returned every time lock or lease granted, It is a number that increses
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fencing_tokens_lock>fencing_tokens_lock</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fencing>fencing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#byzantine_fault>byzantine_fault</a><a id="byzantine_fault"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Byzantine Fault: node claims to have received a particular message when in fact it didn't
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#relevant_p2p>relevant_p2p</a>, <a href=#byz_fault_tolerant>byz_fault_tolerant</a>, <a href=#byz_ft_protocols_complicated>byz_ft_protocols_complicated</a>, <a href=#consensus_in_untrusted_environment>consensus_in_untrusted_environment</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#knowledge_truth_and_lies>knowledge_truth_and_lies</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#consensus_in_untrusted_environment>consensus_in_untrusted_environment</a><a id="consensus_in_untrusted_environment"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reaching consensus in untrusted environment
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#byzantine_generals_problem>byzantine_generals_problem</a> (terminology)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#byzantine_fault>byzantine_fault</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#byzantine_generals_problem>byzantine_generals_problem</a><a id="byzantine_generals_problem"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Byzantine Generals Problem
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consensus_in_untrusted_environment>consensus_in_untrusted_environment</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#byz_fault_tolerant>byz_fault_tolerant</a><a id="byz_fault_tolerant"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Byzantine Fault Tolerant: oeprates correctly even if some of the nodes are malfunctioning or if there are malicious attackers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#relevant_p2p>relevant_p2p</a>, <a href=#byz_ft_protocols_complicated>byz_ft_protocols_complicated</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#byzantine_fault>byzantine_fault</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#byz_ft_protocols_complicated>byz_ft_protocols_complicated</a><a id="byz_ft_protocols_complicated"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Protocoals for Byzantine Fault Tolerant systems are usually complicated and impractical in most use server-side data systems.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#byzantine_fault>byzantine_fault</a>, <a href=#byz_fault_tolerant>byz_fault_tolerant</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#relevant_p2p>relevant_p2p</a><a id="relevant_p2p"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Relevant in P2P systems
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#byzantine_fault>byzantine_fault</a>, <a href=#byz_fault_tolerant>byz_fault_tolerant</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#timing_assumptions>timing_assumptions</a><a id="timing_assumptions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Timing Assumptions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#partially_synchronous>partially_synchronous</a>, <a href=#synchronous>synchronous</a>, <a href=#asynchronous>asynchronous</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#asynchronous>asynchronous</a><a id="asynchronous"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Asynchronous
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timing_assumptions>timing_assumptions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partially_synchronous>partially_synchronous</a><a id="partially_synchronous"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partially Synchronous
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timing_assumptions>timing_assumptions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#node_failures>node_failures</a><a id="node_failures"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Node Failures
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#byzantine_arbitrary_faults>byzantine_arbitrary_faults</a>, <a href=#crash_recoevery_faults>crash_recoevery_faults</a>, <a href=#crash_stop_faults>crash_stop_faults</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#system_model>system_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#crash_stop_faults>crash_stop_faults</a><a id="crash_stop_faults"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Crash-stop faults
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#node_failures>node_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#crash_recoevery_faults>crash_recoevery_faults</a><a id="crash_recoevery_faults"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Crash Recovery Faults
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#node_failures>node_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#byzantine_arbitrary_faults>byzantine_arbitrary_faults</a><a id="byzantine_arbitrary_faults"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Byzantine (arbitrary) faults
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#node_failures>node_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#correctness>correctness</a><a id="correctness"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Correctness
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#proving_correct_doesnt_mean_implementation_correct>proving_correct_doesnt_mean_implementation_correct</a>, <a href=#correctness_properties>correctness_properties</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#system_model>system_model</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#correctness_properties>correctness_properties</a><a id="correctness_properties"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Corretness Properties
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#safety>safety</a>, <a href=#fencing_tokens_lock>fencing_tokens_lock</a>, <a href=#liveness>liveness</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness>correctness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#safety>safety</a><a id="safety"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Safety
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nothing_bad_happens>nothing_bad_happens</a> (informal description), <a href=#on_violation_point_to_time>on_violation_point_to_time</a>, <a href=#uniqueness>uniqueness</a>, <a href=#monotonic_sequence>monotonic_sequence</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness_properties>correctness_properties</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#liveness>liveness</a><a id="liveness"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+liveness
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#satisfied_in_future>satisfied_in_future</a>, <a href=#something_good_eventually_happens>something_good_eventually_happens</a> (informal description), <a href=#availability>availability</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness_properties>correctness_properties</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fencing_tokens_lock>fencing_tokens_lock</a><a id="fencing_tokens_lock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fencing tokens for lock
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#uniqueness>uniqueness</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness_properties>correctness_properties</a>, <a href=#fencing_token>fencing_token</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#uniqueness>uniqueness</a><a id="uniqueness"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Uniqueness
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safety>safety</a>, <a href=#fencing_tokens_lock>fencing_tokens_lock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#monotonic_sequence>monotonic_sequence</a><a id="monotonic_sequence"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Monotonic Sequence
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safety>safety</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#availability>availability</a><a id="availability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Availability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#liveness>liveness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#nothing_bad_happens>nothing_bad_happens</a><a id="nothing_bad_happens"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Nothing bad happens
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safety>safety</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#something_good_eventually_happens>something_good_eventually_happens</a><a id="something_good_eventually_happens"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+something good eventually happens
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#liveness>liveness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#on_violation_point_to_time>on_violation_point_to_time</a><a id="on_violation_point_to_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+On violation, able to point to specific point in time. Violation can't be undone.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safety>safety</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#satisfied_in_future>satisfied_in_future</a><a id="satisfied_in_future"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+May not hold at some point in time, but may be satisified in the future
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#liveness>liveness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#proving_correct_doesnt_mean_implementation_correct>proving_correct_doesnt_mean_implementation_correct</a><a id="proving_correct_doesnt_mean_implementation_correct"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Proving correct doesn't mean implementation will be, but it's a good first step
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness>correctness</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
