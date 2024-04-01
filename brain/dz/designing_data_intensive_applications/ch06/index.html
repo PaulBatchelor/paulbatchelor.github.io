@@ -20,7 +20,45 @@ Chapter 6: Partitioning
 <h2>Node Tree</h2>
 <ul>
 <li>
+<a href=#MPP>MPP</a><ul>
+<li>
+<a href=#parallel_query_exec>parallel_query_exec</a></li>
+</ul>
+</li>
+<li>
 <a href=#partitions>partitions</a><ul>
+<li>
+<a href=#break_data_up>break_data_up</a></li>
+<li>
+<a href=#combined_with_replication>combined_with_replication</a><ul>
+<li>
+<a href=#leader_follower_part>leader_follower_part</a><ul>
+<li>
+<a href=#node_more_than_one_part>node_more_than_one_part</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#document_partitioned_indexes>document_partitioned_indexes</a><ul>
+<li>
+<a href=#global>global</a></li>
+<li>
+<a href=#secondary_indexes_stored_same_part>secondary_indexes_stored_same_part</a><ul>
+<li>
+<a href=#partitioned_separately>partitioned_separately</a></li>
+</ul>
+</li>
+<li>
+<a href=#term_partitioned_indexes>term_partitioned_indexes</a><ul>
+<li>
+<a href=#local>local</a></li>
+<li>
+<a href=#partitioned_separately>partitioned_separately</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li>
 <a href=#key_range>key_range</a><ul>
 <li>
@@ -33,6 +71,8 @@ Chapter 6: Partitioning
 <a href=#main_reason_scalability>main_reason_scalability</a></li>
 <li>
 <a href=#rebalancing>rebalancing</a><ul>
+<li>
+<a href=#dont_do_hash_mod_n>dont_do_hash_mod_n</a></li>
 <li>
 <a href=#dynamic_partitioning>dynamic_partitioning</a><ul>
 <li>
@@ -53,6 +93,8 @@ Chapter 6: Partitioning
 </li>
 <li>
 <a href=#fixed_num_parts>fixed_num_parts</a><ul>
+<li>
+<a href=#account_mismatched_hardware>account_mismatched_hardware</a></li>
 <li>
 <a href=#dynamic_partitioning>dynamic_partitioning</a><ul>
 <li>
@@ -97,8 +139,6 @@ Chapter 6: Partitioning
 </li>
 <li>
 <a href=#partition_number>partition_number</a></li>
-<li>
-<a href=#account_mismatched_hardware>account_mismatched_hardware</a></li>
 </ul>
 </li>
 <li>
@@ -115,14 +155,14 @@ Chapter 6: Partitioning
 <a href=#fixed_part_num_per_node>fixed_part_num_per_node</a></li>
 </ul>
 </li>
-<li>
-<a href=#dont_do_hash_mod_n>dont_do_hash_mod_n</a></li>
 </ul>
 </li>
 <li>
 <a href=#secondary_indexes>secondary_indexes</a><ul>
 <li>
 <a href=#document_partitioning_index>document_partitioning_index</a><ul>
+<li>
+<a href=#document_partitioned_index>document_partitioned_index</a></li>
 <li>
 <a href=#local_index>local_index</a><ul>
 <li>
@@ -149,8 +189,6 @@ Chapter 6: Partitioning
 </li>
 </ul>
 </li>
-<li>
-<a href=#document_partitioned_index>document_partitioned_index</a></li>
 </ul>
 </li>
 <li>
@@ -163,6 +201,18 @@ Chapter 6: Partitioning
 <a href=#spread_data_load_evenly>spread_data_load_evenly</a><ul>
 <li>
 <a href=#key_range_dist>key_range_dist</a><ul>
+<li>
+<a href=#access_patterns_hotspots>access_patterns_hotspots</a></li>
+<li>
+<a href=#compound_primary_key>compound_primary_key</a><ul>
+<li>
+<a href=#several_columns>several_columns</a><ul>
+<li>
+<a href=#good_for_many_to_one>good_for_many_to_one</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li>
 <a href=#keys_sorted_on_each_node>keys_sorted_on_each_node</a></li>
 <li>
@@ -191,32 +241,10 @@ Chapter 6: Partitioning
 <a href=#part_bounds_adapt_data>part_bounds_adapt_data</a></li>
 <li>
 <a href=#range_queries_inefficient>range_queries_inefficient</a></li>
-<li>
-<a href=#access_patterns_hotspots>access_patterns_hotspots</a></li>
-<li>
-<a href=#compound_primary_key>compound_primary_key</a><ul>
-<li>
-<a href=#several_columns>several_columns</a><ul>
-<li>
-<a href=#good_for_many_to_one>good_for_many_to_one</a></li>
-</ul>
-</li>
-</ul>
-</li>
 </ul>
 </li>
 <li>
 <a href=#partition_hash_keys>partition_hash_keys</a><ul>
-<li>
-<a href=#good_hash_func>good_hash_func</a><ul>
-<li>
-<a href=#fowler_noll_vo>fowler_noll_vo</a></li>
-<li>
-<a href=#MD5>MD5</a></li>
-</ul>
-</li>
-<li>
-<a href=#range_queries_inefficient>range_queries_inefficient</a></li>
 <li>
 <a href=#assign_part_hash_range>assign_part_hash_range</a><ul>
 <li>
@@ -237,6 +265,16 @@ Chapter 6: Partitioning
 </li>
 </ul>
 </li>
+<li>
+<a href=#good_hash_func>good_hash_func</a><ul>
+<li>
+<a href=#MD5>MD5</a></li>
+<li>
+<a href=#fowler_noll_vo>fowler_noll_vo</a></li>
+</ul>
+</li>
+<li>
+<a href=#range_queries_inefficient>range_queries_inefficient</a></li>
 </ul>
 </li>
 <li>
@@ -257,44 +295,6 @@ Chapter 6: Partitioning
 <a href=#partitioned_separately>partitioned_separately</a></li>
 </ul>
 </li>
-<li>
-<a href=#break_data_up>break_data_up</a></li>
-<li>
-<a href=#combined_with_replication>combined_with_replication</a><ul>
-<li>
-<a href=#leader_follower_part>leader_follower_part</a><ul>
-<li>
-<a href=#node_more_than_one_part>node_more_than_one_part</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#document_partitioned_indexes>document_partitioned_indexes</a><ul>
-<li>
-<a href=#global>global</a></li>
-<li>
-<a href=#secondary_indexes_stored_same_part>secondary_indexes_stored_same_part</a><ul>
-<li>
-<a href=#partitioned_separately>partitioned_separately</a></li>
-</ul>
-</li>
-<li>
-<a href=#term_partitioned_indexes>term_partitioned_indexes</a><ul>
-<li>
-<a href=#local>local</a></li>
-<li>
-<a href=#partitioned_separately>partitioned_separately</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#MPP>MPP</a><ul>
-<li>
-<a href=#parallel_query_exec>parallel_query_exec</a></li>
 </ul>
 </li>
 </ul>
@@ -318,7 +318,7 @@ Partitions
 children
 </td>
 <td>
-<a href=#key_range>key_range</a>, <a href=#large_datasets_high_throughput>large_datasets_high_throughput</a> (when to use), <a href=#main_reason_scalability>main_reason_scalability</a>, <a href=#rebalancing>rebalancing</a>, <a href=#secondary_indexes>secondary_indexes</a>, <a href=#sharding>sharding</a> (AKA), <a href=#spread_data_load_evenly>spread_data_load_evenly</a>, <a href=#term_partitioned_indexes>term_partitioned_indexes</a>, <a href=#break_data_up>break_data_up</a>, <a href=#combined_with_replication>combined_with_replication</a>, <a href=#document_partitioned_indexes>document_partitioned_indexes</a>
+<a href=#break_data_up>break_data_up</a>, <a href=#combined_with_replication>combined_with_replication</a>, <a href=#document_partitioned_indexes>document_partitioned_indexes</a>, <a href=#key_range>key_range</a>, <a href=#large_datasets_high_throughput>large_datasets_high_throughput</a> (when to use), <a href=#main_reason_scalability>main_reason_scalability</a>, <a href=#rebalancing>rebalancing</a>, <a href=#secondary_indexes>secondary_indexes</a>, <a href=#sharding>sharding</a> (AKA), <a href=#spread_data_load_evenly>spread_data_load_evenly</a>, <a href=#term_partitioned_indexes>term_partitioned_indexes</a>
 </td>
 </tr>
 </table><br>
@@ -526,7 +526,7 @@ Key-range distribution
 children
 </td>
 <td>
-<a href=#keys_sorted_on_each_node>keys_sorted_on_each_node</a>, <a href=#not_good_key_range>not_good_key_range</a>, <a href=#part_bounds_adapt_data>part_bounds_adapt_data</a>, <a href=#range_queries_inefficient>range_queries_inefficient</a>, <a href=#access_patterns_hotspots>access_patterns_hotspots</a>, <a href=#compound_primary_key>compound_primary_key</a>
+<a href=#access_patterns_hotspots>access_patterns_hotspots</a>, <a href=#compound_primary_key>compound_primary_key</a>, <a href=#keys_sorted_on_each_node>keys_sorted_on_each_node</a>, <a href=#not_good_key_range>not_good_key_range</a>, <a href=#part_bounds_adapt_data>part_bounds_adapt_data</a>, <a href=#range_queries_inefficient>range_queries_inefficient</a>
 </td>
 </tr>
 <tr>
@@ -680,7 +680,7 @@ Parition by hash of keys
 children
 </td>
 <td>
-<a href=#good_hash_func>good_hash_func</a>, <a href=#range_queries_inefficient>range_queries_inefficient</a>, <a href=#assign_part_hash_range>assign_part_hash_range</a>, <a href=#compound_primary_key>compound_primary_key</a>
+<a href=#assign_part_hash_range>assign_part_hash_range</a>, <a href=#compound_primary_key>compound_primary_key</a>, <a href=#good_hash_func>good_hash_func</a>, <a href=#range_queries_inefficient>range_queries_inefficient</a>
 </td>
 </tr>
 <tr>
@@ -757,7 +757,7 @@ A good hash function takes skewed data and makes it uniformly distributed
 children
 </td>
 <td>
-<a href=#fowler_noll_vo>fowler_noll_vo</a> (example), <a href=#MD5>MD5</a> (example)
+<a href=#MD5>MD5</a> (example), <a href=#fowler_noll_vo>fowler_noll_vo</a> (example)
 </td>
 </tr>
 <tr>
@@ -904,7 +904,7 @@ Range Queries Inefficient
 parents
 </td>
 <td>
-<a href=#partition_hash_keys>partition_hash_keys</a>, <a href=#key_range_dist>key_range_dist</a>
+<a href=#key_range_dist>key_range_dist</a>, <a href=#partition_hash_keys>partition_hash_keys</a>
 </td>
 </tr>
 </table><br>
@@ -958,7 +958,7 @@ children
 parents
 </td>
 <td>
-<a href=#partition_hash_keys>partition_hash_keys</a>, <a href=#key_range_dist>key_range_dist</a>
+<a href=#key_range_dist>key_range_dist</a>, <a href=#partition_hash_keys>partition_hash_keys</a>
 </td>
 </tr>
 </table><br>
@@ -1066,7 +1066,7 @@ Document Partitioning Index
 children
 </td>
 <td>
-<a href=#local_index>local_index</a> (AKA), <a href=#document_partitioned_index>document_partitioned_index</a> (AKA)
+<a href=#document_partitioned_index>document_partitioned_index</a> (AKA), <a href=#local_index>local_index</a> (AKA)
 </td>
 </tr>
 <tr>
@@ -1382,7 +1382,7 @@ Rebalancing
 children
 </td>
 <td>
-<a href=#dynamic_partitioning>dynamic_partitioning</a>, <a href=#fixed_num_parts>fixed_num_parts</a>, <a href=#move_load_from_node>move_load_from_node</a> (description), <a href=#part_growth_prop_data>part_growth_prop_data</a>, <a href=#partitioning_proportional_nodes>partitioning_proportional_nodes</a>, <a href=#dont_do_hash_mod_n>dont_do_hash_mod_n</a>
+<a href=#dont_do_hash_mod_n>dont_do_hash_mod_n</a>, <a href=#dynamic_partitioning>dynamic_partitioning</a>, <a href=#fixed_num_parts>fixed_num_parts</a>, <a href=#move_load_from_node>move_load_from_node</a> (description), <a href=#part_growth_prop_data>part_growth_prop_data</a>, <a href=#partitioning_proportional_nodes>partitioning_proportional_nodes</a>
 </td>
 </tr>
 <tr>
@@ -1459,7 +1459,7 @@ Fixed number of partitions
 children
 </td>
 <td>
-<a href=#dynamic_partitioning>dynamic_partitioning</a> (vs), <a href=#more_parts_than_nodes>more_parts_than_nodes</a>, <a href=#not_good_key_range>not_good_key_range</a>, <a href=#partition_number>partition_number</a>, <a href=#account_mismatched_hardware>account_mismatched_hardware</a>
+<a href=#account_mismatched_hardware>account_mismatched_hardware</a>, <a href=#dynamic_partitioning>dynamic_partitioning</a> (vs), <a href=#more_parts_than_nodes>more_parts_than_nodes</a>, <a href=#not_good_key_range>not_good_key_range</a>, <a href=#partition_number>partition_number</a>
 </td>
 </tr>
 <tr>
@@ -1567,7 +1567,7 @@ children
 parents
 </td>
 <td>
-<a href=#key_range_dist>key_range_dist</a>, <a href=#fixed_num_parts>fixed_num_parts</a>
+<a href=#fixed_num_parts>fixed_num_parts</a>, <a href=#key_range_dist>key_range_dist</a>
 </td>
 </tr>
 </table><br>
@@ -1598,7 +1598,7 @@ children
 parents
 </td>
 <td>
-<a href=#rebalancing>rebalancing</a>, <a href=#not_good_key_range>not_good_key_range</a>, <a href=#fixed_num_parts>fixed_num_parts</a>
+<a href=#fixed_num_parts>fixed_num_parts</a>, <a href=#rebalancing>rebalancing</a>, <a href=#not_good_key_range>not_good_key_range</a>
 </td>
 </tr>
 </table><br>
@@ -1652,7 +1652,7 @@ Merge partition when it sinks below certain threshold
 parents
 </td>
 <td>
-<a href=#dynamic_partitioning>dynamic_partitioning</a>, <a href=#split_part_exceeds_size>split_part_exceeds_size</a>
+<a href=#split_part_exceeds_size>split_part_exceeds_size</a>, <a href=#dynamic_partitioning>dynamic_partitioning</a>
 </td>
 </tr>
 </table><br>
@@ -2014,7 +2014,7 @@ children
 parents
 </td>
 <td>
-<a href=#document_partitioned_indexes>document_partitioned_indexes</a>, <a href=#partitions>partitions</a>
+<a href=#partitions>partitions</a>, <a href=#document_partitioned_indexes>document_partitioned_indexes</a>
 </td>
 </tr>
 </table><br>
@@ -2060,7 +2060,7 @@ Partitioned separately
 parents
 </td>
 <td>
-<a href=#term_partitioned_indexes>term_partitioned_indexes</a>, <a href=#secondary_indexes_stored_same_part>secondary_indexes_stored_same_part</a>
+<a href=#secondary_indexes_stored_same_part>secondary_indexes_stored_same_part</a>, <a href=#term_partitioned_indexes>term_partitioned_indexes</a>
 </td>
 </tr>
 </table><br>

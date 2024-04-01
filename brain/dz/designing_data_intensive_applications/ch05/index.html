@@ -216,6 +216,22 @@ Chapter 5: Replication
 <li>
 <a href=#handling_write_conflicts>handling_write_conflicts</a><ul>
 <li>
+<a href=#write_sync>write_sync</a><ul>
+<li>
+<a href=#second_write_blocks>second_write_blocks</a><ul>
+<li>
+<a href=#single_leader>single_leader</a></li>
+</ul>
+</li>
+<li>
+<a href=#wait_for_write_before_success>wait_for_write_before_success</a><ul>
+<li>
+<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
 <a href=#auto_conflict_resolution>auto_conflict_resolution</a><ul>
 <li>
 <a href=#CRDT>CRDT</a></li>
@@ -251,22 +267,6 @@ Chapter 5: Replication
 <a href=#write_async>write_async</a><ul>
 <li>
 <a href=#accepts_writes_independently>accepts_writes_independently</a><ul>
-<li>
-<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#write_sync>write_sync</a><ul>
-<li>
-<a href=#second_write_blocks>second_write_blocks</a><ul>
-<li>
-<a href=#single_leader>single_leader</a></li>
-</ul>
-</li>
-<li>
-<a href=#wait_for_write_before_success>wait_for_write_before_success</a><ul>
 <li>
 <a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
 </ul>
@@ -336,10 +336,6 @@ Chapter 5: Replication
 <li>
 <a href=#client_write_sent_to_leader>client_write_sent_to_leader</a><ul>
 <li>
-<a href=#client_reads>client_reads</a></li>
-<li>
-<a href=#leader_only_writes>leader_only_writes</a></li>
-<li>
 <a href=#write_local_storage>write_local_storage</a><ul>
 <li>
 <a href=#sends_data_to_reps>sends_data_to_reps</a><ul>
@@ -349,6 +345,10 @@ Chapter 5: Replication
 </li>
 </ul>
 </li>
+<li>
+<a href=#client_reads>client_reads</a></li>
+<li>
+<a href=#leader_only_writes>leader_only_writes</a></li>
 </ul>
 </li>
 </ul>
@@ -480,9 +480,9 @@ Chapter 5: Replication
 <li>
 <a href=#consistent_prefix_reads>consistent_prefix_reads</a><ul>
 <li>
-<a href=#users_see_data_in_state_that_makes_sense>users_see_data_in_state_that_makes_sense</a></li>
-<li>
 <a href=#write_seq_order_read_order>write_seq_order_read_order</a></li>
+<li>
+<a href=#users_see_data_in_state_that_makes_sense>users_see_data_in_state_that_makes_sense</a></li>
 </ul>
 </li>
 <li>
@@ -744,7 +744,7 @@ children
 parents
 </td>
 <td>
-<a href=#replication>replication</a>, <a href=#read_scaling_arch>read_scaling_arch</a>
+<a href=#read_scaling_arch>read_scaling_arch</a>, <a href=#replication>replication</a>
 </td>
 </tr>
 </table><br>
@@ -798,7 +798,7 @@ Single Leader
 parents
 </td>
 <td>
-<a href=#btwn_nodes>btwn_nodes</a>, <a href=#second_write_blocks>second_write_blocks</a>
+<a href=#second_write_blocks>second_write_blocks</a>, <a href=#btwn_nodes>btwn_nodes</a>
 </td>
 </tr>
 </table><br>
@@ -898,7 +898,7 @@ read-your-writes
 parents
 </td>
 <td>
-<a href=#guarantees>guarantees</a>, <a href=#read_after_write_consistency>read_after_write_consistency</a>
+<a href=#read_after_write_consistency>read_after_write_consistency</a>, <a href=#guarantees>guarantees</a>
 </td>
 </tr>
 </table><br>
@@ -1107,7 +1107,7 @@ Client write requests sent to leader
 children
 </td>
 <td>
-<a href=#client_reads>client_reads</a>, <a href=#leader_only_writes>leader_only_writes</a>, <a href=#write_local_storage>write_local_storage</a>
+<a href=#write_local_storage>write_local_storage</a>, <a href=#client_reads>client_reads</a>, <a href=#leader_only_writes>leader_only_writes</a>
 </td>
 </tr>
 <tr>
@@ -1177,7 +1177,7 @@ children
 parents
 </td>
 <td>
-<a href=#follower>follower</a>, <a href=#write_local_storage>write_local_storage</a>
+<a href=#write_local_storage>write_local_storage</a>, <a href=#follower>follower</a>
 </td>
 </tr>
 </table><br>
@@ -1246,7 +1246,7 @@ Client Reads: query leader or followers
 parents
 </td>
 <td>
-<a href=#client_write_sent_to_leader>client_write_sent_to_leader</a>, <a href=#follower>follower</a>, <a href=#designated_leader>designated_leader</a>
+<a href=#designated_leader>designated_leader</a>, <a href=#client_write_sent_to_leader>client_write_sent_to_leader</a>, <a href=#follower>follower</a>
 </td>
 </tr>
 </table><br>
@@ -1300,7 +1300,7 @@ children
 parents
 </td>
 <td>
-<a href=#follower>follower</a>, <a href=#sync>sync</a>
+<a href=#sync>sync</a>, <a href=#follower>follower</a>
 </td>
 </tr>
 </table><br>
@@ -1354,7 +1354,7 @@ semi-synchronous
 parents
 </td>
 <td>
-<a href=#async>async</a>, <a href=#only_one_sync_follower>only_one_sync_follower</a>
+<a href=#only_one_sync_follower>only_one_sync_follower</a>, <a href=#async>async</a>
 </td>
 </tr>
 </table><br>
@@ -1377,7 +1377,7 @@ Usually asynchronous
 parents
 </td>
 <td>
-<a href=#async>async</a>, <a href=#leader_based_replication>leader_based_replication</a>
+<a href=#leader_based_replication>leader_based_replication</a>, <a href=#async>async</a>
 </td>
 </tr>
 </table><br>
@@ -1678,7 +1678,7 @@ children
 parents
 </td>
 <td>
-<a href=#handling_node_outage>handling_node_outage</a>, <a href=#follower_failure>follower_failure</a>
+<a href=#follower_failure>follower_failure</a>, <a href=#handling_node_outage>handling_node_outage</a>
 </td>
 </tr>
 </table><br>
@@ -2179,7 +2179,7 @@ Lesser guarantee than strong consistency. Stronger guarantee than eventual consi
 parents
 </td>
 <td>
-<a href=#monotonic_reads>monotonic_reads</a>, <a href=#eventual_consistency>eventual_consistency</a>
+<a href=#eventual_consistency>eventual_consistency</a>, <a href=#monotonic_reads>monotonic_reads</a>
 </td>
 </tr>
 </table><br>
@@ -2233,7 +2233,7 @@ consistent prefix reads
 children
 </td>
 <td>
-<a href=#users_see_data_in_state_that_makes_sense>users_see_data_in_state_that_makes_sense</a> (description that popped up in summary of chapter), <a href=#write_seq_order_read_order>write_seq_order_read_order</a>
+<a href=#write_seq_order_read_order>write_seq_order_read_order</a>, <a href=#users_see_data_in_state_that_makes_sense>users_see_data_in_state_that_makes_sense</a> (description that popped up in summary of chapter)
 </td>
 </tr>
 <tr>
@@ -2464,7 +2464,7 @@ Handling Write Conflicts
 children
 </td>
 <td>
-<a href=#auto_conflict_resolution>auto_conflict_resolution</a>, <a href=#avoiding_conflicts>avoiding_conflicts</a>, <a href=#convergence_consistency>convergence_consistency</a>, <a href=#same_as_conflict_resolution>same_as_conflict_resolution</a>, <a href=#write_async>write_async</a>, <a href=#write_sync>write_sync</a>
+<a href=#write_sync>write_sync</a>, <a href=#auto_conflict_resolution>auto_conflict_resolution</a>, <a href=#avoiding_conflicts>avoiding_conflicts</a>, <a href=#convergence_consistency>convergence_consistency</a>, <a href=#same_as_conflict_resolution>same_as_conflict_resolution</a>, <a href=#write_async>write_async</a>
 </td>
 </tr>
 <tr>
@@ -2650,7 +2650,7 @@ Defeats advantage of multi-leader replication
 parents
 </td>
 <td>
-<a href=#accepts_writes_independently>accepts_writes_independently</a>, <a href=#wait_for_write_before_success>wait_for_write_before_success</a>
+<a href=#wait_for_write_before_success>wait_for_write_before_success</a>, <a href=#accepts_writes_independently>accepts_writes_independently</a>
 </td>
 </tr>
 </table><br>
@@ -2874,7 +2874,7 @@ Conflict-free Replicated Data Types (CRDT)
 parents
 </td>
 <td>
-<a href=#clients_merging_concurrent_vals>clients_merging_concurrent_vals</a>, <a href=#auto_conflict_resolution>auto_conflict_resolution</a>
+<a href=#auto_conflict_resolution>auto_conflict_resolution</a>, <a href=#clients_merging_concurrent_vals>clients_merging_concurrent_vals</a>
 </td>
 </tr>
 </table><br>
@@ -3190,7 +3190,7 @@ One node failure can interrupt write flows
 parents
 </td>
 <td>
-<a href=#circular_topology>circular_topology</a>, <a href=#star_topology>star_topology</a>, <a href=#fault_tolerant>fault_tolerant</a>
+<a href=#circular_topology>circular_topology</a>, <a href=#fault_tolerant>fault_tolerant</a>, <a href=#star_topology>star_topology</a>
 </td>
 </tr>
 </table><br>
@@ -3213,7 +3213,7 @@ Some network links may be faster, messages may overtake others
 parents
 </td>
 <td>
-<a href=#violations_of_causality>violations_of_causality</a>, <a href=#all_to_all>all_to_all</a>
+<a href=#all_to_all>all_to_all</a>, <a href=#violations_of_causality>violations_of_causality</a>
 </td>
 </tr>
 </table><br>
@@ -3792,7 +3792,7 @@ n=5, w=3, r=3 can tolerate two unavailable nodes
 parents
 </td>
 <td>
-<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>, <a href=#n3w2r2_one_unavail>n3w2r2_one_unavail</a>
+<a href=#n3w2r2_one_unavail>n3w2r2_one_unavail</a>, <a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
 </td>
 </tr>
 </table><br>
@@ -3900,7 +3900,7 @@ Leader-based replication: uses metrics for the replication lag
 parents
 </td>
 <td>
-<a href=#leader_based_replication>leader_based_replication</a>, <a href=#monitoring_staleness>monitoring_staleness</a>
+<a href=#monitoring_staleness>monitoring_staleness</a>, <a href=#leader_based_replication>leader_based_replication</a>
 </td>
 </tr>
 </table><br>
@@ -4000,7 +4000,7 @@ Accepts writes, write to reachable nodes where value doesn't typically live (not
 parents
 </td>
 <td>
-<a href=#sloppy_quorum>sloppy_quorum</a>, <a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>, <a href=#sloppy_quorum>sloppy_quorum</a>
 </td>
 </tr>
 </table><br>
@@ -4247,7 +4247,7 @@ Essentially same as conflict resolution in multi-leader replication
 parents
 </td>
 <td>
-<a href=#multi_leader_replication>multi_leader_replication</a>, <a href=#handling_write_conflicts>handling_write_conflicts</a>
+<a href=#handling_write_conflicts>handling_write_conflicts</a>, <a href=#multi_leader_replication>multi_leader_replication</a>
 </td>
 </tr>
 </table><br>
