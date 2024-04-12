@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>leetcode/22_generate_parentheses</title>
+<h1>22_generate_parentheses</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/leetcode">leetcode</a> / <a href="/brain/dz/leetcode/22_generate_parentheses">22_generate_parentheses</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+22. Given n pairs of parentheses, write a function to generate all combinations of well-formed parentheses.
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#URL>URL</a></li>
+<li>
+<a href=#editorial>editorial</a><ul>
+<li>
+<a href=#backtracking>backtracking</a><ul>
+<li>
+<a href=#valid_only_equal_left_right>valid_only_equal_left_right</a></li>
+</ul>
+</li>
+<li>
+<a href=#brute_force_with_queue>brute_force_with_queue</a></li>
+<li>
+<a href=#divide_and_conquer>divide_and_conquer</a></li>
+</ul>
+</li>
+<li>
+<a href=#intuition>intuition</a><ul>
+<li>
+<a href=#always_same_size>always_same_size</a></li>
+<li>
+<a href=#brute_force>brute_force</a></li>
+<li>
+<a href=#dynamic_programming>dynamic_programming</a><ul>
+<li>
+<a href=#divide_and_conquer>divide_and_conquer</a></li>
+</ul>
+</li>
+<li>
+<a href=#finding_patterns>finding_patterns</a><ul>
+<li>
+<a href=#always_same_size>always_same_size</a></li>
+<li>
+<a href=#first_entry_always_L>first_entry_always_L</a></li>
+<li>
+<a href=#n_1>n_1</a><ul>
+<li>
+<a href=#n_2>n_2</a></li>
+</ul>
+</li>
+<li>
+<a href=#n_2>n_2</a></li>
+<li>
+<a href=#n_3>n_3</a><ul>
+<li>
+<a href=#n_1>n_1</a><ul>
+<li>
+<a href=#n_2>n_2</a></li>
+</ul>
+</li>
+<li>
+<a href=#recursion>recursion</a><ul>
+<li>
+<a href=#dynamic_programming>dynamic_programming</a><ul>
+<li>
+<a href=#divide_and_conquer>divide_and_conquer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#first_entry_always_L>first_entry_always_L</a></li>
+<li>
+<a href=#generate_first_half>generate_first_half</a></li>
+<li>
+<a href=#recursion>recursion</a><ul>
+<li>
+<a href=#dynamic_programming>dynamic_programming</a><ul>
+<li>
+<a href=#divide_and_conquer>divide_and_conquer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#URL>URL</a><a id="URL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+URL
+</td>
+</tr>
+<tr>
+<td>
+hyperlink
+</td>
+<td>
+<a href="https://leetcode.com/problems/generate-parentheses/">https://leetcode.com/problems/generate-parentheses/</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#intuition>intuition</a><a id="intuition"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Firstly, Parentheses are hard to read. Choosing different values for left/right parentheses could make it easier to see patterns. Secondly, yes I think something could be figured out using patterns. Pretty sure larger numbers of parentheses can be derived from smaller patterns. Dynamic programming? The size of N goes from 1 to 8, so that would suggest a space-intensive solution.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#always_same_size>always_same_size</a>, <a href=#brute_force>brute_force</a>, <a href=#dynamic_programming>dynamic_programming</a> (trying to come up with a ), <a href=#finding_patterns>finding_patterns</a>, <a href=#first_entry_always_L>first_entry_always_L</a>, <a href=#generate_first_half>generate_first_half</a>, <a href=#recursion>recursion</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#finding_patterns>finding_patterns</a><a id="finding_patterns"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Going to find some patterns, using L for "left paren" (, and R for "right paren" ).
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#always_same_size>always_same_size</a>, <a href=#first_entry_always_L>first_entry_always_L</a>, <a href=#n_1>n_1</a>, <a href=#n_2>n_2</a>, <a href=#n_3>n_3</a> (translating given example)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#n_3>n_3</a><a id="n_3"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+When n=3, the combinations are LLLRRR, LLRLRR, LLRRLR, LRLLRR, LRLRLR
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#n_1>n_1</a> (next), <a href=#recursion>recursion</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#finding_patterns>finding_patterns</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#n_1>n_1</a><a id="n_1"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+There is only one combination: LR
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#n_2>n_2</a> (next)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#finding_patterns>finding_patterns</a>, <a href=#n_3>n_3</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#n_2>n_2</a><a id="n_2"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+n=2, LRLR, LLRR
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#finding_patterns>finding_patterns</a>, <a href=#n_1>n_1</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#always_same_size>always_same_size</a><a id="always_same_size"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Each sequence is always the same size of 2N. There is an equal number of left and right parentheses.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#finding_patterns>finding_patterns</a>, <a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#brute_force>brute_force</a><a id="brute_force"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+There are 2^N total combinations to choose, a maximum of 256 iterations. You could produce every combination, some way of checking if it is properly closed, then adding it to an array if it is.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#first_entry_always_L>first_entry_always_L</a><a id="first_entry_always_L"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The first entry always has to be left (L), which would imply that the last item is always right (R).
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#finding_patterns>finding_patterns</a>, <a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#generate_first_half>generate_first_half</a><a id="generate_first_half"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+I wonder if there's any effeciency involved in generating the first half of sequence, then working with the other half?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#recursion>recursion</a><a id="recursion"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+It seems like this could be a solution you could express recursively. In the example, it was very clear that at the end there were 3 small pairs LRLRLR, and at the those pairs were nested.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dynamic_programming>dynamic_programming</a> (follow-up, inspired by seeing smaller things grow into)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#n_3>n_3</a>, <a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dynamic_programming>dynamic_programming</a><a id="dynamic_programming"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+larger things Oh, I see how things could be broken up into smaller problems. With a function GP(n), and the operator GP(x)*GP(y) concatenates all the combinations for inside of GP(x) and GP(y) with X followed by Y. would can see how when N=0, the output is [] when N=1, the output is [LR], or [L*GP(0)*R, GP(0)*LR, LR*GP(0)]. when N=2, the combinations are [GP(1)*GP(1),LGP(1)R]. When N=3, the combinations are all of 2 plus an extra pair: GP(2)*LR, LR*GP(2), L*GP(2)*R. Which can be generalized as [GP(N-1)*LR, LR*GP(N-1), LGP(N-1)]. This notation produces duplicates though. I think it's close to a more elegant solution than brute force.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#divide_and_conquer>divide_and_conquer</a> (similar line of thinking)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#recursion>recursion</a>, <a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#editorial>editorial</a><a id="editorial"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+editorial
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#backtracking>backtracking</a>, <a href=#brute_force_with_queue>brute_force_with_queue</a>, <a href=#divide_and_conquer>divide_and_conquer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#brute_force_with_queue>brute_force_with_queue</a><a id="brute_force_with_queue"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The brute force version uses a queue. I don't have much practical experience working with queue data structures, so it'd be good to write this one out a language that has them trivially. I did however, get the gist of this, just not how to implement it.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#editorial>editorial</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#backtracking>backtracking</a><a id="backtracking"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use backtracking to generate only valid strings. Left/right counts are used to check if valid.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#valid_only_equal_left_right>valid_only_equal_left_right</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#editorial>editorial</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#valid_only_equal_left_right>valid_only_equal_left_right</a><a id="valid_only_equal_left_right"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Is it safe to say that if a sequence has an equal number of left/right parens, it is guaranteed to be balanced? That'd be an interesting one to prove.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backtracking>backtracking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#divide_and_conquer>divide_and_conquer</a><a id="divide_and_conquer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The problem of generating all well-formed parens of length 2n can be decomposed into smaller subproblems of generating valid strings of smaller lengths. I was on the right track, but couldn't get past the duplicate calculations because I wasn't setting it up right.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dynamic_programming>dynamic_programming</a>, <a href=#editorial>editorial</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
