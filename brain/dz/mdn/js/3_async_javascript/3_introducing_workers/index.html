@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>mdn/js/3_async_javascript/3_introducing_workers</title>
+<h1>3_introducing_workers</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/mdn">mdn</a> / <a href="/brain/dz/mdn/js">js</a> / <a href="/brain/dz/mdn/js/3_async_javascript">3_async_javascript</a> / <a href="/brain/dz/mdn/js/3_async_javascript/3_introducing_workers">3_introducing_workers</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Introducing Workers
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#workers>workers</a><ul>
+<li>
+<a href=#thread_seq_instructions>thread_seq_instructions</a></li>
+<li>
+<a href=#types_of_workers>types_of_workers</a><ul>
+<li>
+<a href=#dedicated>dedicated</a><ul>
+<li>
+<a href=#used_single_instance>used_single_instance</a></li>
+</ul>
+</li>
+<li>
+<a href=#shared>shared</a><ul>
+<li>
+<a href=#shared_by_several_different_scripts>shared_by_several_different_scripts</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#no_access_to_vars>no_access_to_vars</a><ul>
+<li>
+<a href=#message_passing>message_passing</a></li>
+</ul>
+</li>
+<li>
+<a href=#post_message>post_message</a></li>
+<li>
+<a href=#tasks_run_seperate_thread>tasks_run_seperate_thread</a><ul>
+<li>
+<a href=#thread_seq_instructions>thread_seq_instructions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#service>service</a><ul>
+<li>
+<a href=#progressive_web_apps>progressive_web_apps</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#workers>workers</a><a id="workers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Workers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#thread_seq_instructions>thread_seq_instructions</a>, <a href=#types_of_workers>types_of_workers</a>, <a href=#no_access_to_vars>no_access_to_vars</a>, <a href=#post_message>post_message</a>, <a href=#tasks_run_seperate_thread>tasks_run_seperate_thread</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tasks_run_seperate_thread>tasks_run_seperate_thread</a><a id="tasks_run_seperate_thread"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Enables some tasks to be run in a separate thread of execution
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#thread_seq_instructions>thread_seq_instructions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#workers>workers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#thread_seq_instructions>thread_seq_instructions</a><a id="thread_seq_instructions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Thread: sequence of instructions that a program follows
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#workers>workers</a>, <a href=#tasks_run_seperate_thread>tasks_run_seperate_thread</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_access_to_vars>no_access_to_vars</a><a id="no_access_to_vars"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Main code and worker code never get access to eachothers variables, only share data in specific cases
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#message_passing>message_passing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#workers>workers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#message_passing>message_passing</a><a id="message_passing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Interaction via message passing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#no_access_to_vars>no_access_to_vars</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#types_of_workers>types_of_workers</a><a id="types_of_workers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Types of Workers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dedicated>dedicated</a>, <a href=#shared>shared</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#workers>workers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dedicated>dedicated</a><a id="dedicated"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dedicated Workers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#used_single_instance>used_single_instance</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#types_of_workers>types_of_workers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#shared>shared</a><a id="shared"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Shared Workers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#shared_by_several_different_scripts>shared_by_several_different_scripts</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#types_of_workers>types_of_workers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#post_message>post_message</a><a id="post_message"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+postMessage(): send message to worker
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#workers>workers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#used_single_instance>used_single_instance</a><a id="used_single_instance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dedicated: used by single script instance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dedicated>dedicated</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#shared_by_several_different_scripts>shared_by_several_different_scripts</a><a id="shared_by_several_different_scripts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Shared: shared by several different scripts running in different windows
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#shared>shared</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#progressive_web_apps>progressive_web_apps</a><a id="progressive_web_apps"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Progressive Web Apps
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#service>service</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#service>service</a><a id="service"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Service: act like proxy servers, caching resources and so that web apps can work when user is offline
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#progressive_web_apps>progressive_web_apps</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
