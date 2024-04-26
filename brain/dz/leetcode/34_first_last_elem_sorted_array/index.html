@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>leetcode/34_first_last_elem_sorted_array</title>
+<h1>34_first_last_elem_sorted_array</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/leetcode">leetcode</a> / <a href="/brain/dz/leetcode/34_first_last_elem_sorted_array">34_first_last_elem_sorted_array</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Given an array of integers nums sorted in non-decreasing  order, find the starting and ending position of a given  target value. If target is not found in the array, return [-1, -1]. You must write an algorithm with O(log n) runtime  complexity.
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#1_binary_search>1_binary_search</a><ul>
+<li>
+<a href=#update_midpoint>update_midpoint</a></li>
+<li>
+<a href=#midpoint_discards_half>midpoint_discards_half</a></li>
+<li>
+<a href=#two_binary_searches>two_binary_searches</a><ul>
+<li>
+<a href=#find_first_pos>find_first_pos</a><ul>
+<li>
+<a href=#update_midpoint>update_midpoint</a></li>
+<li>
+<a href=#find_last_pos>find_last_pos</a><ul>
+<li>
+<a href=#update_midpoint>update_midpoint</a></li>
+</ul>
+</li>
+<li>
+<a href=#only_when_midpoint_is_target>only_when_midpoint_is_target</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#URL>URL</a></li>
+<li>
+<a href=#editorial>editorial</a><ul>
+<li>
+<a href=#0_brute_force>0_brute_force</a></li>
+</ul>
+</li>
+<li>
+<a href=#intuition>intuition</a><ul>
+<li>
+<a href=#two_pass_binary_search>two_pass_binary_search</a><ul>
+<li>
+<a href=#find_lower_bound>find_lower_bound</a><ul>
+<li>
+<a href=#find_upper_bound>find_upper_bound</a></li>
+</ul>
+</li>
+<li>
+<a href=#find_upper_bound>find_upper_bound</a></li>
+<li>
+<a href=#two_binary_searches>two_binary_searches</a><ul>
+<li>
+<a href=#find_first_pos>find_first_pos</a><ul>
+<li>
+<a href=#update_midpoint>update_midpoint</a></li>
+<li>
+<a href=#find_last_pos>find_last_pos</a><ul>
+<li>
+<a href=#update_midpoint>update_midpoint</a></li>
+</ul>
+</li>
+<li>
+<a href=#only_when_midpoint_is_target>only_when_midpoint_is_target</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#two_pointers>two_pointers</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#URL>URL</a><a id="URL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+URL
+</td>
+</tr>
+<tr>
+<td>
+hyperlink
+</td>
+<td>
+<a href="https://leetcode.com/problems/find-first-and-last-position-of-element-in-sorted-array">https://leetcode.com/problems/find-first-and-last-position-of-element-in-sorted-array</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#intuition>intuition</a><a id="intuition"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+I've come to recognize this as a prototypical binary search problem. Sorted array, O(log(n)) time. The special extra bit here is making sure the array returns [-1,-1] if a range hasn't been found.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#two_pass_binary_search>two_pass_binary_search</a>, <a href=#two_pointers>two_pointers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#two_pointers>two_pointers</a><a id="two_pointers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+I'm guessing this solution will ultimately use the left/right pointer technique. You can solve this in about linear time by inching both sides until they converge towards the target. Based on what I've seen so far, a log time solution would involve some kind of midpoint?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#two_pass_binary_search>two_pass_binary_search</a><a id="two_pass_binary_search"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+You can probably perform two binary searches to find the lower bound and upper bound of the target, somehow.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#find_lower_bound>find_lower_bound</a>, <a href=#find_upper_bound>find_upper_bound</a>, <a href=#two_binary_searches>two_binary_searches</a> (thinking about this problem correctly)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#find_lower_bound>find_lower_bound</a><a id="find_lower_bound"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+This is done based on which subarray to choose. To choose the lower bound: make sure the subarray has the range for the target. Eventually the midpoint will be the lower bound. The lower bound will always be greater than or equal to the first value of the left subarray. 
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#find_upper_bound>find_upper_bound</a> (similar)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_pass_binary_search>two_pass_binary_search</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#find_upper_bound>find_upper_bound</a><a id="find_upper_bound"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The upper bound is always going to be less than or equal two the last element in the right subarray.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#find_lower_bound>find_lower_bound</a>, <a href=#two_pass_binary_search>two_pass_binary_search</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#editorial>editorial</a><a id="editorial"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+editorial
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#0_brute_force>0_brute_force</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#0_brute_force>0_brute_force</a><a id="0_brute_force"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+To begin, a hypothetical discussion of the brute force approach, which is a linear sweep. The first occurance is the lower bound, and the upper bound happens when the value is greater than the target or the end of the array. This approach however doesn't take advantage of the sorted nature of the array.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#editorial>editorial</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#1_binary_search>1_binary_search</a><a id="1_binary_search"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Approach: Binary Search, tweaked to find the first and last position of a given element
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#update_midpoint>update_midpoint</a>, <a href=#midpoint_discards_half>midpoint_discards_half</a> (review of binary search), <a href=#two_binary_searches>two_binary_searches</a> (Try to work out this algorithm solution)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#midpoint_discards_half>midpoint_discards_half</a><a id="midpoint_discards_half"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Given a sorted array, binary search finds the midpoint, and based on the midpoint, chooses to discard half of the array.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#1_binary_search>1_binary_search</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#two_binary_searches>two_binary_searches</a><a id="two_binary_searches"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The solution involves using two binary searches, which pretty much how I thought this problem would be solved. The implementation though I don't feel 100% confident I'd get on the first go. Probably worth studying more in detail
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#find_first_pos>find_first_pos</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_pass_binary_search>two_pass_binary_search</a>, <a href=#1_binary_search>1_binary_search</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#find_first_pos>find_first_pos</a><a id="find_first_pos"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+2 situations when an index will be the first occurance of the target in the array. 1. mid is equal to begin, which implies the first element in remaining subarray. 2. The element to the left of the index is not equal to the target being looked for (mid-1). If condition not met, keep searching the left side of array for first occurance of target.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#update_midpoint>update_midpoint</a> (when nums[mid]==target), <a href=#find_last_pos>find_last_pos</a> (similar), <a href=#only_when_midpoint_is_target>only_when_midpoint_is_target</a> (this only happens when midpoint is found to be target)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_binary_searches>two_binary_searches</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#only_when_midpoint_is_target>only_when_midpoint_is_target</a><a id="only_when_midpoint_is_target"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Note that this only happens when the index is found to be target. Otherwise the midpoint update is done based on range.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#find_first_pos>find_first_pos</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#update_midpoint>update_midpoint</a><a id="update_midpoint"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+if nums[mid] &gt; target, end=mid-1, discarding right subarray. if nums[mid] &lt; target, begin=mid+1, discarding left subarray. if nums[mid]==target, determine if it is the first/last occurance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#find_last_pos>find_last_pos</a>, <a href=#find_first_pos>find_first_pos</a>, <a href=#1_binary_search>1_binary_search</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#find_last_pos>find_last_pos</a><a id="find_last_pos"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+inverse of finding first position. 1. mid is same as end (instead of begin), which implies last elem in remaining array. 2. element to right of mid (mid + 1) is not equal to the target, meaning keep searching right.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#update_midpoint>update_midpoint</a> (when nums[mid]==target)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#find_first_pos>find_first_pos</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

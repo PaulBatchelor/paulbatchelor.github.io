@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>leetcode/33_search_in_rotated_sorted_array</title>
+<h1>33_search_in_rotated_sorted_array</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/leetcode">leetcode</a> / <a href="/brain/dz/leetcode/33_search_in_rotated_sorted_array">33_search_in_rotated_sorted_array</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+There is an integer array nums sorted in ascending order  (with distinct values). Prior to being passed to your function, nums is possibly  rotated at an unknown pivot index k (1 <= k <  nums.length) such that the resulting array is [nums[k],  nums[k+1], ..., nums[n-1], nums[0], nums[1], ...,  nums[k-1]] (0-indexed). For example, [0,1,2,4,5,6,7]  might be rotated at pivot index 3 and become  [4,5,6,7,0,1,2]. Given the array nums after the possible rotation and an  integer target, return the index of target if it is in  nums, or -1 if it is not in nums. You must write an algorithm with O(log n) runtime  complexity.
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#URL>URL</a></li>
+<li>
+<a href=#approach_1_binary_search>approach_1_binary_search</a><ul>
+<li>
+<a href=#approach_2_one_pass_binary_search>approach_2_one_pass_binary_search</a><ul>
+<li>
+<a href=#two_pointers>two_pointers</a><ul>
+<li>
+<a href=#check_if_mid_is_target>check_if_mid_is_target</a></li>
+<li>
+<a href=#move_pointer_to_mid_of_prev_search>move_pointer_to_mid_of_prev_search</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#binary_search_in_chosen_array>binary_search_in_chosen_array</a></li>
+<li>
+<a href=#choosing_based_on_rotation>choosing_based_on_rotation</a></li>
+<li>
+<a href=#editorial>editorial</a></li>
+<li>
+<a href=#find_rotation_index>find_rotation_index</a><ul>
+<li>
+<a href=#split_array_via_rotation_index>split_array_via_rotation_index</a><ul>
+<li>
+<a href=#identify_which_array_to_find_target>identify_which_array_to_find_target</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#intuition>intuition</a><ul>
+<li>
+<a href=#divide_and_conquer_binary_search>divide_and_conquer_binary_search</a><ul>
+<li>
+<a href=#wikipedia_binary_search>wikipedia_binary_search</a></li>
+</ul>
+</li>
+<li>
+<a href=#no_rotation>no_rotation</a><ul>
+<li>
+<a href=#factoring_in_rotation>factoring_in_rotation</a><ul>
+<li>
+<a href=#detecting_rotation>detecting_rotation</a><ul>
+<li>
+<a href=#pivot_check>pivot_check</a><ul>
+<li>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a><ul>
+<li>
+<a href=#at_most_one_rotated_subarray>at_most_one_rotated_subarray</a></li>
+</ul>
+</li>
+<li>
+<a href=#pivot_smaller_than_first_elem>pivot_smaller_than_first_elem</a><ul>
+<li>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a><ul>
+<li>
+<a href=#at_most_one_rotated_subarray>at_most_one_rotated_subarray</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#pivot_larger_than_first_elem>pivot_larger_than_first_elem</a><ul>
+<li>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a><ul>
+<li>
+<a href=#at_most_one_rotated_subarray>at_most_one_rotated_subarray</a></li>
+</ul>
+</li>
+<li>
+<a href=#pivot_smaller_than_first_elem>pivot_smaller_than_first_elem</a><ul>
+<li>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a><ul>
+<li>
+<a href=#at_most_one_rotated_subarray>at_most_one_rotated_subarray</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#URL>URL</a><a id="URL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+URL
+</td>
+</tr>
+<tr>
+<td>
+hyperlink
+</td>
+<td>
+<a href="https://leetcode.com/problems/search-in-rotated-sorted-array">https://leetcode.com/problems/search-in-rotated-sorted-array</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#intuition>intuition</a><a id="intuition"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Because they specify O(log(n)) performance, this is a divide an conquer problem. The added bit is the rotational bit.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#divide_and_conquer_binary_search>divide_and_conquer_binary_search</a> (I initially thought "divide and conquer", it was "binary search"), <a href=#no_rotation>no_rotation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_rotation>no_rotation</a><a id="no_rotation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+First, checking a set where there's no rotation. Given an array a numbers (starting with the full array), split the array into two arrays. The number, if it exists, will be in exactly one of these arrays (all numbers unique). Since they are sorted, this is a range check. Pick one of the ranges, and repeat the process until there is only one element left and the element is/isn't found.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#factoring_in_rotation>factoring_in_rotation</a> (can this be modified to factor in pivot?)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#factoring_in_rotation>factoring_in_rotation</a><a id="factoring_in_rotation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A rotation will introduce some kind of discontinuity in the array of sorted values. It would be trivial to have a linear sweep to find the pivot, but this problem doesn't want that.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#detecting_rotation>detecting_rotation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#no_rotation>no_rotation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#detecting_rotation>detecting_rotation</a><a id="detecting_rotation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+In an unrotated array or subarray, the start/end values will be start &lt; end. If a rotation happens, start &gt; end. ex: 456 7012.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#pivot_check>pivot_check</a> (I was thinking about pivots a little bit trying to detect,rotation in a binary search, but didn't get it quite right.)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#factoring_in_rotation>factoring_in_rotation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#choosing_based_on_rotation>choosing_based_on_rotation</a><a id="choosing_based_on_rotation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+how do you choose which region to go on based on if there's rotation? It's a range check, but with extra logic.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#editorial>editorial</a><a id="editorial"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+editorial
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#approach_1_binary_search>approach_1_binary_search</a><a id="approach_1_binary_search"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Approach 1: Binary Search
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#approach_2_one_pass_binary_search>approach_2_one_pass_binary_search</a> (revised binary search to do a single pass)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#find_rotation_index>find_rotation_index</a><a id="find_rotation_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Find =rotation index=, the smallest element in array (can be done via binary search).
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#split_array_via_rotation_index>split_array_via_rotation_index</a> (next)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#split_array_via_rotation_index>split_array_via_rotation_index</a><a id="split_array_via_rotation_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Split array via rotation index.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#identify_which_array_to_find_target>identify_which_array_to_find_target</a> (next)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#find_rotation_index>find_rotation_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#identify_which_array_to_find_target>identify_which_array_to_find_target</a><a id="identify_which_array_to_find_target"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Figure out which array has target by comparing nums[0] and target.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#split_array_via_rotation_index>split_array_via_rotation_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#binary_search_in_chosen_array>binary_search_in_chosen_array</a><a id="binary_search_in_chosen_array"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+binary search in chosen array
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+This time to look for the target I think?
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#approach_2_one_pass_binary_search>approach_2_one_pass_binary_search</a><a id="approach_2_one_pass_binary_search"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Approach 2: one-pass binary search
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#two_pointers>two_pointers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#approach_1_binary_search>approach_1_binary_search</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#two_pointers>two_pointers</a><a id="two_pointers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+two pointer, start/end to track the search scope
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#check_if_mid_is_target>check_if_mid_is_target</a>, <a href=#move_pointer_to_mid_of_prev_search>move_pointer_to_mid_of_prev_search</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#approach_2_one_pass_binary_search>approach_2_one_pass_binary_search</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#check_if_mid_is_target>check_if_mid_is_target</a><a id="check_if_mid_is_target"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+check if mid is target
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_pointers>two_pointers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#move_pointer_to_mid_of_prev_search>move_pointer_to_mid_of_prev_search</a><a id="move_pointer_to_mid_of_prev_search"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+At each iteration, reduce scope in half by moving the start/end pointer to the middle of the previous search.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_pointers>two_pointers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pivot_check>pivot_check</a><a id="pivot_check"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The pivot point (mid) has two checks: pivot element is larger than first element in first array, or it is smaller than first element in first array.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a>, <a href=#pivot_smaller_than_first_elem>pivot_smaller_than_first_elem</a>, <a href=#pivot_larger_than_first_elem>pivot_larger_than_first_elem</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#detecting_rotation>detecting_rotation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pivot_larger_than_first_elem>pivot_larger_than_first_elem</a><a id="pivot_larger_than_first_elem"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If the pivot is larger than the first elem in the first subarray, first array (left) is non-rotated.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a> (left is rotated subarray), <a href=#pivot_smaller_than_first_elem>pivot_smaller_than_first_elem</a> (related)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pivot_check>pivot_check</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pivot_smaller_than_first_elem>pivot_smaller_than_first_elem</a><a id="pivot_smaller_than_first_elem"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If pivot is smaller than first elem in first array, first array (left) is rotated.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a> (right is non-rotated subarray)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pivot_check>pivot_check</a>, <a href=#pivot_larger_than_first_elem>pivot_larger_than_first_elem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a><a id="check_non_rotated_subarray"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Check if element is in non-rotated subarray. If it is, move in that direction, otherwise in opposite direction.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#at_most_one_rotated_subarray>at_most_one_rotated_subarray</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pivot_check>pivot_check</a>, <a href=#pivot_larger_than_first_elem>pivot_larger_than_first_elem</a>, <a href=#pivot_smaller_than_first_elem>pivot_smaller_than_first_elem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#at_most_one_rotated_subarray>at_most_one_rotated_subarray</a><a id="at_most_one_rotated_subarray"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+I think I can deduce that there's always going to be at most one rotated subarray, meaning if you find a rotated subarray, the other subarray is guaranteed to be non-rotated. You can also have a situation where there are no rotated subarrays, in which case the algorithm will still work.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#check_non_rotated_subarray>check_non_rotated_subarray</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#divide_and_conquer_binary_search>divide_and_conquer_binary_search</a><a id="divide_and_conquer_binary_search"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Observation: a lot of what I've been calling "divide and conquer" ends up being more specifically "binary search". I think I need to spend some time studying binary search.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#wikipedia_binary_search>wikipedia_binary_search</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wikipedia_binary_search>wikipedia_binary_search</a><a id="wikipedia_binary_search"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wikipedia page on binary search
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#divide_and_conquer_binary_search>divide_and_conquer_binary_search</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+I've run into enough problems that boil down to binary search that I think it's worth reading about this.
+</td>
+</tr>
+<tr>
+<td>
+hyperlink
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Binary_search_algorithm">https://en.wikipedia.org/wiki/Binary_search_algorithm</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

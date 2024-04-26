@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>leetcode/32_longest_valid_parentheses</title>
+<h1>32_longest_valid_parentheses</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/leetcode">leetcode</a> / <a href="/brain/dz/leetcode/32_longest_valid_parentheses">32_longest_valid_parentheses</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Given a string containing just the characters '(' and  ')', return the length of the longest valid (well-formed)  parentheses substring.
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#empty_stack_push_elem_cur_index>empty_stack_push_elem_cur_index</a></li>
+<li>
+<a href=#intuition>intuition</a><ul>
+<li>
+<a href=#even_number>even_number</a></li>
+<li>
+<a href=#starts_with_left>starts_with_left</a></li>
+<li>
+<a href=#valid_inside_invalid>valid_inside_invalid</a></li>
+<li>
+<a href=#backtrack_approach>backtrack_approach</a><ul>
+<li>
+<a href=#somehow_drop_segments_and_keep_track_of_longest_valid>somehow_drop_segments_and_keep_track_of_longest_valid</a><ul>
+<li>
+<a href=#find_previous_valid_right>find_previous_valid_right</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#URL>URL</a></li>
+<li>
+<a href=#approach_2_dynamic>approach_2_dynamic</a></li>
+<li>
+<a href=#approach_3_stack>approach_3_stack</a><ul>
+<li>
+<a href=#init_push_neg_1>init_push_neg_1</a><ul>
+<li>
+<a href=#every_left_push_index>every_left_push_index</a><ul>
+<li>
+<a href=#every_right_pop_topmost>every_right_pop_topmost</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#approach_1_bruteforce>approach_1_bruteforce</a><ul>
+<li>
+<a href=#vs_approach_3>vs_approach_3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#approach_4_without_extra_space>approach_4_without_extra_space</a></li>
+<li>
+<a href=#editorial>editorial</a><ul>
+<li>
+<a href=#approach_1_bruteforce>approach_1_bruteforce</a><ul>
+<li>
+<a href=#vs_approach_3>vs_approach_3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#URL>URL</a><a id="URL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+URL
+</td>
+</tr>
+<tr>
+<td>
+hyperlink
+</td>
+<td>
+<a href="https://leetcode.com/problems/longest-valid-parentheses">https://leetcode.com/problems/longest-valid-parentheses</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#intuition>intuition</a><a id="intuition"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+I've done substring problems in the past, so I'm trying to remember what was involved with those. I've also dealt with parentheses validation problems, so there may be some intuition there.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#even_number>even_number</a>, <a href=#starts_with_left>starts_with_left</a>, <a href=#valid_inside_invalid>valid_inside_invalid</a>, <a href=#backtrack_approach>backtrack_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#starts_with_left>starts_with_left</a><a id="starts_with_left"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Every valid parantheses substring will start with one left paren, and therefore must have a corresponding right paren.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#even_number>even_number</a><a id="even_number"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+there will always been an even number of parens, with an equal number of left/right parens.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#valid_inside_invalid>valid_inside_invalid</a><a id="valid_inside_invalid"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+valid substrings can be encapsulated inside of larger invalid strings. how to tackle those?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#backtrack_approach>backtrack_approach</a><a id="backtrack_approach"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Keep track of left parens, and backtrack when right parens are found.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#somehow_drop_segments_and_keep_track_of_longest_valid>somehow_drop_segments_and_keep_track_of_longest_valid</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#somehow_drop_segments_and_keep_track_of_longest_valid>somehow_drop_segments_and_keep_track_of_longest_valid</a><a id="somehow_drop_segments_and_keep_track_of_longest_valid"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+somehow, there needs to be a way to keep track of longest substrings during backtracking.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#find_previous_valid_right>find_previous_valid_right</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backtrack_approach>backtrack_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#find_previous_valid_right>find_previous_valid_right</a><a id="find_previous_valid_right"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+when invalid rigth is found, somehow find last right value. this will have a corresponding left value.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#somehow_drop_segments_and_keep_track_of_longest_valid>somehow_drop_segments_and_keep_track_of_longest_valid</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#editorial>editorial</a><a id="editorial"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+editorial
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#approach_1_bruteforce>approach_1_bruteforce</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#approach_1_bruteforce>approach_1_bruteforce</a><a id="approach_1_bruteforce"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+brute force: consider every possible non-empty substring from the given string and check whether it's a valid parentheses or not. Use the stack's method.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#vs_approach_3>vs_approach_3</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#approach_3_stack>approach_3_stack</a>, <a href=#editorial>editorial</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#vs_approach_3>vs_approach_3</a><a id="vs_approach_3"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+approach 1 works by brute forcing every possible combination and using the stack method to check if each substring is valid.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#approach_1_bruteforce>approach_1_bruteforce</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#approach_2_dynamic>approach_2_dynamic</a><a id="approach_2_dynamic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+dynamic programming
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#approach_3_stack>approach_3_stack</a><a id="approach_3_stack"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Instead of checking every possible string to see if it's valid, use a stack while scanning to see if given string scanned so far is valid, and to find the length of the longest string.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#init_push_neg_1>init_push_neg_1</a>, <a href=#approach_1_bruteforce>approach_1_bruteforce</a> (similar)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#init_push_neg_1>init_push_neg_1</a><a id="init_push_neg_1"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+to begin, push negative 1 onto stack
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#every_left_push_index>every_left_push_index</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#approach_3_stack>approach_3_stack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#every_left_push_index>every_left_push_index</a><a id="every_left_push_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+for every left, push the index onto the stack
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#every_right_pop_topmost>every_right_pop_topmost</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#init_push_neg_1>init_push_neg_1</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#every_right_pop_topmost>every_right_pop_topmost</a><a id="every_right_pop_topmost"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+every right encounter, pop topmost element from stack
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#every_left_push_index>every_left_push_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#empty_stack_push_elem_cur_index>empty_stack_push_elem_cur_index</a><a id="empty_stack_push_elem_cur_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If, while popping the element, stack is empty, push the current index onto stack, can continue calculating length of valid substrings
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#approach_4_without_extra_space>approach_4_without_extra_space</a><a id="approach_4_without_extra_space"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+two counters, left and right. traverse string left towards right. for every lpar, increment left, for every rpar, incremnt right. when left=right, calc length of current valid string and keep track of max leng. if right greater than left, reset left/right to 0. traverse from right to left using similar procedure
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
