@@ -111,6 +111,20 @@ function atfun (subject, pos, vals)
 end
 
 function Descript.parse(str)
+    local loc = {}
+    lpeg.locale(loc)
+    local atsym = lpeg.P("@")
+    local newline = lpeg.P('\n')
+    local comment = atsym*lpeg.P("#")*loc.print^0*newline
+    local header = atsym*lpeg.C(loc.print^0)*newline
+    local line = lpeg.C(loc.print^0)*newline^1
+    local chunk = lpeg.Ct(header * (line - header)^0)
+    local chunks = lpeg.Ct(chunk^0)
+    local t = lpeg.match(chunks, str)
+    return t
+end
+
+function Descript.parse_old(str)
     local atsym = lpeg.P("@")
     local atelem = lpeg.C((1 - atsym)^0)
     local atelem = lpeg.Cmt(atelem, atfun)
