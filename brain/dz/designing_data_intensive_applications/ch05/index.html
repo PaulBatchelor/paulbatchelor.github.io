@@ -92,18 +92,6 @@ Chapter 5: Replication
 <li>
 <a href=#leaderless_replication>leaderless_replication</a><ul>
 <li>
-<a href=#write_implementations>write_implementations</a><ul>
-<li>
-<a href=#client_writes_directly>client_writes_directly</a><ul>
-<li>
-<a href=#parallel_read_requests>parallel_read_requests</a></li>
-</ul>
-</li>
-<li>
-<a href=#coordinator_node>coordinator_node</a></li>
-</ul>
-</li>
-<li>
 <a href=#dynamo_style>dynamo_style</a></li>
 <li>
 <a href=#failover_does_not_exist>failover_does_not_exist</a><ul>
@@ -126,13 +114,13 @@ Chapter 5: Replication
 <li>
 <a href=#version_vector>version_vector</a><ul>
 <li>
-<a href=#vector_clock>vector_clock</a></li>
-<li>
 <a href=#causal_context>causal_context</a></li>
 <li>
 <a href=#collection_from_all_replicas>collection_from_all_replicas</a></li>
 <li>
 <a href=#dotted_version_vecotr>dotted_version_vecotr</a></li>
+<li>
+<a href=#vector_clock>vector_clock</a></li>
 </ul>
 </li>
 </ul>
@@ -152,9 +140,25 @@ Chapter 5: Replication
 <li>
 <a href=#quorum_reads_writes>quorum_reads_writes</a><ul>
 <li>
-<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a><ul>
+<a href=#assurance_of_durability>assurance_of_durability</a></li>
 <li>
-<a href=#w_less_n_still_writes>w_less_n_still_writes</a></li>
+<a href=#sloppy_quorum>sloppy_quorum</a><ul>
+<li>
+<a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a></li>
+<li>
+<a href=#not_in_designated_home_nodes>not_in_designated_home_nodes</a><ul>
+<li>
+<a href=#hinted_handoff>hinted_handoff</a><ul>
+<li>
+<a href=#temp_values_sent_home>temp_values_sent_home</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a><ul>
 <li>
 <a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a></li>
 <li>
@@ -175,26 +179,22 @@ Chapter 5: Replication
 <a href=#stale_possible_for_greater_n>stale_possible_for_greater_n</a></li>
 </ul>
 </li>
-</ul>
-</li>
 <li>
-<a href=#assurance_of_durability>assurance_of_durability</a></li>
-<li>
-<a href=#sloppy_quorum>sloppy_quorum</a><ul>
-<li>
-<a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a></li>
-<li>
-<a href=#not_in_designated_home_nodes>not_in_designated_home_nodes</a><ul>
-<li>
-<a href=#hinted_handoff>hinted_handoff</a><ul>
-<li>
-<a href=#temp_values_sent_home>temp_values_sent_home</a></li>
+<a href=#w_less_n_still_writes>w_less_n_still_writes</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li>
+<a href=#write_implementations>write_implementations</a><ul>
+<li>
+<a href=#client_writes_directly>client_writes_directly</a><ul>
+<li>
+<a href=#parallel_read_requests>parallel_read_requests</a></li>
 </ul>
 </li>
+<li>
+<a href=#coordinator_node>coordinator_node</a></li>
 </ul>
 </li>
 </ul>
@@ -215,32 +215,6 @@ Chapter 5: Replication
 <a href=#collab_editing>collab_editing</a></li>
 <li>
 <a href=#handling_write_conflicts>handling_write_conflicts</a><ul>
-<li>
-<a href=#write_async>write_async</a><ul>
-<li>
-<a href=#accepts_writes_independently>accepts_writes_independently</a><ul>
-<li>
-<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<a href=#write_sync>write_sync</a><ul>
-<li>
-<a href=#wait_for_write_before_success>wait_for_write_before_success</a><ul>
-<li>
-<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
-</ul>
-</li>
-<li>
-<a href=#second_write_blocks>second_write_blocks</a><ul>
-<li>
-<a href=#single_leader>single_leader</a></li>
-</ul>
-</li>
-</ul>
-</li>
 <li>
 <a href=#auto_conflict_resolution>auto_conflict_resolution</a><ul>
 <li>
@@ -273,6 +247,32 @@ Chapter 5: Replication
 </li>
 <li>
 <a href=#same_as_conflict_resolution>same_as_conflict_resolution</a></li>
+<li>
+<a href=#write_async>write_async</a><ul>
+<li>
+<a href=#accepts_writes_independently>accepts_writes_independently</a><ul>
+<li>
+<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#write_sync>write_sync</a><ul>
+<li>
+<a href=#second_write_blocks>second_write_blocks</a><ul>
+<li>
+<a href=#single_leader>single_leader</a></li>
+</ul>
+</li>
+<li>
+<a href=#wait_for_write_before_success>wait_for_write_before_success</a><ul>
+<li>
+<a href=#defeats_multi_leader_advantage>defeats_multi_leader_advantage</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li>
@@ -328,8 +328,6 @@ Chapter 5: Replication
 <li>
 <a href=#leader_based_replication>leader_based_replication</a><ul>
 <li>
-<a href=#usually_async>usually_async</a></li>
-<li>
 <a href=#LBR_lag_metrics>LBR_lag_metrics</a></li>
 <li>
 <a href=#designated_leader>designated_leader</a><ul>
@@ -337,6 +335,10 @@ Chapter 5: Replication
 <a href=#client_reads>client_reads</a></li>
 <li>
 <a href=#client_write_sent_to_leader>client_write_sent_to_leader</a><ul>
+<li>
+<a href=#client_reads>client_reads</a></li>
+<li>
+<a href=#leader_only_writes>leader_only_writes</a></li>
 <li>
 <a href=#write_local_storage>write_local_storage</a><ul>
 <li>
@@ -347,10 +349,6 @@ Chapter 5: Replication
 </li>
 </ul>
 </li>
-<li>
-<a href=#client_reads>client_reads</a></li>
-<li>
-<a href=#leader_only_writes>leader_only_writes</a></li>
 </ul>
 </li>
 </ul>
@@ -472,6 +470,12 @@ Chapter 5: Replication
 <li>
 <a href=#replication_lag>replication_lag</a><ul>
 <li>
+<a href=#transactions>transactions</a><ul>
+<li>
+<a href=#dont_think_replication_lag>dont_think_replication_lag</a></li>
+</ul>
+</li>
+<li>
 <a href=#violations_of_causality>violations_of_causality</a><ul>
 <li>
 <a href=#consistent_prefix_reads>consistent_prefix_reads</a><ul>
@@ -485,18 +489,10 @@ Chapter 5: Replication
 <a href=#network_messages_overtake>network_messages_overtake</a></li>
 </ul>
 </li>
-<li>
-<a href=#transactions>transactions</a><ul>
-<li>
-<a href=#dont_think_replication_lag>dont_think_replication_lag</a></li>
-</ul>
-</li>
 </ul>
 </li>
 <li>
 <a href=#replication_methods>replication_methods</a><ul>
-<li>
-<a href=#wal_shipping>wal_shipping</a></li>
 <li>
 <a href=#logical_log>logical_log</a><ul>
 <li>
@@ -507,8 +503,12 @@ Chapter 5: Replication
 <a href=#statement_based>statement_based</a></li>
 <li>
 <a href=#trigger_based>trigger_based</a></li>
+<li>
+<a href=#wal_shipping>wal_shipping</a></li>
 </ul>
 </li>
+<li>
+<a href=#usually_async>usually_async</a></li>
 </ul>
 </li>
 </ul>
@@ -520,9 +520,9 @@ Chapter 5: Replication
 <li>
 <a href=#async>async</a><ul>
 <li>
-<a href=#usually_async>usually_async</a></li>
-<li>
 <a href=#semi_sync>semi_sync</a></li>
+<li>
+<a href=#usually_async>usually_async</a></li>
 </ul>
 </li>
 <li>
@@ -705,7 +705,7 @@ asynchronous
 children
 </td>
 <td>
-<a href=#usually_async>usually_async</a>, <a href=#semi_sync>semi_sync</a>
+<a href=#semi_sync>semi_sync</a>, <a href=#usually_async>usually_async</a>
 </td>
 </tr>
 <tr>
@@ -1014,7 +1014,7 @@ Leader-based replication
 children
 </td>
 <td>
-<a href=#usually_async>usually_async</a>, <a href=#LBR_lag_metrics>LBR_lag_metrics</a>, <a href=#designated_leader>designated_leader</a>, <a href=#follower>follower</a>, <a href=#handling_node_outage>handling_node_outage</a>, <a href=#read_after_write_consistency>read_after_write_consistency</a>, <a href=#read_scaling_arch>read_scaling_arch</a>, <a href=#replication_lag>replication_lag</a>, <a href=#replication_methods>replication_methods</a>
+<a href=#LBR_lag_metrics>LBR_lag_metrics</a>, <a href=#designated_leader>designated_leader</a>, <a href=#follower>follower</a>, <a href=#handling_node_outage>handling_node_outage</a>, <a href=#read_after_write_consistency>read_after_write_consistency</a>, <a href=#read_scaling_arch>read_scaling_arch</a>, <a href=#replication_lag>replication_lag</a>, <a href=#replication_methods>replication_methods</a>, <a href=#usually_async>usually_async</a>
 </td>
 </tr>
 <tr>
@@ -1107,7 +1107,7 @@ Client write requests sent to leader
 children
 </td>
 <td>
-<a href=#write_local_storage>write_local_storage</a>, <a href=#client_reads>client_reads</a>, <a href=#leader_only_writes>leader_only_writes</a>
+<a href=#client_reads>client_reads</a>, <a href=#leader_only_writes>leader_only_writes</a>, <a href=#write_local_storage>write_local_storage</a>
 </td>
 </tr>
 <tr>
@@ -1246,7 +1246,7 @@ Client Reads: query leader or followers
 parents
 </td>
 <td>
-<a href=#follower>follower</a>, <a href=#designated_leader>designated_leader</a>, <a href=#client_write_sent_to_leader>client_write_sent_to_leader</a>
+<a href=#client_write_sent_to_leader>client_write_sent_to_leader</a>, <a href=#follower>follower</a>, <a href=#designated_leader>designated_leader</a>
 </td>
 </tr>
 </table><br>
@@ -1886,7 +1886,7 @@ Replication Methods
 children
 </td>
 <td>
-<a href=#wal_shipping>wal_shipping</a>, <a href=#logical_log>logical_log</a>, <a href=#statement_based>statement_based</a>, <a href=#trigger_based>trigger_based</a>
+<a href=#logical_log>logical_log</a>, <a href=#statement_based>statement_based</a>, <a href=#trigger_based>trigger_based</a>, <a href=#wal_shipping>wal_shipping</a>
 </td>
 </tr>
 <tr>
@@ -2125,7 +2125,7 @@ Replication lag
 children
 </td>
 <td>
-<a href=#violations_of_causality>violations_of_causality</a>, <a href=#transactions>transactions</a>
+<a href=#transactions>transactions</a>, <a href=#violations_of_causality>violations_of_causality</a>
 </td>
 </tr>
 <tr>
@@ -2464,7 +2464,7 @@ Handling Write Conflicts
 children
 </td>
 <td>
-<a href=#write_async>write_async</a>, <a href=#write_sync>write_sync</a>, <a href=#auto_conflict_resolution>auto_conflict_resolution</a>, <a href=#avoiding_conflicts>avoiding_conflicts</a>, <a href=#convergence_consistency>convergence_consistency</a>, <a href=#same_as_conflict_resolution>same_as_conflict_resolution</a>
+<a href=#auto_conflict_resolution>auto_conflict_resolution</a>, <a href=#avoiding_conflicts>avoiding_conflicts</a>, <a href=#convergence_consistency>convergence_consistency</a>, <a href=#same_as_conflict_resolution>same_as_conflict_resolution</a>, <a href=#write_async>write_async</a>, <a href=#write_sync>write_sync</a>
 </td>
 </tr>
 <tr>
@@ -2495,7 +2495,7 @@ Synchronous Writes
 children
 </td>
 <td>
-<a href=#wait_for_write_before_success>wait_for_write_before_success</a>, <a href=#second_write_blocks>second_write_blocks</a>
+<a href=#second_write_blocks>second_write_blocks</a>, <a href=#wait_for_write_before_success>wait_for_write_before_success</a>
 </td>
 </tr>
 <tr>
@@ -3190,7 +3190,7 @@ One node failure can interrupt write flows
 parents
 </td>
 <td>
-<a href=#star_topology>star_topology</a>, <a href=#fault_tolerant>fault_tolerant</a>, <a href=#circular_topology>circular_topology</a>
+<a href=#circular_topology>circular_topology</a>, <a href=#star_topology>star_topology</a>, <a href=#fault_tolerant>fault_tolerant</a>
 </td>
 </tr>
 </table><br>
@@ -3236,7 +3236,7 @@ Leaderless replication
 children
 </td>
 <td>
-<a href=#write_implementations>write_implementations</a>, <a href=#dynamo_style>dynamo_style</a> (AKA), <a href=#failover_does_not_exist>failover_does_not_exist</a>, <a href=#quorum_reads_writes>quorum_reads_writes</a>
+<a href=#dynamo_style>dynamo_style</a> (AKA), <a href=#failover_does_not_exist>failover_does_not_exist</a>, <a href=#quorum_reads_writes>quorum_reads_writes</a>, <a href=#write_implementations>write_implementations</a>
 </td>
 </tr>
 <tr>
@@ -3630,7 +3630,7 @@ Quorum reads and writes
 children
 </td>
 <td>
-<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>, <a href=#assurance_of_durability>assurance_of_durability</a>, <a href=#sloppy_quorum>sloppy_quorum</a>
+<a href=#assurance_of_durability>assurance_of_durability</a>, <a href=#sloppy_quorum>sloppy_quorum</a>, <a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
 </td>
 </tr>
 <tr>
@@ -3661,7 +3661,7 @@ w + r &gt; n
 children
 </td>
 <td>
-<a href=#w_less_n_still_writes>w_less_n_still_writes</a>, <a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a> (the "n" in this equation), <a href=#n3w2r2_one_unavail>n3w2r2_one_unavail</a>, <a href=#n5w3r3_two_unavail>n5w3r3_two_unavail</a>, <a href=#n_w_r>n_w_r</a>, <a href=#r_less_n_still_reads>r_less_n_still_reads</a>, <a href=#smaller_wr>smaller_wr</a>
+<a href=#accept_writes_reachable_nodes_atypical>accept_writes_reachable_nodes_atypical</a> (the "n" in this equation), <a href=#n3w2r2_one_unavail>n3w2r2_one_unavail</a>, <a href=#n5w3r3_two_unavail>n5w3r3_two_unavail</a>, <a href=#n_w_r>n_w_r</a>, <a href=#r_less_n_still_reads>r_less_n_still_reads</a>, <a href=#smaller_wr>smaller_wr</a>, <a href=#w_less_n_still_writes>w_less_n_still_writes</a>
 </td>
 </tr>
 <tr>
@@ -4000,7 +4000,7 @@ Accepts writes, write to reachable nodes where value doesn't typically live (not
 parents
 </td>
 <td>
-<a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>, <a href=#sloppy_quorum>sloppy_quorum</a>
+<a href=#sloppy_quorum>sloppy_quorum</a>, <a href=#w_plus_r_greater_n>w_plus_r_greater_n</a>
 </td>
 </tr>
 </table><br>
@@ -4378,7 +4378,7 @@ Version Vector
 children
 </td>
 <td>
-<a href=#vector_clock>vector_clock</a>, <a href=#causal_context>causal_context</a>, <a href=#collection_from_all_replicas>collection_from_all_replicas</a>, <a href=#dotted_version_vecotr>dotted_version_vecotr</a> (variation on version vector)
+<a href=#causal_context>causal_context</a>, <a href=#collection_from_all_replicas>collection_from_all_replicas</a>, <a href=#dotted_version_vecotr>dotted_version_vecotr</a> (variation on version vector), <a href=#vector_clock>vector_clock</a>
 </td>
 </tr>
 <tr>
