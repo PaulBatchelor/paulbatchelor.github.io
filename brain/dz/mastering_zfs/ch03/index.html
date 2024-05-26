@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>mastering_zfs/ch03</title>
+<h1>ch03</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/mastering_zfs">mastering_zfs</a> / <a href="/brain/dz/mastering_zfs/ch03">ch03</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 3: Pools
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#zfs_blocks>zfs_blocks</a><ul>
+<li>
+<a href=#COW>COW</a></li>
+<li>
+<a href=#critical_blocks>critical_blocks</a><ul>
+<li>
+<a href=#uberblock>uberblock</a><ul>
+<li>
+<a href=#128_blocks_reserved_uber>128_blocks_reserved_uber</a><ul>
+<li>
+<a href=#loops_back>loops_back</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#ditto_blocks>ditto_blocks</a></li>
+<li>
+<a href=#transaction_groups>transaction_groups</a><ul>
+<li>
+<a href=#commits_to_storage>commits_to_storage</a></li>
+<li>
+<a href=#txg>txg</a></li>
+</ul>
+</li>
+<li>
+<a href=#uberblock>uberblock</a><ul>
+<li>
+<a href=#128_blocks_reserved_uber>128_blocks_reserved_uber</a><ul>
+<li>
+<a href=#loops_back>loops_back</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zpools>zpools</a><ul>
+<li>
+<a href=#128_blocks_reserved_uber>128_blocks_reserved_uber</a><ul>
+<li>
+<a href=#loops_back>loops_back</a></li>
+</ul>
+</li>
+<li>
+<a href=#access_history>access_history</a></li>
+<li>
+<a href=#cannot_shrink>cannot_shrink</a></li>
+<li>
+<a href=#creating_pools_vdevs>creating_pools_vdevs</a><ul>
+<li>
+<a href=#add_vdev_existing_pool>add_vdev_existing_pool</a></li>
+<li>
+<a href=#log_devices>log_devices</a><ul>
+<li>
+<a href=#cache>cache</a><ul>
+<li>
+<a href=#read_cache>read_cache</a></li>
+</ul>
+</li>
+<li>
+<a href=#log>log</a><ul>
+<li>
+<a href=#write_cache>write_cache</a><ul>
+<li>
+<a href=#improve_perf_dedicated_cache_ssd>improve_perf_dedicated_cache_ssd</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#reusing_providers>reusing_providers</a></li>
+</ul>
+</li>
+<li>
+<a href=#mirrored_pools>mirrored_pools</a><ul>
+<li>
+<a href=#reflect>reflect</a></li>
+</ul>
+</li>
+<li>
+<a href=#multi_vdev_pools>multi_vdev_pools</a></li>
+<li>
+<a href=#raid_z>raid_z</a><ul>
+<li>
+<a href=#bucket>bucket</a><ul>
+<li>
+<a href=#raid_z1>raid_z1</a></li>
+<li>
+<a href=#raid_z3>raid_z3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#striped_pools>striped_pools</a><ul>
+<li>
+<a href=#compost>compost</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#destroy>destroy</a><ul>
+<li>
+<a href=#removing>removing</a></li>
+</ul>
+</li>
+<li>
+<a href=#feature_flags>feature_flags</a></li>
+<li>
+<a href=#flexibility>flexibility</a></li>
+<li>
+<a href=#maintenance_automation>maintenance_automation</a><ul>
+<li>
+<a href=#periodic>periodic</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_flexibility_than_RAID>more_flexibility_than_RAID</a></li>
+<li>
+<a href=#multiple_VDEVs>multiple_VDEVs</a><ul>
+<li>
+<a href=#cannot_remove_VDEV>cannot_remove_VDEV</a></li>
+<li>
+<a href=#writes_split_across>writes_split_across</a></li>
+</ul>
+</li>
+<li>
+<a href=#new_VDEVs_trivial>new_VDEVs_trivial</a></li>
+<li>
+<a href=#partition_alignment>partition_alignment</a><ul>
+<li>
+<a href=#avoid_alignment_problems>avoid_alignment_problems</a></li>
+</ul>
+</li>
+<li>
+<a href=#pool_integrity>pool_integrity</a><ul>
+<li>
+<a href=#checksums>checksums</a><ul>
+<li>
+<a href=#hashes>hashes</a></li>
+<li>
+<a href=#scrubbing>scrubbing</a><ul>
+<li>
+<a href=#scrub_frequency>scrub_frequency</a><ul>
+<li>
+<a href=#monthly_cheap_hw>monthly_cheap_hw</a></li>
+<li>
+<a href=#quarterly_reliable_hw>quarterly_reliable_hw</a></li>
+</ul>
+</li>
+<li>
+<a href=#self_healing>self_healing</a></li>
+<li>
+<a href=#verify_every_hash>verify_every_hash</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#self_healing>self_healing</a></li>
+</ul>
+</li>
+<li>
+<a href=#pools_vdevs_created_simultaneously>pools_vdevs_created_simultaneously</a></li>
+<li>
+<a href=#properties>properties</a><ul>
+<li>
+<a href=#changing_props>changing_props</a><ul>
+<li>
+<a href=#at_creation_time>at_creation_time</a></li>
+<li>
+<a href=#source_default_local_forever>source_default_local_forever</a></li>
+</ul>
+</li>
+<li>
+<a href=#viewing_props>viewing_props</a></li>
+</ul>
+</li>
+<li>
+<a href=#removing>removing</a></li>
+<li>
+<a href=#sector_size>sector_size</a><ul>
+<li>
+<a href=#cant_change_sector_size>cant_change_sector_size</a></li>
+<li>
+<a href=#default_sector_size>default_sector_size</a><ul>
+<li>
+<a href=#impedance_mismatch_inefficient>impedance_mismatch_inefficient</a><ul>
+<li>
+<a href=#preferrable_4kb_sectors>preferrable_4kb_sectors</a><ul>
+<li>
+<a href=#ashift_pool_var>ashift_pool_var</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#set_ashift_once>set_ashift_once</a></li>
+<li>
+<a href=#stores_pointer_to_fsroot>stores_pointer_to_fsroot</a></li>
+<li>
+<a href=#stripe>stripe</a><ul>
+<li>
+<a href=#chunk_written_to_device>chunk_written_to_device</a></li>
+<li>
+<a href=#dynamic_size>dynamic_size</a></li>
+</ul>
+</li>
+<li>
+<a href=#use_identical_VDEVs>use_identical_VDEVs</a></li>
+<li>
+<a href=#viewing>viewing</a></li>
+<li>
+<a href=#zpool_cli>zpool_cli</a><ul>
+<li>
+<a href=#create>create</a><ul>
+<li>
+<a href=#compost>compost</a></li>
+<li>
+<a href=#dash_o>dash_o</a><ul>
+<li>
+<a href=#at_creation_time>at_creation_time</a></li>
+</ul>
+</li>
+<li>
+<a href=#reflect>reflect</a></li>
+</ul>
+</li>
+<li>
+<a href=#history>history</a><ul>
+<li>
+<a href=#access_history>access_history</a></li>
+</ul>
+</li>
+<li>
+<a href=#set>set</a><ul>
+<li>
+<a href=#changing_props>changing_props</a><ul>
+<li>
+<a href=#at_creation_time>at_creation_time</a></li>
+<li>
+<a href=#source_default_local_forever>source_default_local_forever</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zpool_list>zpool_list</a><ul>
+<li>
+<a href=#more_detail>more_detail</a></li>
+</ul>
+</li>
+<li>
+<a href=#zpool_status>zpool_status</a><ul>
+<li>
+<a href=#more_detail>more_detail</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zpools>zpools</a><a id="zpools"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Zpools
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#128_blocks_reserved_uber>128_blocks_reserved_uber</a>, <a href=#access_history>access_history</a>, <a href=#cannot_shrink>cannot_shrink</a>, <a href=#creating_pools_vdevs>creating_pools_vdevs</a>, <a href=#destroy>destroy</a>, <a href=#feature_flags>feature_flags</a>, <a href=#flexibility>flexibility</a>, <a href=#maintenance_automation>maintenance_automation</a>, <a href=#more_flexibility_than_RAID>more_flexibility_than_RAID</a>, <a href=#multiple_VDEVs>multiple_VDEVs</a>, <a href=#new_VDEVs_trivial>new_VDEVs_trivial</a>, <a href=#partition_alignment>partition_alignment</a>, <a href=#pool_integrity>pool_integrity</a>, <a href=#pools_vdevs_created_simultaneously>pools_vdevs_created_simultaneously</a>, <a href=#properties>properties</a>, <a href=#removing>removing</a>, <a href=#sector_size>sector_size</a>, <a href=#set_ashift_once>set_ashift_once</a>, <a href=#stores_pointer_to_fsroot>stores_pointer_to_fsroot</a>, <a href=#stripe>stripe</a>, <a href=#use_identical_VDEVs>use_identical_VDEVs</a>, <a href=#viewing>viewing</a>, <a href=#zpool_cli>zpool_cli</a>, <a href=#zpool_list>zpool_list</a>, <a href=#zpool_status>zpool_status</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#128_blocks_reserved_uber>128_blocks_reserved_uber</a><a id="128_blocks_reserved_uber"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+128 Blocks reserved for uber blocks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#loops_back>loops_back</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#uberblock>uberblock</a>, <a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_blocks>zfs_blocks</a><a id="zfs_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ZFS blocks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#COW>COW</a>, <a href=#critical_blocks>critical_blocks</a>, <a href=#ditto_blocks>ditto_blocks</a>, <a href=#transaction_groups>transaction_groups</a>, <a href=#uberblock>uberblock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#COW>COW</a><a id="COW"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+COW (copy on write)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_blocks>zfs_blocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#uberblock>uberblock</a><a id="uberblock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+UberBlock
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#128_blocks_reserved_uber>128_blocks_reserved_uber</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_blocks>zfs_blocks</a>, <a href=#critical_blocks>critical_blocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stores_pointer_to_fsroot>stores_pointer_to_fsroot</a><a id="stores_pointer_to_fsroot"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Stores pointer filesystem root
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#critical_blocks>critical_blocks</a><a id="critical_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Critical Blocks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#uberblock>uberblock</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_blocks>zfs_blocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ditto_blocks>ditto_blocks</a><a id="ditto_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ditto Blocks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_blocks>zfs_blocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#loops_back>loops_back</a><a id="loops_back"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Loops back when last block is used
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#128_blocks_reserved_uber>128_blocks_reserved_uber</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stripe>stripe</a><a id="stripe"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Stripe
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#chunk_written_to_device>chunk_written_to_device</a> (definition), <a href=#dynamic_size>dynamic_size</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#chunk_written_to_device>chunk_written_to_device</a><a id="chunk_written_to_device"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Chunk of data written to single device
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#stripe>stripe</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transaction_groups>transaction_groups</a><a id="transaction_groups"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction Groups
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#commits_to_storage>commits_to_storage</a>, <a href=#txg>txg</a> (AKA)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_blocks>zfs_blocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#txg>txg</a><a id="txg"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+TXG
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction_groups>transaction_groups</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#commits_to_storage>commits_to_storage</a><a id="commits_to_storage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Commits changes to storage medium
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction_groups>transaction_groups</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dynamic_size>dynamic_size</a><a id="dynamic_size"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+default size 128kb, but can change dynamically to fit equipment qorkload
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#stripe>stripe</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_flexibility_than_RAID>more_flexibility_than_RAID</a><a id="more_flexibility_than_RAID"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More flexibility than a traditional RAID
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#flexibility>flexibility</a><a id="flexibility"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Flexibility
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#new_VDEVs_trivial>new_VDEVs_trivial</a><a id="new_VDEVs_trivial"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Trivial to add new VDEVs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multiple_VDEVs>multiple_VDEVs</a><a id="multiple_VDEVs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mulitple VDEVs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cannot_remove_VDEV>cannot_remove_VDEV</a>, <a href=#writes_split_across>writes_split_across</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#viewing>viewing</a><a id="viewing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Viewing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zpool_list>zpool_list</a><a id="zpool_list"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zpool List
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#more_detail>more_detail</a> (more detail than)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zpool_status>zpool_status</a><a id="zpool_status"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zpool_status
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#more_detail>more_detail</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_detail>more_detail</a><a id="more_detail"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More detail than =zpool list=, VDEV layout
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpool_status>zpool_status</a>, <a href=#zpool_list>zpool_list</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cannot_shrink>cannot_shrink</a><a id="cannot_shrink"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cannot shrink
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#writes_split_across>writes_split_across</a><a id="writes_split_across"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Writes split across them
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multiple_VDEVs>multiple_VDEVs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#use_identical_VDEVs>use_identical_VDEVs</a><a id="use_identical_VDEVs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Best practice: use only identical VDEVs in a pool
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cannot_remove_VDEV>cannot_remove_VDEV</a><a id="cannot_remove_VDEV"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cannot remove VDEV
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multiple_VDEVs>multiple_VDEVs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sector_size>sector_size</a><a id="sector_size"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sector size
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cant_change_sector_size>cant_change_sector_size</a>, <a href=#default_sector_size>default_sector_size</a> (default)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#default_sector_size>default_sector_size</a><a id="default_sector_size"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Default sector size 512kb
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#impedance_mismatch_inefficient>impedance_mismatch_inefficient</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sector_size>sector_size</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#impedance_mismatch_inefficient>impedance_mismatch_inefficient</a><a id="impedance_mismatch_inefficient"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Inefficient if physical sector size is 4kb, causes impedance mismatch which impacts performance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#preferrable_4kb_sectors>preferrable_4kb_sectors</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#default_sector_size>default_sector_size</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#preferrable_4kb_sectors>preferrable_4kb_sectors</a><a id="preferrable_4kb_sectors"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Almost always preferrable force ZFS to use 4kb sectors
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ashift_pool_var>ashift_pool_var</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#impedance_mismatch_inefficient>impedance_mismatch_inefficient</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ashift_pool_var>ashift_pool_var</a><a id="ashift_pool_var"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ashift: pool variable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#preferrable_4kb_sectors>preferrable_4kb_sectors</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+12=4096, 9=512 (powers of 2 values)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partition_alignment>partition_alignment</a><a id="partition_alignment"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parition Alignment
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#avoid_alignment_problems>avoid_alignment_problems</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#avoid_alignment_problems>avoid_alignment_problems</a><a id="avoid_alignment_problems"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Avoid Alignment problems: -a1m' to gpart add
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition_alignment>partition_alignment</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cant_change_sector_size>cant_change_sector_size</a><a id="cant_change_sector_size"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cant change virtual device sector size
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sector_size>sector_size</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#creating_pools_vdevs>creating_pools_vdevs</a><a id="creating_pools_vdevs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Creating pools and VDEVs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#add_vdev_existing_pool>add_vdev_existing_pool</a>, <a href=#log_devices>log_devices</a>, <a href=#mirrored_pools>mirrored_pools</a>, <a href=#multi_vdev_pools>multi_vdev_pools</a>, <a href=#raid_z>raid_z</a>, <a href=#striped_pools>striped_pools</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#striped_pools>striped_pools</a><a id="striped_pools"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Striped pools
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#compost>compost</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating_pools_vdevs>creating_pools_vdevs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pools_vdevs_created_simultaneously>pools_vdevs_created_simultaneously</a><a id="pools_vdevs_created_simultaneously"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pools/VDEVs created simultaneously
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#set_ashift_once>set_ashift_once</a><a id="set_ashift_once"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Set ashift only once before making pools
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#add_vdev_existing_pool>add_vdev_existing_pool</a><a id="add_vdev_existing_pool"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Adding a VDEV to an existing pool
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating_pools_vdevs>creating_pools_vdevs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mirrored_pools>mirrored_pools</a><a id="mirrored_pools"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mirrored Pools
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reflect>reflect</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating_pools_vdevs>creating_pools_vdevs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zpool_cli>zpool_cli</a><a id="zpool_cli"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zpool (cli)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#create>create</a>, <a href=#history>history</a>, <a href=#set>set</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#create>create</a><a id="create"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Create
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#compost>compost</a>, <a href=#dash_o>dash_o</a>, <a href=#reflect>reflect</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpool_cli>zpool_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reflect>reflect</a><a id="reflect"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reflect
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mirrored_pools>mirrored_pools</a>, <a href=#create>create</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#compost>compost</a><a id="compost"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+compost
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#striped_pools>striped_pools</a>, <a href=#create>create</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bucket>bucket</a><a id="bucket"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+bucket
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#raid_z1>raid_z1</a>, <a href=#raid_z3>raid_z3</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raid_z>raid_z</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#raid_z>raid_z</a><a id="raid_z"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAID z
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bucket>bucket</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating_pools_vdevs>creating_pools_vdevs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#raid_z1>raid_z1</a><a id="raid_z1"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAID-Z1
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bucket>bucket</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#raid_z3>raid_z3</a><a id="raid_z3"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAID-Z3
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bucket>bucket</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multi_vdev_pools>multi_vdev_pools</a><a id="multi_vdev_pools"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+multi-VDEV pools
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating_pools_vdevs>creating_pools_vdevs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_devices>log_devices</a><a id="log_devices"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+log devices
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cache>cache</a>, <a href=#log>log</a>, <a href=#reusing_providers>reusing_providers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating_pools_vdevs>creating_pools_vdevs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log>log</a><a id="log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#write_cache>write_cache</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_devices>log_devices</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cache>cache</a><a id="cache"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+cache
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#read_cache>read_cache</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_devices>log_devices</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_cache>read_cache</a><a id="read_cache"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read Cache
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cache>cache</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_cache>write_cache</a><a id="write_cache"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write Cache
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#improve_perf_dedicated_cache_ssd>improve_perf_dedicated_cache_ssd</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log>log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#improve_perf_dedicated_cache_ssd>improve_perf_dedicated_cache_ssd</a><a id="improve_perf_dedicated_cache_ssd"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Improve performance using dedicated caches on fast high-endurance SSD
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_cache>write_cache</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reusing_providers>reusing_providers</a><a id="reusing_providers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Re-Using Providers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_devices>log_devices</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pool_integrity>pool_integrity</a><a id="pool_integrity"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pool Integrity
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#checksums>checksums</a>, <a href=#self_healing>self_healing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#scrubbing>scrubbing</a><a id="scrubbing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Scrubbing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#scrub_frequency>scrub_frequency</a>, <a href=#self_healing>self_healing</a> (scrubbing can do automatic self-healing), <a href=#verify_every_hash>verify_every_hash</a> (description of what it does)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#checksums>checksums</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#checksums>checksums</a><a id="checksums"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Checksums
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#hashes>hashes</a>, <a href=#scrubbing>scrubbing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pool_integrity>pool_integrity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#self_healing>self_healing</a><a id="self_healing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Self-healing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pool_integrity>pool_integrity</a>, <a href=#scrubbing>scrubbing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#verify_every_hash>verify_every_hash</a><a id="verify_every_hash"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Verifies every hash in pool
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#scrubbing>scrubbing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hashes>hashes</a><a id="hashes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hashes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#checksums>checksums</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#scrub_frequency>scrub_frequency</a><a id="scrub_frequency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Scrub Frequency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#monthly_cheap_hw>monthly_cheap_hw</a>, <a href=#quarterly_reliable_hw>quarterly_reliable_hw</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#scrubbing>scrubbing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#quarterly_reliable_hw>quarterly_reliable_hw</a><a id="quarterly_reliable_hw"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Quarterly for reliable hardware
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#scrub_frequency>scrub_frequency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#monthly_cheap_hw>monthly_cheap_hw</a><a id="monthly_cheap_hw"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Monthly for cheap hardware
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#scrub_frequency>scrub_frequency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#properties>properties</a><a id="properties"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Properties
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#changing_props>changing_props</a>, <a href=#viewing_props>viewing_props</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#viewing_props>viewing_props</a><a id="viewing_props"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Viewing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#properties>properties</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#changing_props>changing_props</a><a id="changing_props"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Changing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#at_creation_time>at_creation_time</a>, <a href=#source_default_local_forever>source_default_local_forever</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#set>set</a>, <a href=#properties>properties</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#set>set</a><a id="set"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Set
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#changing_props>changing_props</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpool_cli>zpool_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#at_creation_time>at_creation_time</a><a id="at_creation_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+At creation time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#changing_props>changing_props</a>, <a href=#dash_o>dash_o</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dash_o>dash_o</a><a id="dash_o"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+-o
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#at_creation_time>at_creation_time</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#create>create</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#source_default_local_forever>source_default_local_forever</a><a id="source_default_local_forever"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Source: default. changing to local remains local forever
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#changing_props>changing_props</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#maintenance_automation>maintenance_automation</a><a id="maintenance_automation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Maintenance automation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#periodic>periodic</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#periodic>periodic</a><a id="periodic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+periodic(8)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#maintenance_automation>maintenance_automation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#history>history</a><a id="history"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+history
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#access_history>access_history</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpool_cli>zpool_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#access_history>access_history</a><a id="access_history"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Acess history
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#history>history</a>, <a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#removing>removing</a><a id="removing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+removing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#destroy>destroy</a>, <a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#destroy>destroy</a><a id="destroy"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+destroy
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#removing>removing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#feature_flags>feature_flags</a><a id="feature_flags"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Feature Flags
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zpools>zpools</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

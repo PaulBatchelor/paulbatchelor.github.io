@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec17</title>
+<h1>lec17</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec17">lec17</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Lecture 17: COPS, Causal Consistency
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#eventual_consistency>eventual_consistency</a><ul>
+<li>
+<a href=#concurrent_writes_conflicts>concurrent_writes_conflicts</a><ul>
+<li>
+<a href=#last_writer_wins>last_writer_wins</a></li>
+<li>
+<a href=#more_sophisticated_conflict_resolution>more_sophisticated_conflict_resolution</a></li>
+<li>
+<a href=#no_good_answer>no_good_answer</a></li>
+</ul>
+</li>
+<li>
+<a href=#strawman_1>strawman_1</a><ul>
+<li>
+<a href=#good_perf>good_perf</a></li>
+<li>
+<a href=#lots_of_parallelism>lots_of_parallelism</a></li>
+<li>
+<a href=#queue_outstanding_writes>queue_outstanding_writes</a></li>
+<li>
+<a href=#reads_less_than_writes>reads_less_than_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#weak_spec>weak_spec</a></li>
+<li>
+<a href=#which_write_is_recent>which_write_is_recent</a><ul>
+<li>
+<a href=#versioning>versioning</a><ul>
+<li>
+<a href=#wall_clock>wall_clock</a><ul>
+<li>
+<a href=#clocks_not_in_sync>clocks_not_in_sync</a><ul>
+<li>
+<a href=#lamport_clocks>lamport_clocks</a><ul>
+<li>
+<a href=#t_max>t_max</a><ul>
+<li>
+<a href=#calculate_t>calculate_t</a></li>
+</ul>
+</li>
+<li>
+<a href=#timestamps_related_realtime_cope_fast_clocks>timestamps_related_realtime_cope_fast_clocks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#same_timestamp>same_timestamp</a><ul>
+<li>
+<a href=#use_id_from_datacenter>use_id_from_datacenter</a><ul>
+<li>
+<a href=#placed_bottom_bits>placed_bottom_bits</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#writes_stops_eventually_same>writes_stops_eventually_same</a></li>
+<li>
+<a href=#anomaly>anomaly</a></li>
+</ul>
+</li>
+<li>
+<a href=#strawman_designs>strawman_designs</a><ul>
+<li>
+<a href=#strawman_1>strawman_1</a><ul>
+<li>
+<a href=#good_perf>good_perf</a></li>
+<li>
+<a href=#lots_of_parallelism>lots_of_parallelism</a></li>
+<li>
+<a href=#queue_outstanding_writes>queue_outstanding_writes</a></li>
+<li>
+<a href=#reads_less_than_writes>reads_less_than_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#strawman_2>strawman_2</a><ul>
+<li>
+<a href=#eventual_consistency_barriers>eventual_consistency_barriers</a><ul>
+<li>
+<a href=#requires_careful_thought>requires_careful_thought</a></li>
+</ul>
+</li>
+<li>
+<a href=#sync_operator>sync_operator</a><ul>
+<li>
+<a href=#encode_order_instead_of_waiting>encode_order_instead_of_waiting</a><ul>
+<li>
+<a href=#designated_log_server>designated_log_server</a><ul>
+<li>
+<a href=#non_scalable_solution>non_scalable_solution</a><ul>
+<li>
+<a href=#all_writes_through_log_server>all_writes_through_log_server</a><ul>
+<li>
+<a href=#eliminate_central_log>eliminate_central_log</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sent_log_order>sent_log_order</a></li>
+<li>
+<a href=#all_writes_through_log_server>all_writes_through_log_server</a><ul>
+<li>
+<a href=#eliminate_central_log>eliminate_central_log</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#quorum_avoid_faults>quorum_avoid_faults</a></li>
+<li>
+<a href=#waits_until_version>waits_until_version</a><ul>
+<li>
+<a href=#key_version>key_version</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#COPS>COPS</a><ul>
+<li>
+<a href=#causal_consistency>causal_consistency</a><ul>
+<li>
+<a href=#causal_dependency>causal_dependency</a><ul>
+<li>
+<a href=#client_reads_b_sees_a>client_reads_b_sees_a</a></li>
+</ul>
+</li>
+<li>
+<a href=#dep_relationship_transitive>dep_relationship_transitive</a></li>
+<li>
+<a href=#no_obligations_if_not_causal>no_obligations_if_not_causal</a></li>
+<li>
+<a href=#actions_induce_dependencies>actions_induce_dependencies</a><ul>
+<li>
+<a href=#client_put_dep_prev_put>client_put_dep_prev_put</a></li>
+<li>
+<a href=#get_corr_put>get_corr_put</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#close_to_users>close_to_users</a><ul>
+<li>
+<a href=#data_duplicated_across>data_duplicated_across</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_multiple_centers>data_multiple_centers</a><ul>
+<li>
+<a href=#data_duplicated_across>data_duplicated_across</a></li>
+</ul>
+</li>
+<li>
+<a href=#larger_scheme_causality_other_channels>larger_scheme_causality_other_channels</a></li>
+<li>
+<a href=#local_reads_writes>local_reads_writes</a></li>
+<li>
+<a href=#non_GT_COPS>non_GT_COPS</a><ul>
+<li>
+<a href=#context_accumulates_puts_gets>context_accumulates_puts_gets</a><ul>
+<li>
+<a href=#deps_in_put>deps_in_put</a><ul>
+<li>
+<a href=#passed_to_local_shard>passed_to_local_shard</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#get_transaction>get_transaction</a></li>
+<li>
+<a href=#cascading_wait_problem>cascading_wait_problem</a></li>
+</ul>
+</li>
+<li>
+<a href=#only_aware_certain_relationships>only_aware_certain_relationships</a></li>
+<li>
+<a href=#situations_no_desired_order_reads_writes>situations_no_desired_order_reads_writes</a><ul>
+<li>
+<a href=#ACL>ACL</a><ul>
+<li>
+<a href=#mutually_consistent_ACL>mutually_consistent_ACL</a><ul>
+<li>
+<a href=#COPS_GT>COPS_GT</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#transactions>transactions</a></li>
+<li>
+<a href=#at_least_new_as_deps>at_least_new_as_deps</a></li>
+</ul>
+</li>
+<li>
+<a href=#spanner_similar_pattern>spanner_similar_pattern</a></li>
+<li>
+<a href=#writes_procede_locally>writes_procede_locally</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#COPS>COPS</a><a id="COPS"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+COPS
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#causal_consistency>causal_consistency</a>, <a href=#close_to_users>close_to_users</a>, <a href=#data_multiple_centers>data_multiple_centers</a>, <a href=#larger_scheme_causality_other_channels>larger_scheme_causality_other_channels</a>, <a href=#local_reads_writes>local_reads_writes</a>, <a href=#non_GT_COPS>non_GT_COPS</a>, <a href=#only_aware_certain_relationships>only_aware_certain_relationships</a>, <a href=#situations_no_desired_order_reads_writes>situations_no_desired_order_reads_writes</a>, <a href=#spanner_similar_pattern>spanner_similar_pattern</a>, <a href=#writes_procede_locally>writes_procede_locally</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#data_multiple_centers>data_multiple_centers</a><a id="data_multiple_centers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data in multiple centers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#data_duplicated_across>data_duplicated_across</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#close_to_users>close_to_users</a><a id="close_to_users"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Want: data close to users
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#data_duplicated_across>data_duplicated_across</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#data_duplicated_across>data_duplicated_across</a><a id="data_duplicated_across"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data duplicated across multiple data centers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_multiple_centers>data_multiple_centers</a>, <a href=#close_to_users>close_to_users</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#spanner_similar_pattern>spanner_similar_pattern</a><a id="spanner_similar_pattern"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Spanner follows this similar pattern
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#writes_procede_locally>writes_procede_locally</a><a id="writes_procede_locally"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can we have a system where writes procede locally?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#local_reads_writes>local_reads_writes</a><a id="local_reads_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Local reads, local writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#strawman_designs>strawman_designs</a><a id="strawman_designs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Strawman designs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#strawman_1>strawman_1</a>, <a href=#strawman_2>strawman_2</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#strawman_1>strawman_1</a><a id="strawman_1"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Strawman 1
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#good_perf>good_perf</a>, <a href=#lots_of_parallelism>lots_of_parallelism</a>, <a href=#queue_outstanding_writes>queue_outstanding_writes</a>, <a href=#reads_less_than_writes>reads_less_than_writes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strawman_designs>strawman_designs</a>, <a href=#eventual_consistency>eventual_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#queue_outstanding_writes>queue_outstanding_writes</a><a id="queue_outstanding_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Queue of outstanding writes to send to others
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strawman_1>strawman_1</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#good_perf>good_perf</a><a id="good_perf"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Good performance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strawman_1>strawman_1</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lots_of_parallelism>lots_of_parallelism</a><a id="lots_of_parallelism"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lots of parallelism
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strawman_1>strawman_1</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reads_less_than_writes>reads_less_than_writes</a><a id="reads_less_than_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reads are less work than writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strawman_1>strawman_1</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#eventual_consistency>eventual_consistency</a><a id="eventual_consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Eventual Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#concurrent_writes_conflicts>concurrent_writes_conflicts</a>, <a href=#strawman_1>strawman_1</a>, <a href=#weak_spec>weak_spec</a>, <a href=#which_write_is_recent>which_write_is_recent</a>, <a href=#writes_stops_eventually_same>writes_stops_eventually_same</a> (description), <a href=#anomaly>anomaly</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#writes_stops_eventually_same>writes_stops_eventually_same</a><a id="writes_stops_eventually_same"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If writes stop, everything eventually has same data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#eventual_consistency>eventual_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#which_write_is_recent>which_write_is_recent</a><a id="which_write_is_recent"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Which write is most recent?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#versioning>versioning</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#eventual_consistency>eventual_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#versioning>versioning</a><a id="versioning"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Versioning
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#wall_clock>wall_clock</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#which_write_is_recent>which_write_is_recent</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wall_clock>wall_clock</a><a id="wall_clock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wall clock
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clocks_not_in_sync>clocks_not_in_sync</a>, <a href=#same_timestamp>same_timestamp</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#versioning>versioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clocks_not_in_sync>clocks_not_in_sync</a><a id="clocks_not_in_sync"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clocks not in sync?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lamport_clocks>lamport_clocks</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#wall_clock>wall_clock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lamport_clocks>lamport_clocks</a><a id="lamport_clocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lamport Clocks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#t_max>t_max</a>, <a href=#timestamps_related_realtime_cope_fast_clocks>timestamps_related_realtime_cope_fast_clocks</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks_not_in_sync>clocks_not_in_sync</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#same_timestamp>same_timestamp</a><a id="same_timestamp"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Same timestamp?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#use_id_from_datacenter>use_id_from_datacenter</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#wall_clock>wall_clock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#use_id_from_datacenter>use_id_from_datacenter</a><a id="use_id_from_datacenter"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use ID from datacenter
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#placed_bottom_bits>placed_bottom_bits</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#same_timestamp>same_timestamp</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#placed_bottom_bits>placed_bottom_bits</a><a id="placed_bottom_bits"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+placed in bottom bits
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#use_id_from_datacenter>use_id_from_datacenter</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#anomaly>anomaly</a><a id="anomaly"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Anomaly
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#eventual_consistency>eventual_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#weak_spec>weak_spec</a><a id="weak_spec"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Weak spec, lots of freedom in implementation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#eventual_consistency>eventual_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#timestamps_related_realtime_cope_fast_clocks>timestamps_related_realtime_cope_fast_clocks</a><a id="timestamps_related_realtime_cope_fast_clocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A way to assign timestamps that are related to relatime, but cope with fast clocks.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lamport_clocks>lamport_clocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#t_max>t_max</a><a id="t_max"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+T_max: highest version it has seen
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#calculate_t>calculate_t</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lamport_clocks>lamport_clocks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#calculate_t>calculate_t</a><a id="calculate_t"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+T = (T_max + 1, real time)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#t_max>t_max</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#concurrent_writes_conflicts>concurrent_writes_conflicts</a><a id="concurrent_writes_conflicts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Concurrent writes causing conflicts
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#last_writer_wins>last_writer_wins</a>, <a href=#more_sophisticated_conflict_resolution>more_sophisticated_conflict_resolution</a>, <a href=#no_good_answer>no_good_answer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#eventual_consistency>eventual_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_good_answer>no_good_answer</a><a id="no_good_answer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"real puzzle". No good answer
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#concurrent_writes_conflicts>concurrent_writes_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#last_writer_wins>last_writer_wins</a><a id="last_writer_wins"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Last writer wins policy
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#concurrent_writes_conflicts>concurrent_writes_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_sophisticated_conflict_resolution>more_sophisticated_conflict_resolution</a><a id="more_sophisticated_conflict_resolution"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More sophisticated conflict resolution
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#concurrent_writes_conflicts>concurrent_writes_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#strawman_2>strawman_2</a><a id="strawman_2"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Strawman 2
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#eventual_consistency_barriers>eventual_consistency_barriers</a>, <a href=#sync_operator>sync_operator</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strawman_designs>strawman_designs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#eventual_consistency_barriers>eventual_consistency_barriers</a><a id="eventual_consistency_barriers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Eventual consistency plus barriers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#requires_careful_thought>requires_careful_thought</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strawman_2>strawman_2</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sync_operator>sync_operator</a><a id="sync_operator"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sync Operator
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#encode_order_instead_of_waiting>encode_order_instead_of_waiting</a>, <a href=#quorum_avoid_faults>quorum_avoid_faults</a>, <a href=#waits_until_version>waits_until_version</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strawman_2>strawman_2</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#waits_until_version>waits_until_version</a><a id="waits_until_version"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Waits until all data centers know at least up to version number
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#key_version>key_version</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync_operator>sync_operator</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#key_version>key_version</a><a id="key_version"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Key, version number
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#waits_until_version>waits_until_version</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#requires_careful_thought>requires_careful_thought</a><a id="requires_careful_thought"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Requires careful thought from the programmer to use
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#eventual_consistency_barriers>eventual_consistency_barriers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#quorum_avoid_faults>quorum_avoid_faults</a><a id="quorum_avoid_faults"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use of quorum to avoid fault tolerance problems
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync_operator>sync_operator</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#encode_order_instead_of_waiting>encode_order_instead_of_waiting</a><a id="encode_order_instead_of_waiting"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Instead of waiting, encode the order
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#designated_log_server>designated_log_server</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sync_operator>sync_operator</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#designated_log_server>designated_log_server</a><a id="designated_log_server"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Each data center has designated log server in charge of communicating to other data centers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#non_scalable_solution>non_scalable_solution</a>, <a href=#sent_log_order>sent_log_order</a>, <a href=#all_writes_through_log_server>all_writes_through_log_server</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#encode_order_instead_of_waiting>encode_order_instead_of_waiting</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#non_scalable_solution>non_scalable_solution</a><a id="non_scalable_solution"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+non-scalable solution
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#all_writes_through_log_server>all_writes_through_log_server</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#designated_log_server>designated_log_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sent_log_order>sent_log_order</a><a id="sent_log_order"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sent in log ordre
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#designated_log_server>designated_log_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#all_writes_through_log_server>all_writes_through_log_server</a><a id="all_writes_through_log_server"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+All writes go through log server
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#eliminate_central_log>eliminate_central_log</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#designated_log_server>designated_log_server</a>, <a href=#non_scalable_solution>non_scalable_solution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#eliminate_central_log>eliminate_central_log</a><a id="eliminate_central_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to elimante central log server?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#all_writes_through_log_server>all_writes_through_log_server</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#non_GT_COPS>non_GT_COPS</a><a id="non_GT_COPS"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+non-GT COPS
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#context_accumulates_puts_gets>context_accumulates_puts_gets</a>, <a href=#get_transaction>get_transaction</a> (abbrevation), <a href=#cascading_wait_problem>cascading_wait_problem</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#get_transaction>get_transaction</a><a id="get_transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GT = get transaction
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#non_GT_COPS>non_GT_COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cascading_wait_problem>cascading_wait_problem</a><a id="cascading_wait_problem"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cascading wait problem
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#non_GT_COPS>non_GT_COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#context_accumulates_puts_gets>context_accumulates_puts_gets</a><a id="context_accumulates_puts_gets"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Context that accumulates puts/gets
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#deps_in_put>deps_in_put</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#non_GT_COPS>non_GT_COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#deps_in_put>deps_in_put</a><a id="deps_in_put"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dependencies in "put"
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#passed_to_local_shard>passed_to_local_shard</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#context_accumulates_puts_gets>context_accumulates_puts_gets</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#passed_to_local_shard>passed_to_local_shard</a><a id="passed_to_local_shard"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Passed to local shard server
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deps_in_put>deps_in_put</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#causal_consistency>causal_consistency</a><a id="causal_consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Causal Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#causal_dependency>causal_dependency</a>, <a href=#dep_relationship_transitive>dep_relationship_transitive</a>, <a href=#no_obligations_if_not_causal>no_obligations_if_not_causal</a>, <a href=#actions_induce_dependencies>actions_induce_dependencies</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#actions_induce_dependencies>actions_induce_dependencies</a><a id="actions_induce_dependencies"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clients actions induce dependencies
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_put_dep_prev_put>client_put_dep_prev_put</a>, <a href=#get_corr_put>get_corr_put</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#causal_consistency>causal_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#client_put_dep_prev_put>client_put_dep_prev_put</a><a id="client_put_dep_prev_put"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Client put/get, get/put, or put/put depends on previous put
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#actions_induce_dependencies>actions_induce_dependencies</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#get_corr_put>get_corr_put</a><a id="get_corr_put"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Client get corresponds to a put
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#actions_induce_dependencies>actions_induce_dependencies</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dep_relationship_transitive>dep_relationship_transitive</a><a id="dep_relationship_transitive"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dependency relationship is transitive
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#causal_consistency>causal_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#causal_dependency>causal_dependency</a><a id="causal_dependency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Causal Dependency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#client_reads_b_sees_a>client_reads_b_sees_a</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#causal_consistency>causal_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_obligations_if_not_causal>no_obligations_if_not_causal</a><a id="no_obligations_if_not_causal"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If updates not causally related, no obligations about maintaining order.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#causal_consistency>causal_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#client_reads_b_sees_a>client_reads_b_sees_a</a><a id="client_reads_b_sees_a"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If A depends on B, and client reads B, the client is guaranteed to see A
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#causal_dependency>causal_dependency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#only_aware_certain_relationships>only_aware_certain_relationships</a><a id="only_aware_certain_relationships"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Only aware of certain relationships
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#larger_scheme_causality_other_channels>larger_scheme_causality_other_channels</a><a id="larger_scheme_causality_other_channels"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+In the larger scheme: causality is often conveyed through channels not aware of by COPS
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+this was kind of vague in the lecture. There was an example given about a human operator calling another human to explicitely look at a node because it updated.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#situations_no_desired_order_reads_writes>situations_no_desired_order_reads_writes</a><a id="situations_no_desired_order_reads_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Situations where no one order of reads or writes will yield desired behavior.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ACL>ACL</a>, <a href=#transactions>transactions</a> (mechanism used to help with this (I think?)), <a href=#at_least_new_as_deps>at_least_new_as_deps</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#COPS>COPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transactions>transactions</a><a id="transactions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transactions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#situations_no_desired_order_reads_writes>situations_no_desired_order_reads_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ACL>ACL</a><a id="ACL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ACL (Access Control List)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mutually_consistent_ACL>mutually_consistent_ACL</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#situations_no_desired_order_reads_writes>situations_no_desired_order_reads_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#at_least_new_as_deps>at_least_new_as_deps</a><a id="at_least_new_as_deps"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+At least as new as dependencies
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#situations_no_desired_order_reads_writes>situations_no_desired_order_reads_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mutually_consistent_ACL>mutually_consistent_ACL</a><a id="mutually_consistent_ACL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to get mutually consistent ACL?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#COPS_GT>COPS_GT</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACL>ACL</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#COPS_GT>COPS_GT</a><a id="COPS_GT"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+COPS GT
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mutually_consistent_ACL>mutually_consistent_ACL</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Not elaborated on in lecture (out of time)
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

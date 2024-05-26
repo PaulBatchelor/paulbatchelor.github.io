@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>mastering_zfs/ch07</title>
+<h1>ch07</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/mastering_zfs">mastering_zfs</a> / <a href="/brain/dz/mastering_zfs/ch07">ch07</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 7: Snapshots and Clones
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#clone>clone</a><ul>
+<li>
+<a href=#clone_create>clone_create</a></li>
+<li>
+<a href=#clone_delete>clone_delete</a><ul>
+<li>
+<a href=#clone_exists_prevents_snap_removal>clone_exists_prevents_snap_removal</a></li>
+</ul>
+</li>
+<li>
+<a href=#clone_view>clone_view</a><ul>
+<li>
+<a href=#origin_prop_tells_if_clone>origin_prop_tells_if_clone</a></li>
+</ul>
+</li>
+<li>
+<a href=#fork_fs_snap>fork_fs_snap</a></li>
+<li>
+<a href=#fork_of_fs>fork_of_fs</a></li>
+<li>
+<a href=#initially_no_disk_space>initially_no_disk_space</a></li>
+<li>
+<a href=#new_fs_from_snap>new_fs_from_snap</a></li>
+<li>
+<a href=#promoting>promoting</a><ul>
+<li>
+<a href=#reverse_parent_child>reverse_parent_child</a></li>
+</ul>
+</li>
+<li>
+<a href=#receive_no_updates_from_dataset>receive_no_updates_from_dataset</a></li>
+<li>
+<a href=#writable>writable</a></li>
+</ul>
+</li>
+<li>
+<a href=#snapshot>snapshot</a><ul>
+<li>
+<a href=#accessing>accessing</a><ul>
+<li>
+<a href=#snapdir>snapdir</a><ul>
+<li>
+<a href=#snapdir_prop>snapdir_prop</a><ul>
+<li>
+<a href=#hidden>hidden</a></li>
+<li>
+<a href=#visible>visible</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#automatic_snapshot_regimen>automatic_snapshot_regimen</a></li>
+<li>
+<a href=#bookmarks>bookmarks</a></li>
+<li>
+<a href=#copy_on_write>copy_on_write</a><ul>
+<li>
+<a href=#change_file_identify_blocks>change_file_identify_blocks</a><ul>
+<li>
+<a href=#keeps_track_version_blocks>keeps_track_version_blocks</a></li>
+</ul>
+</li>
+<li>
+<a href=#never_overwrites_blocks>never_overwrites_blocks</a></li>
+</ul>
+</li>
+<li>
+<a href=#creating_snaps>creating_snaps</a><ul>
+<li>
+<a href=#copies_fs_top_block>copies_fs_top_block</a><ul>
+<li>
+<a href=#live_uses_copy_snap_orig>live_uses_copy_snap_orig</a></li>
+</ul>
+</li>
+<li>
+<a href=#dead_list>dead_list</a><ul>
+<li>
+<a href=#block_freed_when>block_freed_when</a></li>
+<li>
+<a href=#delete_snap_update_deadlist>delete_snap_update_deadlist</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#deleting>deleting</a><ul>
+<li>
+<a href=#dry_runs>dry_runs</a></li>
+<li>
+<a href=#range>range</a><ul>
+<li>
+<a href=#range_notation>range_notation</a></li>
+</ul>
+</li>
+<li>
+<a href=#recursive>recursive</a></li>
+</ul>
+</li>
+<li>
+<a href=#diffing>diffing</a><ul>
+<li>
+<a href=#file_states>file_states</a><ul>
+<li>
+<a href=#state_added>state_added</a></li>
+<li>
+<a href=#state_modified>state_modified</a></li>
+<li>
+<a href=#state_removed>state_removed</a></li>
+<li>
+<a href=#state_renamed>state_renamed</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#fork_fs_snap>fork_fs_snap</a></li>
+<li>
+<a href=#holds>holds</a></li>
+<li>
+<a href=#keeps_track_version_blocks>keeps_track_version_blocks</a></li>
+<li>
+<a href=#list_of_blocks>list_of_blocks</a></li>
+<li>
+<a href=#mounting>mounting</a></li>
+<li>
+<a href=#read_only>read_only</a></li>
+<li>
+<a href=#recursive_snaps>recursive_snaps</a></li>
+<li>
+<a href=#revert>revert</a><ul>
+<li>
+<a href=#only_rollback_most_recent>only_rollback_most_recent</a></li>
+</ul>
+</li>
+<li>
+<a href=#underpin_repl>underpin_repl</a></li>
+<li>
+<a href=#using>using</a><ul>
+<li>
+<a href=#create>create</a></li>
+</ul>
+</li>
+<li>
+<a href=#view>view</a><ul>
+<li>
+<a href=#by_type>by_type</a></li>
+<li>
+<a href=#control_output>control_output</a></li>
+<li>
+<a href=#per_snap_space_use>per_snap_space_use</a><ul>
+<li>
+<a href=#written_prop>written_prop</a></li>
+</ul>
+</li>
+<li>
+<a href=#scriptable_output>scriptable_output</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zfs_cli>zfs_cli</a><ul>
+<li>
+<a href=#zfs_clone>zfs_clone</a><ul>
+<li>
+<a href=#clone_create>clone_create</a></li>
+</ul>
+</li>
+<li>
+<a href=#zfs_clone_destroy>zfs_clone_destroy</a><ul>
+<li>
+<a href=#clone_delete>clone_delete</a><ul>
+<li>
+<a href=#clone_exists_prevents_snap_removal>clone_exists_prevents_snap_removal</a></li>
+</ul>
+</li>
+<li>
+<a href=#dash_big_r>dash_big_r</a><ul>
+<li>
+<a href=#clone_exists_prevents_snap_removal>clone_exists_prevents_snap_removal</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zfs_destroy>zfs_destroy</a><ul>
+<li>
+<a href=#dash_n>dash_n</a><ul>
+<li>
+<a href=#dry_runs>dry_runs</a></li>
+</ul>
+</li>
+<li>
+<a href=#dash_r>dash_r</a><ul>
+<li>
+<a href=#recursive>recursive</a></li>
+<li>
+<a href=#recursive_snaps>recursive_snaps</a></li>
+</ul>
+</li>
+<li>
+<a href=#dash_vn>dash_vn</a><ul>
+<li>
+<a href=#dry_runs>dry_runs</a></li>
+</ul>
+</li>
+<li>
+<a href=#deleting>deleting</a><ul>
+<li>
+<a href=#dry_runs>dry_runs</a></li>
+<li>
+<a href=#range>range</a><ul>
+<li>
+<a href=#range_notation>range_notation</a></li>
+</ul>
+</li>
+<li>
+<a href=#recursive>recursive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zfs_diff>zfs_diff</a><ul>
+<li>
+<a href=#diffing>diffing</a><ul>
+<li>
+<a href=#file_states>file_states</a><ul>
+<li>
+<a href=#state_added>state_added</a></li>
+<li>
+<a href=#state_modified>state_modified</a></li>
+<li>
+<a href=#state_removed>state_removed</a></li>
+<li>
+<a href=#state_renamed>state_renamed</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#file_states>file_states</a><ul>
+<li>
+<a href=#state_added>state_added</a></li>
+<li>
+<a href=#state_modified>state_modified</a></li>
+<li>
+<a href=#state_removed>state_removed</a></li>
+<li>
+<a href=#state_renamed>state_renamed</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zfs_list>zfs_list</a><ul>
+<li>
+<a href=#dash_o>dash_o</a><ul>
+<li>
+<a href=#control_output>control_output</a></li>
+<li>
+<a href=#written_prop>written_prop</a></li>
+</ul>
+</li>
+<li>
+<a href=#dash_p>dash_p</a><ul>
+<li>
+<a href=#scriptable_output>scriptable_output</a></li>
+</ul>
+</li>
+<li>
+<a href=#dash_t>dash_t</a><ul>
+<li>
+<a href=#by_type>by_type</a></li>
+<li>
+<a href=#zfs_all>zfs_all</a></li>
+<li>
+<a href=#zfs_snapshot_option>zfs_snapshot_option</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zfs_list_t_snapshot>zfs_list_t_snapshot</a><ul>
+<li>
+<a href=#view>view</a><ul>
+<li>
+<a href=#by_type>by_type</a></li>
+<li>
+<a href=#control_output>control_output</a></li>
+<li>
+<a href=#per_snap_space_use>per_snap_space_use</a><ul>
+<li>
+<a href=#written_prop>written_prop</a></li>
+</ul>
+</li>
+<li>
+<a href=#scriptable_output>scriptable_output</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zfs_promote>zfs_promote</a></li>
+<li>
+<a href=#zfs_rollback>zfs_rollback</a><ul>
+<li>
+<a href=#revert>revert</a><ul>
+<li>
+<a href=#only_rollback_most_recent>only_rollback_most_recent</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#zfs_snapshot>zfs_snapshot</a><ul>
+<li>
+<a href=#create>create</a></li>
+<li>
+<a href=#dash_r>dash_r</a><ul>
+<li>
+<a href=#recursive>recursive</a></li>
+<li>
+<a href=#recursive_snaps>recursive_snaps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snapshot>snapshot</a><a id="snapshot"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+snapshot
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#accessing>accessing</a>, <a href=#automatic_snapshot_regimen>automatic_snapshot_regimen</a>, <a href=#bookmarks>bookmarks</a>, <a href=#copy_on_write>copy_on_write</a>, <a href=#creating_snaps>creating_snaps</a>, <a href=#deleting>deleting</a>, <a href=#diffing>diffing</a>, <a href=#fork_fs_snap>fork_fs_snap</a>, <a href=#holds>holds</a>, <a href=#keeps_track_version_blocks>keeps_track_version_blocks</a> (how it works), <a href=#list_of_blocks>list_of_blocks</a>, <a href=#mounting>mounting</a>, <a href=#read_only>read_only</a>, <a href=#recursive_snaps>recursive_snaps</a>, <a href=#revert>revert</a>, <a href=#underpin_repl>underpin_repl</a>, <a href=#using>using</a>, <a href=#view>view</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_only>read_only</a><a id="read_only"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+read-only
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#underpin_repl>underpin_repl</a><a id="underpin_repl"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Underpinnings of replication in ZFS
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#copy_on_write>copy_on_write</a><a id="copy_on_write"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Copy-on-Write
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#change_file_identify_blocks>change_file_identify_blocks</a> (how it works), <a href=#never_overwrites_blocks>never_overwrites_blocks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clone>clone</a><a id="clone"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+clone
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clone_create>clone_create</a>, <a href=#clone_delete>clone_delete</a>, <a href=#clone_view>clone_view</a>, <a href=#fork_fs_snap>fork_fs_snap</a> (description), <a href=#fork_of_fs>fork_of_fs</a>, <a href=#initially_no_disk_space>initially_no_disk_space</a>, <a href=#new_fs_from_snap>new_fs_from_snap</a> (description), <a href=#promoting>promoting</a>, <a href=#receive_no_updates_from_dataset>receive_no_updates_from_dataset</a>, <a href=#writable>writable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fork_fs_snap>fork_fs_snap</a><a id="fork_fs_snap"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fork of filesystem based on snapshot
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>, <a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#never_overwrites_blocks>never_overwrites_blocks</a><a id="never_overwrites_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ZFS never overwrites blocks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#copy_on_write>copy_on_write</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#change_file_identify_blocks>change_file_identify_blocks</a><a id="change_file_identify_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+When a change is made to a file, it identifies the changed blocks, then copies those blocks to a new location
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#keeps_track_version_blocks>keeps_track_version_blocks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#copy_on_write>copy_on_write</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#keeps_track_version_blocks>keeps_track_version_blocks</a><a id="keeps_track_version_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+created by keeping track of deduplicated versions of changed blocks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#change_file_identify_blocks>change_file_identify_blocks</a>, <a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#creating_snaps>creating_snaps</a><a id="creating_snaps"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Creating
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#copies_fs_top_block>copies_fs_top_block</a>, <a href=#dead_list>dead_list</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#copies_fs_top_block>copies_fs_top_block</a><a id="copies_fs_top_block"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+copies filesystem top-level metadata block
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#live_uses_copy_snap_orig>live_uses_copy_snap_orig</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating_snaps>creating_snaps</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dead_list>dead_list</a><a id="dead_list"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+dead list
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#block_freed_when>block_freed_when</a>, <a href=#delete_snap_update_deadlist>delete_snap_update_deadlist</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating_snaps>creating_snaps</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#live_uses_copy_snap_orig>live_uses_copy_snap_orig</a><a id="live_uses_copy_snap_orig"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Live system uses copy, snap shot uses original
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#copies_fs_top_block>copies_fs_top_block</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#delete_snap_update_deadlist>delete_snap_update_deadlist</a><a id="delete_snap_update_deadlist"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Deleting the most recent snapshot will update the deadlist. It will remove blocks that were only required by that snapshot.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dead_list>dead_list</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#block_freed_when>block_freed_when</a><a id="block_freed_when"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Block is only freed when no filesystem, volume, or snapshot is using it.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dead_list>dead_list</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#list_of_blocks>list_of_blocks</a><a id="list_of_blocks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+List of blocks used inthe live dataset when snapshot was taken.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_cli>zfs_cli</a><a id="zfs_cli"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zfs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#zfs_clone>zfs_clone</a>, <a href=#zfs_clone_destroy>zfs_clone_destroy</a>, <a href=#zfs_destroy>zfs_destroy</a>, <a href=#zfs_diff>zfs_diff</a>, <a href=#zfs_list>zfs_list</a>, <a href=#zfs_list_t_snapshot>zfs_list_t_snapshot</a>, <a href=#zfs_promote>zfs_promote</a>, <a href=#zfs_rollback>zfs_rollback</a>, <a href=#zfs_snapshot>zfs_snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mounting>mounting</a><a id="mounting"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mounting
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#deleting>deleting</a><a id="deleting"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+deleting
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dry_runs>dry_runs</a>, <a href=#range>range</a>, <a href=#recursive>recursive</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>, <a href=#zfs_destroy>zfs_destroy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_destroy>zfs_destroy</a><a id="zfs_destroy"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+destroy
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dash_n>dash_n</a>, <a href=#dash_r>dash_r</a>, <a href=#dash_vn>dash_vn</a>, <a href=#deleting>deleting</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dash_n>dash_n</a><a id="dash_n"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+-n
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dry_runs>dry_runs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_destroy>zfs_destroy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dash_vn>dash_vn</a><a id="dash_vn"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+-vn
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dry_runs>dry_runs</a> (a little bit more verbose)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_destroy>zfs_destroy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dry_runs>dry_runs</a><a id="dry_runs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dry Runs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dash_n>dash_n</a>, <a href=#dash_vn>dash_vn</a>, <a href=#deleting>deleting</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#recursive>recursive</a><a id="recursive"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+recursive
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deleting>deleting</a>, <a href=#dash_r>dash_r</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dash_r>dash_r</a><a id="dash_r"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+-r
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#recursive>recursive</a>, <a href=#recursive_snaps>recursive_snaps</a> (snapshot -r)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_snapshot>zfs_snapshot</a>, <a href=#zfs_destroy>zfs_destroy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#range>range</a><a id="range"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+range
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#range_notation>range_notation</a> (notation(ish))
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deleting>deleting</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#range_notation>range_notation</a><a id="range_notation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+[from snapshot] % [to snapshot[
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#range>range</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#revert>revert</a><a id="revert"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+revert
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#only_rollback_most_recent>only_rollback_most_recent</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>, <a href=#zfs_rollback>zfs_rollback</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#only_rollback_most_recent>only_rollback_most_recent</a><a id="only_rollback_most_recent"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can only roll back to most recent snapshot. No forward/backward
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#revert>revert</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_rollback>zfs_rollback</a><a id="zfs_rollback"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+rollback
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#revert>revert</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#diffing>diffing</a><a id="diffing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Diffing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#file_states>file_states</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>, <a href=#zfs_diff>zfs_diff</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_diff>zfs_diff</a><a id="zfs_diff"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+diff
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#diffing>diffing</a>, <a href=#file_states>file_states</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#file_states>file_states</a><a id="file_states"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+File States
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#state_added>state_added</a>, <a href=#state_modified>state_modified</a>, <a href=#state_removed>state_removed</a>, <a href=#state_renamed>state_renamed</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_diff>zfs_diff</a>, <a href=#diffing>diffing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#state_removed>state_removed</a><a id="state_removed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"-" = removed
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#file_states>file_states</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#state_added>state_added</a><a id="state_added"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"+" = added
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#file_states>file_states</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#state_modified>state_modified</a><a id="state_modified"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"M" = modified
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#file_states>file_states</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#state_renamed>state_renamed</a><a id="state_renamed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"R" = renamed
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#file_states>file_states</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#holds>holds</a><a id="holds"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Holds
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#automatic_snapshot_regimen>automatic_snapshot_regimen</a><a id="automatic_snapshot_regimen"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+automatic snapshot regimen
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bookmarks>bookmarks</a><a id="bookmarks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+bookmarks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#using>using</a><a id="using"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+using
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#create>create</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#create>create</a><a id="create"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+create
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#using>using</a>, <a href=#zfs_snapshot>zfs_snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_snapshot>zfs_snapshot</a><a id="zfs_snapshot"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+snapshot
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#create>create</a>, <a href=#dash_r>dash_r</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#view>view</a><a id="view"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+view
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#by_type>by_type</a>, <a href=#control_output>control_output</a>, <a href=#per_snap_space_use>per_snap_space_use</a>, <a href=#scriptable_output>scriptable_output</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>, <a href=#zfs_list_t_snapshot>zfs_list_t_snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_list_t_snapshot>zfs_list_t_snapshot</a><a id="zfs_list_t_snapshot"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zfs list -t snapshot
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#view>view</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_list>zfs_list</a><a id="zfs_list"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+list
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dash_o>dash_o</a>, <a href=#dash_p>dash_p</a>, <a href=#dash_t>dash_t</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#recursive_snaps>recursive_snaps</a><a id="recursive_snaps"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+recursive snapshots
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>, <a href=#dash_r>dash_r</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#by_type>by_type</a><a id="by_type"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+by type
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dash_t>dash_t</a>, <a href=#view>view</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dash_t>dash_t</a><a id="dash_t"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+-t
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#by_type>by_type</a>, <a href=#zfs_all>zfs_all</a>, <a href=#zfs_snapshot_option>zfs_snapshot_option</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_list>zfs_list</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#control_output>control_output</a><a id="control_output"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+control_output
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dash_o>dash_o</a>, <a href=#view>view</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dash_o>dash_o</a><a id="dash_o"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+-o
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#control_output>control_output</a>, <a href=#written_prop>written_prop</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_list>zfs_list</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#scriptable_output>scriptable_output</a><a id="scriptable_output"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+scriptable output
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dash_p>dash_p</a>, <a href=#view>view</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dash_p>dash_p</a><a id="dash_p"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+-p
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#scriptable_output>scriptable_output</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_list>zfs_list</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_all>zfs_all</a><a id="zfs_all"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+all
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dash_t>dash_t</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_snapshot_option>zfs_snapshot_option</a><a id="zfs_snapshot_option"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+snapshot
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dash_t>dash_t</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#per_snap_space_use>per_snap_space_use</a><a id="per_snap_space_use"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+per-snapshot space use
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#written_prop>written_prop</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#view>view</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#written_prop>written_prop</a><a id="written_prop"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"written" property
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#per_snap_space_use>per_snap_space_use</a>, <a href=#dash_o>dash_o</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#accessing>accessing</a><a id="accessing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+accessing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#snapdir>snapdir</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot>snapshot</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snapdir>snapdir</a><a id="snapdir"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+snapshot directory/snapdir
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#snapdir_prop>snapdir_prop</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#accessing>accessing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snapdir_prop>snapdir_prop</a><a id="snapdir_prop"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+snapdir property
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#hidden>hidden</a>, <a href=#visible>visible</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapdir>snapdir</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#visible>visible</a><a id="visible"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+visible
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapdir_prop>snapdir_prop</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hidden>hidden</a><a id="hidden"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+hidden
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapdir_prop>snapdir_prop</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#new_fs_from_snap>new_fs_from_snap</a><a id="new_fs_from_snap"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+new filesystem created from snapshot
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#writable>writable</a><a id="writable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+writable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fork_of_fs>fork_of_fs</a><a id="fork_of_fs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+fork or branch of filesystem
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#initially_no_disk_space>initially_no_disk_space</a><a id="initially_no_disk_space"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+no disk space initially
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#receive_no_updates_from_dataset>receive_no_updates_from_dataset</a><a id="receive_no_updates_from_dataset"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+receives no updates made in original dataset
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clone_create>clone_create</a><a id="clone_create"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+creating
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_clone>zfs_clone</a>, <a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_clone>zfs_clone</a><a id="zfs_clone"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+clone
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clone_create>clone_create</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clone_view>clone_view</a><a id="clone_view"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+viewing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#origin_prop_tells_if_clone>origin_prop_tells_if_clone</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#origin_prop_tells_if_clone>origin_prop_tells_if_clone</a><a id="origin_prop_tells_if_clone"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+the "origin" property is the only way to tell if it is clone or not
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clone_view>clone_view</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clone_delete>clone_delete</a><a id="clone_delete"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+deleting
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clone_exists_prevents_snap_removal>clone_exists_prevents_snap_removal</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_clone_destroy>zfs_clone_destroy</a>, <a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clone_exists_prevents_snap_removal>clone_exists_prevents_snap_removal</a><a id="clone_exists_prevents_snap_removal"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Existence of clone prevents source snap from being deleted
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dash_big_r>dash_big_r</a>, <a href=#clone_delete>clone_delete</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_clone_destroy>zfs_clone_destroy</a><a id="zfs_clone_destroy"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+destroy
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clone_delete>clone_delete</a>, <a href=#dash_big_r>dash_big_r</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dash_big_r>dash_big_r</a><a id="dash_big_r"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+-R
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clone_exists_prevents_snap_removal>clone_exists_prevents_snap_removal</a> (removes dependent clones)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_clone_destroy>zfs_clone_destroy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#promoting>promoting</a><a id="promoting"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+promoting
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reverse_parent_child>reverse_parent_child</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clone>clone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reverse_parent_child>reverse_parent_child</a><a id="reverse_parent_child"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+reverse parent/child relationship original/clone
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#promoting>promoting</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zfs_promote>zfs_promote</a><a id="zfs_promote"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+promote
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zfs_cli>zfs_cli</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

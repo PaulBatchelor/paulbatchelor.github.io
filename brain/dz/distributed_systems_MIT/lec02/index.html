@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec02</title>
+<h1>lec02</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec02">lec02</a>
+<p></p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#RACE>RACE</a><ul>
+<li>
+<a href=#solution_lock>solution_lock</a><ul>
+<li>
+<a href=#mutex>mutex</a><ul>
+<li>
+<a href=#locks_stop_threads>locks_stop_threads</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#shared_memory_bug>shared_memory_bug</a></li>
+</ul>
+</li>
+<li>
+<a href=#coord>coord</a><ul>
+<li>
+<a href=#sync_cond>sync_cond</a></li>
+<li>
+<a href=#channels>channels</a></li>
+<li>
+<a href=#wait_for_things>wait_for_things</a></li>
+<li>
+<a href=#wait_group>wait_group</a></li>
+</ul>
+</li>
+<li>
+<a href=#deadlock>deadlock</a></li>
+<li>
+<a href=#threads>threads</a><ul>
+<li>
+<a href=#event_driven>event_driven</a><ul>
+<li>
+<a href=#single_thread>single_thread</a></li>
+</ul>
+</li>
+<li>
+<a href=#goroutines>goroutines</a></li>
+<li>
+<a href=#io_conc>io_conc</a></li>
+<li>
+<a href=#parallelism>parallelism</a></li>
+<li>
+<a href=#sep_prog>sep_prog</a><ul>
+<li>
+<a href=#same_address>same_address</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#while_one>while_one</a></li>
+<li>
+<a href=#why_important>why_important</a><ul>
+<li>
+<a href=#convenience>convenience</a></li>
+<li>
+<a href=#io_conc>io_conc</a></li>
+<li>
+<a href=#parallelism>parallelism</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#threads>threads</a><a id="threads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Threads
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#event_driven>event_driven</a>, <a href=#goroutines>goroutines</a>, <a href=#io_conc>io_conc</a>, <a href=#parallelism>parallelism</a>, <a href=#sep_prog>sep_prog</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#parallelism>parallelism</a><a id="parallelism"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parallelism
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#threads>threads</a>, <a href=#why_important>why_important</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sep_prog>sep_prog</a><a id="sep_prog"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Separate program counter, stacks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#same_address>same_address</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#threads>threads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#io_conc>io_conc</a><a id="io_conc"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+I/O Concurrency
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#threads>threads</a>, <a href=#why_important>why_important</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#goroutines>goroutines</a><a id="goroutines"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Goroutines
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#threads>threads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#event_driven>event_driven</a><a id="event_driven"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Event Driven
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#single_thread>single_thread</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#threads>threads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#same_address>same_address</a><a id="same_address"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Same Address Space
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sep_prog>sep_prog</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#convenience>convenience</a><a id="convenience"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Convenience
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why_important>why_important</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#why_important>why_important</a><a id="why_important"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Why Important?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#convenience>convenience</a>, <a href=#io_conc>io_conc</a>, <a href=#parallelism>parallelism</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#while_one>while_one</a><a id="while_one"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+While one activity is waiting, others can proceed
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#single_thread>single_thread</a><a id="single_thread"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Single threaded, event loop
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#event_driven>event_driven</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#RACE>RACE</a><a id="RACE"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RACE
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#solution_lock>solution_lock</a>, <a href=#shared_memory_bug>shared_memory_bug</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#shared_memory_bug>shared_memory_bug</a><a id="shared_memory_bug"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Shared Memory Bug
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RACE>RACE</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#solution_lock>solution_lock</a><a id="solution_lock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Solution: use a lock
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mutex>mutex</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RACE>RACE</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mutex>mutex</a><a id="mutex"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mutex
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#locks_stop_threads>locks_stop_threads</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#solution_lock>solution_lock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#locks_stop_threads>locks_stop_threads</a><a id="locks_stop_threads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Do locks stop all other threads?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mutex>mutex</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#deadlock>deadlock</a><a id="deadlock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Deadlock
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#coord>coord</a><a id="coord"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Coordination
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sync_cond>sync_cond</a>, <a href=#channels>channels</a>, <a href=#wait_for_things>wait_for_things</a>, <a href=#wait_group>wait_group</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#channels>channels</a><a id="channels"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Channels
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#coord>coord</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wait_group>wait_group</a><a id="wait_group"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wait Group
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#coord>coord</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sync_cond>sync_cond</a><a id="sync_cond"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sync Condition
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#coord>coord</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wait_for_things>wait_for_things</a><a id="wait_for_things"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wait for specific number of things to finish
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#coord>coord</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

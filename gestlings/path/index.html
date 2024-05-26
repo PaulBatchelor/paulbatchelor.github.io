@@ -76,11 +76,20 @@ Lua, can be compiled into TAL code using the <code>path</code>function. In addit
 the <a href="/gestlings/tal">tal</a> library will need to be passed in,
 along with a table to place the words that get generated.
 </p>
-<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.path(tal, words, path)
+<div><b><i>&lt;&lt;path&gt;&gt;=</i></b></div><pre><code>function Path.path(tal, words, path, lookup)
     for _, v in pairs(path)
     do
+        assert(v.val ~= nil)
         if v.val ~= nil then
-            tal.val(words, v.val)
+            local pathval = v.val
+
+            if lookup ~= nil and type(pathval) == "string" then
+                local pathkey = pathval
+                pathval = lookup[pathkey]
+                assert(pathval ~= nil, "Could not find value for '" .. pathkey .. "'")
+            end
+
+            tal.val(words, pathval)
         end
 
         if v.dur ~= nil then
@@ -91,8 +100,7 @@ along with a table to place the words that get generated.
             tal.behavior(words, v.bhvr)
         end
     end
-end
-</pre></code>
+end</pre></code>
 
 <h2>6. <a id="savingloading-paths-as-assets">Saving/Loading Paths as Assets</a></h2>
 
@@ -248,18 +256,40 @@ function fracmul(a, b)
     return reduce(out)
 end
 
+-- local function morphseq_dur_old(mseq)
+--     error("old morseq_dur")
+--     local total = {0, 0}
+--     for _, m in pairs(mseq) do
+--         local r = m[2]
+--         total = fracadd(total, r)
+--     end
+--     -- r is a ratemultiplier against a normalize
+--     -- path with dur 1. 2/1 is 2x faster, or dur 1/2.
+--     -- inverse to get duration
+--     -- this can be multiplied with normalized path
+--     -- to stretch/squash it out
+--     return {total[2], total[1]}
+-- end
+
 local function morphseq_dur(mseq)
     local total = {0, 0}
     for _, m in pairs(mseq) do
         local r = m[2]
-        total = fracadd(total, r)
+        local dur = {r[2], r[1]}
+        total = fracadd(total, dur)
     end
-    -- r is a ratemultiplier against a normalize
-    -- path with dur 1. 2/1 is 2x faster, or dur 1/2.
-    -- inverse to get duration
-    -- this can be multiplied with normalized path
-    -- to stretch/squash it out
-    return {total[2], total[1]}
+
+    return total
+end
+
+-- TODO move this to morpheme
+
+function Path.fracmul(a, b)
+    return fracmul(a, b)
+end
+
+function Path.morphseq_dur(mseq)
+    return morphseq_dur(mseq)
 end
 
 local function path_normalizer(p)
@@ -276,9 +306,14 @@ local function apply_ratemul(p, r, vertexer)
     path_with_ratemul = {}
 
     for _,v in pairs(p) do
+        local new_rate = reduce({r[1], v[2]*r[2]})
+        assert(new_rate[1] &lt;= 0xFF,
+            "rate multiplier numerator too high: " .. new_rate[1])
+        assert(new_rate[2] &lt;= 0xFF,
+            "rate multiplier denominator too high" .. new_rate[2])
         local v_rm = {
             v[1],
-            reduce({r[1], v[2]*r[2]}),
+            new_rate,
             v[3]
         }
         table.insert(path_with_ratemul, vertexer(v_rm))

@@ -48,11 +48,34 @@ as optional arguments in the configuration.
     return o
 end</pre></code>
 
-<h2>4. <a id="save-save-an-asset-to-a-file">Save: Save an asset to a file</a></h2>
+<h2>4. <a id="instantiate">Instantiate</a></h2>
 
-<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset:save(data, filename)
+<p>The <code>instantiate</code> function
+is a helper function that shaves off a few steps and
+turns this process into a one-liner.
+</p>
+<p>Asset is instantiated by first loading this module, laoding
+the base64/msgpack components, then creating a single
+instance with the <code>new</code> method.
+</p>
+<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset.instantiate()
+    return Asset:new {
+        msgpack=dofile("util/MessagePack.lua"),
+        base64=dofile("util/base64.lua")
+    }
+end</pre></code>
+
+<h2>5. <a id="save-save-an-asset-to-a-file">Save: Save an asset to a file</a></h2>
+
+<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset:encode(data)
     local data_packed = self.msgpack.pack(data)
     local data_b64 = self.base64.encode(data_packed)
+    return data_b64
+end
+function Asset:save(data, filename)
+    -- local data_packed = self.msgpack.pack(data)
+    -- local data_b64 = self.base64.encode(data_packed)
+    local data_b64 = self.encode(self, data)
 
     local fp = io.open(filename, "wb")
     for p=1,#data_b64, 40 do
@@ -61,17 +84,23 @@ end</pre></code>
     fp:close()
 end</pre></code>
 
-<h2>5. <a id="load-load-an-asset-from-a-file">Load: Load an asset from a file</a></h2>
+<h2>6. <a id="load-load-an-asset-from-a-file">Load: Load an asset from a file</a></h2>
 
-<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset:load(filename)
-    local fp = io.open(filename, "rb")
-    local data_packed_b64 = fp:read("*all")
-    fp:close()
+<div><b><i>&lt;&lt;asset&gt;&gt;=</i></b></div><pre><code>function Asset:decode(data_packed_b64)
     local data_packed = self.base64.decode(data_packed_b64)
     local data = self.msgpack.unpack(data_packed)
     return data
+end
+function Asset:load(filename)
+    local fp = io.open(filename, "rb")
+    assert(fp ~= nil, "Could not read file: " .. filename)
+    local data_packed_b64 = fp:read("*all")
+    fp:close()
+    -- local data_packed = self.base64.decode(data_packed_b64)
+    -- local data = self.msgpack.unpack(data_packed)
+    data = self.decode(self, data_packed_b64)
+    return data
 end</pre></code>
-</p>
 </div>
 </body>
 </html>

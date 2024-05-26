@@ -1,0 +1,5719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>designing_data_intensive_applications/ch03</title>
+<h1>ch03</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/designing_data_intensive_applications">designing_data_intensive_applications</a> / <a href="/brain/dz/designing_data_intensive_applications/ch03">ch03</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 3: Storage and Retrieval
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#tradeoff>tradeoff</a><ul>
+<li>
+<a href=#efficient_data_struct_lookup>efficient_data_struct_lookup</a></li>
+<li>
+<a href=#incurs_overhead>incurs_overhead</a></li>
+</ul>
+</li>
+<li>
+<a href=#transaction>transaction</a><ul>
+<li>
+<a href=#OLTP>OLTP</a><ul>
+<li>
+<a href=#OLTP_ops>OLTP_ops</a><ul>
+<li>
+<a href=#dicing>dicing</a></li>
+<li>
+<a href=#drill_down>drill_down</a></li>
+<li>
+<a href=#slicing>slicing</a></li>
+</ul>
+</li>
+<li>
+<a href=#some_oltp_traits>some_oltp_traits</a></li>
+<li>
+<a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a><ul>
+<li>
+<a href=#update_in_place>update_in_place</a></li>
+<li>
+<a href=#log_structured>log_structured</a><ul>
+<li>
+<a href=#log>log</a><ul>
+<li>
+<a href=#append_only>append_only</a></li>
+<li>
+<a href=#break_log_segments>break_log_segments</a><ul>
+<li>
+<a href=#SSTables>SSTables</a><ul>
+<li>
+<a href=#uses_SSTable>uses_SSTable</a></li>
+<li>
+<a href=#advantages>advantages</a><ul>
+<li>
+<a href=#merging_segments_simple>merging_segments_simple</a></li>
+<li>
+<a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a><ul>
+<li>
+<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a><ul>
+<li>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#records_grouped_compressed>records_grouped_compressed</a><ul>
+<li>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#each_key_appears_once>each_key_appears_once</a><ul>
+<li>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
+</ul>
+</li>
+<li>
+<a href=#how_to_sort>how_to_sort</a><ul>
+<li>
+<a href=#sort_in_memory>sort_in_memory</a><ul>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sort_on_disk>sort_on_disk</a><ul>
+<li>
+<a href=#b_trees>b_trees</a><ul>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo_log>redo_log</a></li>
+</ul>
+</li>
+<li>
+<a href=#4_level_tree>4_level_tree</a></li>
+<li>
+<a href=#balanced>balanced</a><ul>
+<li>
+<a href=#n_keys_depth>n_keys_depth</a></li>
+</ul>
+</li>
+<li>
+<a href=#blocks_pages>blocks_pages</a><ul>
+<li>
+<a href=#branching_factor>branching_factor</a></li>
+<li>
+<a href=#btree_root>btree_root</a></li>
+<li>
+<a href=#fixed_size_page>fixed_size_page</a></li>
+<li>
+<a href=#leaf_page>leaf_page</a></li>
+<li>
+<a href=#orphan_page>orphan_page</a><ul>
+<li>
+<a href=#not_child_to_parent>not_child_to_parent</a></li>
+<li>
+<a href=#orphan_caused_when>orphan_caused_when</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#btree_root>btree_root</a></li>
+<li>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><ul>
+<li>
+<a href=#write_amplification>write_amplification</a><ul>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#btree_vs>btree_vs</a><ul>
+<li>
+<a href=#faster_reads>faster_reads</a></li>
+<li>
+<a href=#key_exists_in_one_place>key_exists_in_one_place</a><ul>
+<li>
+<a href=#strong_transactional_semantics>strong_transactional_semantics</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_mature>more_mature</a></li>
+</ul>
+</li>
+<li>
+<a href=#lsm_tree_vs>lsm_tree_vs</a><ul>
+<li>
+<a href=#better_compression>better_compression</a></li>
+<li>
+<a href=#compaction_interference>compaction_interference</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#faster_writes>faster_writes</a></li>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#misconfigured_compaction>misconfigured_compaction</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#fractal_trees>fractal_trees</a></li>
+<li>
+<a href=#identified_using_address>identified_using_address</a><ul>
+<li>
+<a href=#refs_make_tree>refs_make_tree</a></li>
+</ul>
+</li>
+<li>
+<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
+<li>
+<a href=#latches>latches</a><ul>
+<li>
+<a href=#lightweight_locks>lightweight_locks</a></li>
+</ul>
+</li>
+<li>
+<a href=#most_widely_used_index_struct>most_widely_used_index_struct</a></li>
+<li>
+<a href=#secondary_key_index>secondary_key_index</a><ul>
+<li>
+<a href=#avoids_duplication>avoids_duplication</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sort_in_memory>sort_in_memory</a><ul>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+<li>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
+<li>
+<a href=#leveled>leveled</a><ul>
+<li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sorted_string_table>sorted_string_table</a></li>
+</ul>
+</li>
+<li>
+<a href=#merge_segments>merge_segments</a><ul>
+<li>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
+<li>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
+<li>
+<a href=#leveled>leveled</a><ul>
+<li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#commercial_transaction>commercial_transaction</a></li>
+<li>
+<a href=#data_analytics>data_analytics</a><ul>
+<li>
+<a href=#business_intel>business_intel</a><ul>
+<li>
+<a href=#OLAP>OLAP</a><ul>
+<li>
+<a href=#column_oriented_storage>column_oriented_storage</a><ul>
+<li>
+<a href=#writing>writing</a><ul>
+<li>
+<a href=#more_difficult>more_difficult</a><ul>
+<li>
+<a href=#lstm_trees>lstm_trees</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a></li>
+<li>
+<a href=#compresses_well>compresses_well</a><ul>
+<li>
+<a href=#bitmap_encoding>bitmap_encoding</a></li>
+</ul>
+</li>
+<li>
+<a href=#sort_order>sort_order</a><ul>
+<li>
+<a href=#helpful_for_col_compr>helpful_for_col_compr</a></li>
+</ul>
+</li>
+<li>
+<a href=#sorted_different_ways>sorted_different_ways</a><ul>
+<li>
+<a href=#optimized_diff_queries>optimized_diff_queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#some_olap_traits>some_olap_traits</a><ul>
+<li>
+<a href=#some_oltp_traits>some_oltp_traits</a></li>
+</ul>
+</li>
+<li>
+<a href=#specialized_db_olap>specialized_db_olap</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#rw_group_logical_unit>rw_group_logical_unit</a></li>
+</ul>
+</li>
+<li>
+<a href=#LSM_Trees>LSM_Trees</a><ul>
+<li>
+<a href=#uses_SSTable>uses_SSTable</a></li>
+<li>
+<a href=#LSM_Trees_perf>LSM_Trees_perf</a><ul>
+<li>
+<a href=#nonexist_keys_slow>nonexist_keys_slow</a><ul>
+<li>
+<a href=#bloom_filters>bloom_filters</a><ul>
+<li>
+<a href=#bloom_desc>bloom_desc</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#LSM_storage_engine>LSM_storage_engine</a></li>
+<li>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><ul>
+<li>
+<a href=#write_amplification>write_amplification</a><ul>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#btree_vs>btree_vs</a><ul>
+<li>
+<a href=#faster_reads>faster_reads</a></li>
+<li>
+<a href=#key_exists_in_one_place>key_exists_in_one_place</a><ul>
+<li>
+<a href=#strong_transactional_semantics>strong_transactional_semantics</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_mature>more_mature</a></li>
+</ul>
+</li>
+<li>
+<a href=#lsm_tree_vs>lsm_tree_vs</a><ul>
+<li>
+<a href=#better_compression>better_compression</a></li>
+<li>
+<a href=#compaction_interference>compaction_interference</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#faster_writes>faster_writes</a></li>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#misconfigured_compaction>misconfigured_compaction</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#cascade_SSTables>cascade_SSTables</a></li>
+<li>
+<a href=#log_structured_merge_tree>log_structured_merge_tree</a></li>
+<li>
+<a href=#secondary_key_index>secondary_key_index</a><ul>
+<li>
+<a href=#avoids_duplication>avoids_duplication</a></li>
+</ul>
+</li>
+<li>
+<a href=#term_dictionary>term_dictionary</a><ul>
+<li>
+<a href=#lucene>lucene</a></li>
+<li>
+<a href=#term_desc>term_desc</a><ul>
+<li>
+<a href=#kept_in_SSTable>kept_in_SSTable</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#covering_index>covering_index</a><ul>
+<li>
+<a href=#clustered_nonclustered_compromise>clustered_nonclustered_compromise</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_warehouse>data_warehouse</a><ul>
+<li>
+<a href=#column_oriented_storage>column_oriented_storage</a><ul>
+<li>
+<a href=#writing>writing</a><ul>
+<li>
+<a href=#more_difficult>more_difficult</a><ul>
+<li>
+<a href=#lstm_trees>lstm_trees</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a></li>
+<li>
+<a href=#compresses_well>compresses_well</a><ul>
+<li>
+<a href=#bitmap_encoding>bitmap_encoding</a></li>
+</ul>
+</li>
+<li>
+<a href=#sort_order>sort_order</a><ul>
+<li>
+<a href=#helpful_for_col_compr>helpful_for_col_compr</a></li>
+</ul>
+</li>
+<li>
+<a href=#sorted_different_ways>sorted_different_ways</a><ul>
+<li>
+<a href=#optimized_diff_queries>optimized_diff_queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#doesnt_affect_user_facing_db>doesnt_affect_user_facing_db</a></li>
+<li>
+<a href=#extract_transform_load>extract_transform_load</a></li>
+<li>
+<a href=#materialized_aggregates>materialized_aggregates</a><ul>
+<li>
+<a href=#cache_common_queries>cache_common_queries</a></li>
+<li>
+<a href=#materialized_view>materialized_view</a><ul>
+<li>
+<a href=#datacube>datacube</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#specialized_db_olap>specialized_db_olap</a></li>
+<li>
+<a href=#star_schema>star_schema</a><ul>
+<li>
+<a href=#dimensional_modeling>dimensional_modeling</a></li>
+<li>
+<a href=#fact_table>fact_table</a><ul>
+<li>
+<a href=#dimension_tables>dimension_tables</a><ul>
+<li>
+<a href=#surround_like_star_rays>surround_like_star_rays</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#snowflake_schema>snowflake_schema</a><ul>
+<li>
+<a href=#dimensions_broken_into_subdimensions>dimensions_broken_into_subdimensions</a></li>
+</ul>
+</li>
+<li>
+<a href=#surround_like_star_rays>surround_like_star_rays</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#fts_fuzzy>fts_fuzzy</a><ul>
+<li>
+<a href=#fuzzy_querying>fuzzy_querying</a></li>
+<li>
+<a href=#levenshtein_automation>levenshtein_automation</a><ul>
+<li>
+<a href=#efficient_search_words_edit_distance>efficient_search_words_edit_distance</a></li>
+</ul>
+</li>
+<li>
+<a href=#similar_keys>similar_keys</a></li>
+</ul>
+</li>
+<li>
+<a href=#keeping_everything_memory>keeping_everything_memory</a><ul>
+<li>
+<a href=#NVM>NVM</a></li>
+<li>
+<a href=#anti_caching>anti_caching</a><ul>
+<li>
+<a href=#datasets_larger_than_mem>datasets_larger_than_mem</a></li>
+<li>
+<a href=#evict_least_used>evict_least_used</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_memory_db>in_memory_db</a><ul>
+<li>
+<a href=#avoids_encoding_overhead>avoids_encoding_overhead</a></li>
+<li>
+<a href=#disk_durablity>disk_durablity</a></li>
+<li>
+<a href=#implement_models_difficult_for_disks>implement_models_difficult_for_disks</a><ul>
+<li>
+<a href=#redis_data_structs>redis_data_structs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#primary_key_index>primary_key_index</a><ul>
+<li>
+<a href=#secondary_key_index>secondary_key_index</a><ul>
+<li>
+<a href=#avoids_duplication>avoids_duplication</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#storage_engine>storage_engine</a><ul>
+<li>
+<a href=#LSM_storage_engine>LSM_storage_engine</a></li>
+<li>
+<a href=#index>index</a><ul>
+<li>
+<a href=#value>value</a><ul>
+<li>
+<a href=#row>row</a><ul>
+<li>
+<a href=#row_ref>row_ref</a><ul>
+<li>
+<a href=#heap_file>heap_file</a><ul>
+<li>
+<a href=#avoids_duplication>avoids_duplication</a></li>
+<li>
+<a href=#indexed_row_in_index>indexed_row_in_index</a><ul>
+<li>
+<a href=#clustered_index>clustered_index</a></li>
+<li>
+<a href=#multi_column_index>multi_column_index</a><ul>
+<li>
+<a href=#concat_index>concat_index</a></li>
+<li>
+<a href=#geospatial_data>geospatial_data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#additional_struct_data_derived>additional_struct_data_derived</a></li>
+<li>
+<a href=#efficient_data_struct_lookup>efficient_data_struct_lookup</a></li>
+<li>
+<a href=#hash_index>hash_index</a><ul>
+<li>
+<a href=#compaction>compaction</a><ul>
+<li>
+<a href=#merge_segments>merge_segments</a><ul>
+<li>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
+<li>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
+<li>
+<a href=#leveled>leveled</a><ul>
+<li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
+<li>
+<a href=#leveled>leveled</a><ul>
+<li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#throw_away_dup_keep_recent>throw_away_dup_keep_recent</a></li>
+</ul>
+</li>
+<li>
+<a href=#kv_store>kv_store</a><ul>
+<li>
+<a href=#bitcask>bitcask</a><ul>
+<li>
+<a href=#keys_mem_values_disk>keys_mem_values_disk</a></li>
+</ul>
+</li>
+<li>
+<a href=#dictionary>dictionary</a></li>
+<li>
+<a href=#tombstone>tombstone</a><ul>
+<li>
+<a href=#deletion_record>deletion_record</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#incurs_overhead>incurs_overhead</a></li>
+<li>
+<a href=#key>key</a><ul>
+<li>
+<a href=#queries_for>queries_for</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#log_structured>log_structured</a><ul>
+<li>
+<a href=#log>log</a><ul>
+<li>
+<a href=#append_only>append_only</a></li>
+<li>
+<a href=#break_log_segments>break_log_segments</a><ul>
+<li>
+<a href=#SSTables>SSTables</a><ul>
+<li>
+<a href=#uses_SSTable>uses_SSTable</a></li>
+<li>
+<a href=#advantages>advantages</a><ul>
+<li>
+<a href=#merging_segments_simple>merging_segments_simple</a></li>
+<li>
+<a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a><ul>
+<li>
+<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a><ul>
+<li>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#records_grouped_compressed>records_grouped_compressed</a><ul>
+<li>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#each_key_appears_once>each_key_appears_once</a><ul>
+<li>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
+</ul>
+</li>
+<li>
+<a href=#how_to_sort>how_to_sort</a><ul>
+<li>
+<a href=#sort_in_memory>sort_in_memory</a><ul>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sort_on_disk>sort_on_disk</a><ul>
+<li>
+<a href=#b_trees>b_trees</a><ul>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo_log>redo_log</a></li>
+</ul>
+</li>
+<li>
+<a href=#4_level_tree>4_level_tree</a></li>
+<li>
+<a href=#balanced>balanced</a><ul>
+<li>
+<a href=#n_keys_depth>n_keys_depth</a></li>
+</ul>
+</li>
+<li>
+<a href=#blocks_pages>blocks_pages</a><ul>
+<li>
+<a href=#branching_factor>branching_factor</a></li>
+<li>
+<a href=#btree_root>btree_root</a></li>
+<li>
+<a href=#fixed_size_page>fixed_size_page</a></li>
+<li>
+<a href=#leaf_page>leaf_page</a></li>
+<li>
+<a href=#orphan_page>orphan_page</a><ul>
+<li>
+<a href=#not_child_to_parent>not_child_to_parent</a></li>
+<li>
+<a href=#orphan_caused_when>orphan_caused_when</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#btree_root>btree_root</a></li>
+<li>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><ul>
+<li>
+<a href=#write_amplification>write_amplification</a><ul>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#btree_vs>btree_vs</a><ul>
+<li>
+<a href=#faster_reads>faster_reads</a></li>
+<li>
+<a href=#key_exists_in_one_place>key_exists_in_one_place</a><ul>
+<li>
+<a href=#strong_transactional_semantics>strong_transactional_semantics</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_mature>more_mature</a></li>
+</ul>
+</li>
+<li>
+<a href=#lsm_tree_vs>lsm_tree_vs</a><ul>
+<li>
+<a href=#better_compression>better_compression</a></li>
+<li>
+<a href=#compaction_interference>compaction_interference</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#faster_writes>faster_writes</a></li>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#misconfigured_compaction>misconfigured_compaction</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#fractal_trees>fractal_trees</a></li>
+<li>
+<a href=#identified_using_address>identified_using_address</a><ul>
+<li>
+<a href=#refs_make_tree>refs_make_tree</a></li>
+</ul>
+</li>
+<li>
+<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
+<li>
+<a href=#latches>latches</a><ul>
+<li>
+<a href=#lightweight_locks>lightweight_locks</a></li>
+</ul>
+</li>
+<li>
+<a href=#most_widely_used_index_struct>most_widely_used_index_struct</a></li>
+<li>
+<a href=#secondary_key_index>secondary_key_index</a><ul>
+<li>
+<a href=#avoids_duplication>avoids_duplication</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sort_in_memory>sort_in_memory</a><ul>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
+<li>
+<a href=#memtable>memtable</a><ul>
+<li>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><ul>
+<li>
+<a href=#crash_solution>crash_solution</a></li>
+</ul>
+</li>
+<li>
+<a href=#in_mem_tree>in_mem_tree</a><ul>
+<li>
+<a href=#AVL>AVL</a></li>
+<li>
+<a href=#redblack>redblack</a></li>
+</ul>
+</li>
+<li>
+<a href=#memtable_read>memtable_read</a></li>
+<li>
+<a href=#memtable_write>memtable_write</a></li>
+</ul>
+</li>
+<li>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
+<li>
+<a href=#leveled>leveled</a><ul>
+<li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sorted_string_table>sorted_string_table</a></li>
+</ul>
+</li>
+<li>
+<a href=#merge_segments>merge_segments</a><ul>
+<li>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a></li>
+<li>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><ul>
+<li>
+<a href=#leveled>leveled</a><ul>
+<li>
+<a href=#leveled_elab>leveled_elab</a></li>
+</ul>
+</li>
+<li>
+<a href=#size_tiered>size_tiered</a><ul>
+<li>
+<a href=#size_tiered_elab>size_tiered_elab</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#page_oriented>page_oriented</a><ul>
+<li>
+<a href=#b_trees>b_trees</a><ul>
+<li>
+<a href=#write_ahead_log>write_ahead_log</a><ul>
+<li>
+<a href=#redo_log>redo_log</a></li>
+</ul>
+</li>
+<li>
+<a href=#4_level_tree>4_level_tree</a></li>
+<li>
+<a href=#balanced>balanced</a><ul>
+<li>
+<a href=#n_keys_depth>n_keys_depth</a></li>
+</ul>
+</li>
+<li>
+<a href=#blocks_pages>blocks_pages</a><ul>
+<li>
+<a href=#branching_factor>branching_factor</a></li>
+<li>
+<a href=#btree_root>btree_root</a></li>
+<li>
+<a href=#fixed_size_page>fixed_size_page</a></li>
+<li>
+<a href=#leaf_page>leaf_page</a></li>
+<li>
+<a href=#orphan_page>orphan_page</a><ul>
+<li>
+<a href=#not_child_to_parent>not_child_to_parent</a></li>
+<li>
+<a href=#orphan_caused_when>orphan_caused_when</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#btree_root>btree_root</a></li>
+<li>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><ul>
+<li>
+<a href=#write_amplification>write_amplification</a><ul>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a></li>
+</ul>
+</li>
+<li>
+<a href=#btree_vs>btree_vs</a><ul>
+<li>
+<a href=#faster_reads>faster_reads</a></li>
+<li>
+<a href=#key_exists_in_one_place>key_exists_in_one_place</a><ul>
+<li>
+<a href=#strong_transactional_semantics>strong_transactional_semantics</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_mature>more_mature</a></li>
+</ul>
+</li>
+<li>
+<a href=#lsm_tree_vs>lsm_tree_vs</a><ul>
+<li>
+<a href=#better_compression>better_compression</a></li>
+<li>
+<a href=#compaction_interference>compaction_interference</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#faster_writes>faster_writes</a></li>
+<li>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a></li>
+<li>
+<a href=#misconfigured_compaction>misconfigured_compaction</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_predictable>more_predictable</a><ul>
+<li>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a></li>
+<li>
+<a href=#queries>queries</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#fractal_trees>fractal_trees</a></li>
+<li>
+<a href=#identified_using_address>identified_using_address</a><ul>
+<li>
+<a href=#refs_make_tree>refs_make_tree</a></li>
+</ul>
+</li>
+<li>
+<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a></li>
+<li>
+<a href=#latches>latches</a><ul>
+<li>
+<a href=#lightweight_locks>lightweight_locks</a></li>
+</ul>
+</li>
+<li>
+<a href=#most_widely_used_index_struct>most_widely_used_index_struct</a></li>
+<li>
+<a href=#secondary_key_index>secondary_key_index</a><ul>
+<li>
+<a href=#avoids_duplication>avoids_duplication</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#storage_engine>storage_engine</a><a id="storage_engine"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Storage Engine
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#LSM_storage_engine>LSM_storage_engine</a>, <a href=#index>index</a>, <a href=#log_structured>log_structured</a>, <a href=#page_oriented>page_oriented</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_structured>log_structured</a><a id="log_structured"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+log-structured
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log>log</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_engine>storage_engine</a>, <a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#page_oriented>page_oriented</a><a id="page_oriented"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Page Oriented
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_engine>storage_engine</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log>log</a><a id="log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#append_only>append_only</a>, <a href=#break_log_segments>break_log_segments</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_structured>log_structured</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#append_only>append_only</a><a id="append_only"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+append-only
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log>log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#b_trees>b_trees</a><a id="b_trees"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+B-Trees
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#write_ahead_log>write_ahead_log</a>, <a href=#4_level_tree>4_level_tree</a>, <a href=#balanced>balanced</a>, <a href=#blocks_pages>blocks_pages</a>, <a href=#btree_root>btree_root</a>, <a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>, <a href=#fractal_trees>fractal_trees</a> (variation of b-trees (I think?)), <a href=#identified_using_address>identified_using_address</a>, <a href=#keep_kv_sorted_key>keep_kv_sorted_key</a>, <a href=#latches>latches</a>, <a href=#most_widely_used_index_struct>most_widely_used_index_struct</a>, <a href=#secondary_key_index>secondary_key_index</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#page_oriented>page_oriented</a>, <a href=#sort_on_disk>sort_on_disk</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#index>index</a><a id="index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#value>value</a>, <a href=#additional_struct_data_derived>additional_struct_data_derived</a>, <a href=#efficient_data_struct_lookup>efficient_data_struct_lookup</a>, <a href=#hash_index>hash_index</a>, <a href=#incurs_overhead>incurs_overhead</a>, <a href=#key>key</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_engine>storage_engine</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#efficient_data_struct_lookup>efficient_data_struct_lookup</a><a id="efficient_data_struct_lookup"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Efficient data structure for lookup
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tradeoff>tradeoff</a>, <a href=#index>index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#incurs_overhead>incurs_overhead</a><a id="incurs_overhead"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Incurs overhead, especially for writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tradeoff>tradeoff</a>, <a href=#index>index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tradeoff>tradeoff</a><a id="tradeoff"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tradeoff
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#efficient_data_struct_lookup>efficient_data_struct_lookup</a>, <a href=#incurs_overhead>incurs_overhead</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#additional_struct_data_derived>additional_struct_data_derived</a><a id="additional_struct_data_derived"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Additional structure derived from data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#index>index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hash_index>hash_index</a><a id="hash_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hash Index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#compaction>compaction</a>, <a href=#kv_store>kv_store</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#index>index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#kv_store>kv_store</a><a id="kv_store"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Key-Value store
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bitcask>bitcask</a>, <a href=#dictionary>dictionary</a>, <a href=#tombstone>tombstone</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#hash_index>hash_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bitcask>bitcask</a><a id="bitcask"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bitcask
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#keys_mem_values_disk>keys_mem_values_disk</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#kv_store>kv_store</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dictionary>dictionary</a><a id="dictionary"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dictionary
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#kv_store>kv_store</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#compaction>compaction</a><a id="compaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Compaction
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#merge_segments>merge_segments</a>, <a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a>, <a href=#throw_away_dup_keep_recent>throw_away_dup_keep_recent</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#hash_index>hash_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#keys_mem_values_disk>keys_mem_values_disk</a><a id="keys_mem_values_disk"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+in-memory keys, values on disk with offsets
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bitcask>bitcask</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#break_log_segments>break_log_segments</a><a id="break_log_segments"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Break log into segments
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#SSTables>SSTables</a>, <a href=#merge_segments>merge_segments</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log>log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#throw_away_dup_keep_recent>throw_away_dup_keep_recent</a><a id="throw_away_dup_keep_recent"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Throw away duplicate keys, keep most recent
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compaction>compaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tombstone>tombstone</a><a id="tombstone"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tombstone
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#deletion_record>deletion_record</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#kv_store>kv_store</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#deletion_record>deletion_record</a><a id="deletion_record"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Deletion record after removing key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tombstone>tombstone</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#merge_segments>merge_segments</a><a id="merge_segments"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Merge Segments
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a>, <a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#break_log_segments>break_log_segments</a>, <a href=#compaction>compaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#SSTables>SSTables</a><a id="SSTables"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SSTables
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#uses_SSTable>uses_SSTable</a>, <a href=#advantages>advantages</a>, <a href=#each_key_appears_once>each_key_appears_once</a>, <a href=#how_to_sort>how_to_sort</a>, <a href=#keep_kv_sorted_key>keep_kv_sorted_key</a> (Similarity to SSTables), <a href=#memtable>memtable</a>, <a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a> (performance), <a href=#sorted_string_table>sorted_string_table</a> (decrypting the abbreviation)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#break_log_segments>break_log_segments</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sorted_string_table>sorted_string_table</a><a id="sorted_string_table"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sorted String Table
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSTables>SSTables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#advantages>advantages</a><a id="advantages"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Advantages
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#merging_segments_simple>merging_segments_simple</a>, <a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a>, <a href=#records_grouped_compressed>records_grouped_compressed</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSTables>SSTables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#each_key_appears_once>each_key_appears_once</a><a id="each_key_appears_once"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Each key appears only once
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSTables>SSTables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#LSM_Trees>LSM_Trees</a><a id="LSM_Trees"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+LSM-Trees
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#uses_SSTable>uses_SSTable</a>, <a href=#LSM_Trees_perf>LSM_Trees_perf</a>, <a href=#LSM_storage_engine>LSM_storage_engine</a>, <a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>, <a href=#cascade_SSTables>cascade_SSTables</a>, <a href=#log_structured_merge_tree>log_structured_merge_tree</a> (decrypting the abbreviation), <a href=#secondary_key_index>secondary_key_index</a> (also used with LSM-Trees), <a href=#term_dictionary>term_dictionary</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#most_recent_multi_segs>most_recent_multi_segs</a><a id="most_recent_multi_segs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Most recent key used when dealing with multiple segments
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#merge_segments>merge_segments</a>, <a href=#each_key_appears_once>each_key_appears_once</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#merging_segments_simple>merging_segments_simple</a><a id="merging_segments_simple"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Merging segments simple and efficient
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#advantages>advantages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a><a id="no_need_all_keys_in_memory"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+in-memory representation of keys no longer needed
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#advantages>advantages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a><a id="one_key_offset_every_few_kb"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One key offset every few kb is sufficient density
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a> (terminology)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#no_need_all_keys_in_memory>no_need_all_keys_in_memory</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a><a id="sparse_in_mem_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+sparse in-memory index
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#records_grouped_compressed>records_grouped_compressed</a>, <a href=#one_key_offset_every_few_kb>one_key_offset_every_few_kb</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#records_grouped_compressed>records_grouped_compressed</a><a id="records_grouped_compressed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Records can be grouped and compressed
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sparse_in_mem_index>sparse_in_mem_index</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#advantages>advantages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#how_to_sort>how_to_sort</a><a id="how_to_sort"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to sort?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sort_in_memory>sort_in_memory</a>, <a href=#sort_on_disk>sort_on_disk</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSTables>SSTables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sort_in_memory>sort_in_memory</a><a id="sort_in_memory"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+In memory
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#memtable>memtable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#how_to_sort>how_to_sort</a>, <a href=#sort_on_disk>sort_on_disk</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sort_on_disk>sort_on_disk</a><a id="sort_on_disk"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+On Disk
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#b_trees>b_trees</a> (b-trees main structure for on-disk sorting), <a href=#sort_in_memory>sort_in_memory</a> (in-memory sorting easier than on-disk)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#how_to_sort>how_to_sort</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#memtable>memtable</a><a id="memtable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+memtable
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a>, <a href=#in_mem_tree>in_mem_tree</a>, <a href=#memtable_read>memtable_read</a>, <a href=#memtable_write>memtable_write</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sort_in_memory>sort_in_memory</a>, <a href=#SSTables>SSTables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#in_mem_tree>in_mem_tree</a><a id="in_mem_tree"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+in-memory tree
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#AVL>AVL</a>, <a href=#redblack>redblack</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memtable>memtable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#redblack>redblack</a><a id="redblack"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Red-Black tree
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#in_mem_tree>in_mem_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#AVL>AVL</a><a id="AVL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+AVL
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#in_mem_tree>in_mem_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#memtable_write>memtable_write</a><a id="memtable_write"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memtable>memtable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#memtable_read>memtable_read</a><a id="memtable_read"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memtable>memtable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a><a id="db_crash_recent_writes_lost"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+issue: if database crashes the most recent writes (still in memory) will be lost.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#crash_solution>crash_solution</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memtable>memtable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#crash_solution>crash_solution</a><a id="crash_solution"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Solution: use append-only log for most recent writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_crash_recent_writes_lost>db_crash_recent_writes_lost</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_structured_merge_tree>log_structured_merge_tree</a><a id="log_structured_merge_tree"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Structured Merge Tree
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees>LSM_Trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#LSM_storage_engine>LSM_storage_engine</a><a id="LSM_storage_engine"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+LSM storage engine
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees>LSM_Trees</a>, <a href=#storage_engine>storage_engine</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#uses_SSTable>uses_SSTable</a><a id="uses_SSTable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Uses SSTable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees>LSM_Trees</a>, <a href=#SSTables>SSTables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#LSM_Trees_perf>LSM_Trees_perf</a><a id="LSM_Trees_perf"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Performance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nonexist_keys_slow>nonexist_keys_slow</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees>LSM_Trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#term_dictionary>term_dictionary</a><a id="term_dictionary"></a>
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lucene>lucene</a>, <a href=#term_desc>term_desc</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees>LSM_Trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lucene>lucene</a><a id="lucene"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lucene
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term_dictionary>term_dictionary</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#term_desc>term_desc</a><a id="term_desc"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Key: Term, Value: List of ID's of all the documents containing term (word) (postings list)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#kept_in_SSTable>kept_in_SSTable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term_dictionary>term_dictionary</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#kept_in_SSTable>kept_in_SSTable</a><a id="kept_in_SSTable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Kept in SSTable-like sorted files
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term_desc>term_desc</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#nonexist_keys_slow>nonexist_keys_slow</a><a id="nonexist_keys_slow"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Nonexistant key look-up slow
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bloom_filters>bloom_filters</a> (optimization solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees_perf>LSM_Trees_perf</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bloom_filters>bloom_filters</a><a id="bloom_filters"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bloom filters
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bloom_desc>bloom_desc</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#nonexist_keys_slow>nonexist_keys_slow</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bloom_desc>bloom_desc</a><a id="bloom_desc"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Memory-efficient data structure for approximating the contents in a set
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bloom_filters>bloom_filters</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a><a id="order_timing_strategies_compaction_merge"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Strategies for the order and time of SSTables compaction and merge
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leveled>leveled</a>, <a href=#size_tiered>size_tiered</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#merge_segments>merge_segments</a>, <a href=#compaction>compaction</a>, <a href=#SSTables>SSTables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#size_tiered>size_tiered</a><a id="size_tiered"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Size Tiered
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#size_tiered_elab>size_tiered_elab</a> (Elaboration)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#size_tiered_elab>size_tiered_elab</a><a id="size_tiered_elab"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Newer/smaller merged into older/larger
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#size_tiered>size_tiered</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leveled>leveled</a><a id="leveled"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leveled
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leveled_elab>leveled_elab</a> (elaboration)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#order_timing_strategies_compaction_merge>order_timing_strategies_compaction_merge</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leveled_elab>leveled_elab</a><a id="leveled_elab"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Key range split into smaller tables. Old data moved int levels
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leveled>leveled</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cascade_SSTables>cascade_SSTables</a><a id="cascade_SSTables"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cascade of SSTables
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees>LSM_Trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#most_widely_used_index_struct>most_widely_used_index_struct</a><a id="most_widely_used_index_struct"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Most widely used indexing structure
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#keep_kv_sorted_key>keep_kv_sorted_key</a><a id="keep_kv_sorted_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Keeps key/value pairs sorted by key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>, <a href=#SSTables>SSTables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#blocks_pages>blocks_pages</a><a id="blocks_pages"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Blocks/pages
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#branching_factor>branching_factor</a>, <a href=#btree_root>btree_root</a>, <a href=#fixed_size_page>fixed_size_page</a>, <a href=#leaf_page>leaf_page</a>, <a href=#orphan_page>orphan_page</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fixed_size_page>fixed_size_page</a><a id="fixed_size_page"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fixed size (4kb traditionally)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blocks_pages>blocks_pages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#identified_using_address>identified_using_address</a><a id="identified_using_address"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+identified using an on-disk address/location
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#refs_make_tree>refs_make_tree</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#refs_make_tree>refs_make_tree</a><a id="refs_make_tree"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+References make tree
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#identified_using_address>identified_using_address</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#btree_root>btree_root</a><a id="btree_root"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Root
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blocks_pages>blocks_pages</a>, <a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leaf_page>leaf_page</a><a id="leaf_page"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leaf page: page containing individual keys
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blocks_pages>blocks_pages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#branching_factor>branching_factor</a><a id="branching_factor"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Branching factor: number of references to child pages in one page
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blocks_pages>blocks_pages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#balanced>balanced</a><a id="balanced"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+balanced
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#n_keys_depth>n_keys_depth</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#n_keys_depth>n_keys_depth</a><a id="n_keys_depth"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+N-keys has depth O(n*log(n))
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#balanced>balanced</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#4_level_tree>4_level_tree</a><a id="4_level_tree"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+4-level tree of 4kb pages with branching factor of 500 can store up to 256TB
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#orphan_page>orphan_page</a><a id="orphan_page"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Orphan Page
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_child_to_parent>not_child_to_parent</a> (description), <a href=#orphan_caused_when>orphan_caused_when</a> (caused by)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blocks_pages>blocks_pages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_child_to_parent>not_child_to_parent</a><a id="not_child_to_parent"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not a child of any parent page
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#orphan_page>orphan_page</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#orphan_caused_when>orphan_caused_when</a><a id="orphan_caused_when"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can be caused when writing page split gets interrupted.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#orphan_page>orphan_page</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_ahead_log>write_ahead_log</a><a id="write_ahead_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write-ahead log (WAL)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#redo_log>redo_log</a> (AKA (I think?))
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#redo_log>redo_log</a><a id="redo_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+redo log
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_ahead_log>write_ahead_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#latches>latches</a><a id="latches"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+latches
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lightweight_locks>lightweight_locks</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lightweight_locks>lightweight_locks</a><a id="lightweight_locks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lightweight locks for concurrent access
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#latches>latches</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fractal_trees>fractal_trees</a><a id="fractal_trees"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+fractal trees
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a><a id="btree_vs_lsm_tree"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+B-Trees vs LSM-Trees
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#write_amplification>write_amplification</a>, <a href=#btree_vs>btree_vs</a>, <a href=#lsm_tree_vs>lsm_tree_vs</a>, <a href=#more_predictable>more_predictable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees>LSM_Trees</a>, <a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#btree_vs>btree_vs</a><a id="btree_vs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+B-Tree
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#faster_reads>faster_reads</a>, <a href=#key_exists_in_one_place>key_exists_in_one_place</a>, <a href=#more_mature>more_mature</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lsm_tree_vs>lsm_tree_vs</a><a id="lsm_tree_vs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+LSM Tree
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#better_compression>better_compression</a>, <a href=#compaction_interference>compaction_interference</a>, <a href=#faster_writes>faster_writes</a>, <a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a>, <a href=#misconfigured_compaction>misconfigured_compaction</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_mature>more_mature</a><a id="more_mature"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More Mature
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#btree_vs>btree_vs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#faster_reads>faster_reads</a><a id="faster_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+faster reads
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#btree_vs>btree_vs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_amplification>write_amplification</a><a id="write_amplification"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write Amplification
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a>, <a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#one_db_write_several_disk_writes>one_db_write_several_disk_writes</a><a id="one_db_write_several_disk_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One DB write yields mulitple disk writes over DB lifetime
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_amplification>write_amplification</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#higher_throughput_lower_wa>higher_throughput_lower_wa</a><a id="higher_throughput_lower_wa"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sustain higher throughput, lower write amplification
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_amplification>write_amplification</a>, <a href=#lsm_tree_vs>lsm_tree_vs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#better_compression>better_compression</a><a id="better_compression"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Better compression
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lsm_tree_vs>lsm_tree_vs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#faster_writes>faster_writes</a><a id="faster_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Faster Writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lsm_tree_vs>lsm_tree_vs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_predictable>more_predictable</a><a id="more_predictable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More predictable
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a>, <a href=#queries>queries</a> (more predictable queries)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compaction_interference>compaction_interference</a>, <a href=#btree_vs_lsm_tree>btree_vs_lsm_tree</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#compaction_interference>compaction_interference</a><a id="compaction_interference"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Compaction sometimes interferes with read/write performance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a>, <a href=#more_predictable>more_predictable</a> (compaction makes r/w performance less predictable)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lsm_tree_vs>lsm_tree_vs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#impacts_higer_percentiles>impacts_higer_percentiles</a><a id="impacts_higer_percentiles"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Impacts higher percentiles
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compaction_interference>compaction_interference</a>, <a href=#more_predictable>more_predictable</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+see previous chapters on percentiles
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#queries>queries</a><a id="queries"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+queries
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#more_predictable>more_predictable</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#key_exists_in_one_place>key_exists_in_one_place</a><a id="key_exists_in_one_place"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Key exists in exactly one place in the index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#strong_transactional_semantics>strong_transactional_semantics</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#btree_vs>btree_vs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#strong_transactional_semantics>strong_transactional_semantics</a><a id="strong_transactional_semantics"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Strong Transactional Semantics
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#key_exists_in_one_place>key_exists_in_one_place</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#misconfigured_compaction>misconfigured_compaction</a><a id="misconfigured_compaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Misconfigured compaction causes disks to fill up
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lsm_tree_vs>lsm_tree_vs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#primary_key_index>primary_key_index</a><a id="primary_key_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Primary key index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#secondary_key_index>secondary_key_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#secondary_key_index>secondary_key_index</a><a id="secondary_key_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Secondary key index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#avoids_duplication>avoids_duplication</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#LSM_Trees>LSM_Trees</a>, <a href=#primary_key_index>primary_key_index</a>, <a href=#b_trees>b_trees</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#key>key</a><a id="key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Key 
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#queries_for>queries_for</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#index>index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#value>value</a><a id="value"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Value
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#row>row</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#index>index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#queries_for>queries_for</a><a id="queries_for"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Queries For
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#key>key</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#row>row</a><a id="row"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Row
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#row_ref>row_ref</a> (or)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#value>value</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#row_ref>row_ref</a><a id="row_ref"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ref to row, stored elsewhere
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#heap_file>heap_file</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#row>row</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#heap_file>heap_file</a><a id="heap_file"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Heap File
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#avoids_duplication>avoids_duplication</a>, <a href=#indexed_row_in_index>indexed_row_in_index</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#row_ref>row_ref</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#avoids_duplication>avoids_duplication</a><a id="avoids_duplication"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Avoids duplication when multiple secondary indexes are present
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#secondary_key_index>secondary_key_index</a>, <a href=#heap_file>heap_file</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#indexed_row_in_index>indexed_row_in_index</a><a id="indexed_row_in_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If hop from index to heap too expensive, store indexed row in index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clustered_index>clustered_index</a>, <a href=#multi_column_index>multi_column_index</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#heap_file>heap_file</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clustered_index>clustered_index</a><a id="clustered_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clustered Index
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#indexed_row_in_index>indexed_row_in_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clustered_nonclustered_compromise>clustered_nonclustered_compromise</a><a id="clustered_nonclustered_compromise"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Compromise between clustered and nonclustered
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#covering_index>covering_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multi_column_index>multi_column_index</a><a id="multi_column_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multi-Column Index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#concat_index>concat_index</a>, <a href=#geospatial_data>geospatial_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#indexed_row_in_index>indexed_row_in_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#concat_index>concat_index</a><a id="concat_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Concatenated Index
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_column_index>multi_column_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#covering_index>covering_index</a><a id="covering_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+covering index, or index with included columns
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clustered_nonclustered_compromise>clustered_nonclustered_compromise</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#geospatial_data>geospatial_data</a><a id="geospatial_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+geospatial data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_column_index>multi_column_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fts_fuzzy>fts_fuzzy</a><a id="fts_fuzzy"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Full-text search and fuzzy indexes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fuzzy_querying>fuzzy_querying</a>, <a href=#levenshtein_automation>levenshtein_automation</a>, <a href=#similar_keys>similar_keys</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#similar_keys>similar_keys</a><a id="similar_keys"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+similar keys
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fts_fuzzy>fts_fuzzy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fuzzy_querying>fuzzy_querying</a><a id="fuzzy_querying"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fuzzy Querying
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fts_fuzzy>fts_fuzzy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#levenshtein_automation>levenshtein_automation</a><a id="levenshtein_automation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+levenshtein automation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#efficient_search_words_edit_distance>efficient_search_words_edit_distance</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fts_fuzzy>fts_fuzzy</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#efficient_search_words_edit_distance>efficient_search_words_edit_distance</a><a id="efficient_search_words_edit_distance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Efficient search of words within edit distance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#levenshtein_automation>levenshtein_automation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#keeping_everything_memory>keeping_everything_memory</a><a id="keeping_everything_memory"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Keeping everything in memory
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#NVM>NVM</a>, <a href=#anti_caching>anti_caching</a>, <a href=#in_memory_db>in_memory_db</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#in_memory_db>in_memory_db</a><a id="in_memory_db"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+In-memory databses
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#avoids_encoding_overhead>avoids_encoding_overhead</a>, <a href=#disk_durablity>disk_durablity</a>, <a href=#implement_models_difficult_for_disks>implement_models_difficult_for_disks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#keeping_everything_memory>keeping_everything_memory</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#disk_durablity>disk_durablity</a><a id="disk_durablity"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use disk as append-only log for durability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#in_memory_db>in_memory_db</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#implement_models_difficult_for_disks>implement_models_difficult_for_disks</a><a id="implement_models_difficult_for_disks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can provide models that are difficult to implement with disk-based indexes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#redis_data_structs>redis_data_structs</a> (examples)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#in_memory_db>in_memory_db</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#redis_data_structs>redis_data_structs</a><a id="redis_data_structs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Redis: priority queues and sets
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#implement_models_difficult_for_disks>implement_models_difficult_for_disks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#avoids_encoding_overhead>avoids_encoding_overhead</a><a id="avoids_encoding_overhead"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Performance advantage comes from avoiding overheads of encoding data in a form that can be written to disk
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#in_memory_db>in_memory_db</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#anti_caching>anti_caching</a><a id="anti_caching"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Anti-caching
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#datasets_larger_than_mem>datasets_larger_than_mem</a> (situation when to use it), <a href=#evict_least_used>evict_least_used</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#keeping_everything_memory>keeping_everything_memory</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#datasets_larger_than_mem>datasets_larger_than_mem</a><a id="datasets_larger_than_mem"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Datasets larger than memory
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#anti_caching>anti_caching</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#evict_least_used>evict_least_used</a><a id="evict_least_used"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Evict least used data from memory and write to disk
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#anti_caching>anti_caching</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#NVM>NVM</a><a id="NVM"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+NVM: non-volatile memory
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#keeping_everything_memory>keeping_everything_memory</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transaction>transaction</a><a id="transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#OLTP>OLTP</a>, <a href=#commercial_transaction>commercial_transaction</a> (business origins), <a href=#data_analytics>data_analytics</a>, <a href=#rw_group_logical_unit>rw_group_logical_unit</a> (description)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#commercial_transaction>commercial_transaction</a><a id="commercial_transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Commercial transaction
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction>transaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rw_group_logical_unit>rw_group_logical_unit</a><a id="rw_group_logical_unit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Group of reads/writes that form a logical unit
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction>transaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#OLTP>OLTP</a><a id="OLTP"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Online Transaction Processing (OLTP)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#OLTP_ops>OLTP_ops</a>, <a href=#some_oltp_traits>some_oltp_traits</a>, <a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction>transaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#data_analytics>data_analytics</a><a id="data_analytics"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data Analytics
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#business_intel>business_intel</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction>transaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#business_intel>business_intel</a><a id="business_intel"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Business intelligence
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#OLAP>OLAP</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_analytics>data_analytics</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#OLAP>OLAP</a><a id="OLAP"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Online analytic processing (OLAP)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#column_oriented_storage>column_oriented_storage</a>, <a href=#some_olap_traits>some_olap_traits</a>, <a href=#specialized_db_olap>specialized_db_olap</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#business_intel>business_intel</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#data_warehouse>data_warehouse</a><a id="data_warehouse"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data Warehouse
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#column_oriented_storage>column_oriented_storage</a>, <a href=#doesnt_affect_user_facing_db>doesnt_affect_user_facing_db</a>, <a href=#extract_transform_load>extract_transform_load</a>, <a href=#materialized_aggregates>materialized_aggregates</a>, <a href=#specialized_db_olap>specialized_db_olap</a> (description), <a href=#star_schema>star_schema</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#specialized_db_olap>specialized_db_olap</a><a id="specialized_db_olap"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+specialized database for OLAP
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OLAP>OLAP</a>, <a href=#data_warehouse>data_warehouse</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#doesnt_affect_user_facing_db>doesnt_affect_user_facing_db</a><a id="doesnt_affect_user_facing_db"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Doesn't affect performance of user-facing OLTP databse
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_warehouse>data_warehouse</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#extract_transform_load>extract_transform_load</a><a id="extract_transform_load"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+extract, transform, load
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_warehouse>data_warehouse</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#star_schema>star_schema</a><a id="star_schema"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Star Schema
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dimensional_modeling>dimensional_modeling</a> (AKA), <a href=#fact_table>fact_table</a>, <a href=#snowflake_schema>snowflake_schema</a>, <a href=#surround_like_star_rays>surround_like_star_rays</a> (Where "star schema" gets its name)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_warehouse>data_warehouse</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dimensional_modeling>dimensional_modeling</a><a id="dimensional_modeling"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dimensional Modeling
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#star_schema>star_schema</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fact_table>fact_table</a><a id="fact_table"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fact Table
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dimension_tables>dimension_tables</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#star_schema>star_schema</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snowflake_schema>snowflake_schema</a><a id="snowflake_schema"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Snowflake schema
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dimensions_broken_into_subdimensions>dimensions_broken_into_subdimensions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#star_schema>star_schema</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dimension_tables>dimension_tables</a><a id="dimension_tables"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dimension Tables
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#surround_like_star_rays>surround_like_star_rays</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fact_table>fact_table</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#surround_like_star_rays>surround_like_star_rays</a><a id="surround_like_star_rays"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Surround facts table like rays of a star
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#star_schema>star_schema</a>, <a href=#dimension_tables>dimension_tables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#OLTP_ops>OLTP_ops</a><a id="OLTP_ops"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+OLTP operations
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dicing>dicing</a>, <a href=#drill_down>drill_down</a>, <a href=#slicing>slicing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OLTP>OLTP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#drill_down>drill_down</a><a id="drill_down"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Drill Down
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OLTP_ops>OLTP_ops</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#slicing>slicing</a><a id="slicing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Slicing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OLTP_ops>OLTP_ops</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dicing>dicing</a><a id="dicing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+dicing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OLTP_ops>OLTP_ops</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#column_oriented_storage>column_oriented_storage</a><a id="column_oriented_storage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Column-oriented storage
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#writing>writing</a>, <a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a>, <a href=#compresses_well>compresses_well</a>, <a href=#sort_order>sort_order</a>, <a href=#sorted_different_ways>sorted_different_ways</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OLAP>OLAP</a>, <a href=#data_warehouse>data_warehouse</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#compresses_well>compresses_well</a><a id="compresses_well"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tends to compress well
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bitmap_encoding>bitmap_encoding</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#column_oriented_storage>column_oriented_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#access_few_columns_at_a_time>access_few_columns_at_a_time</a><a id="access_few_columns_at_a_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Queries tend to access only 3-5 columns at a time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#column_oriented_storage>column_oriented_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bitmap_encoding>bitmap_encoding</a><a id="bitmap_encoding"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bitmap Encoding
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compresses_well>compresses_well</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dimensions_broken_into_subdimensions>dimensions_broken_into_subdimensions</a><a id="dimensions_broken_into_subdimensions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dimensions broken down into subdimensions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snowflake_schema>snowflake_schema</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sort_order>sort_order</a><a id="sort_order"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+sort order
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#helpful_for_col_compr>helpful_for_col_compr</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#column_oriented_storage>column_oriented_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#helpful_for_col_compr>helpful_for_col_compr</a><a id="helpful_for_col_compr"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can help with compression of columns
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sort_order>sort_order</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#writing>writing</a><a id="writing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+writing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#more_difficult>more_difficult</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#column_oriented_storage>column_oriented_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sorted_different_ways>sorted_different_ways</a><a id="sorted_different_ways"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+sorted in different ways
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#optimized_diff_queries>optimized_diff_queries</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#column_oriented_storage>column_oriented_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#optimized_diff_queries>optimized_diff_queries</a><a id="optimized_diff_queries"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Optimized for different queries
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#sorted_different_ways>sorted_different_ways</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_difficult>more_difficult</a><a id="more_difficult"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+more difficult
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lstm_trees>lstm_trees</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#writing>writing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lstm_trees>lstm_trees</a><a id="lstm_trees"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+LSTM Trees
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#more_difficult>more_difficult</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#materialized_aggregates>materialized_aggregates</a><a id="materialized_aggregates"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Materialized Aggregates
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cache_common_queries>cache_common_queries</a>, <a href=#materialized_view>materialized_view</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_warehouse>data_warehouse</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#materialized_view>materialized_view</a><a id="materialized_view"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Materialized View
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#datacube>datacube</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#materialized_aggregates>materialized_aggregates</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cache_common_queries>cache_common_queries</a><a id="cache_common_queries"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cache common aggregate queries (count, sum, avg, etc)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#materialized_aggregates>materialized_aggregates</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#datacube>datacube</a><a id="datacube"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+datacube/OLAP cube
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#materialized_view>materialized_view</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#some_olap_traits>some_olap_traits</a><a id="some_olap_traits"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+low volume, demanding queries, business analyists
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#some_oltp_traits>some_oltp_traits</a> (contrasting)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OLAP>OLAP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#some_oltp_traits>some_oltp_traits</a><a id="some_oltp_traits"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+high volume, user-facing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#some_olap_traits>some_olap_traits</a>, <a href=#OLTP>OLTP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a><a id="storage_engine_schools_of_thought"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+storage engine schools of thought
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#update_in_place>update_in_place</a>, <a href=#log_structured>log_structured</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OLTP>OLTP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#update_in_place>update_in_place</a><a id="update_in_place"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Update in-place
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#storage_engine_schools_of_thought>storage_engine_schools_of_thought</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

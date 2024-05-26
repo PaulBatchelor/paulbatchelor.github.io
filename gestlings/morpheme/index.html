@@ -283,15 +283,30 @@ bytecode). <code>mp</code> contains the table of gesture paths,
 presumably populated by the append operation defined
 previously.
 </p>
-<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.compile(tal, path, words, mp, head)
+<div><b><i>&lt;&lt;helpers&gt;&gt;=</i></b></div><pre><code>function M.compile(tal, path, words, mp, head, lookup)
     head = head or {}
     for label, p in pairs(mp) do
         tal.label(words, label)
         if head[label] ~= nil then
             head[label](words)
         end
-        path.path(tal, words, p)
+        lookup = lookup or nil
+        path.path(tal, words, p, lookup)
         tal.jump(words, label)
+    end
+end
+
+function M.compile_noloop(tal, path, words, mp, head, lookup, multilut)
+    head = head or {}
+    multilut = multilut or {}
+    for label, p in pairs(mp) do
+        tal.label(words, label)
+        if head[label] ~= nil then
+            head[label](words)
+        end
+        local lut = multilut[label] or lookup
+        path.path(tal, words, p, lut)
+        tal.jump(words, "hold")
     end
 end</pre></code>
 

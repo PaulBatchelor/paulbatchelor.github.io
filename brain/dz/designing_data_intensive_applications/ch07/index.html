@@ -1,0 +1,4312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>designing_data_intensive_applications/ch07</title>
+<h1>ch07</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/designing_data_intensive_applications">designing_data_intensive_applications</a> / <a href="/brain/dz/designing_data_intensive_applications/ch07">ch07</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 7: Transactions
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#single_node>single_node</a><ul>
+<li>
+<a href=#WAL>WAL</a></li>
+<li>
+<a href=#nv_storage>nv_storage</a></li>
+</ul>
+</li>
+<li>
+<a href=#transactions>transactions</a><ul>
+<li>
+<a href=#ACID>ACID</a><ul>
+<li>
+<a href=#BASE>BASE</a></li>
+<li>
+<a href=#atomicity>atomicity</a><ul>
+<li>
+<a href=#atomic>atomic</a></li>
+<li>
+<a href=#atomic_transaction>atomic_transaction</a><ul>
+<li>
+<a href=#abortability>abortability</a></li>
+</ul>
+</li>
+<li>
+<a href=#not_about_concurrency>not_about_concurrency</a></li>
+</ul>
+</li>
+<li>
+<a href=#best_effort>best_effort</a><ul>
+<li>
+<a href=#leaderless_repl>leaderless_repl</a></li>
+</ul>
+</li>
+<li>
+<a href=#consistency>consistency</a><ul>
+<li>
+<a href=#depends_app_invariants>depends_app_invariants</a><ul>
+<li>
+<a href=#property_of_app_not_db>property_of_app_not_db</a></li>
+</ul>
+</li>
+<li>
+<a href=#invariants>invariants</a><ul>
+<li>
+<a href=#depends_app_invariants>depends_app_invariants</a><ul>
+<li>
+<a href=#property_of_app_not_db>property_of_app_not_db</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#durability>durability</a><ul>
+<li>
+<a href=#WAL>WAL</a></li>
+<li>
+<a href=#data_written_not_forgotten>data_written_not_forgotten</a><ul>
+<li>
+<a href=#even_crash_hardware_fault>even_crash_hardware_fault</a><ul>
+<li>
+<a href=#WAL>WAL</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#nv_storage>nv_storage</a></li>
+<li>
+<a href=#repl_wait_copy_before_success>repl_wait_copy_before_success</a></li>
+</ul>
+</li>
+<li>
+<a href=#implementations_not_equal>implementations_not_equal</a><ul>
+<li>
+<a href=#isolation_ambiguity>isolation_ambiguity</a><ul>
+<li>
+<a href=#SQL_isolation_ambiguous>SQL_isolation_ambiguous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#isolation>isolation</a><ul>
+<li>
+<a href=#concurrency_problems_multiusers>concurrency_problems_multiusers</a></li>
+<li>
+<a href=#concurrent_tasks_isolated>concurrent_tasks_isolated</a></li>
+<li>
+<a href=#isolation_formalized_serializability>isolation_formalized_serializability</a><ul>
+<li>
+<a href=#perf_penalty>perf_penalty</a></li>
+<li>
+<a href=#serializability>serializability</a><ul>
+<li>
+<a href=#two_phase_locking>two_phase_locking</a><ul>
+<li>
+<a href=#deadlock>deadlock</a><ul>
+<li>
+<a href=#auto_deadlock_detection>auto_deadlock_detection</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_impl>lock_impl</a><ul>
+<li>
+<a href=#exclusive_mode>exclusive_mode</a><ul>
+<li>
+<a href=#transaction_writes_objects>transaction_writes_objects</a><ul>
+<li>
+<a href=#transaction_reads_objects>transaction_reads_objects</a></li>
+</ul>
+</li>
+<li>
+<a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a></li>
+</ul>
+</li>
+<li>
+<a href=#index_range_locking>index_range_locking</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_table_as_safe_fallback>lock_table_as_safe_fallback</a></li>
+<li>
+<a href=#next_key_locking>next_key_locking</a></li>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_held_until_trans_end>lock_held_until_trans_end</a></li>
+<li>
+<a href=#phases>phases</a></li>
+<li>
+<a href=#predicate_lock>predicate_lock</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#shared_mode>shared_mode</a><ul>
+<li>
+<a href=#transaction_reads_objects>transaction_reads_objects</a></li>
+<li>
+<a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#many_reads_until_write_then_exclusive>many_reads_until_write_then_exclusive</a></li>
+<li>
+<a href=#not_two_phase_commit>not_two_phase_commit</a></li>
+<li>
+<a href=#pessimistic_concurrency>pessimistic_concurrency</a><ul>
+<li>
+<a href=#mutex>mutex</a></li>
+<li>
+<a href=#optimistic_concurrency>optimistic_concurrency</a><ul>
+<li>
+<a href=#poor_perf_high_contention>poor_perf_high_contention</a></li>
+<li>
+<a href=#usually_better_than_pessimistic>usually_better_than_pessimistic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#phases>phases</a></li>
+<li>
+<a href=#predicate_lock>predicate_lock</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#writers_block_readers_vice_versa>writers_block_readers_vice_versa</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#lost_update_problem>lost_update_problem</a><ul>
+<li>
+<a href=#atomic_updates>atomic_updates</a><ul>
+<li>
+<a href=#cursor_stability>cursor_stability</a></li>
+</ul>
+</li>
+<li>
+<a href=#auto_detecting_lost_updates>auto_detecting_lost_updates</a><ul>
+<li>
+<a href=#allows_parallel_RMW>allows_parallel_RMW</a></li>
+</ul>
+</li>
+<li>
+<a href=#compare_and_set>compare_and_set</a><ul>
+<li>
+<a href=#in_DBs_without_transactions>in_DBs_without_transactions</a></li>
+<li>
+<a href=#update_only_if_value_unchanged>update_only_if_value_unchanged</a></li>
+</ul>
+</li>
+<li>
+<a href=#explicit_locking>explicit_locking</a><ul>
+<li>
+<a href=#app_explicitely_locks_objects>app_explicitely_locks_objects</a></li>
+</ul>
+</li>
+<li>
+<a href=#generalization_lost_update>generalization_lost_update</a></li>
+<li>
+<a href=#later_write_clobbers_earler>later_write_clobbers_earler</a></li>
+<li>
+<a href=#read_modify_write>read_modify_write</a><ul>
+<li>
+<a href=#allows_parallel_RMW>allows_parallel_RMW</a></li>
+</ul>
+</li>
+<li>
+<a href=#replicated_lost_update>replicated_lost_update</a></li>
+<li>
+<a href=#timing_dirty_write_LU_anomaly>timing_dirty_write_LU_anomaly</a></li>
+<li>
+<a href=#write_skew>write_skew</a><ul>
+<li>
+<a href=#generalization_lost_update>generalization_lost_update</a></li>
+<li>
+<a href=#phantom>phantom</a><ul>
+<li>
+<a href=#materializing_conflicts>materializing_conflicts</a><ul>
+<li>
+<a href=#phantom_to_lock_conflict>phantom_to_lock_conflict</a></li>
+</ul>
+</li>
+<li>
+<a href=#predicate_lock>predicate_lock</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#protects_against_write_skew_phantom>protects_against_write_skew_phantom</a></li>
+<li>
+<a href=#write_changes_result_in_other_trans>write_changes_result_in_other_trans</a></li>
+</ul>
+</li>
+<li>
+<a href=#premise>premise</a><ul>
+<li>
+<a href=#db_detects_outdated_premise_abort>db_detects_outdated_premise_abort</a><ul>
+<li>
+<a href=#stale_MVCC>stale_MVCC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#protects_against_write_skew_phantom>protects_against_write_skew_phantom</a></li>
+<li>
+<a href=#two_reads_same_object_some_updates>two_reads_same_object_some_updates</a><ul>
+<li>
+<a href=#timing_dirty_write_LU_anomaly>timing_dirty_write_LU_anomaly</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#snapshot_isolation_oracle>snapshot_isolation_oracle</a></li>
+</ul>
+</li>
+<li>
+<a href=#terminology_fault_tolerant_mechanisms>terminology_fault_tolerant_mechanisms</a></li>
+</ul>
+</li>
+<li>
+<a href=#abort_reduces_many_errors>abort_reduces_many_errors</a></li>
+<li>
+<a href=#group_rw_logical_unit>group_rw_logical_unit</a></li>
+<li>
+<a href=#multi_object_transactions>multi_object_transactions</a><ul>
+<li>
+<a href=#determine_which_ops_belong_to_transaction>determine_which_ops_belong_to_transaction</a></li>
+<li>
+<a href=#ensures_foreign_keys_remain_valid>ensures_foreign_keys_remain_valid</a></li>
+<li>
+<a href=#keeps_denorm_data_synced>keeps_denorm_data_synced</a></li>
+<li>
+<a href=#single_object_writes>single_object_writes</a><ul>
+<li>
+<a href=#provides_atomicity_single_objects>provides_atomicity_single_objects</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#no_partial_failure>no_partial_failure</a></li>
+<li>
+<a href=#safety_guarantees>safety_guarantees</a></li>
+<li>
+<a href=#simplify_programming_model>simplify_programming_model</a></li>
+<li>
+<a href=#transaction_isolation>transaction_isolation</a><ul>
+<li>
+<a href=#concurrency_bugs_difficult>concurrency_bugs_difficult</a></li>
+<li>
+<a href=#read_committed>read_committed</a><ul>
+<li>
+<a href=#no_dirty_reads>no_dirty_reads</a><ul>
+<li>
+<a href=#no_dirty_writes>no_dirty_writes</a><ul>
+<li>
+<a href=#delay_2nd_write_until_1st_done>delay_2nd_write_until_1st_done</a><ul>
+<li>
+<a href=#row_level_locks>row_level_locks</a><ul>
+<li>
+<a href=#two_phase_locking>two_phase_locking</a><ul>
+<li>
+<a href=#deadlock>deadlock</a><ul>
+<li>
+<a href=#auto_deadlock_detection>auto_deadlock_detection</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_impl>lock_impl</a><ul>
+<li>
+<a href=#exclusive_mode>exclusive_mode</a><ul>
+<li>
+<a href=#transaction_writes_objects>transaction_writes_objects</a><ul>
+<li>
+<a href=#transaction_reads_objects>transaction_reads_objects</a></li>
+</ul>
+</li>
+<li>
+<a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a></li>
+</ul>
+</li>
+<li>
+<a href=#index_range_locking>index_range_locking</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_table_as_safe_fallback>lock_table_as_safe_fallback</a></li>
+<li>
+<a href=#next_key_locking>next_key_locking</a></li>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_held_until_trans_end>lock_held_until_trans_end</a></li>
+<li>
+<a href=#phases>phases</a></li>
+<li>
+<a href=#predicate_lock>predicate_lock</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#shared_mode>shared_mode</a><ul>
+<li>
+<a href=#transaction_reads_objects>transaction_reads_objects</a></li>
+<li>
+<a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#many_reads_until_write_then_exclusive>many_reads_until_write_then_exclusive</a></li>
+<li>
+<a href=#not_two_phase_commit>not_two_phase_commit</a></li>
+<li>
+<a href=#pessimistic_concurrency>pessimistic_concurrency</a><ul>
+<li>
+<a href=#mutex>mutex</a></li>
+<li>
+<a href=#optimistic_concurrency>optimistic_concurrency</a><ul>
+<li>
+<a href=#poor_perf_high_contention>poor_perf_high_contention</a></li>
+<li>
+<a href=#usually_better_than_pessimistic>usually_better_than_pessimistic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#phases>phases</a></li>
+<li>
+<a href=#predicate_lock>predicate_lock</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#writers_block_readers_vice_versa>writers_block_readers_vice_versa</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#timing_dirty_write_LU_anomaly>timing_dirty_write_LU_anomaly</a></li>
+</ul>
+</li>
+<li>
+<a href=#read_committed_impl>read_committed_impl</a><ul>
+<li>
+<a href=#impl_generalization_of_dirty_read>impl_generalization_of_dirty_read</a><ul>
+<li>
+<a href=#MVCC>MVCC</a><ul>
+<li>
+<a href=#indices_multiversion_db>indices_multiversion_db</a><ul>
+<li>
+<a href=#append_only_b_trees>append_only_b_trees</a></li>
+<li>
+<a href=#postgres_optimizations_avoid_index_updates>postgres_optimizations_avoid_index_updates</a></li>
+</ul>
+</li>
+<li>
+<a href=#postgres_GC>postgres_GC</a></li>
+<li>
+<a href=#stale_MVCC>stale_MVCC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#no_dirty_writes>no_dirty_writes</a><ul>
+<li>
+<a href=#delay_2nd_write_until_1st_done>delay_2nd_write_until_1st_done</a><ul>
+<li>
+<a href=#row_level_locks>row_level_locks</a><ul>
+<li>
+<a href=#two_phase_locking>two_phase_locking</a><ul>
+<li>
+<a href=#deadlock>deadlock</a><ul>
+<li>
+<a href=#auto_deadlock_detection>auto_deadlock_detection</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_impl>lock_impl</a><ul>
+<li>
+<a href=#exclusive_mode>exclusive_mode</a><ul>
+<li>
+<a href=#transaction_writes_objects>transaction_writes_objects</a><ul>
+<li>
+<a href=#transaction_reads_objects>transaction_reads_objects</a></li>
+</ul>
+</li>
+<li>
+<a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a></li>
+</ul>
+</li>
+<li>
+<a href=#index_range_locking>index_range_locking</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_table_as_safe_fallback>lock_table_as_safe_fallback</a></li>
+<li>
+<a href=#next_key_locking>next_key_locking</a></li>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_held_until_trans_end>lock_held_until_trans_end</a></li>
+<li>
+<a href=#phases>phases</a></li>
+<li>
+<a href=#predicate_lock>predicate_lock</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#shared_mode>shared_mode</a><ul>
+<li>
+<a href=#transaction_reads_objects>transaction_reads_objects</a></li>
+<li>
+<a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#many_reads_until_write_then_exclusive>many_reads_until_write_then_exclusive</a></li>
+<li>
+<a href=#not_two_phase_commit>not_two_phase_commit</a></li>
+<li>
+<a href=#pessimistic_concurrency>pessimistic_concurrency</a><ul>
+<li>
+<a href=#mutex>mutex</a></li>
+<li>
+<a href=#optimistic_concurrency>optimistic_concurrency</a><ul>
+<li>
+<a href=#poor_perf_high_contention>poor_perf_high_contention</a></li>
+<li>
+<a href=#usually_better_than_pessimistic>usually_better_than_pessimistic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#phases>phases</a></li>
+<li>
+<a href=#predicate_lock>predicate_lock</a><ul>
+<li>
+<a href=#better_than_predicate>better_than_predicate</a><ul>
+<li>
+<a href=#simplify_predicate>simplify_predicate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#writers_block_readers_vice_versa>writers_block_readers_vice_versa</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#timing_dirty_write_LU_anomaly>timing_dirty_write_LU_anomaly</a></li>
+</ul>
+</li>
+<li>
+<a href=#read_committed_impl>read_committed_impl</a><ul>
+<li>
+<a href=#impl_generalization_of_dirty_read>impl_generalization_of_dirty_read</a><ul>
+<li>
+<a href=#MVCC>MVCC</a><ul>
+<li>
+<a href=#indices_multiversion_db>indices_multiversion_db</a><ul>
+<li>
+<a href=#append_only_b_trees>append_only_b_trees</a></li>
+<li>
+<a href=#postgres_optimizations_avoid_index_updates>postgres_optimizations_avoid_index_updates</a></li>
+</ul>
+</li>
+<li>
+<a href=#postgres_GC>postgres_GC</a></li>
+<li>
+<a href=#stale_MVCC>stale_MVCC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#read_skew>read_skew</a><ul>
+<li>
+<a href=#reads_inconsistent_state>reads_inconsistent_state</a></li>
+<li>
+<a href=#snapshot_isolation>snapshot_isolation</a><ul>
+<li>
+<a href=#SSI>SSI</a><ul>
+<li>
+<a href=#SSI_overview>SSI_overview</a><ul>
+<li>
+<a href=#db_detects_outdated_premise_abort>db_detects_outdated_premise_abort</a><ul>
+<li>
+<a href=#stale_MVCC>stale_MVCC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#abort_rate_affects_perf>abort_rate_affects_perf</a></li>
+<li>
+<a href=#full_serializability_small_penalty>full_serializability_small_penalty</a></li>
+<li>
+<a href=#granular_tracking_more_overhead>granular_tracking_more_overhead</a></li>
+<li>
+<a href=#optimistic_concurrency>optimistic_concurrency</a><ul>
+<li>
+<a href=#poor_perf_high_contention>poor_perf_high_contention</a></li>
+<li>
+<a href=#usually_better_than_pessimistic>usually_better_than_pessimistic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#repeatable_read>repeatable_read</a><ul>
+<li>
+<a href=#SQL_standard_repeatable_read>SQL_standard_repeatable_read</a><ul>
+<li>
+<a href=#SQL_isolation_ambiguous>SQL_isolation_ambiguous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#serializable_oracle>serializable_oracle</a></li>
+<li>
+<a href=#snapshot_isolation_oracle>snapshot_isolation_oracle</a></li>
+<li>
+<a href=#visibility_rules>visibility_rules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#serializable_isolation>serializable_isolation</a><ul>
+<li>
+<a href=#SSI>SSI</a><ul>
+<li>
+<a href=#SSI_overview>SSI_overview</a><ul>
+<li>
+<a href=#db_detects_outdated_premise_abort>db_detects_outdated_premise_abort</a><ul>
+<li>
+<a href=#stale_MVCC>stale_MVCC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#abort_rate_affects_perf>abort_rate_affects_perf</a></li>
+<li>
+<a href=#full_serializability_small_penalty>full_serializability_small_penalty</a></li>
+<li>
+<a href=#granular_tracking_more_overhead>granular_tracking_more_overhead</a></li>
+<li>
+<a href=#optimistic_concurrency>optimistic_concurrency</a><ul>
+<li>
+<a href=#poor_perf_high_contention>poor_perf_high_contention</a></li>
+<li>
+<a href=#usually_better_than_pessimistic>usually_better_than_pessimistic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#actual_serial_execution>actual_serial_execution</a><ul>
+<li>
+<a href=#every_trans_small_fast>every_trans_small_fast</a></li>
+<li>
+<a href=#interactive_multistatements_forbidden>interactive_multistatements_forbidden</a></li>
+<li>
+<a href=#limited_to_in_memory>limited_to_in_memory</a></li>
+<li>
+<a href=#low_write_throughput>low_write_throughput</a></li>
+<li>
+<a href=#stored_procedure>stored_procedure</a></li>
+</ul>
+</li>
+<li>
+<a href=#performance_cost>performance_cost</a><ul>
+<li>
+<a href=#weaker_isolation_levels>weaker_isolation_levels</a><ul>
+<li>
+<a href=#subtle_bugs>subtle_bugs</a></li>
+<li>
+<a href=#throughput_and_response_worse_than_weak_isolation>throughput_and_response_worse_than_weak_isolation</a><ul>
+<li>
+<a href=#reduced_concurrency>reduced_concurrency</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#si_mantra>si_mantra</a><ul>
+<li>
+<a href=#writers_block_readers_vice_versa>writers_block_readers_vice_versa</a></li>
+</ul>
+</li>
+<li>
+<a href=#strongest_isolation_level>strongest_isolation_level</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transactions>transactions</a><a id="transactions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transactions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ACID>ACID</a>, <a href=#abort_reduces_many_errors>abort_reduces_many_errors</a>, <a href=#group_rw_logical_unit>group_rw_logical_unit</a> (description), <a href=#multi_object_transactions>multi_object_transactions</a>, <a href=#no_partial_failure>no_partial_failure</a>, <a href=#safety_guarantees>safety_guarantees</a>, <a href=#simplify_programming_model>simplify_programming_model</a> (why transactions were created), <a href=#transaction_isolation>transaction_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#group_rw_logical_unit>group_rw_logical_unit</a><a id="group_rw_logical_unit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Groups reads and writes into logical unit
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#simplify_programming_model>simplify_programming_model</a><a id="simplify_programming_model"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Created to simplify programming model for apps accessing database
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_partial_failure>no_partial_failure</a><a id="no_partial_failure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No partial failure. Safe to retry.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#safety_guarantees>safety_guarantees</a><a id="safety_guarantees"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Safety Guarantees: databse handles certain potential error scenarios and concurrency issues
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ACID>ACID</a><a id="ACID"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+ACID: Atomicity, Consistency, Isolation, Durability
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#BASE>BASE</a> (BASE is a less strict version of ACID), <a href=#atomicity>atomicity</a>, <a href=#best_effort>best_effort</a>, <a href=#consistency>consistency</a>, <a href=#durability>durability</a>, <a href=#implementations_not_equal>implementations_not_equal</a>, <a href=#isolation>isolation</a>, <a href=#terminology_fault_tolerant_mechanisms>terminology_fault_tolerant_mechanisms</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#terminology_fault_tolerant_mechanisms>terminology_fault_tolerant_mechanisms</a><a id="terminology_fault_tolerant_mechanisms"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+An effort to establish precise terminology for fault-tolerant mechanisms in databases
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACID>ACID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#implementations_not_equal>implementations_not_equal</a><a id="implementations_not_equal"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Implementations not equal
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#isolation_ambiguity>isolation_ambiguity</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACID>ACID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#isolation_ambiguity>isolation_ambiguity</a><a id="isolation_ambiguity"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"Isolation" ambiguity
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#SQL_isolation_ambiguous>SQL_isolation_ambiguous</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#implementations_not_equal>implementations_not_equal</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#BASE>BASE</a><a id="BASE"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+BASE: Basically available Soft-state Eventual consistency
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACID>ACID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#atomicity>atomicity</a><a id="atomicity"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Atomicity
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#atomic>atomic</a>, <a href=#atomic_transaction>atomic_transaction</a>, <a href=#not_about_concurrency>not_about_concurrency</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACID>ACID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#atomic>atomic</a><a id="atomic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Atomic: something that cannot be broken down into smaller parts
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomicity>atomicity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_about_concurrency>not_about_concurrency</a><a id="not_about_concurrency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not about concurrency in a DB context
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomicity>atomicity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#atomic_transaction>atomic_transaction</a><a id="atomic_transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Atomic Transaction: if writes in a transaction can't be completed due to fault, abort and discard writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#abortability>abortability</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomicity>atomicity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#abortability>abortability</a><a id="abortability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"abortability"
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomic_transaction>atomic_transaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#consistency>consistency</a><a id="consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#depends_app_invariants>depends_app_invariants</a>, <a href=#invariants>invariants</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACID>ACID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#invariants>invariants</a><a id="invariants"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Invariants: statements about data that must always be true
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#depends_app_invariants>depends_app_invariants</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#depends_app_invariants>depends_app_invariants</a><a id="depends_app_invariants"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Depends on application's notion of invaraints
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#property_of_app_not_db>property_of_app_not_db</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#invariants>invariants</a>, <a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#property_of_app_not_db>property_of_app_not_db</a><a id="property_of_app_not_db"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Property of application, not database
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#depends_app_invariants>depends_app_invariants</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#isolation>isolation</a><a id="isolation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Isolation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#concurrency_problems_multiusers>concurrency_problems_multiusers</a>, <a href=#concurrent_tasks_isolated>concurrent_tasks_isolated</a>, <a href=#isolation_formalized_serializability>isolation_formalized_serializability</a>, <a href=#lost_update_problem>lost_update_problem</a>, <a href=#snapshot_isolation_oracle>snapshot_isolation_oracle</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACID>ACID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#concurrent_tasks_isolated>concurrent_tasks_isolated</a><a id="concurrent_tasks_isolated"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Concurrently executing tasks are isolated from one another
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#isolation>isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#concurrency_problems_multiusers>concurrency_problems_multiusers</a><a id="concurrency_problems_multiusers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Concurrency problems with multiple users
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#isolation>isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#isolation_formalized_serializability>isolation_formalized_serializability</a><a id="isolation_formalized_serializability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Classical database textbooks formalize isolation as serializability
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#perf_penalty>perf_penalty</a>, <a href=#serializability>serializability</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#isolation>isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#serializability>serializability</a><a id="serializability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Serializability: each transaction can pretend it is the only one running on the entire database
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#two_phase_locking>two_phase_locking</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#isolation_formalized_serializability>isolation_formalized_serializability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#perf_penalty>perf_penalty</a><a id="perf_penalty"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Performance penalty: rarely used.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#isolation_formalized_serializability>isolation_formalized_serializability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snapshot_isolation_oracle>snapshot_isolation_oracle</a><a id="snapshot_isolation_oracle"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Snapshot Isolation (Oracle)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#isolation>isolation</a>, <a href=#snapshot_isolation>snapshot_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#durability>durability</a><a id="durability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Durability
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#WAL>WAL</a>, <a href=#data_written_not_forgotten>data_written_not_forgotten</a>, <a href=#nv_storage>nv_storage</a>, <a href=#repl_wait_copy_before_success>repl_wait_copy_before_success</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACID>ACID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#nv_storage>nv_storage</a><a id="nv_storage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Non-volatile storage
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#single_node>single_node</a>, <a href=#durability>durability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#WAL>WAL</a><a id="WAL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+WAL (write-ahead-log)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#durability>durability</a>, <a href=#single_node>single_node</a>, <a href=#even_crash_hardware_fault>even_crash_hardware_fault</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#repl_wait_copy_before_success>repl_wait_copy_before_success</a><a id="repl_wait_copy_before_success"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replicated database: wait for data to copy to nodes before reporting success
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#durability>durability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#data_written_not_forgotten>data_written_not_forgotten</a><a id="data_written_not_forgotten"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Promise: data written in successful transaction will not be forgotten
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#even_crash_hardware_fault>even_crash_hardware_fault</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#durability>durability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#even_crash_hardware_fault>even_crash_hardware_fault</a><a id="even_crash_hardware_fault"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Even with crashes or hardware faults
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#WAL>WAL</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_written_not_forgotten>data_written_not_forgotten</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#single_node>single_node</a><a id="single_node"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Single-node
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#WAL>WAL</a>, <a href=#nv_storage>nv_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multi_object_transactions>multi_object_transactions</a><a id="multi_object_transactions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+multi-object transactions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#determine_which_ops_belong_to_transaction>determine_which_ops_belong_to_transaction</a>, <a href=#ensures_foreign_keys_remain_valid>ensures_foreign_keys_remain_valid</a>, <a href=#keeps_denorm_data_synced>keeps_denorm_data_synced</a>, <a href=#single_object_writes>single_object_writes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#single_object_writes>single_object_writes</a><a id="single_object_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Single-object writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#provides_atomicity_single_objects>provides_atomicity_single_objects</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_object_transactions>multi_object_transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#determine_which_ops_belong_to_transaction>determine_which_ops_belong_to_transaction</a><a id="determine_which_ops_belong_to_transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+requires some way of determining which read/write operations belong to same transaction
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_object_transactions>multi_object_transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#provides_atomicity_single_objects>provides_atomicity_single_objects</a><a id="provides_atomicity_single_objects"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Usually provides atomicity for single objects
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#single_object_writes>single_object_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ensures_foreign_keys_remain_valid>ensures_foreign_keys_remain_valid</a><a id="ensures_foreign_keys_remain_valid"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+In relational model, multi-object transactions ensure that foreign keys remain valid
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_object_transactions>multi_object_transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#keeps_denorm_data_synced>keeps_denorm_data_synced</a><a id="keeps_denorm_data_synced"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Helps to keep denormalized data in sync
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multi_object_transactions>multi_object_transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#best_effort>best_effort</a><a id="best_effort"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Best Effort: databse does as much as it can, won't undo changes it has already done if it runs into error
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leaderless_repl>leaderless_repl</a> (useful in leaderless replication schemes (I think?))
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ACID>ACID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leaderless_repl>leaderless_repl</a><a id="leaderless_repl"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leaderless replication
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#best_effort>best_effort</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transaction_isolation>transaction_isolation</a><a id="transaction_isolation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction Isolation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#concurrency_bugs_difficult>concurrency_bugs_difficult</a> (reason they were created), <a href=#read_committed>read_committed</a>, <a href=#serializable_isolation>serializable_isolation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#concurrency_bugs_difficult>concurrency_bugs_difficult</a><a id="concurrency_bugs_difficult"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Created because concurrency bugs are hard to find by testing
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction_isolation>transaction_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#serializable_isolation>serializable_isolation</a><a id="serializable_isolation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+serializable isolation: database guarantees that transactions have same effect as if they ran serially
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#SSI>SSI</a>, <a href=#actual_serial_execution>actual_serial_execution</a>, <a href=#performance_cost>performance_cost</a>, <a href=#si_mantra>si_mantra</a>, <a href=#strongest_isolation_level>strongest_isolation_level</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction_isolation>transaction_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_committed>read_committed</a><a id="read_committed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+read committed
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#no_dirty_reads>no_dirty_reads</a>, <a href=#no_dirty_writes>no_dirty_writes</a>, <a href=#read_committed_impl>read_committed_impl</a>, <a href=#read_skew>read_skew</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction_isolation>transaction_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_dirty_reads>no_dirty_reads</a><a id="no_dirty_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reads: only see committed (AKA no dirty reads)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#no_dirty_writes>no_dirty_writes</a> (related), <a href=#read_committed_impl>read_committed_impl</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_committed>read_committed</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_dirty_writes>no_dirty_writes</a><a id="no_dirty_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Writes: only overwrite data that has been comitted (AKA no dirty writes)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#delay_2nd_write_until_1st_done>delay_2nd_write_until_1st_done</a>, <a href=#timing_dirty_write_LU_anomaly>timing_dirty_write_LU_anomaly</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_committed>read_committed</a>, <a href=#no_dirty_reads>no_dirty_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#performance_cost>performance_cost</a><a id="performance_cost"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+performance cost
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#weaker_isolation_levels>weaker_isolation_levels</a> (alternative solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#serializable_isolation>serializable_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#weaker_isolation_levels>weaker_isolation_levels</a><a id="weaker_isolation_levels"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Weaker levels of isolation that protect aginst only some concurrency bugs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#subtle_bugs>subtle_bugs</a>, <a href=#throughput_and_response_worse_than_weak_isolation>throughput_and_response_worse_than_weak_isolation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#performance_cost>performance_cost</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#subtle_bugs>subtle_bugs</a><a id="subtle_bugs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can lead to subtle bugs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#weaker_isolation_levels>weaker_isolation_levels</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#delay_2nd_write_until_1st_done>delay_2nd_write_until_1st_done</a><a id="delay_2nd_write_until_1st_done"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Usually delays second write until first write is either committed or aborted
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#row_level_locks>row_level_locks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#no_dirty_writes>no_dirty_writes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#row_level_locks>row_level_locks</a><a id="row_level_locks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Row-level locks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#two_phase_locking>two_phase_locking</a> (similar)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#delay_2nd_write_until_1st_done>delay_2nd_write_until_1st_done</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_skew>read_skew</a><a id="read_skew"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read Skew / Non-repeatable Read
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reads_inconsistent_state>reads_inconsistent_state</a>, <a href=#snapshot_isolation>snapshot_isolation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_committed>read_committed</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reads_inconsistent_state>reads_inconsistent_state</a><a id="reads_inconsistent_state"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Anomaly where databse is read in an inconsistent state
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_skew>read_skew</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_committed_impl>read_committed_impl</a><a id="read_committed_impl"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+For every object written, DB remembers old comitted and new value (set by transaction holding write lock). Old value is returned while transaction ongoing, new value returned when transaction committed
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#impl_generalization_of_dirty_read>impl_generalization_of_dirty_read</a> (description of dirty read prevention mechanism)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_committed>read_committed</a>, <a href=#no_dirty_reads>no_dirty_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snapshot_isolation>snapshot_isolation</a><a id="snapshot_isolation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Snapshot Isolation: each transaction reads from a consistent snapshot of the database
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#SSI>SSI</a>, <a href=#repeatable_read>repeatable_read</a>, <a href=#serializable_oracle>serializable_oracle</a> (AKA), <a href=#snapshot_isolation_oracle>snapshot_isolation_oracle</a>, <a href=#visibility_rules>visibility_rules</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_skew>read_skew</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#visibility_rules>visibility_rules</a><a id="visibility_rules"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Visibility Rules
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot_isolation>snapshot_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#impl_generalization_of_dirty_read>impl_generalization_of_dirty_read</a><a id="impl_generalization_of_dirty_read"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Implemenation is generalization of dirty read prevention mechanism
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#MVCC>MVCC</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_committed_impl>read_committed_impl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#MVCC>MVCC</a><a id="MVCC"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+MVCC: multi-version concurrency control
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#indices_multiversion_db>indices_multiversion_db</a>, <a href=#postgres_GC>postgres_GC</a>, <a href=#stale_MVCC>stale_MVCC</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#impl_generalization_of_dirty_read>impl_generalization_of_dirty_read</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#indices_multiversion_db>indices_multiversion_db</a><a id="indices_multiversion_db"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Indices in multiversion DB
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#append_only_b_trees>append_only_b_trees</a>, <a href=#postgres_optimizations_avoid_index_updates>postgres_optimizations_avoid_index_updates</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#MVCC>MVCC</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#postgres_GC>postgres_GC</a><a id="postgres_GC"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+PostgreSQL: use garbage collection on rows marked for deletion
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#MVCC>MVCC</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#postgres_optimizations_avoid_index_updates>postgres_optimizations_avoid_index_updates</a><a id="postgres_optimizations_avoid_index_updates"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+PostgreSQL: optimizations for avoiding index updates if idfferent versions of same object can fit on same page
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#indices_multiversion_db>indices_multiversion_db</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#append_only_b_trees>append_only_b_trees</a><a id="append_only_b_trees"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+append-only / copy-on-write B-Trees (CouchDB, Datomic, LMDB)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#indices_multiversion_db>indices_multiversion_db</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#serializable_oracle>serializable_oracle</a><a id="serializable_oracle"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Serializable (Oracle)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot_isolation>snapshot_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#repeatable_read>repeatable_read</a><a id="repeatable_read"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Repeatable Read (PostreSQL, MySQL)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#SQL_standard_repeatable_read>SQL_standard_repeatable_read</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot_isolation>snapshot_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#SQL_standard_repeatable_read>SQL_standard_repeatable_read</a><a id="SQL_standard_repeatable_read"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SQL Standard doesn't have concept of Snapshot Isolation (wasn't invented yet), Repeatable Read meets requirements of standard.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#SQL_isolation_ambiguous>SQL_isolation_ambiguous</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#repeatable_read>repeatable_read</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#SQL_isolation_ambiguous>SQL_isolation_ambiguous</a><a id="SQL_isolation_ambiguous"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Standard's definition of isolation ambiguous, and imprecise, different database implementations have different guarantees
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SQL_standard_repeatable_read>SQL_standard_repeatable_read</a>, <a href=#isolation_ambiguity>isolation_ambiguity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lost_update_problem>lost_update_problem</a><a id="lost_update_problem"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lost Update Problem: if two concurrent transactions perform read-modify-write-cycle, one of the writes will be lost.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#atomic_updates>atomic_updates</a> (solution), <a href=#auto_detecting_lost_updates>auto_detecting_lost_updates</a>, <a href=#compare_and_set>compare_and_set</a>, <a href=#explicit_locking>explicit_locking</a> (solution), <a href=#generalization_lost_update>generalization_lost_update</a>, <a href=#later_write_clobbers_earler>later_write_clobbers_earler</a>, <a href=#read_modify_write>read_modify_write</a>, <a href=#replicated_lost_update>replicated_lost_update</a>, <a href=#timing_dirty_write_LU_anomaly>timing_dirty_write_LU_anomaly</a>, <a href=#write_skew>write_skew</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#isolation>isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_modify_write>read_modify_write</a><a id="read_modify_write"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+read-modify-write: read a value, modify the value, then write the new value back to the DB.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#allows_parallel_RMW>allows_parallel_RMW</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#later_write_clobbers_earler>later_write_clobbers_earler</a><a id="later_write_clobbers_earler"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Later write clobbers the earlier write
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#atomic_updates>atomic_updates</a><a id="atomic_updates"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Atomic Updates
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cursor_stability>cursor_stability</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cursor_stability>cursor_stability</a><a id="cursor_stability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cursor Stability: Take exclusive lock on object when it is being read so that no transaction can read it until the update has been applied.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomic_updates>atomic_updates</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#explicit_locking>explicit_locking</a><a id="explicit_locking"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Explicit Locking
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#app_explicitely_locks_objects>app_explicitely_locks_objects</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#app_explicitely_locks_objects>app_explicitely_locks_objects</a><a id="app_explicitely_locks_objects"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Application explicitely locks objects to updated
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#explicit_locking>explicit_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#compare_and_set>compare_and_set</a><a id="compare_and_set"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Compare-and-set
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#in_DBs_without_transactions>in_DBs_without_transactions</a>, <a href=#update_only_if_value_unchanged>update_only_if_value_unchanged</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#auto_detecting_lost_updates>auto_detecting_lost_updates</a><a id="auto_detecting_lost_updates"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+auto-detecting lost updates: on detection, abort transaction and retry.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#allows_parallel_RMW>allows_parallel_RMW</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#in_DBs_without_transactions>in_DBs_without_transactions</a><a id="in_DBs_without_transactions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+in Databases that don't provide transactions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compare_and_set>compare_and_set</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#allows_parallel_RMW>allows_parallel_RMW</a><a id="allows_parallel_RMW"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Allows read-modify-write cycles to run in parallel
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#auto_detecting_lost_updates>auto_detecting_lost_updates</a>, <a href=#read_modify_write>read_modify_write</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#update_only_if_value_unchanged>update_only_if_value_unchanged</a><a id="update_only_if_value_unchanged"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Update value only if value has not changed since it was last read.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compare_and_set>compare_and_set</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replicated_lost_update>replicated_lost_update</a><a id="replicated_lost_update"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replicated: allow concurent writes, conflicting versions (siblings), use application code or special data structures to resolve later.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_skew>write_skew</a><a id="write_skew"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write Skew
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#generalization_lost_update>generalization_lost_update</a>, <a href=#phantom>phantom</a>, <a href=#premise>premise</a>, <a href=#protects_against_write_skew_phantom>protects_against_write_skew_phantom</a>, <a href=#two_reads_same_object_some_updates>two_reads_same_object_some_updates</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#generalization_lost_update>generalization_lost_update</a><a id="generalization_lost_update"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Generalization of lost update problem
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lost_update_problem>lost_update_problem</a>, <a href=#write_skew>write_skew</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#two_reads_same_object_some_updates>two_reads_same_object_some_updates</a><a id="two_reads_same_object_some_updates"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can happen if two transactions read same objects, then update some of those objects
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#timing_dirty_write_LU_anomaly>timing_dirty_write_LU_anomaly</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_skew>write_skew</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#timing_dirty_write_LU_anomaly>timing_dirty_write_LU_anomaly</a><a id="timing_dirty_write_LU_anomaly"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Depending on timing: it can either be a dirty write or a lost update anomaly
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#no_dirty_writes>no_dirty_writes</a>, <a href=#two_reads_same_object_some_updates>two_reads_same_object_some_updates</a>, <a href=#lost_update_problem>lost_update_problem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#phantom>phantom</a><a id="phantom"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+phantom
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#materializing_conflicts>materializing_conflicts</a>, <a href=#predicate_lock>predicate_lock</a>, <a href=#protects_against_write_skew_phantom>protects_against_write_skew_phantom</a>, <a href=#write_changes_result_in_other_trans>write_changes_result_in_other_trans</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_skew>write_skew</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_changes_result_in_other_trans>write_changes_result_in_other_trans</a><a id="write_changes_result_in_other_trans"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write in one transactions changes the result in another transaction.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#phantom>phantom</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#materializing_conflicts>materializing_conflicts</a><a id="materializing_conflicts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Materializing Conflicts
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#phantom_to_lock_conflict>phantom_to_lock_conflict</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#phantom>phantom</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#phantom_to_lock_conflict>phantom_to_lock_conflict</a><a id="phantom_to_lock_conflict"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Takes phantom and turns it into a lock conflict on concrete set of rows
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#materializing_conflicts>materializing_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#strongest_isolation_level>strongest_isolation_level</a><a id="strongest_isolation_level"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Strongest Isolation Level
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#serializable_isolation>serializable_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#actual_serial_execution>actual_serial_execution</a><a id="actual_serial_execution"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Actual Serial Execution
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#every_trans_small_fast>every_trans_small_fast</a>, <a href=#interactive_multistatements_forbidden>interactive_multistatements_forbidden</a>, <a href=#limited_to_in_memory>limited_to_in_memory</a>, <a href=#low_write_throughput>low_write_throughput</a>, <a href=#stored_procedure>stored_procedure</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#serializable_isolation>serializable_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#interactive_multistatements_forbidden>interactive_multistatements_forbidden</a><a id="interactive_multistatements_forbidden"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Interactive multi-statement transactions not allowed in single-trhead serial transaction processing (for performance reasons)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#actual_serial_execution>actual_serial_execution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stored_procedure>stored_procedure</a><a id="stored_procedure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+stored procedure: entire transaction code submitted to databse ahead of time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#actual_serial_execution>actual_serial_execution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#every_trans_small_fast>every_trans_small_fast</a><a id="every_trans_small_fast"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Every transaction must be small and fast
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#actual_serial_execution>actual_serial_execution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#limited_to_in_memory>limited_to_in_memory</a><a id="limited_to_in_memory"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Limited to usecases where dataset fits in memory
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#actual_serial_execution>actual_serial_execution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#low_write_throughput>low_write_throughput</a><a id="low_write_throughput"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Write throughput must be low enough for single CPU core, otherwise use partitioning
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#actual_serial_execution>actual_serial_execution</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#two_phase_locking>two_phase_locking</a><a id="two_phase_locking"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Two-Phase Locking (2PL)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#deadlock>deadlock</a>, <a href=#lock_impl>lock_impl</a>, <a href=#many_reads_until_write_then_exclusive>many_reads_until_write_then_exclusive</a> (description), <a href=#not_two_phase_commit>not_two_phase_commit</a> (not to be confused with), <a href=#pessimistic_concurrency>pessimistic_concurrency</a>, <a href=#phases>phases</a> (origin of name), <a href=#predicate_lock>predicate_lock</a>, <a href=#writers_block_readers_vice_versa>writers_block_readers_vice_versa</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#serializability>serializability</a>, <a href=#row_level_locks>row_level_locks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_two_phase_commit>not_two_phase_commit</a><a id="not_two_phase_commit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+not to be confused with two-phase commit (2PC)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_phase_locking>two_phase_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#many_reads_until_write_then_exclusive>many_reads_until_write_then_exclusive</a><a id="many_reads_until_write_then_exclusive"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Severual concurrent reads allowed until write occurs, then, exclusive access
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_phase_locking>two_phase_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#writers_block_readers_vice_versa>writers_block_readers_vice_versa</a><a id="writers_block_readers_vice_versa"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Writers block other readers and vice versa
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_phase_locking>two_phase_locking</a>, <a href=#si_mantra>si_mantra</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#si_mantra>si_mantra</a><a id="si_mantra"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Serializable Isolation Mantra: readers nver block writers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#writers_block_readers_vice_versa>writers_block_readers_vice_versa</a> (contrasts)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#serializable_isolation>serializable_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lock_impl>lock_impl</a><a id="lock_impl"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lock Implementation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#exclusive_mode>exclusive_mode</a>, <a href=#index_range_locking>index_range_locking</a>, <a href=#lock_held_until_trans_end>lock_held_until_trans_end</a>, <a href=#phases>phases</a>, <a href=#predicate_lock>predicate_lock</a> (similar to shared/exclusive lock), <a href=#shared_mode>shared_mode</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_phase_locking>two_phase_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#shared_mode>shared_mode</a><a id="shared_mode"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Shared Mode
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transaction_reads_objects>transaction_reads_objects</a>, <a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_impl>lock_impl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#exclusive_mode>exclusive_mode</a><a id="exclusive_mode"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Exclusive Mode
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transaction_writes_objects>transaction_writes_objects</a>, <a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_impl>lock_impl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transaction_reads_objects>transaction_reads_objects</a><a id="transaction_reads_objects"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction reads objects
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#shared_mode>shared_mode</a>, <a href=#transaction_writes_objects>transaction_writes_objects</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transaction_writes_objects>transaction_writes_objects</a><a id="transaction_writes_objects"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction writes objects
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transaction_reads_objects>transaction_reads_objects</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#exclusive_mode>exclusive_mode</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#upgrade_shared_to_exclusive>upgrade_shared_to_exclusive</a><a id="upgrade_shared_to_exclusive"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+When a transaction reads an object, then writes to it, it gets upgraded from shared mode to exclusive mode
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#shared_mode>shared_mode</a>, <a href=#exclusive_mode>exclusive_mode</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lock_held_until_trans_end>lock_held_until_trans_end</a><a id="lock_held_until_trans_end"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Acquired lock must be held until the end of the transaction
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_impl>lock_impl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#phases>phases</a><a id="phases"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Phase 1: acquire lock. Phase 2: release lock
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_impl>lock_impl</a>, <a href=#two_phase_locking>two_phase_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#deadlock>deadlock</a><a id="deadlock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Deadlock: Transaction A stuck waiting for Transaction B to finish and release lock, and vice versa
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#auto_deadlock_detection>auto_deadlock_detection</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_phase_locking>two_phase_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#auto_deadlock_detection>auto_deadlock_detection</a><a id="auto_deadlock_detection"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Automatic Deadlock Detection
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#deadlock>deadlock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#throughput_and_response_worse_than_weak_isolation>throughput_and_response_worse_than_weak_isolation</a><a id="throughput_and_response_worse_than_weak_isolation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+throughput and response times signficantly worse compared to weak isolation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reduced_concurrency>reduced_concurrency</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#weaker_isolation_levels>weaker_isolation_levels</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reduced_concurrency>reduced_concurrency</a><a id="reduced_concurrency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reduced Concurrency
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#throughput_and_response_worse_than_weak_isolation>throughput_and_response_worse_than_weak_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#predicate_lock>predicate_lock</a><a id="predicate_lock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Predicate Lock: lock that bleongs to all objects that match search condition
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#better_than_predicate>better_than_predicate</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#phantom>phantom</a>, <a href=#lock_impl>lock_impl</a>, <a href=#two_phase_locking>two_phase_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#index_range_locking>index_range_locking</a><a id="index_range_locking"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Index-range locking
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#better_than_predicate>better_than_predicate</a>, <a href=#lock_table_as_safe_fallback>lock_table_as_safe_fallback</a>, <a href=#next_key_locking>next_key_locking</a> (AKA), <a href=#simplify_predicate>simplify_predicate</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_impl>lock_impl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#better_than_predicate>better_than_predicate</a><a id="better_than_predicate"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Better than predicate locking
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#simplify_predicate>simplify_predicate</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#index_range_locking>index_range_locking</a>, <a href=#predicate_lock>predicate_lock</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#protects_against_write_skew_phantom>protects_against_write_skew_phantom</a><a id="protects_against_write_skew_phantom"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Protects aginst write skew and phantoms
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_skew>write_skew</a>, <a href=#phantom>phantom</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#next_key_locking>next_key_locking</a><a id="next_key_locking"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+next-key locking
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#index_range_locking>index_range_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#simplify_predicate>simplify_predicate</a><a id="simplify_predicate"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Simplify predicate by making it match greater set of objects
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#better_than_predicate>better_than_predicate</a>, <a href=#index_range_locking>index_range_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lock_table_as_safe_fallback>lock_table_as_safe_fallback</a><a id="lock_table_as_safe_fallback"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Safe (but expensive) Fallback: shared lock on entire table if not suitable range found
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#index_range_locking>index_range_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#SSI>SSI</a><a id="SSI"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Serializable Snapshot Isolation (SSI)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#SSI_overview>SSI_overview</a>, <a href=#abort_rate_affects_perf>abort_rate_affects_perf</a>, <a href=#full_serializability_small_penalty>full_serializability_small_penalty</a>, <a href=#granular_tracking_more_overhead>granular_tracking_more_overhead</a>, <a href=#optimistic_concurrency>optimistic_concurrency</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#serializable_isolation>serializable_isolation</a>, <a href=#snapshot_isolation>snapshot_isolation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#full_serializability_small_penalty>full_serializability_small_penalty</a><a id="full_serializability_small_penalty"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Provides full serializability and only a small performance penalty compared to snapshop isolation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSI>SSI</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pessimistic_concurrency>pessimistic_concurrency</a><a id="pessimistic_concurrency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pessimistic Concurrency Control: if something goes wrong, better to wait until it's safe to do something
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mutex>mutex</a> (similar), <a href=#optimistic_concurrency>optimistic_concurrency</a> (vs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_phase_locking>two_phase_locking</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mutex>mutex</a><a id="mutex"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mutal Exclusion
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pessimistic_concurrency>pessimistic_concurrency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#premise>premise</a><a id="premise"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Premise: fact that was true at beginning of transaction
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_detects_outdated_premise_abort>db_detects_outdated_premise_abort</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_skew>write_skew</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#optimistic_concurrency>optimistic_concurrency</a><a id="optimistic_concurrency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Optimistic Concurrency Control: keep going if things go wrong in the hope that everything willl turn out all right
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#poor_perf_high_contention>poor_perf_high_contention</a>, <a href=#usually_better_than_pessimistic>usually_better_than_pessimistic</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#pessimistic_concurrency>pessimistic_concurrency</a>, <a href=#SSI>SSI</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#poor_perf_high_contention>poor_perf_high_contention</a><a id="poor_perf_high_contention"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Performs badly if there is high contention (many transactions trying to access same object)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#optimistic_concurrency>optimistic_concurrency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#usually_better_than_pessimistic>usually_better_than_pessimistic</a><a id="usually_better_than_pessimistic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Usually better than pessimistic concurrency control
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#optimistic_concurrency>optimistic_concurrency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#SSI_overview>SSI_overview</a><a id="SSI_overview"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Builds on top of snapshot isolation, detects serialization conflicts, determines which transactions to abort
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_detects_outdated_premise_abort>db_detects_outdated_premise_abort</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSI>SSI</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#db_detects_outdated_premise_abort>db_detects_outdated_premise_abort</a><a id="db_detects_outdated_premise_abort"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database must detect outdated premises and abort
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#stale_MVCC>stale_MVCC</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSI_overview>SSI_overview</a>, <a href=#premise>premise</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stale_MVCC>stale_MVCC</a><a id="stale_MVCC"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Stale MVCC
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#MVCC>MVCC</a>, <a href=#db_detects_outdated_premise_abort>db_detects_outdated_premise_abort</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#abort_rate_affects_perf>abort_rate_affects_perf</a><a id="abort_rate_affects_perf"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Abort rate significantly affects performance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSI>SSI</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#granular_tracking_more_overhead>granular_tracking_more_overhead</a><a id="granular_tracking_more_overhead"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More granular in tracking transactions yields more bookkeeping overhead
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#SSI>SSI</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#abort_reduces_many_errors>abort_reduces_many_errors</a><a id="abort_reduces_many_errors"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reduces large class of errors to do transaction abort
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

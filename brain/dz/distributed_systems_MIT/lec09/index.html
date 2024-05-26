@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec09</title>
+<h1>lec09</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec09">lec09</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+More Replication, CRAQ
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#test_and_set>test_and_set</a></li>
+<li>
+<a href=#zookeeper>zookeeper</a><ul>
+<li>
+<a href=#problems_to_solve>problems_to_solve</a><ul>
+<li>
+<a href=#config_info>config_info</a></li>
+<li>
+<a href=#elect_master>elect_master</a><ul>
+<li>
+<a href=#zookeeper_primitives>zookeeper_primitives</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#reads_stale_writes_ordered>reads_stale_writes_ordered</a></li>
+<li>
+<a href=#API>API</a><ul>
+<li>
+<a href=#exists>exists</a><ul>
+<li>
+<a href=#check_and_insert>check_and_insert</a></li>
+</ul>
+</li>
+<li>
+<a href=#filesystem_like>filesystem_like</a><ul>
+<li>
+<a href=#naming_system>naming_system</a></li>
+</ul>
+</li>
+<li>
+<a href=#get_data>get_data</a></li>
+<li>
+<a href=#list>list</a></li>
+<li>
+<a href=#set_data>set_data</a></li>
+<li>
+<a href=#z_nodes>z_nodes</a><ul>
+<li>
+<a href=#regular>regular</a><ul>
+<li>
+<a href=#flags>flags</a><ul>
+<li>
+<a href=#create>create</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sequential>sequential</a><ul>
+<li>
+<a href=#flags>flags</a><ul>
+<li>
+<a href=#create>create</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#ephemeral>ephemeral</a><ul>
+<li>
+<a href=#flags>flags</a><ul>
+<li>
+<a href=#create>create</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#create>create</a></li>
+<li>
+<a href=#delete>delete</a><ul>
+<li>
+<a href=#version>version</a></li>
+</ul>
+</li>
+<li>
+<a href=#ex_count>ex_count</a><ul>
+<li>
+<a href=#count_pseudocode>count_pseudocode</a><ul>
+<li>
+<a href=#mini_transaction>mini_transaction</a><ul>
+<li>
+<a href=#pulled_off_atomic>pulled_off_atomic</a></li>
+</ul>
+</li>
+<li>
+<a href=#no_finish_guarantee>no_finish_guarantee</a><ul>
+<li>
+<a href=#okay_in_practice>okay_in_practice</a></li>
+</ul>
+</li>
+<li>
+<a href=#pulled_off_atomic>pulled_off_atomic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#ex_locks>ex_locks</a><ul>
+<li>
+<a href=#herd_effect>herd_effect</a><ul>
+<li>
+<a href=#lock_without_herd>lock_without_herd</a><ul>
+<li>
+<a href=#scalable_lock>scalable_lock</a></li>
+</ul>
+</li>
+<li>
+<a href=#too_many_clients>too_many_clients</a></li>
+</ul>
+</li>
+<li>
+<a href=#lock_without_herd>lock_without_herd</a><ul>
+<li>
+<a href=#scalable_lock>scalable_lock</a></li>
+</ul>
+</li>
+<li>
+<a href=#non_scalable_lock>non_scalable_lock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#based_on_raft>based_on_raft</a></li>
+</ul>
+</li>
+<li>
+<a href=#CRAQ>CRAQ</a><ul>
+<li>
+<a href=#optimizes_reads>optimizes_reads</a></li>
+<li>
+<a href=#why_reading>why_reading</a></li>
+<li>
+<a href=#chain_repl>chain_repl</a><ul>
+<li>
+<a href=#failure_recovery>failure_recovery</a><ul>
+<li>
+<a href=#head_fails_next>head_fails_next</a><ul>
+<li>
+<a href=#intermediate_more_compliex>intermediate_more_compliex</a></li>
+</ul>
+</li>
+<li>
+<a href=#intermediate_more_compliex>intermediate_more_compliex</a></li>
+<li>
+<a href=#tail_fails_prev>tail_fails_prev</a><ul>
+<li>
+<a href=#intermediate_more_compliex>intermediate_more_compliex</a></li>
+</ul>
+</li>
+<li>
+<a href=#constrainted_set_of_states>constrainted_set_of_states</a></li>
+</ul>
+</li>
+<li>
+<a href=#incomplete_repl_story>incomplete_repl_story</a><ul>
+<li>
+<a href=#config_manager>config_manager</a><ul>
+<li>
+<a href=#if_dead_new_config>if_dead_new_config</a></li>
+<li>
+<a href=#monitors_liveness>monitors_liveness</a></li>
+<li>
+<a href=#built_on>built_on</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#old_version>old_version</a></li>
+<li>
+<a href=#optimizes_reads>optimizes_reads</a></li>
+<li>
+<a href=#raft_load_higher_than_chain_head>raft_load_higher_than_chain_head</a></li>
+<li>
+<a href=#chain_of_servers>chain_of_servers</a><ul>
+<li>
+<a href=#head>head</a><ul>
+<li>
+<a href=#writes_start_proliferate>writes_start_proliferate</a><ul>
+<li>
+<a href=#sends_reply_client>sends_reply_client</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#tail>tail</a><ul>
+<li>
+<a href=#reads_from_tail>reads_from_tail</a></li>
+<li>
+<a href=#sends_reply_client>sends_reply_client</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#different_ft_properties>different_ft_properties</a></li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zookeeper>zookeeper</a><a id="zookeeper"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+zookeeper
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#problems_to_solve>problems_to_solve</a>, <a href=#reads_stale_writes_ordered>reads_stale_writes_ordered</a>, <a href=#API>API</a>, <a href=#based_on_raft>based_on_raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#based_on_raft>based_on_raft</a><a id="based_on_raft"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+based on raft
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zookeeper>zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reads_stale_writes_ordered>reads_stale_writes_ordered</a><a id="reads_stale_writes_ordered"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reads can be stale, writes are ordered
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zookeeper>zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#problems_to_solve>problems_to_solve</a><a id="problems_to_solve"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Problems to solve
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#config_info>config_info</a>, <a href=#elect_master>elect_master</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zookeeper>zookeeper</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+problems it solves, perhaps?
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#config_info>config_info</a><a id="config_info"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Config info
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#problems_to_solve>problems_to_solve</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#test_and_set>test_and_set</a><a id="test_and_set"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+VMWare test and set service that is fault-tolerant and does right thing under partitions
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#elect_master>elect_master</a><a id="elect_master"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Elect Master
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#zookeeper_primitives>zookeeper_primitives</a> (I think this was a phrase used while talking about,electing a master as a usecase)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#problems_to_solve>problems_to_solve</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#zookeeper_primitives>zookeeper_primitives</a><a id="zookeeper_primitives"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"zookeeper primitives"
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#elect_master>elect_master</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#API>API</a><a id="API"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+API
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#exists>exists</a>, <a href=#filesystem_like>filesystem_like</a>, <a href=#get_data>get_data</a>, <a href=#list>list</a>, <a href=#set_data>set_data</a>, <a href=#z_nodes>z_nodes</a>, <a href=#create>create</a>, <a href=#delete>delete</a>, <a href=#ex_count>ex_count</a>, <a href=#ex_locks>ex_locks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#zookeeper>zookeeper</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#filesystem_like>filesystem_like</a><a id="filesystem_like"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Filesystem-like
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#naming_system>naming_system</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#naming_system>naming_system</a><a id="naming_system"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+naming system
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#filesystem_like>filesystem_like</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#z_nodes>z_nodes</a><a id="z_nodes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Z-Nodes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#regular>regular</a>, <a href=#sequential>sequential</a>, <a href=#ephemeral>ephemeral</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#regular>regular</a><a id="regular"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Regular
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#flags>flags</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#z_nodes>z_nodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ephemeral>ephemeral</a><a id="ephemeral"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ephemeral
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#flags>flags</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#z_nodes>z_nodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sequential>sequential</a><a id="sequential"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sequential
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#flags>flags</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#z_nodes>z_nodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#flags>flags</a><a id="flags"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+flags
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#create>create</a> (flags argument)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ephemeral>ephemeral</a>, <a href=#regular>regular</a>, <a href=#sequential>sequential</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#create>create</a><a id="create"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+create(path, data, flags)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>, <a href=#flags>flags</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#delete>delete</a><a id="delete"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+delete
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#version>version</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#version>version</a><a id="version"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+version
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#delete>delete</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#exists>exists</a><a id="exists"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+exists(path, watch)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#check_and_insert>check_and_insert</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#check_and_insert>check_and_insert</a><a id="check_and_insert"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+exists check and insert if watch is atomic
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#exists>exists</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+"if watch is atomic?" I think I meant to say it was an atomic operation?
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#get_data>get_data</a><a id="get_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+get data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#set_data>set_data</a><a id="set_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+set data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ex_count>ex_count</a><a id="ex_count"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Example: count (using zookeeper)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#count_pseudocode>count_pseudocode</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#count_pseudocode>count_pseudocode</a><a id="count_pseudocode"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+While true   x,v = getdata("f")   if setdata("f", x-&gt; 1, w)     break
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mini_transaction>mini_transaction</a>, <a href=#no_finish_guarantee>no_finish_guarantee</a>, <a href=#pulled_off_atomic>pulled_off_atomic</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ex_count>ex_count</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mini_transaction>mini_transaction</a><a id="mini_transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mini-transaction
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#pulled_off_atomic>pulled_off_atomic</a> (Atomicity is why this is referred to as a "mini,transaction")
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#count_pseudocode>count_pseudocode</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pulled_off_atomic>pulled_off_atomic</a><a id="pulled_off_atomic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Once pulled off, is atomic
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#count_pseudocode>count_pseudocode</a>, <a href=#mini_transaction>mini_transaction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_finish_guarantee>no_finish_guarantee</a><a id="no_finish_guarantee"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not guaranteed to finish
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#okay_in_practice>okay_in_practice</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#count_pseudocode>count_pseudocode</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#okay_in_practice>okay_in_practice</a><a id="okay_in_practice"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+this is usually okay in practice and doesn't happen
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#no_finish_guarantee>no_finish_guarantee</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ex_locks>ex_locks</a><a id="ex_locks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Example: Locks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#herd_effect>herd_effect</a>, <a href=#lock_without_herd>lock_without_herd</a>, <a href=#non_scalable_lock>non_scalable_lock</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Prof: "in paper, not necessarily helpful"
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#herd_effect>herd_effect</a><a id="herd_effect"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Herd effect
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lock_without_herd>lock_without_herd</a>, <a href=#too_many_clients>too_many_clients</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ex_locks>ex_locks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#too_many_clients>too_many_clients</a><a id="too_many_clients"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Problem caused by too many clients
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#herd_effect>herd_effect</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#non_scalable_lock>non_scalable_lock</a><a id="non_scalable_lock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+non-scalable lock
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ex_locks>ex_locks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#list>list</a><a id="list"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+list operation
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#API>API</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lock_without_herd>lock_without_herd</a><a id="lock_without_herd"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lock without herd effect
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#scalable_lock>scalable_lock</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ex_locks>ex_locks</a>, <a href=#herd_effect>herd_effect</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#scalable_lock>scalable_lock</a><a id="scalable_lock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Scalable lock
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_without_herd>lock_without_herd</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Prof impressed that zookeeper can express it but not sure why it is helpful to have in zookeeper
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#CRAQ>CRAQ</a><a id="CRAQ"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+CRAQ
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#optimizes_reads>optimizes_reads</a>, <a href=#why_reading>why_reading</a>, <a href=#chain_repl>chain_repl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#why_reading>why_reading</a><a id="why_reading"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Why read about this?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#CRAQ>CRAQ</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#different_ft_properties>different_ft_properties</a><a id="different_ft_properties"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The fault-tolerant properties are different from from RAFT
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#chain_repl>chain_repl</a><a id="chain_repl"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Chain replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#failure_recovery>failure_recovery</a>, <a href=#incomplete_repl_story>incomplete_repl_story</a>, <a href=#old_version>old_version</a>, <a href=#optimizes_reads>optimizes_reads</a>, <a href=#raft_load_higher_than_chain_head>raft_load_higher_than_chain_head</a>, <a href=#chain_of_servers>chain_of_servers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#CRAQ>CRAQ</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#old_version>old_version</a><a id="old_version"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+old version
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#chain_repl>chain_repl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#optimizes_reads>optimizes_reads</a><a id="optimizes_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Optimizes reads
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#chain_repl>chain_repl</a>, <a href=#CRAQ>CRAQ</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#chain_of_servers>chain_of_servers</a><a id="chain_of_servers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Chain of servers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#head>head</a>, <a href=#tail>tail</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#chain_repl>chain_repl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#head>head</a><a id="head"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Head
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#writes_start_proliferate>writes_start_proliferate</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#chain_of_servers>chain_of_servers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tail>tail</a><a id="tail"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+tail
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reads_from_tail>reads_from_tail</a>, <a href=#sends_reply_client>sends_reply_client</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#chain_of_servers>chain_of_servers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reads_from_tail>reads_from_tail</a><a id="reads_from_tail"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reads from tail
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tail>tail</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sends_reply_client>sends_reply_client</a><a id="sends_reply_client"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+sends reply to client
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#writes_start_proliferate>writes_start_proliferate</a>, <a href=#tail>tail</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#writes_start_proliferate>writes_start_proliferate</a><a id="writes_start_proliferate"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+writes start here, proliferate
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sends_reply_client>sends_reply_client</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#head>head</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#failure_recovery>failure_recovery</a><a id="failure_recovery"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Failure Recovery
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#head_fails_next>head_fails_next</a>, <a href=#intermediate_more_compliex>intermediate_more_compliex</a>, <a href=#tail_fails_prev>tail_fails_prev</a>, <a href=#constrainted_set_of_states>constrainted_set_of_states</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#chain_repl>chain_repl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#constrainted_set_of_states>constrainted_set_of_states</a><a id="constrainted_set_of_states"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Set of strates after failure relatively constrained
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#failure_recovery>failure_recovery</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#head_fails_next>head_fails_next</a><a id="head_fails_next"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If head fails, next one in chain becomes head
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#intermediate_more_compliex>intermediate_more_compliex</a> (more complex than head)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#failure_recovery>failure_recovery</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#tail_fails_prev>tail_fails_prev</a><a id="tail_fails_prev"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If tail fails, previous node takes over
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#intermediate_more_compliex>intermediate_more_compliex</a> (more complex than tail)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#failure_recovery>failure_recovery</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#intermediate_more_compliex>intermediate_more_compliex</a><a id="intermediate_more_compliex"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Intermediate failed node, more complex than head/tail
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#tail_fails_prev>tail_fails_prev</a>, <a href=#failure_recovery>failure_recovery</a>, <a href=#head_fails_next>head_fails_next</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#raft_load_higher_than_chain_head>raft_load_higher_than_chain_head</a><a id="raft_load_higher_than_chain_head"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+load on raft leader higher than chain replication head
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#chain_repl>chain_repl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#incomplete_repl_story>incomplete_repl_story</a><a id="incomplete_repl_story"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not a complete replication story
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#config_manager>config_manager</a> (config manager completes I think?)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#chain_repl>chain_repl</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#config_manager>config_manager</a><a id="config_manager"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Configuration manager
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#if_dead_new_config>if_dead_new_config</a>, <a href=#monitors_liveness>monitors_liveness</a>, <a href=#built_on>built_on</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#incomplete_repl_story>incomplete_repl_story</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#monitors_liveness>monitors_liveness</a><a id="monitors_liveness"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Monitors Liveness
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#config_manager>config_manager</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#if_dead_new_config>if_dead_new_config</a><a id="if_dead_new_config"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If it thinks a server is dead, it sends a new config
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#config_manager>config_manager</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#built_on>built_on</a><a id="built_on"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+built on RAFT, Pasx, or zookeeper
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#config_manager>config_manager</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

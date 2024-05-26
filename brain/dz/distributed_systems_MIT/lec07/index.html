@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec07</title>
+<h1>lec07</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec07">lec07</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+RAFT part 2
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#faster_backup_scheme>faster_backup_scheme</a><ul>
+<li>
+<a href=#log_backup_acceleration>log_backup_acceleration</a><ul>
+<li>
+<a href=#xindex>xindex</a></li>
+<li>
+<a href=#xleng>xleng</a></li>
+<li>
+<a href=#xterm>xterm</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#linearization_definition>linearization_definition</a></li>
+<li>
+<a href=#raft>raft</a><ul>
+<li>
+<a href=#who_can_be_leader>who_can_be_leader</a><ul>
+<li>
+<a href=#why_not_longest>why_not_longest</a></li>
+<li>
+<a href=#election_restriction>election_restriction</a><ul>
+<li>
+<a href=#prefers_candidates>prefers_candidates</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#backup_mechanism>backup_mechanism</a><ul>
+<li>
+<a href=#detect_point>detect_point</a></li>
+<li>
+<a href=#forget_client>forget_client</a><ul>
+<li>
+<a href=#not_majority>not_majority</a></li>
+</ul>
+</li>
+<li>
+<a href=#log_compaction_snapshots>log_compaction_snapshots</a><ul>
+<li>
+<a href=#snapshots>snapshots</a><ul>
+<li>
+<a href=#app_state_smaller>app_state_smaller</a></li>
+<li>
+<a href=#ask_application_state>ask_application_state</a></li>
+<li>
+<a href=#log_structure>log_structure</a></li>
+<li>
+<a href=#restart>restart</a><ul>
+<li>
+<a href=#find_latest_snapshot>find_latest_snapshot</a></li>
+<li>
+<a href=#follower_not_caught_up>follower_not_caught_up</a><ul>
+<li>
+<a href=#install_snapshot_rpc>install_snapshot_rpc</a><ul>
+<li>
+<a href=#adds_significant_complexity>adds_significant_complexity</a></li>
+</ul>
+</li>
+<li>
+<a href=#send_snapshot>send_snapshot</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#solves_long_logs>solves_long_logs</a></li>
+</ul>
+</li>
+<li>
+<a href=#rollback_scheme>rollback_scheme</a></li>
+<li>
+<a href=#takes_a_while>takes_a_while</a><ul>
+<li>
+<a href=#prefers_candidates>prefers_candidates</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#correctness>correctness</a><ul>
+<li>
+<a href=#linearizability>linearizability</a><ul>
+<li>
+<a href=#formalization_of_behavior>formalization_of_behavior</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#persistance>persistance</a><ul>
+<li>
+<a href=#thrown_away>thrown_away</a><ul>
+<li>
+<a href=#reconstructed>reconstructed</a></li>
+</ul>
+</li>
+<li>
+<a href=#vs_nonvolatile>vs_nonvolatile</a><ul>
+<li>
+<a href=#thrown_away>thrown_away</a><ul>
+<li>
+<a href=#reconstructed>reconstructed</a></li>
+</ul>
+</li>
+<li>
+<a href=#performance>performance</a></li>
+</ul>
+</li>
+<li>
+<a href=#writes_to_disk>writes_to_disk</a></li>
+<li>
+<a href=#communicating_outside>communicating_outside</a><ul>
+<li>
+<a href=#disk_writes_limit>disk_writes_limit</a><ul>
+<li>
+<a href=#synchronous_disk_update>synchronous_disk_update</a><ul>
+<li>
+<a href=#optimization>optimization</a><ul>
+<li>
+<a href=#batch>batch</a></li>
+<li>
+<a href=#ssd_flash_dram>ssd_flash_dram</a></li>
+</ul>
+</li>
+<li>
+<a href=#ssd_flash_dram>ssd_flash_dram</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#items>items</a><ul>
+<li>
+<a href=#voted_for>voted_for</a></li>
+<li>
+<a href=#current_term>current_term</a><ul>
+<li>
+<a href=#preserve_evidence>preserve_evidence</a></li>
+</ul>
+</li>
+<li>
+<a href=#log>log</a><ul>
+<li>
+<a href=#application_state>application_state</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#restore_after_crash>restore_after_crash</a></li>
+<li>
+<a href=#save_state>save_state</a><ul>
+<li>
+<a href=#validate_data>validate_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#simultaneous_power_failure>simultaneous_power_failure</a><ul>
+<li>
+<a href=#save_state>save_state</a><ul>
+<li>
+<a href=#validate_data>validate_data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#raft>raft</a><a id="raft"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAFT
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#who_can_be_leader>who_can_be_leader</a>, <a href=#backup_mechanism>backup_mechanism</a>, <a href=#correctness>correctness</a>, <a href=#persistance>persistance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#backup_mechanism>backup_mechanism</a><a id="backup_mechanism"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Backup Mechanism
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#detect_point>detect_point</a>, <a href=#forget_client>forget_client</a>, <a href=#log_compaction_snapshots>log_compaction_snapshots</a>, <a href=#rollback_scheme>rollback_scheme</a> (AKA), <a href=#takes_a_while>takes_a_while</a> (Backups can take a while to do a full restore)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rollback_scheme>rollback_scheme</a><a id="rollback_scheme"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Rollback Scheme
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backup_mechanism>backup_mechanism</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#takes_a_while>takes_a_while</a><a id="takes_a_while"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can take a while
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#prefers_candidates>prefers_candidates</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backup_mechanism>backup_mechanism</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#detect_point>detect_point</a><a id="detect_point"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Detect a point at which followers match servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backup_mechanism>backup_mechanism</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#forget_client>forget_client</a><a id="forget_client"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Why is it okay to forget about client command
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_majority>not_majority</a> (answer)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backup_mechanism>backup_mechanism</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+I believe this was a hypothetical situation in the lecture
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_majority>not_majority</a><a id="not_majority"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+not in majority, never executed, no reply back to client. Client resends
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#forget_client>forget_client</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#prefers_candidates>prefers_candidates</a><a id="prefers_candidates"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Prefers candidates who know about more recent terms
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#takes_a_while>takes_a_while</a>, <a href=#election_restriction>election_restriction</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#who_can_be_leader>who_can_be_leader</a><a id="who_can_be_leader"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Who can be a leader?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#why_not_longest>why_not_longest</a> (why not choose leader based on longest log?), <a href=#election_restriction>election_restriction</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#why_not_longest>why_not_longest</a><a id="why_not_longest"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Why not use longest log as heuristic?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#who_can_be_leader>who_can_be_leader</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+At this point, there was a good example that showed situation where this wouldn't be a good idea.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#election_restriction>election_restriction</a><a id="election_restriction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Election Restriction: vote "yes" only if higher term in last entry, or same last term, or the log length greater than or equal to server that received vote request.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#prefers_candidates>prefers_candidates</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#who_can_be_leader>who_can_be_leader</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#faster_backup_scheme>faster_backup_scheme</a><a id="faster_backup_scheme"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A faster backup scheme
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_backup_acceleration>log_backup_acceleration</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+The paper is apparently vague here. Prof calls it a "nondescription".
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_backup_acceleration>log_backup_acceleration</a><a id="log_backup_acceleration"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Backup Acceleration
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#xindex>xindex</a>, <a href=#xleng>xleng</a>, <a href=#xterm>xterm</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#faster_backup_scheme>faster_backup_scheme</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#xterm>xterm</a><a id="xterm"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+xterm
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_backup_acceleration>log_backup_acceleration</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#xleng>xleng</a><a id="xleng"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+xleng
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_backup_acceleration>log_backup_acceleration</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#xindex>xindex</a><a id="xindex"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+xindex
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_backup_acceleration>log_backup_acceleration</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#persistance>persistance</a><a id="persistance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Persistance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#thrown_away>thrown_away</a> (what can be thrown away?), <a href=#vs_nonvolatile>vs_nonvolatile</a>, <a href=#writes_to_disk>writes_to_disk</a>, <a href=#communicating_outside>communicating_outside</a>, <a href=#items>items</a>, <a href=#restore_after_crash>restore_after_crash</a>, <a href=#save_state>save_state</a>, <a href=#simultaneous_power_failure>simultaneous_power_failure</a> (What Persistance Can Help With)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#writes_to_disk>writes_to_disk</a><a id="writes_to_disk"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Writes to Disk
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#persistance>persistance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#vs_nonvolatile>vs_nonvolatile</a><a id="vs_nonvolatile"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+VS. Nonvolatile
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#thrown_away>thrown_away</a>, <a href=#performance>performance</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#persistance>persistance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#performance>performance</a><a id="performance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Performance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vs_nonvolatile>vs_nonvolatile</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#restore_after_crash>restore_after_crash</a><a id="restore_after_crash"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Restore After Crash
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#persistance>persistance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#simultaneous_power_failure>simultaneous_power_failure</a><a id="simultaneous_power_failure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Simulataneous Power Failure
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#save_state>save_state</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#persistance>persistance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#save_state>save_state</a><a id="save_state"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Save State When Power Returns
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#validate_data>validate_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#persistance>persistance</a>, <a href=#simultaneous_power_failure>simultaneous_power_failure</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#validate_data>validate_data</a><a id="validate_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Way to Validate Datat
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#save_state>save_state</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#items>items</a><a id="items"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Items that are persistant
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#voted_for>voted_for</a>, <a href=#current_term>current_term</a>, <a href=#log>log</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#persistance>persistance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log>log</a><a id="log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#application_state>application_state</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#items>items</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#current_term>current_term</a><a id="current_term"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Current Term
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#preserve_evidence>preserve_evidence</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#items>items</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#voted_for>voted_for</a><a id="voted_for"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Voted For
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#items>items</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#communicating_outside>communicating_outside</a><a id="communicating_outside"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Don't need to persist until communicating with outside
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#disk_writes_limit>disk_writes_limit</a> (This is probably why there's a benefit to waiting to,persist.)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#persistance>persistance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#preserve_evidence>preserve_evidence</a><a id="preserve_evidence"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+preserves evidence of pre-existing term numbers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#current_term>current_term</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#application_state>application_state</a><a id="application_state"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Only place where application state exists
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log>log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#disk_writes_limit>disk_writes_limit</a><a id="disk_writes_limit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Disk writes are a limiting factor in performance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#synchronous_disk_update>synchronous_disk_update</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#communicating_outside>communicating_outside</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#synchronous_disk_update>synchronous_disk_update</a><a id="synchronous_disk_update"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Synchronous Disk Update
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#optimization>optimization</a>, <a href=#ssd_flash_dram>ssd_flash_dram</a> (These are ways to improve performance)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#disk_writes_limit>disk_writes_limit</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ssd_flash_dram>ssd_flash_dram</a><a id="ssd_flash_dram"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+SSD, Flash, Batter-Backed DRAM
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#optimization>optimization</a>, <a href=#synchronous_disk_update>synchronous_disk_update</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#optimization>optimization</a><a id="optimization"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Optimiation strategies for synchronous disk update
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#batch>batch</a>, <a href=#ssd_flash_dram>ssd_flash_dram</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#synchronous_disk_update>synchronous_disk_update</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#batch>batch</a><a id="batch"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Batch operation: do everything in one go
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#optimization>optimization</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#thrown_away>thrown_away</a><a id="thrown_away"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Why is it okay for some things to be thrown away? (non-volatile)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reconstructed>reconstructed</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#persistance>persistance</a>, <a href=#vs_nonvolatile>vs_nonvolatile</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reconstructed>reconstructed</a><a id="reconstructed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Some things can be reconstructed from logs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#thrown_away>thrown_away</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_compaction_snapshots>log_compaction_snapshots</a><a id="log_compaction_snapshots"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log Compaction and Snapshots
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#snapshots>snapshots</a>, <a href=#solves_long_logs>solves_long_logs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backup_mechanism>backup_mechanism</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#solves_long_logs>solves_long_logs</a><a id="solves_long_logs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Problem Solved: long logs from servers that have been up a while
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_compaction_snapshots>log_compaction_snapshots</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snapshots>snapshots</a><a id="snapshots"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Snapshots
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#app_state_smaller>app_state_smaller</a>, <a href=#ask_application_state>ask_application_state</a> (transcend software layers (RAFT layer vs Application Layer)), <a href=#log_structure>log_structure</a>, <a href=#restart>restart</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_compaction_snapshots>log_compaction_snapshots</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ask_application_state>ask_application_state</a><a id="ask_application_state"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ask Application to save state as log entry
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshots>snapshots</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#app_state_smaller>app_state_smaller</a><a id="app_state_smaller"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+usually app state is smaller than log
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshots>snapshots</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_structure>log_structure</a><a id="log_structure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Snapshots are part of logs, works like this: index with snapshot, then logs after the snapshot
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshots>snapshots</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#restart>restart</a><a id="restart"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What happens during restart?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#find_latest_snapshot>find_latest_snapshot</a>, <a href=#follower_not_caught_up>follower_not_caught_up</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshots>snapshots</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#find_latest_snapshot>find_latest_snapshot</a><a id="find_latest_snapshot"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Find latest snapshot index that RAFt found
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#restart>restart</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#follower_not_caught_up>follower_not_caught_up</a><a id="follower_not_caught_up"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Problem: if follower isn't fully caught up with logs up to snapshot, it will never be able to catch up.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#install_snapshot_rpc>install_snapshot_rpc</a> (solution to the "follower not caught up" issue), <a href=#send_snapshot>send_snapshot</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#restart>restart</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#install_snapshot_rpc>install_snapshot_rpc</a><a id="install_snapshot_rpc"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Install Snapshot RPC
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#adds_significant_complexity>adds_significant_complexity</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#follower_not_caught_up>follower_not_caught_up</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#send_snapshot>send_snapshot</a><a id="send_snapshot"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Send Snapshot to Follower
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#follower_not_caught_up>follower_not_caught_up</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#correctness>correctness</a><a id="correctness"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+correctness
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#linearizability>linearizability</a> (Synonym)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#linearizability>linearizability</a><a id="linearizability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Linearizability
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#formalization_of_behavior>formalization_of_behavior</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correctness>correctness</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Prof will admit later on that linearizability and correctness are used interchangeably here, but linearizability has a more formal definition.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#adds_significant_complexity>adds_significant_complexity</a><a id="adds_significant_complexity"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+adds significant complexity
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#install_snapshot_rpc>install_snapshot_rpc</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#formalization_of_behavior>formalization_of_behavior</a><a id="formalization_of_behavior"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Formalization of Behavior
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#linearizability>linearizability</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#linearization_definition>linearization_definition</a><a id="linearization_definition"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Execution history is linearizable if total order of operations matches realtime for non-concurrent requests, each read sees most recent write in order
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

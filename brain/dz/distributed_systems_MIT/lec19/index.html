@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec19</title>
+<h1>lec19</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec19">lec19</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Lecture 19: Bitcoin
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#bitcoin>bitcoin</a><ul>
+<li>
+<a href=#public_ledger>public_ledger</a><ul>
+<li>
+<a href=#peers_transaction_logs_identical>peers_transaction_logs_identical</a><ul>
+<li>
+<a href=#easy_to_make_attack>easy_to_make_attack</a></li>
+<li>
+<a href=#majority_vote>majority_vote</a><ul>
+<li>
+<a href=#open_system_controlled_membership_difficult>open_system_controlled_membership_difficult</a></li>
+</ul>
+</li>
+<li>
+<a href=#agreement_ledger_despite_malice>agreement_ledger_despite_malice</a></li>
+</ul>
+</li>
+<li>
+<a href=#use_single_trusted_entity>use_single_trusted_entity</a><ul>
+<li>
+<a href=#doesnt_work_global_scale>doesnt_work_global_scale</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#blockchain>blockchain</a><ul>
+<li>
+<a href=#two_successors_block>two_successors_block</a><ul>
+<li>
+<a href=#fork>fork</a><ul>
+<li>
+<a href=#handling_forks>handling_forks</a><ul>
+<li>
+<a href=#longer_fork_preference>longer_fork_preference</a><ul>
+<li>
+<a href=#manufacture_longer_chain>manufacture_longer_chain</a><ul>
+<li>
+<a href=#more_CPU_peers>more_CPU_peers</a><ul>
+<li>
+<a href=#non_malicious_network_more_CPU>non_malicious_network_more_CPU</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#rapidly_chooses_fork>rapidly_chooses_fork</a></li>
+<li>
+<a href=#chain_grows_prop_num_peers>chain_grows_prop_num_peers</a></li>
+</ul>
+</li>
+<li>
+<a href=#peers_immediately_work_on_successor_block>peers_immediately_work_on_successor_block</a><ul>
+<li>
+<a href=#longer_fork_preference>longer_fork_preference</a><ul>
+<li>
+<a href=#manufacture_longer_chain>manufacture_longer_chain</a><ul>
+<li>
+<a href=#more_CPU_peers>more_CPU_peers</a><ul>
+<li>
+<a href=#non_malicious_network_more_CPU>non_malicious_network_more_CPU</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#rapidly_chooses_fork>rapidly_chooses_fork</a></li>
+<li>
+<a href=#chain_grows_prop_num_peers>chain_grows_prop_num_peers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#block>block</a><ul>
+<li>
+<a href=#hash_prev_transaction>hash_prev_transaction</a></li>
+<li>
+<a href=#signature_prev_owner>signature_prev_owner</a></li>
+<li>
+<a href=#current_owner_public_key>current_owner_public_key</a></li>
+</ul>
+</li>
+<li>
+<a href=#change_blocks_attack>change_blocks_attack</a><ul>
+<li>
+<a href=#cryptographic_hashes_prevent>cryptographic_hashes_prevent</a></li>
+</ul>
+</li>
+<li>
+<a href=#creating>creating</a><ul>
+<li>
+<a href=#mining>mining</a><ul>
+<li>
+<a href=#leading_zeros>leading_zeros</a><ul>
+<li>
+<a href=#dynamically_adjust_leading_zeros>dynamically_adjust_leading_zeros</a><ul>
+<li>
+<a href=#nonce_hardness>nonce_hardness</a><ul>
+<li>
+<a href=#peers_agree>peers_agree</a><ul>
+<li>
+<a href=#use_deterministic_function>use_deterministic_function</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#nonce>nonce</a></li>
+</ul>
+</li>
+<li>
+<a href=#proof_of_work>proof_of_work</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bitcoin>bitcoin</a><a id="bitcoin"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bitcoin
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#public_ledger>public_ledger</a>, <a href=#blockchain>blockchain</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#public_ledger>public_ledger</a><a id="public_ledger"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Public Ledger
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#peers_transaction_logs_identical>peers_transaction_logs_identical</a>, <a href=#use_single_trusted_entity>use_single_trusted_entity</a> (simple idea)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bitcoin>bitcoin</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#use_single_trusted_entity>use_single_trusted_entity</a><a id="use_single_trusted_entity"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Simple idea: use single trusted entity
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#doesnt_work_global_scale>doesnt_work_global_scale</a> (why it doesn't work)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#public_ledger>public_ledger</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#doesnt_work_global_scale>doesnt_work_global_scale</a><a id="doesnt_work_global_scale"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Doesn't work at global scale
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#use_single_trusted_entity>use_single_trusted_entity</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#peers_transaction_logs_identical>peers_transaction_logs_identical</a><a id="peers_transaction_logs_identical"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Peers: transaction logs should be identical
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#easy_to_make_attack>easy_to_make_attack</a>, <a href=#majority_vote>majority_vote</a>, <a href=#agreement_ledger_despite_malice>agreement_ledger_despite_malice</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#public_ledger>public_ledger</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#majority_vote>majority_vote</a><a id="majority_vote"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Majority vote
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#open_system_controlled_membership_difficult>open_system_controlled_membership_difficult</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#peers_transaction_logs_identical>peers_transaction_logs_identical</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#easy_to_make_attack>easy_to_make_attack</a><a id="easy_to_make_attack"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Easy to make attack
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#peers_transaction_logs_identical>peers_transaction_logs_identical</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#open_system_controlled_membership_difficult>open_system_controlled_membership_difficult</a><a id="open_system_controlled_membership_difficult"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hard to build open system with controlled membership
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#majority_vote>majority_vote</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#agreement_ledger_despite_malice>agreement_ledger_despite_malice</a><a id="agreement_ledger_despite_malice"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Agreement on ledger, despite malice
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#peers_transaction_logs_identical>peers_transaction_logs_identical</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#blockchain>blockchain</a><a id="blockchain"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Blockchain
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#two_successors_block>two_successors_block</a>, <a href=#block>block</a>, <a href=#change_blocks_attack>change_blocks_attack</a>, <a href=#creating>creating</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bitcoin>bitcoin</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#block>block</a><a id="block"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Block
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#hash_prev_transaction>hash_prev_transaction</a> (item in block entry), <a href=#signature_prev_owner>signature_prev_owner</a> (item in block entry), <a href=#current_owner_public_key>current_owner_public_key</a> (item in block entry)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockchain>blockchain</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hash_prev_transaction>hash_prev_transaction</a><a id="hash_prev_transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hash of previous transaction
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#block>block</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#signature_prev_owner>signature_prev_owner</a><a id="signature_prev_owner"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Signature of previous owners public key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#block>block</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#current_owner_public_key>current_owner_public_key</a><a id="current_owner_public_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Current Owner's Public Key 
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#block>block</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#creating>creating</a><a id="creating"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Creating
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#mining>mining</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockchain>blockchain</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mining>mining</a><a id="mining"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mining
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leading_zeros>leading_zeros</a>, <a href=#proof_of_work>proof_of_work</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#creating>creating</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#proof_of_work>proof_of_work</a><a id="proof_of_work"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Proof of work
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mining>mining</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leading_zeros>leading_zeros</a><a id="leading_zeros"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leading zeros in hash
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dynamically_adjust_leading_zeros>dynamically_adjust_leading_zeros</a>, <a href=#nonce>nonce</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mining>mining</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#nonce>nonce</a><a id="nonce"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Nonce
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leading_zeros>leading_zeros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dynamically_adjust_leading_zeros>dynamically_adjust_leading_zeros</a><a id="dynamically_adjust_leading_zeros"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If block creation rate faster than one every 10 minutes, leading zeroes increases. If slower, decrease leading zeros.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nonce_hardness>nonce_hardness</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leading_zeros>leading_zeros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#two_successors_block>two_successors_block</a><a id="two_successors_block"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Two successors to a single block possible
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fork>fork</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockchain>blockchain</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fork>fork</a><a id="fork"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fork
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#handling_forks>handling_forks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#two_successors_block>two_successors_block</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#handling_forks>handling_forks</a><a id="handling_forks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to handle forks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#longer_fork_preference>longer_fork_preference</a>, <a href=#peers_immediately_work_on_successor_block>peers_immediately_work_on_successor_block</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fork>fork</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#peers_immediately_work_on_successor_block>peers_immediately_work_on_successor_block</a><a id="peers_immediately_work_on_successor_block"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Peers that see a successor block will immediately start working on it
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#longer_fork_preference>longer_fork_preference</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#handling_forks>handling_forks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#longer_fork_preference>longer_fork_preference</a><a id="longer_fork_preference"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Preference for longer fork
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#manufacture_longer_chain>manufacture_longer_chain</a>, <a href=#rapidly_chooses_fork>rapidly_chooses_fork</a>, <a href=#chain_grows_prop_num_peers>chain_grows_prop_num_peers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#peers_immediately_work_on_successor_block>peers_immediately_work_on_successor_block</a>, <a href=#handling_forks>handling_forks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#chain_grows_prop_num_peers>chain_grows_prop_num_peers</a><a id="chain_grows_prop_num_peers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Rate at which chain can grow is proportional to number of peers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#longer_fork_preference>longer_fork_preference</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rapidly_chooses_fork>rapidly_chooses_fork</a><a id="rapidly_chooses_fork"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Rapidly chooses fork
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#longer_fork_preference>longer_fork_preference</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#change_blocks_attack>change_blocks_attack</a><a id="change_blocks_attack"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can you change blocks in an attack?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#cryptographic_hashes_prevent>cryptographic_hashes_prevent</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blockchain>blockchain</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cryptographic_hashes_prevent>cryptographic_hashes_prevent</a><a id="cryptographic_hashes_prevent"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Cryptographic hashes prevent this
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#change_blocks_attack>change_blocks_attack</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#manufacture_longer_chain>manufacture_longer_chain</a><a id="manufacture_longer_chain"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Manufacture longer chain
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#more_CPU_peers>more_CPU_peers</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#longer_fork_preference>longer_fork_preference</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_CPU_peers>more_CPU_peers</a><a id="more_CPU_peers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Possible to do if you have more CPU than all the peers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#non_malicious_network_more_CPU>non_malicious_network_more_CPU</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#manufacture_longer_chain>manufacture_longer_chain</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#non_malicious_network_more_CPU>non_malicious_network_more_CPU</a><a id="non_malicious_network_more_CPU"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+non-malicious part of network should have more CPU power
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#more_CPU_peers>more_CPU_peers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#nonce_hardness>nonce_hardness</a><a id="nonce_hardness"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hardness of finding nonce
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#peers_agree>peers_agree</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dynamically_adjust_leading_zeros>dynamically_adjust_leading_zeros</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#peers_agree>peers_agree</a><a id="peers_agree"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Peers need to agree
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#use_deterministic_function>use_deterministic_function</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#nonce_hardness>nonce_hardness</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#use_deterministic_function>use_deterministic_function</a><a id="use_deterministic_function"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use deterministic function on blockchain to find hardness
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#peers_agree>peers_agree</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

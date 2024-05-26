@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec05</title>
+<h1>lec05</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec05">lec05</a>
+<p></p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#go>go</a><ul>
+<li>
+<a href=#goroutines>goroutines</a><ul>
+<li>
+<a href=#expressivity_not_performance>expressivity_not_performance</a></li>
+</ul>
+</li>
+<li>
+<a href=#memory_model>memory_model</a></li>
+<li>
+<a href=#primitives>primitives</a><ul>
+<li>
+<a href=#goroutines>goroutines</a><ul>
+<li>
+<a href=#expressivity_not_performance>expressivity_not_performance</a></li>
+</ul>
+</li>
+<li>
+<a href=#mutexes>mutexes</a><ul>
+<li>
+<a href=#protects_invariants>protects_invariants</a></li>
+<li>
+<a href=#run_atomically>run_atomically</a><ul>
+<li>
+<a href=#serial>serial</a></li>
+</ul>
+</li>
+<li>
+<a href=#critical_section>critical_section</a></li>
+</ul>
+</li>
+<li>
+<a href=#periodic_function>periodic_function</a><ul>
+<li>
+<a href=#periodic_function_variation>periodic_function_variation</a></li>
+</ul>
+</li>
+<li>
+<a href=#channels>channels</a><ul>
+<li>
+<a href=#probably_avoid>probably_avoid</a></li>
+<li>
+<a href=#synchronous>synchronous</a><ul>
+<li>
+<a href=#blocking>blocking</a></li>
+</ul>
+</li>
+<li>
+<a href=#wait_groups>wait_groups</a><ul>
+<li>
+<a href=#threads_to_be_done>threads_to_be_done</a></li>
+</ul>
+</li>
+<li>
+<a href=#channels_useful_for>channels_useful_for</a></li>
+</ul>
+</li>
+<li>
+<a href=#closures>closures</a><ul>
+<li>
+<a href=#identifier_capture>identifier_capture</a><ul>
+<li>
+<a href=#scope_correct>scope_correct</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#condition_variables>condition_variables</a><ul>
+<li>
+<a href=#threads_waiting>threads_waiting</a></li>
+<li>
+<a href=#cv_wait>cv_wait</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#concurrency>concurrency</a><ul>
+<li>
+<a href=#goroutines>goroutines</a><ul>
+<li>
+<a href=#expressivity_not_performance>expressivity_not_performance</a></li>
+</ul>
+</li>
+<li>
+<a href=#primitives>primitives</a><ul>
+<li>
+<a href=#goroutines>goroutines</a><ul>
+<li>
+<a href=#expressivity_not_performance>expressivity_not_performance</a></li>
+</ul>
+</li>
+<li>
+<a href=#mutexes>mutexes</a><ul>
+<li>
+<a href=#protects_invariants>protects_invariants</a></li>
+<li>
+<a href=#run_atomically>run_atomically</a><ul>
+<li>
+<a href=#serial>serial</a></li>
+</ul>
+</li>
+<li>
+<a href=#critical_section>critical_section</a></li>
+</ul>
+</li>
+<li>
+<a href=#periodic_function>periodic_function</a><ul>
+<li>
+<a href=#periodic_function_variation>periodic_function_variation</a></li>
+</ul>
+</li>
+<li>
+<a href=#channels>channels</a><ul>
+<li>
+<a href=#probably_avoid>probably_avoid</a></li>
+<li>
+<a href=#synchronous>synchronous</a><ul>
+<li>
+<a href=#blocking>blocking</a></li>
+</ul>
+</li>
+<li>
+<a href=#wait_groups>wait_groups</a><ul>
+<li>
+<a href=#threads_to_be_done>threads_to_be_done</a></li>
+</ul>
+</li>
+<li>
+<a href=#channels_useful_for>channels_useful_for</a></li>
+</ul>
+</li>
+<li>
+<a href=#closures>closures</a><ul>
+<li>
+<a href=#identifier_capture>identifier_capture</a><ul>
+<li>
+<a href=#scope_correct>scope_correct</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#condition_variables>condition_variables</a><ul>
+<li>
+<a href=#threads_waiting>threads_waiting</a></li>
+<li>
+<a href=#cv_wait>cv_wait</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#producer_consumer>producer_consumer</a></li>
+<li>
+<a href=#raft>raft</a><ul>
+<li>
+<a href=#common_bugs>common_bugs</a><ul>
+<li>
+<a href=#holding_lock>holding_lock</a></li>
+<li>
+<a href=#attempt_election_function>attempt_election_function</a><ul>
+<li>
+<a href=#elected_two_leaders>elected_two_leaders</a><ul>
+<li>
+<a href=#double_check>double_check</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#debugging>debugging</a><ul>
+<li>
+<a href=#race_flag>race_flag</a></li>
+<li>
+<a href=#where_stuck>where_stuck</a><ul>
+<li>
+<a href=#log_printf>log_printf</a><ul>
+<li>
+<a href=#dprintf>dprintf</a></li>
+</ul>
+</li>
+<li>
+<a href=#minimize_scope>minimize_scope</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#cv_broadcast>cv_broadcast</a><ul>
+<li>
+<a href=#wakes_up>wakes_up</a><ul>
+<li>
+<a href=#lost_wakeup_problem>lost_wakeup_problem</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#go>go</a><a id="go"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+the Go Progamming language
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#goroutines>goroutines</a>, <a href=#memory_model>memory_model</a>, <a href=#primitives>primitives</a>, <a href=#concurrency>concurrency</a> (Concurrency primitives in go)
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#concurrency>concurrency</a><a id="concurrency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Concurrency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#goroutines>goroutines</a>, <a href=#primitives>primitives</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#go>go</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#primitives>primitives</a><a id="primitives"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Primitives
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#goroutines>goroutines</a>, <a href=#mutexes>mutexes</a>, <a href=#periodic_function>periodic_function</a>, <a href=#channels>channels</a>, <a href=#closures>closures</a>, <a href=#condition_variables>condition_variables</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#go>go</a>, <a href=#concurrency>concurrency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#goroutines>goroutines</a><a id="goroutines"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Goroutines
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#expressivity_not_performance>expressivity_not_performance</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#concurrency>concurrency</a>, <a href=#primitives>primitives</a>, <a href=#go>go</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#expressivity_not_performance>expressivity_not_performance</a><a id="expressivity_not_performance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+not used for performance reasons, but expressivity
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#goroutines>goroutines</a>
+</td>
+</tr>
+<tr>
+<td>
+flashcard (front)
+</td>
+<td>
+Are goroutines good for performance?
+</td>
+</tr>
+<tr>
+<td>
+flashcard (back)
+</td>
+<td>
+While goroutines may help with performance, they are primarily used for expressivity
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#memory_model>memory_model</a><a id="memory_model"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Memory Model in Go
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#go>go</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+There was a paper that discussed how the memory model works. The wisdom boiled down here is "don't be clever".
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#closures>closures</a><a id="closures"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Closures
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#identifier_capture>identifier_capture</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primitives>primitives</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#identifier_capture>identifier_capture</a><a id="identifier_capture"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Identifier Capture
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#scope_correct>scope_correct</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#closures>closures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#scope_correct>scope_correct</a><a id="scope_correct"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Make sure scope is correct
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#identifier_capture>identifier_capture</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#periodic_function>periodic_function</a><a id="periodic_function"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Period Function: Run something, sleep, run again, etc.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#periodic_function_variation>periodic_function_variation</a> (variation of periodic function pattern)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primitives>primitives</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#periodic_function_variation>periodic_function_variation</a><a id="periodic_function_variation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Periodic Function Variation: Periodic Until (Some Conidition)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#periodic_function>periodic_function</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mutexes>mutexes</a><a id="mutexes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mutexes (Mutual Exclusion)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#protects_invariants>protects_invariants</a> (Mutexes protect against invariants), <a href=#run_atomically>run_atomically</a>, <a href=#critical_section>critical_section</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primitives>primitives</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#serial>serial</a><a id="serial"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Serial
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#run_atomically>run_atomically</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#run_atomically>run_atomically</a><a id="run_atomically"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Makes blocks of code run atomically
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#serial>serial</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mutexes>mutexes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#critical_section>critical_section</a><a id="critical_section"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Critical Section: region of code inside the mutex. this is guaranteed mutual exclusion The region of code found inside a mutex
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mutexes>mutexes</a>
+</td>
+</tr>
+<tr>
+<td>
+flashcard (front)
+</td>
+<td>
+Critial Section
+</td>
+</tr>
+<tr>
+<td>
+flashcard (back)
+</td>
+<td>
+
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#protects_invariants>protects_invariants</a><a id="protects_invariants"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Mutexes protect invariants
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mutexes>mutexes</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Probably would be a good idea to define this better
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#condition_variables>condition_variables</a><a id="condition_variables"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Condition Variables
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#threads_waiting>threads_waiting</a> (CV are used to coordinate when condition comes true), <a href=#cv_wait>cv_wait</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primitives>primitives</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#threads_waiting>threads_waiting</a><a id="threads_waiting"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Used when threads are wiating for some condition to come true
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#condition_variables>condition_variables</a>
+</td>
+</tr>
+<tr>
+<td>
+flashcard (front)
+</td>
+<td>
+What is a conidition variable and when should it be used?
+</td>
+</tr>
+<tr>
+<td>
+flashcard (back)
+</td>
+<td>
+Condition variables are Go primitives used when you have threads are waiting for some condition to come true.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cv_wait>cv_wait</a><a id="cv_wait"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+wait: called when it is waiting
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#condition_variables>condition_variables</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cv_broadcast>cv_broadcast</a><a id="cv_broadcast"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+broadcast: called when something is changed
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#wakes_up>wakes_up</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wakes_up>wakes_up</a><a id="wakes_up"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wakes up whoever is waiting.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lost_wakeup_problem>lost_wakeup_problem</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cv_broadcast>cv_broadcast</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lost_wakeup_problem>lost_wakeup_problem</a><a id="lost_wakeup_problem"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The lost wakeup problem
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#wakes_up>wakes_up</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+This was mentioned in the lecture, but I forget what it means. I think it was a vague mention in the lecture.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#channels>channels</a><a id="channels"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Channels
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#probably_avoid>probably_avoid</a>, <a href=#synchronous>synchronous</a>, <a href=#wait_groups>wait_groups</a> (channels used as an approach for wait groups), <a href=#channels_useful_for>channels_useful_for</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primitives>primitives</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#synchronous>synchronous</a><a id="synchronous"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Synchronous
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#blocking>blocking</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#channels>channels</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Communication Mechanism
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#blocking>blocking</a><a id="blocking"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Blocking behavior
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#synchronous>synchronous</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#channels_useful_for>channels_useful_for</a><a id="channels_useful_for"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Useful for
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#channels>channels</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#producer_consumer>producer_consumer</a><a id="producer_consumer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+producer/consumer
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+vaguely mentioned. not sure?
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#probably_avoid>probably_avoid</a><a id="probably_avoid"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+channels should probably be avoided most of the time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#channels>channels</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wait_groups>wait_groups</a><a id="wait_groups"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can be used as an approach for wait groups
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#threads_to_be_done>threads_to_be_done</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#channels>channels</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#threads_to_be_done>threads_to_be_done</a><a id="threads_to_be_done"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wait Group waits for a certain number of threads to be done.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#wait_groups>wait_groups</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#raft>raft</a><a id="raft"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RAFT
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#common_bugs>common_bugs</a> (Common bugs when implementing RAFT), <a href=#debugging>debugging</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#common_bugs>common_bugs</a><a id="common_bugs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Common Bugs
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#holding_lock>holding_lock</a>, <a href=#attempt_election_function>attempt_election_function</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#holding_lock>holding_lock</a><a id="holding_lock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Holding lock through RPC calls causes deadlock
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#common_bugs>common_bugs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#attempt_election_function>attempt_election_function</a><a id="attempt_election_function"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Attempt an election
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#elected_two_leaders>elected_two_leaders</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#common_bugs>common_bugs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#elected_two_leaders>elected_two_leaders</a><a id="elected_two_leaders"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bug: elected two leaders, when there should be only one.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#double_check>double_check</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#attempt_election_function>attempt_election_function</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#double_check>double_check</a><a id="double_check"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One Solution: double check that the term is the same, and that they are still a candidate
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#elected_two_leaders>elected_two_leaders</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#debugging>debugging</a><a id="debugging"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Debugging RAFT implementations
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#race_flag>race_flag</a>, <a href=#where_stuck>where_stuck</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#raft>raft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#where_stuck>where_stuck</a><a id="where_stuck"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Where stuck?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_printf>log_printf</a>, <a href=#minimize_scope>minimize_scope</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#debugging>debugging</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_printf>log_printf</a><a id="log_printf"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Log.printf(...)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dprintf>dprintf</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#where_stuck>where_stuck</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#minimize_scope>minimize_scope</a><a id="minimize_scope"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Minimize scope of bug
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#where_stuck>where_stuck</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dprintf>dprintf</a><a id="dprintf"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+dprintf() wrapper
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_printf>log_printf</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#race_flag>race_flag</a><a id="race_flag"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Using the "-race" flag to check for race coniditions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#debugging>debugging</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

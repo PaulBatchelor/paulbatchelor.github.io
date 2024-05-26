@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec16</title>
+<h1>lec16</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec16">lec16</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Lecture 16: Facebook and Memcached
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#facebook>facebook</a><ul>
+<li>
+<a href=#east_west_datacenter>east_west_datacenter</a></li>
+<li>
+<a href=#lookaside_cache>lookaside_cache</a><ul>
+<li>
+<a href=#lookthrough_cache>lookthrough_cache</a></li>
+<li>
+<a href=#neutral_about_db>neutral_about_db</a></li>
+<li>
+<a href=#read_operation>read_operation</a></li>
+<li>
+<a href=#write_operation>write_operation</a><ul>
+<li>
+<a href=#delete_needed>delete_needed</a><ul>
+<li>
+<a href=#invalidates_key>invalidates_key</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#performance_architecture>performance_architecture</a><ul>
+<li>
+<a href=#parallel_execution>parallel_execution</a></li>
+<li>
+<a href=#partition>partition</a><ul>
+<li>
+<a href=#memory_efficient>memory_efficient</a></li>
+<li>
+<a href=#not_good_hot_keys>not_good_hot_keys</a><ul>
+<li>
+<a href=#good_hot_keys>good_hot_keys</a></li>
+</ul>
+</li>
+<li>
+<a href=#50ms_latency>50ms_latency</a><ul>
+<li>
+<a href=#localized_faster_reads>localized_faster_reads</a></li>
+</ul>
+</li>
+<li>
+<a href=#client_talks_every_part>client_talks_every_part</a><ul>
+<li>
+<a href=#few_tcp_connections>few_tcp_connections</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#replicate>replicate</a><ul>
+<li>
+<a href=#few_tcp_connections>few_tcp_connections</a></li>
+<li>
+<a href=#good_hot_keys>good_hot_keys</a></li>
+<li>
+<a href=#less_total_data>less_total_data</a></li>
+<li>
+<a href=#regions>regions</a><ul>
+<li>
+<a href=#db_servers>db_servers</a><ul>
+<li>
+<a href=#clusters>clusters</a><ul>
+<li>
+<a href=#why_multicluster>why_multicluster</a><ul>
+<li>
+<a href=#helps_popular_keys>helps_popular_keys</a><ul>
+<li>
+<a href=#parallel_serving>parallel_serving</a></li>
+</ul>
+</li>
+<li>
+<a href=#parallel_serving>parallel_serving</a></li>
+<li>
+<a href=#data_spread>data_spread</a><ul>
+<li>
+<a href=#communication_overhead>communication_overhead</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#localized_faster_reads>localized_faster_reads</a></li>
+<li>
+<a href=#regional_pool>regional_pool</a><ul>
+<li>
+<a href=#less_popular_keys_go_here>less_popular_keys_go_here</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#consistency>consistency</a><ul>
+<li>
+<a href=#lots_of_copies_of_data>lots_of_copies_of_data</a></li>
+<li>
+<a href=#stale_data_okay>stale_data_okay</a></li>
+<li>
+<a href=#users_should_see_their_changes>users_should_see_their_changes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#how_to_start_web_app>how_to_start_web_app</a><ul>
+<li>
+<a href=#second_approach>second_approach</a><ul>
+<li>
+<a href=#db_server_out_of_steam>db_server_out_of_steam</a></li>
+<li>
+<a href=#scale_out_frontend>scale_out_frontend</a></li>
+<li>
+<a href=#third_approach>third_approach</a><ul>
+<li>
+<a href=#fourth_approach>fourth_approach</a><ul>
+<li>
+<a href=#caching_layer>caching_layer</a></li>
+</ul>
+</li>
+<li>
+<a href=#multiple_FE_BE_servers>multiple_FE_BE_servers</a></li>
+<li>
+<a href=#mysql_expensive>mysql_expensive</a><ul>
+<li>
+<a href=#run_out_of_steam_reads>run_out_of_steam_reads</a><ul>
+<li>
+<a href=#use_caching>use_caching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sharding>sharding</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#single_computer>single_computer</a><ul>
+<li>
+<a href=#few_users>few_users</a></li>
+<li>
+<a href=#mysql>mysql</a><ul>
+<li>
+<a href=#db_server_out_of_steam>db_server_out_of_steam</a></li>
+<li>
+<a href=#mysql_expensive>mysql_expensive</a><ul>
+<li>
+<a href=#run_out_of_steam_reads>run_out_of_steam_reads</a><ul>
+<li>
+<a href=#use_caching>use_caching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#php>php</a><ul>
+<li>
+<a href=#too_much_cpu>too_much_cpu</a><ul>
+<li>
+<a href=#scale_out_frontend>scale_out_frontend</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#second_approach>second_approach</a><ul>
+<li>
+<a href=#db_server_out_of_steam>db_server_out_of_steam</a></li>
+<li>
+<a href=#scale_out_frontend>scale_out_frontend</a></li>
+<li>
+<a href=#third_approach>third_approach</a><ul>
+<li>
+<a href=#fourth_approach>fourth_approach</a><ul>
+<li>
+<a href=#caching_layer>caching_layer</a></li>
+</ul>
+</li>
+<li>
+<a href=#multiple_FE_BE_servers>multiple_FE_BE_servers</a></li>
+<li>
+<a href=#mysql_expensive>mysql_expensive</a><ul>
+<li>
+<a href=#run_out_of_steam_reads>run_out_of_steam_reads</a><ul>
+<li>
+<a href=#use_caching>use_caching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sharding>sharding</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#too_much_cpu>too_much_cpu</a><ul>
+<li>
+<a href=#scale_out_frontend>scale_out_frontend</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#third_approach>third_approach</a><ul>
+<li>
+<a href=#fourth_approach>fourth_approach</a><ul>
+<li>
+<a href=#caching_layer>caching_layer</a></li>
+</ul>
+</li>
+<li>
+<a href=#multiple_FE_BE_servers>multiple_FE_BE_servers</a></li>
+<li>
+<a href=#mysql_expensive>mysql_expensive</a><ul>
+<li>
+<a href=#run_out_of_steam_reads>run_out_of_steam_reads</a><ul>
+<li>
+<a href=#use_caching>use_caching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sharding>sharding</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#memcached>memcached</a><ul>
+<li>
+<a href=#gutter>gutter</a><ul>
+<li>
+<a href=#idle_except_on_failure>idle_except_on_failure</a></li>
+</ul>
+</li>
+<li>
+<a href=#lookaside_cache>lookaside_cache</a><ul>
+<li>
+<a href=#lookthrough_cache>lookthrough_cache</a></li>
+<li>
+<a href=#neutral_about_db>neutral_about_db</a></li>
+<li>
+<a href=#read_operation>read_operation</a></li>
+<li>
+<a href=#write_operation>write_operation</a><ul>
+<li>
+<a href=#delete_needed>delete_needed</a><ul>
+<li>
+<a href=#invalidates_key>invalidates_key</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#mc_fails_db_load_increases>mc_fails_db_load_increases</a><ul>
+<li>
+<a href=#db_shouldnt_see_full_load>db_shouldnt_see_full_load</a></li>
+</ul>
+</li>
+<li>
+<a href=#regional_pool>regional_pool</a><ul>
+<li>
+<a href=#less_popular_keys_go_here>less_popular_keys_go_here</a></li>
+</ul>
+</li>
+<li>
+<a href=#stay_synced_with_db>stay_synced_with_db</a></li>
+<li>
+<a href=#thundering_herd>thundering_herd</a><ul>
+<li>
+<a href=#delete_popular_key>delete_popular_key</a><ul>
+<li>
+<a href=#high_load_on_same_key>high_load_on_same_key</a><ul>
+<li>
+<a href=#lease>lease</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#high_load_on_same_key>high_load_on_same_key</a><ul>
+<li>
+<a href=#lease>lease</a></li>
+</ul>
+</li>
+<li>
+<a href=#lease>lease</a></li>
+</ul>
+</li>
+<li>
+<a href=#10x_faster_reads>10x_faster_reads</a></li>
+<li>
+<a href=#caching_layer>caching_layer</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#how_to_start_web_app>how_to_start_web_app</a><a id="how_to_start_web_app"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to start a web app
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#second_approach>second_approach</a>, <a href=#single_computer>single_computer</a>, <a href=#third_approach>third_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#single_computer>single_computer</a><a id="single_computer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+single computer
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#few_users>few_users</a>, <a href=#mysql>mysql</a>, <a href=#php>php</a>, <a href=#second_approach>second_approach</a> (next), <a href=#too_much_cpu>too_much_cpu</a> (early problem that arises: php takes up too much CPU)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#how_to_start_web_app>how_to_start_web_app</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#few_users>few_users</a><a id="few_users"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Few Users
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#single_computer>single_computer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#php>php</a><a id="php"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+PHP
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#too_much_cpu>too_much_cpu</a> (too much CPU on single computer)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#single_computer>single_computer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mysql>mysql</a><a id="mysql"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+MySQL
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_server_out_of_steam>db_server_out_of_steam</a>, <a href=#mysql_expensive>mysql_expensive</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#single_computer>single_computer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#too_much_cpu>too_much_cpu</a><a id="too_much_cpu"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Too much CPU
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#scale_out_frontend>scale_out_frontend</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#php>php</a>, <a href=#single_computer>single_computer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#second_approach>second_approach</a><a id="second_approach"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Second Approach
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_server_out_of_steam>db_server_out_of_steam</a>, <a href=#scale_out_frontend>scale_out_frontend</a>, <a href=#third_approach>third_approach</a> (next)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#how_to_start_web_app>how_to_start_web_app</a>, <a href=#single_computer>single_computer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#scale_out_frontend>scale_out_frontend</a><a id="scale_out_frontend"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Scale out frontend servers running PHP
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#too_much_cpu>too_much_cpu</a>, <a href=#second_approach>second_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#db_server_out_of_steam>db_server_out_of_steam</a><a id="db_server_out_of_steam"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database server runs out of steam
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mysql>mysql</a>, <a href=#second_approach>second_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#third_approach>third_approach</a><a id="third_approach"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Third Approch
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fourth_approach>fourth_approach</a> (next), <a href=#multiple_FE_BE_servers>multiple_FE_BE_servers</a>, <a href=#mysql_expensive>mysql_expensive</a>, <a href=#sharding>sharding</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#how_to_start_web_app>how_to_start_web_app</a>, <a href=#second_approach>second_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multiple_FE_BE_servers>multiple_FE_BE_servers</a><a id="multiple_FE_BE_servers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multiple frontend and backend servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#third_approach>third_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sharding>sharding</a><a id="sharding"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sharding
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#third_approach>third_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mysql_expensive>mysql_expensive</a><a id="mysql_expensive"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+mysql is expensive, not fast
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#run_out_of_steam_reads>run_out_of_steam_reads</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mysql>mysql</a>, <a href=#third_approach>third_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#run_out_of_steam_reads>run_out_of_steam_reads</a><a id="run_out_of_steam_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Runs out of steam for reads
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#use_caching>use_caching</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mysql_expensive>mysql_expensive</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#use_caching>use_caching</a><a id="use_caching"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use Caching
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#run_out_of_steam_reads>run_out_of_steam_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fourth_approach>fourth_approach</a><a id="fourth_approach"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fourth Approach
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#caching_layer>caching_layer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#third_approach>third_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#caching_layer>caching_layer</a><a id="caching_layer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Use a caching layer
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memcached>memcached</a>, <a href=#fourth_approach>fourth_approach</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#memcached>memcached</a><a id="memcached"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Memcached
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#gutter>gutter</a>, <a href=#lookaside_cache>lookaside_cache</a>, <a href=#mc_fails_db_load_increases>mc_fails_db_load_increases</a>, <a href=#regional_pool>regional_pool</a>, <a href=#stay_synced_with_db>stay_synced_with_db</a>, <a href=#thundering_herd>thundering_herd</a>, <a href=#10x_faster_reads>10x_faster_reads</a>, <a href=#caching_layer>caching_layer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#facebook>facebook</a><a id="facebook"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Facebook
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#east_west_datacenter>east_west_datacenter</a>, <a href=#lookaside_cache>lookaside_cache</a>, <a href=#performance_architecture>performance_architecture</a>, <a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#10x_faster_reads>10x_faster_reads</a><a id="10x_faster_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+10x faster than database reads
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memcached>memcached</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lookaside_cache>lookaside_cache</a><a id="lookaside_cache"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+lookaside cache
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lookthrough_cache>lookthrough_cache</a> (verses), <a href=#neutral_about_db>neutral_about_db</a>, <a href=#read_operation>read_operation</a>, <a href=#write_operation>write_operation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#facebook>facebook</a>, <a href=#memcached>memcached</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lookthrough_cache>lookthrough_cache</a><a id="lookthrough_cache"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+look-through cache
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lookaside_cache>lookaside_cache</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#neutral_about_db>neutral_about_db</a><a id="neutral_about_db"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Neutral about database
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lookaside_cache>lookaside_cache</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stay_synced_with_db>stay_synced_with_db</a><a id="stay_synced_with_db"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to stay synchronized with database?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memcached>memcached</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#mc_fails_db_load_increases>mc_fails_db_load_increases</a><a id="mc_fails_db_load_increases"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If Memcached fails, database load increases
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_shouldnt_see_full_load>db_shouldnt_see_full_load</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memcached>memcached</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#db_shouldnt_see_full_load>db_shouldnt_see_full_load</a><a id="db_shouldnt_see_full_load"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database shouldn't see full load
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#mc_fails_db_load_increases>mc_fails_db_load_increases</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stale_data_okay>stale_data_okay</a><a id="stale_data_okay"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Stale data (seconds) okay
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#consistency>consistency</a><a id="consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lots_of_copies_of_data>lots_of_copies_of_data</a>, <a href=#stale_data_okay>stale_data_okay</a>, <a href=#users_should_see_their_changes>users_should_see_their_changes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#facebook>facebook</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#users_should_see_their_changes>users_should_see_their_changes</a><a id="users_should_see_their_changes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If a user changes data, they should be able to see it
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#east_west_datacenter>east_west_datacenter</a><a id="east_west_datacenter"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+East/West Datacenter
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#facebook>facebook</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_operation>read_operation</a><a id="read_operation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+read: if v = get(k); if v is nil: v = [fetch from DB]; set(k, v)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lookaside_cache>lookaside_cache</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#write_operation>write_operation</a><a id="write_operation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+write: send kv to database, then delete(k)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#delete_needed>delete_needed</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lookaside_cache>lookaside_cache</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#delete_needed>delete_needed</a><a id="delete_needed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Delete needed so frontends will see their own writes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#invalidates_key>invalidates_key</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#write_operation>write_operation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#invalidates_key>invalidates_key</a><a id="invalidates_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Invalidates key
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#delete_needed>delete_needed</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#performance_architecture>performance_architecture</a><a id="performance_architecture"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Performance Architecture
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#parallel_execution>parallel_execution</a>, <a href=#partition>partition</a>, <a href=#replicate>replicate</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#facebook>facebook</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#parallel_execution>parallel_execution</a><a id="parallel_execution"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parallel Execution
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#performance_architecture>performance_architecture</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replicate>replicate</a><a id="replicate"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replicate
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#few_tcp_connections>few_tcp_connections</a>, <a href=#good_hot_keys>good_hot_keys</a>, <a href=#less_total_data>less_total_data</a>, <a href=#regions>regions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#performance_architecture>performance_architecture</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partition>partition</a><a id="partition"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partition
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#memory_efficient>memory_efficient</a>, <a href=#not_good_hot_keys>not_good_hot_keys</a>, <a href=#50ms_latency>50ms_latency</a>, <a href=#client_talks_every_part>client_talks_every_part</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#performance_architecture>performance_architecture</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#memory_efficient>memory_efficient</a><a id="memory_efficient"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Memory Efficient
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition>partition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_good_hot_keys>not_good_hot_keys</a><a id="not_good_hot_keys"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not good for hot keys
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#good_hot_keys>good_hot_keys</a> (verses)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition>partition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#client_talks_every_part>client_talks_every_part</a><a id="client_talks_every_part"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Client talks to every partition
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#few_tcp_connections>few_tcp_connections</a> (verses)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition>partition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#good_hot_keys>good_hot_keys</a><a id="good_hot_keys"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Good for hot keys
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replicate>replicate</a>, <a href=#not_good_hot_keys>not_good_hot_keys</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#few_tcp_connections>few_tcp_connections</a><a id="few_tcp_connections"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Few TCP connections
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replicate>replicate</a>, <a href=#client_talks_every_part>client_talks_every_part</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#less_total_data>less_total_data</a><a id="less_total_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Less total data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replicate>replicate</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#50ms_latency>50ms_latency</a><a id="50ms_latency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+50ms Latency Across country
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#localized_faster_reads>localized_faster_reads</a> (Removes latency caused by traveling across country)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition>partition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#regions>regions</a><a id="regions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Regions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#db_servers>db_servers</a>, <a href=#localized_faster_reads>localized_faster_reads</a>, <a href=#regional_pool>regional_pool</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replicate>replicate</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#localized_faster_reads>localized_faster_reads</a><a id="localized_faster_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Localized, faster reads
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#50ms_latency>50ms_latency</a>, <a href=#regions>regions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#db_servers>db_servers</a><a id="db_servers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Database servers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#clusters>clusters</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#regions>regions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clusters>clusters</a><a id="clusters"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clusters
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#why_multicluster>why_multicluster</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#db_servers>db_servers</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#why_multicluster>why_multicluster</a><a id="why_multicluster"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Why Multicluster?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#helps_popular_keys>helps_popular_keys</a> (a reason), <a href=#parallel_serving>parallel_serving</a> (a_reason), <a href=#data_spread>data_spread</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clusters>clusters</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#regional_pool>regional_pool</a><a id="regional_pool"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Regional (memcached) Pool
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#less_popular_keys_go_here>less_popular_keys_go_here</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#regions>regions</a>, <a href=#memcached>memcached</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#helps_popular_keys>helps_popular_keys</a><a id="helps_popular_keys"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Helps with popular keys
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#parallel_serving>parallel_serving</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why_multicluster>why_multicluster</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#parallel_serving>parallel_serving</a><a id="parallel_serving"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parallel Serving
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#helps_popular_keys>helps_popular_keys</a>, <a href=#why_multicluster>why_multicluster</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#communication_overhead>communication_overhead</a><a id="communication_overhead"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lots of communication overhead (TCP)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_spread>data_spread</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#data_spread>data_spread</a><a id="data_spread"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data spread over all memcached servers
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#communication_overhead>communication_overhead</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#why_multicluster>why_multicluster</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#less_popular_keys_go_here>less_popular_keys_go_here</a><a id="less_popular_keys_go_here"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Less popular keys go here
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#regional_pool>regional_pool</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#thundering_herd>thundering_herd</a><a id="thundering_herd"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Thundering Herd
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#delete_popular_key>delete_popular_key</a>, <a href=#high_load_on_same_key>high_load_on_same_key</a> (how it gets its name), <a href=#lease>lease</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memcached>memcached</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lease>lease</a><a id="lease"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lease
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#thundering_herd>thundering_herd</a>, <a href=#high_load_on_same_key>high_load_on_same_key</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#delete_popular_key>delete_popular_key</a><a id="delete_popular_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Deleting a popular key
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#high_load_on_same_key>high_load_on_same_key</a> (causes)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#thundering_herd>thundering_herd</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#high_load_on_same_key>high_load_on_same_key</a><a id="high_load_on_same_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Causes high load on same key
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#lease>lease</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#delete_popular_key>delete_popular_key</a>, <a href=#thundering_herd>thundering_herd</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#gutter>gutter</a><a id="gutter"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Gutter
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#idle_except_on_failure>idle_except_on_failure</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#memcached>memcached</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#idle_except_on_failure>idle_except_on_failure</a><a id="idle_except_on_failure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Idle, except when memcached fails
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#gutter>gutter</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lots_of_copies_of_data>lots_of_copies_of_data</a><a id="lots_of_copies_of_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lots of copies of data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistency>consistency</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

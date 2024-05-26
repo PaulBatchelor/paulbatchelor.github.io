@@ -1,0 +1,2209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec04</title>
+<h1>lec04</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec04">lec04</a>
+<p></p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#fault_tolerance>fault_tolerance</a><ul>
+<li>
+<a href=#replication>replication</a><ul>
+<li>
+<a href=#limits_to>limits_to</a><ul>
+<li>
+<a href=#software_bugs>software_bugs</a></li>
+<li>
+<a href=#correlated_failures>correlated_failures</a><ul>
+<li>
+<a href=#physical_separation>physical_separation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#replication_schemes>replication_schemes</a><ul>
+<li>
+<a href=#replicated_state_machine>replicated_state_machine</a><ul>
+<li>
+<a href=#internal_deterministic>internal_deterministic</a><ul>
+<li>
+<a href=#unicore_processor>unicore_processor</a><ul>
+<li>
+<a href=#multicore_nondeterministic>multicore_nondeterministic</a><ul>
+<li>
+<a href=#multicore_parallelism>multicore_parallelism</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#smaller_operations>smaller_operations</a><ul>
+<li>
+<a href=#ops_more_complex>ops_more_complex</a></li>
+</ul>
+</li>
+<li>
+<a href=#designing_rsm>designing_rsm</a><ul>
+<li>
+<a href=#how_close_is_sync>how_close_is_sync</a><ul>
+<li>
+<a href=#sync_ideal>sync_ideal</a></li>
+</ul>
+</li>
+<li>
+<a href=#level_of_replication>level_of_replication</a><ul>
+<li>
+<a href=#full_state_detailed>full_state_detailed</a><ul>
+<li>
+<a href=#application_level>application_level</a><ul>
+<li>
+<a href=#replication_application>replication_application</a><ul>
+<li>
+<a href=#existing_software>existing_software</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#new_replica_expensive>new_replica_expensive</a><ul>
+<li>
+<a href=#full_state_detailed>full_state_detailed</a><ul>
+<li>
+<a href=#application_level>application_level</a><ul>
+<li>
+<a href=#replication_application>replication_application</a><ul>
+<li>
+<a href=#existing_software>existing_software</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#state_transfer>state_transfer</a><ul>
+<li>
+<a href=#smaller_operations>smaller_operations</a><ul>
+<li>
+<a href=#ops_more_complex>ops_more_complex</a></li>
+</ul>
+</li>
+<li>
+<a href=#whole_state>whole_state</a><ul>
+<li>
+<a href=#just_send_external>just_send_external</a><ul>
+<li>
+<a href=#nondeterministic_events>nondeterministic_events</a><ul>
+<li>
+<a href=#inputs>inputs</a><ul>
+<li>
+<a href=#network_packets>network_packets</a><ul>
+<li>
+<a href=#data_interrupt>data_interrupt</a><ul>
+<li>
+<a href=#timing_interrupt>timing_interrupt</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#multicore_parallelism>multicore_parallelism</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#worth_it>worth_it</a></li>
+<li>
+<a href=#expected_failures>expected_failures</a><ul>
+<li>
+<a href=#fail_stop_faults>fail_stop_faults</a><ul>
+<li>
+<a href=#hardware_errors>hardware_errors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#vmware_ft>vmware_ft</a><ul>
+<li>
+<a href=#full_state_detailed>full_state_detailed</a><ul>
+<li>
+<a href=#application_level>application_level</a><ul>
+<li>
+<a href=#replication_application>replication_application</a><ul>
+<li>
+<a href=#existing_software>existing_software</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#output>output</a><ul>
+<li>
+<a href=#network_packets_only>network_packets_only</a></li>
+<li>
+<a href=#awkward_failures>awkward_failures</a><ul>
+<li>
+<a href=#network_split_brain>network_split_brain</a></li>
+<li>
+<a href=#output_rules>output_rules</a><ul>
+<li>
+<a href=#output_waits_for_backup>output_waits_for_backup</a></li>
+</ul>
+</li>
+<li>
+<a href=#test_and_set>test_and_set</a><ul>
+<li>
+<a href=#acts_like_lock>acts_like_lock</a></li>
+<li>
+<a href=#network_split_brain>network_split_brain</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#primary_fails>primary_fails</a><ul>
+<li>
+<a href=#backup_stops_logs>backup_stops_logs</a><ul>
+<li>
+<a href=#backup_goes_live>backup_goes_live</a><ul>
+<li>
+<a href=#vm_allows_backup_to_run>vm_allows_backup_to_run</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#timer_exact>timer_exact</a><ul>
+<li>
+<a href=#physical_timer_to_guest>physical_timer_to_guest</a></li>
+<li>
+<a href=#backup_gets_ahead>backup_gets_ahead</a><ul>
+<li>
+<a href=#event_buffer_nonempty>event_buffer_nonempty</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#unicore_processor>unicore_processor</a><ul>
+<li>
+<a href=#multicore_nondeterministic>multicore_nondeterministic</a><ul>
+<li>
+<a href=#multicore_parallelism>multicore_parallelism</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#vmm>vmm</a><ul>
+<li>
+<a href=#packet_sends_vm_backup>packet_sends_vm_backup</a><ul>
+<li>
+<a href=#primary_outputs_only>primary_outputs_only</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#logging_channel>logging_channel</a><ul>
+<li>
+<a href=#log_entry_format>log_entry_format</a><ul>
+<li>
+<a href=#interrupt_type>interrupt_type</a></li>
+<li>
+<a href=#log_entry_data>log_entry_data</a></li>
+</ul>
+</li>
+<li>
+<a href=#only_weird_instructions>only_weird_instructions</a></li>
+<li>
+<a href=#arriving_packets>arriving_packets</a><ul>
+<li>
+<a href=#NICS_DMA>NICS_DMA</a><ul>
+<li>
+<a href=#primary_no_DMA>primary_no_DMA</a><ul>
+<li>
+<a href=#private_mem>private_mem</a><ul>
+<li>
+<a href=#bounce_buffer>bounce_buffer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#depends>depends</a></li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fault_tolerance>fault_tolerance</a><a id="fault_tolerance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fault Tolerance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replication>replication</a> (Tool Used For Fault Tolerance), <a href=#vmware_ft>vmware_ft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replication>replication</a><a id="replication"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#limits_to>limits_to</a>, <a href=#replication_schemes>replication_schemes</a>, <a href=#worth_it>worth_it</a>, <a href=#expected_failures>expected_failures</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#expected_failures>expected_failures</a><a id="expected_failures"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Expected Failures To Address
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fail_stop_faults>fail_stop_faults</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fail_stop_faults>fail_stop_faults</a><a id="fail_stop_faults"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fail Stop Faults: Stops Computing Entirely
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#hardware_errors>hardware_errors</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#expected_failures>expected_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#limits_to>limits_to</a><a id="limits_to"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Limits To Replication (Not Covered)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#software_bugs>software_bugs</a>, <a href=#correlated_failures>correlated_failures</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#software_bugs>software_bugs</a><a id="software_bugs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bugs in Software
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#limits_to>limits_to</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#vmware_ft>vmware_ft</a><a id="vmware_ft"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+VMWare FT. This lecture studies this particular replication design.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#full_state_detailed>full_state_detailed</a> (This is the approach that VMWare FT uses, which makes,it unique.), <a href=#output>output</a>, <a href=#primary_fails>primary_fails</a>, <a href=#timer_exact>timer_exact</a>, <a href=#unicore_processor>unicore_processor</a>, <a href=#vmm>vmm</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fault_tolerance>fault_tolerance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hardware_errors>hardware_errors</a><a id="hardware_errors"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hardware errors can be turned into fault errors sometimes. The advantage of this is that these errors can be detectable.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fail_stop_faults>fail_stop_faults</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#correlated_failures>correlated_failures</a><a id="correlated_failures"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Correlated failures include hardware defects (such as from defective batch of servers from a single company), and natural disasters like earthquakes.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#physical_separation>physical_separation</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#limits_to>limits_to</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#worth_it>worth_it</a><a id="worth_it"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Is replication worth it?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#depends>depends</a><a id="depends"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Depends on value of a reliable service
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#physical_separation>physical_separation</a><a id="physical_separation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Physical separtion (different countries)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#correlated_failures>correlated_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#state_transfer>state_transfer</a><a id="state_transfer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+State Transfer
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#smaller_operations>smaller_operations</a> (more favorable than state transfer), <a href=#whole_state>whole_state</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_schemes>replication_schemes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replication_schemes>replication_schemes</a><a id="replication_schemes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication Schemes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replicated_state_machine>replicated_state_machine</a>, <a href=#state_transfer>state_transfer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication>replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replicated_state_machine>replicated_state_machine</a><a id="replicated_state_machine"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replicated State Machine
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#internal_deterministic>internal_deterministic</a>, <a href=#smaller_operations>smaller_operations</a> (This is a "pro" for using RSMs over), <a href=#designing_rsm>designing_rsm</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_schemes>replication_schemes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#whole_state>whole_state</a><a id="whole_state"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sends whole state of primary
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#just_send_external>just_send_external</a> (Sending external events typically means sending less)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#state_transfer>state_transfer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#internal_deterministic>internal_deterministic</a><a id="internal_deterministic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Works on the assumption that most internal operations of a CPU are deterministic
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#unicore_processor>unicore_processor</a> (single-core instructions are determinstic)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replicated_state_machine>replicated_state_machine</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#just_send_external>just_send_external</a><a id="just_send_external"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Just send external events (input events, packets, etc)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#nondeterministic_events>nondeterministic_events</a> (External events are the non-deterministic events)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#whole_state>whole_state</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#smaller_operations>smaller_operations</a><a id="smaller_operations"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RSMs tend to have smaller operations (compared to state transfer), tends to be more favorable
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ops_more_complex>ops_more_complex</a> (Potential downside of RSMs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#state_transfer>state_transfer</a>, <a href=#replicated_state_machine>replicated_state_machine</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ops_more_complex>ops_more_complex</a><a id="ops_more_complex"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Operations in RSMs tend to be more complex
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#smaller_operations>smaller_operations</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#unicore_processor>unicore_processor</a><a id="unicore_processor"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+VMWare FT replication works on unicore processors
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#multicore_nondeterministic>multicore_nondeterministic</a> (multicore unable to be used with this replication scheme)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#internal_deterministic>internal_deterministic</a>, <a href=#vmware_ft>vmware_ft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multicore_nondeterministic>multicore_nondeterministic</a><a id="multicore_nondeterministic"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+multicore processors can't be used because the way instructions are interleaved makes them non-deterministic
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#multicore_parallelism>multicore_parallelism</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#unicore_processor>unicore_processor</a>
+</td>
+</tr>
+<tr>
+<td>
+flashcard (front)
+</td>
+<td>
+Why can't multicore processors be used in the VMWare FT Replication scheme?
+</td>
+</tr>
+<tr>
+<td>
+flashcard (back)
+</td>
+<td>
+The way multicore processors interleave instructions makes them non-deterministic and therefore unsuitable for the VMware FT replication scheme.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#level_of_replication>level_of_replication</a><a id="level_of_replication"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What level of replication should be used?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#full_state_detailed>full_state_detailed</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#designing_rsm>designing_rsm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#designing_rsm>designing_rsm</a><a id="designing_rsm"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Designing a Replicated State Machine (RSM)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#how_close_is_sync>how_close_is_sync</a>, <a href=#level_of_replication>level_of_replication</a>, <a href=#new_replica_expensive>new_replica_expensive</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replicated_state_machine>replicated_state_machine</a>
+</td>
+</tr>
+<tr>
+<td>
+flashcard (front)
+</td>
+<td>
+What does RSM stand for?
+</td>
+</tr>
+<tr>
+<td>
+flashcard (back)
+</td>
+<td>
+Replicated State Machine.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#how_close_is_sync>how_close_is_sync</a><a id="how_close_is_sync"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How close is synchronization? (between primary/backup)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sync_ideal>sync_ideal</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#designing_rsm>designing_rsm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sync_ideal>sync_ideal</a><a id="sync_ideal"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ideal Synchronization: if primary fails, switch over to backup with no anomalies.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#how_close_is_sync>how_close_is_sync</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+this never actually happens in practice, anomalies do occur
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#new_replica_expensive>new_replica_expensive</a><a id="new_replica_expensive"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Creation of a new replica is expensive
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#full_state_detailed>full_state_detailed</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#designing_rsm>designing_rsm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#full_state_detailed>full_state_detailed</a><a id="full_state_detailed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Copying full State of machine (registers, memory) is very detailed
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#application_level>application_level</a> (more efficient than machine-level replication)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#level_of_replication>level_of_replication</a>, <a href=#new_replica_expensive>new_replica_expensive</a>, <a href=#vmware_ft>vmware_ft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#application_level>application_level</a><a id="application_level"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Most replication schemes are application-level
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replication_application>replication_application</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#full_state_detailed>full_state_detailed</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replication_application>replication_application</a><a id="replication_application"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replication needs to be a part of the application in order to work.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#existing_software>existing_software</a> (Existing software runs on top of machine and can work,without modification or any knowledge of replication.)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#application_level>application_level</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#existing_software>existing_software</a><a id="existing_software"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Existing software will work as-is using machine-level replication.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#replication_application>replication_application</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multicore_parallelism>multicore_parallelism</a><a id="multicore_parallelism"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multicore Parallelism is not covered
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multicore_nondeterministic>multicore_nondeterministic</a>, <a href=#nondeterministic_events>nondeterministic_events</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#nondeterministic_events>nondeterministic_events</a><a id="nondeterministic_events"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Examples of non-deterministic events
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#inputs>inputs</a>, <a href=#multicore_parallelism>multicore_parallelism</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#just_send_external>just_send_external</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#inputs>inputs</a><a id="inputs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Inputs are the most common non-deterministic event
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#network_packets>network_packets</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#nondeterministic_events>nondeterministic_events</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_packets>network_packets</a><a id="network_packets"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Inputs in this scope are just network packets
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#data_interrupt>data_interrupt</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#inputs>inputs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#data_interrupt>data_interrupt</a><a id="data_interrupt"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+When a packet arrives, the data in the packet, and the interrupt type is stored.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#timing_interrupt>timing_interrupt</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#network_packets>network_packets</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#timing_interrupt>timing_interrupt</a><a id="timing_interrupt"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The timing of the interrupt (where it is in the instruction set) must be identical.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_interrupt>data_interrupt</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#vmm>vmm</a><a id="vmm"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Virtual Machine Monitor
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#packet_sends_vm_backup>packet_sends_vm_backup</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vmware_ft>vmware_ft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#packet_sends_vm_backup>packet_sends_vm_backup</a><a id="packet_sends_vm_backup"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Network packets, sends to the VM, then sends a version of the packet to the backup
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#primary_outputs_only>primary_outputs_only</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vmm>vmm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#primary_outputs_only>primary_outputs_only</a><a id="primary_outputs_only"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Both primary and backup see inputs, primary is the only one that outputs.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#packet_sends_vm_backup>packet_sends_vm_backup</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#logging_channel>logging_channel</a><a id="logging_channel"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Logging Channel: stream of events.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#log_entry_format>log_entry_format</a>, <a href=#only_weird_instructions>only_weird_instructions</a>, <a href=#arriving_packets>arriving_packets</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Context: sending "Log events on the log channel"
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#primary_fails>primary_fails</a><a id="primary_fails"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if the primary fails?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#backup_stops_logs>backup_stops_logs</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vmware_ft>vmware_ft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#backup_stops_logs>backup_stops_logs</a><a id="backup_stops_logs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Indicator that primary fails is if the backup stops getting logs from the primary.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#backup_goes_live>backup_goes_live</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primary_fails>primary_fails</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+Apparently logs get sent quite frequently to the backup (many times a second). Some kind of "heartbeat" or timing interrupt? I forget the exact terminology
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#backup_goes_live>backup_goes_live</a><a id="backup_goes_live"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The Backup Goes "Live"
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#vm_allows_backup_to_run>vm_allows_backup_to_run</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backup_stops_logs>backup_stops_logs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#vm_allows_backup_to_run>vm_allows_backup_to_run</a><a id="vm_allows_backup_to_run"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The VM allows the backup to run. The backup then stops discarding output.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backup_goes_live>backup_goes_live</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#only_weird_instructions>only_weird_instructions</a><a id="only_weird_instructions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Only "weird" instructions get sent to the log channel
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#logging_channel>logging_channel</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_entry_format>log_entry_format</a><a id="log_entry_format"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Format of a log entry
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#interrupt_type>interrupt_type</a>, <a href=#log_entry_data>log_entry_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#logging_channel>logging_channel</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+They don't explicitely say what the format of a log entry is in the paper.
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#interrupt_type>interrupt_type</a><a id="interrupt_type"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Interrupt Type
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry_format>log_entry_format</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+I just wrote "type", but I'm assuming it's interrupt type
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#log_entry_data>log_entry_data</a><a id="log_entry_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data (from network packet)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#log_entry_format>log_entry_format</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#timer_exact>timer_exact</a><a id="timer_exact"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Assumes VM has timer in exactly the same place for both the Primary and Backup
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#physical_timer_to_guest>physical_timer_to_guest</a>, <a href=#backup_gets_ahead>backup_gets_ahead</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vmware_ft>vmware_ft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#physical_timer_to_guest>physical_timer_to_guest</a><a id="physical_timer_to_guest"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Physical timer interrupts are sent to guest
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timer_exact>timer_exact</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#arriving_packets>arriving_packets</a><a id="arriving_packets"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Arriving Packets
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#NICS_DMA>NICS_DMA</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#logging_channel>logging_channel</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#NICS_DMA>NICS_DMA</a><a id="NICS_DMA"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Some NICS use DMA (direct memory access) in their implementation.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#primary_no_DMA>primary_no_DMA</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#arriving_packets>arriving_packets</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#primary_no_DMA>primary_no_DMA</a><a id="primary_no_DMA"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Primary cannot directly access NIC and the DMA directly
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#private_mem>private_mem</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#NICS_DMA>NICS_DMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#private_mem>private_mem</a><a id="private_mem"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Events from NIC are DMA'd into private memory in VM, then they are copied over to the primary
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#bounce_buffer>bounce_buffer</a> ("Bounce Buffer" is the term for what this does)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#primary_no_DMA>primary_no_DMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bounce_buffer>bounce_buffer</a><a id="bounce_buffer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bounce Buffer
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#private_mem>private_mem</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#backup_gets_ahead>backup_gets_ahead</a><a id="backup_gets_ahead"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if backup gets ahead of primary execution? This can't ever happen.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#event_buffer_nonempty>event_buffer_nonempty</a> (Event buffer is used to prevent backup from getting ahead)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#timer_exact>timer_exact</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#event_buffer_nonempty>event_buffer_nonempty</a><a id="event_buffer_nonempty"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Event buffer: VM only executes instructions if non-empty
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#backup_gets_ahead>backup_gets_ahead</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#output>output</a><a id="output"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Handling output events
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#network_packets_only>network_packets_only</a>, <a href=#awkward_failures>awkward_failures</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vmware_ft>vmware_ft</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_packets_only>network_packets_only</a><a id="network_packets_only"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+In this context, the only thing being output are network packets
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#output>output</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#awkward_failures>awkward_failures</a><a id="awkward_failures"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What are the kinds of awkward failures that could happen?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#network_split_brain>network_split_brain</a> (example of failure), <a href=#output_rules>output_rules</a>, <a href=#test_and_set>test_and_set</a> (Prevantative Solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#output>output</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#output_rules>output_rules</a><a id="output_rules"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Output Rules Preventative Measures against certain kinds of failures
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#output_waits_for_backup>output_waits_for_backup</a> (This prevents issues related to backup not receiving,network packets over log channel)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#awkward_failures>awkward_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#output_waits_for_backup>output_waits_for_backup</a><a id="output_waits_for_backup"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Output can't produce any output until backup receives all previous events to this point in time.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#output_rules>output_rules</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#test_and_set>test_and_set</a><a id="test_and_set"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Test And Set: an outside authority that deices which machine (primary/backup) can be "live"
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#acts_like_lock>acts_like_lock</a>, <a href=#network_split_brain>network_split_brain</a> ("Test and Set" server used to solve this)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#awkward_failures>awkward_failures</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_split_brain>network_split_brain</a><a id="network_split_brain"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Network Issues can cause split brain
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#awkward_failures>awkward_failures</a>, <a href=#test_and_set>test_and_set</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#acts_like_lock>acts_like_lock</a><a id="acts_like_lock"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Test/Set server acts like a lock. The primary/secondary send requests to this server to get write permission, which in turn set a flag on the Test/Set server.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#test_and_set>test_and_set</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,2265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec13</title>
+<h1>lec13</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec13">lec13</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Spanner
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#spanner>spanner</a><ul>
+<li>
+<a href=#goals>goals</a><ul>
+<li>
+<a href=#external_consistency>external_consistency</a><ul>
+<li>
+<a href=#ext_cons_def>ext_cons_def</a></li>
+<li>
+<a href=#linearizability>linearizability</a></li>
+<li>
+<a href=#violation_ext_cons>violation_ext_cons</a></li>
+</ul>
+</li>
+<li>
+<a href=#read_only_transactions>read_only_transactions</a><ul>
+<li>
+<a href=#read_only>read_only</a><ul>
+<li>
+<a href=#complex_approach>complex_approach</a></li>
+<li>
+<a href=#latest_copy_local_replica>latest_copy_local_replica</a><ul>
+<li>
+<a href=#not_serializable>not_serializable</a></li>
+</ul>
+</li>
+<li>
+<a href=#local_read>local_read</a></li>
+<li>
+<a href=#multi_version_db>multi_version_db</a></li>
+<li>
+<a href=#no_locks>no_locks</a></li>
+<li>
+<a href=#read_lower_ts>read_lower_ts</a><ul>
+<li>
+<a href=#stale_data_allowed>stale_data_allowed</a><ul>
+<li>
+<a href=#concurrent>concurrent</a></li>
+</ul>
+</li>
+<li>
+<a href=#too_old>too_old</a><ul>
+<li>
+<a href=#safe_time>safe_time</a><ul>
+<li>
+<a href=#replicas_wait_to_respond>replicas_wait_to_respond</a></li>
+<li>
+<a href=#true_time>true_time</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#snapshot_isolation>snapshot_isolation</a><ul>
+<li>
+<a href=#synchronized_time>synchronized_time</a><ul>
+<li>
+<a href=#government_labs>government_labs</a><ul>
+<li>
+<a href=#UTC>UTC</a><ul>
+<li>
+<a href=#GPS>GPS</a><ul>
+<li>
+<a href=#GPS_rec>GPS_rec</a><ul>
+<li>
+<a href=#time_master>time_master</a><ul>
+<li>
+<a href=#true_time>true_time</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#transaction_timestamp>transaction_timestamp</a><ul>
+<li>
+<a href=#exec_ts_order>exec_ts_order</a></li>
+<li>
+<a href=#blows_up_storage>blows_up_storage</a><ul>
+<li>
+<a href=#forget_some_history>forget_some_history</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#uncertainty>uncertainty</a><ul>
+<li>
+<a href=#network_var_delay>network_var_delay</a></li>
+<li>
+<a href=#sat_delay>sat_delay</a></li>
+<li>
+<a href=#time_pair>time_pair</a></li>
+</ul>
+</li>
+<li>
+<a href=#clocks_not_synced>clocks_not_synced</a><ul>
+<li>
+<a href=#ro_ts_too_large>ro_ts_too_large</a><ul>
+<li>
+<a href=#wait_for_paxos>wait_for_paxos</a></li>
+</ul>
+</li>
+<li>
+<a href=#rw_okay>rw_okay</a></li>
+<li>
+<a href=#too_slow>too_slow</a><ul>
+<li>
+<a href=#violation_ext_cons>violation_ext_cons</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#transaction_timestamp>transaction_timestamp</a><ul>
+<li>
+<a href=#exec_ts_order>exec_ts_order</a></li>
+<li>
+<a href=#blows_up_storage>blows_up_storage</a><ul>
+<li>
+<a href=#forget_some_history>forget_some_history</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#still_serializable>still_serializable</a></li>
+<li>
+<a href=#avoiding_preferrable>avoiding_preferrable</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#strong_consistency>strong_consistency</a><ul>
+<li>
+<a href=#transactions>transactions</a><ul>
+<li>
+<a href=#read_only>read_only</a><ul>
+<li>
+<a href=#complex_approach>complex_approach</a></li>
+<li>
+<a href=#latest_copy_local_replica>latest_copy_local_replica</a><ul>
+<li>
+<a href=#not_serializable>not_serializable</a></li>
+</ul>
+</li>
+<li>
+<a href=#local_read>local_read</a></li>
+<li>
+<a href=#multi_version_db>multi_version_db</a></li>
+<li>
+<a href=#no_locks>no_locks</a></li>
+<li>
+<a href=#read_lower_ts>read_lower_ts</a><ul>
+<li>
+<a href=#stale_data_allowed>stale_data_allowed</a><ul>
+<li>
+<a href=#concurrent>concurrent</a></li>
+</ul>
+</li>
+<li>
+<a href=#too_old>too_old</a><ul>
+<li>
+<a href=#safe_time>safe_time</a><ul>
+<li>
+<a href=#replicas_wait_to_respond>replicas_wait_to_respond</a></li>
+<li>
+<a href=#true_time>true_time</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#snapshot_isolation>snapshot_isolation</a><ul>
+<li>
+<a href=#synchronized_time>synchronized_time</a><ul>
+<li>
+<a href=#government_labs>government_labs</a><ul>
+<li>
+<a href=#UTC>UTC</a><ul>
+<li>
+<a href=#GPS>GPS</a><ul>
+<li>
+<a href=#GPS_rec>GPS_rec</a><ul>
+<li>
+<a href=#time_master>time_master</a><ul>
+<li>
+<a href=#true_time>true_time</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#transaction_timestamp>transaction_timestamp</a><ul>
+<li>
+<a href=#exec_ts_order>exec_ts_order</a></li>
+<li>
+<a href=#blows_up_storage>blows_up_storage</a><ul>
+<li>
+<a href=#forget_some_history>forget_some_history</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#uncertainty>uncertainty</a><ul>
+<li>
+<a href=#network_var_delay>network_var_delay</a></li>
+<li>
+<a href=#sat_delay>sat_delay</a></li>
+<li>
+<a href=#time_pair>time_pair</a></li>
+</ul>
+</li>
+<li>
+<a href=#clocks_not_synced>clocks_not_synced</a><ul>
+<li>
+<a href=#ro_ts_too_large>ro_ts_too_large</a><ul>
+<li>
+<a href=#wait_for_paxos>wait_for_paxos</a></li>
+</ul>
+</li>
+<li>
+<a href=#rw_okay>rw_okay</a></li>
+<li>
+<a href=#too_slow>too_slow</a><ul>
+<li>
+<a href=#violation_ext_cons>violation_ext_cons</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#transaction_timestamp>transaction_timestamp</a><ul>
+<li>
+<a href=#exec_ts_order>exec_ts_order</a></li>
+<li>
+<a href=#blows_up_storage>blows_up_storage</a><ul>
+<li>
+<a href=#forget_some_history>forget_some_history</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#still_serializable>still_serializable</a></li>
+<li>
+<a href=#avoiding_preferrable>avoiding_preferrable</a></li>
+</ul>
+</li>
+<li>
+<a href=#readwrite>readwrite</a><ul>
+<li>
+<a href=#huge_amt_messages>huge_amt_messages</a><ul>
+<li>
+<a href=#avoiding_preferrable>avoiding_preferrable</a></li>
+</ul>
+</li>
+<li>
+<a href=#locking_ensures_serialization>locking_ensures_serialization</a></li>
+<li>
+<a href=#2pc>2pc</a><ul>
+<li>
+<a href=#paxos_instead_of_servers>paxos_instead_of_servers</a></li>
+<li>
+<a href=#blocking>blocking</a><ul>
+<li>
+<a href=#replicate_transaction_mgr>replicate_transaction_mgr</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#2_rules>2_rules</a><ul>
+<li>
+<a href=#start_rule>start_rule</a><ul>
+<li>
+<a href=#ro_commit>ro_commit</a></li>
+<li>
+<a href=#rw_start>rw_start</a></li>
+<li>
+<a href=#start_rule_desc>start_rule_desc</a><ul>
+<li>
+<a href=#guaranteed_not_happened>guaranteed_not_happened</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#commit_wait>commit_wait</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#spanner_desc>spanner_desc</a></li>
+<li>
+<a href=#synchronized_time>synchronized_time</a><ul>
+<li>
+<a href=#government_labs>government_labs</a><ul>
+<li>
+<a href=#UTC>UTC</a><ul>
+<li>
+<a href=#GPS>GPS</a><ul>
+<li>
+<a href=#GPS_rec>GPS_rec</a><ul>
+<li>
+<a href=#time_master>time_master</a><ul>
+<li>
+<a href=#true_time>true_time</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#transaction_timestamp>transaction_timestamp</a><ul>
+<li>
+<a href=#exec_ts_order>exec_ts_order</a></li>
+<li>
+<a href=#blows_up_storage>blows_up_storage</a><ul>
+<li>
+<a href=#forget_some_history>forget_some_history</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#uncertainty>uncertainty</a><ul>
+<li>
+<a href=#network_var_delay>network_var_delay</a></li>
+<li>
+<a href=#sat_delay>sat_delay</a></li>
+<li>
+<a href=#time_pair>time_pair</a></li>
+</ul>
+</li>
+<li>
+<a href=#clocks_not_synced>clocks_not_synced</a><ul>
+<li>
+<a href=#ro_ts_too_large>ro_ts_too_large</a><ul>
+<li>
+<a href=#wait_for_paxos>wait_for_paxos</a></li>
+</ul>
+</li>
+<li>
+<a href=#rw_okay>rw_okay</a></li>
+<li>
+<a href=#too_slow>too_slow</a><ul>
+<li>
+<a href=#violation_ext_cons>violation_ext_cons</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#2pc_paxos>2pc_paxos</a><ul>
+<li>
+<a href=#paxos>paxos</a><ul>
+<li>
+<a href=#replicate_transaction_mgr>replicate_transaction_mgr</a></li>
+</ul>
+</li>
+<li>
+<a href=#2pc>2pc</a><ul>
+<li>
+<a href=#paxos_instead_of_servers>paxos_instead_of_servers</a></li>
+<li>
+<a href=#blocking>blocking</a><ul>
+<li>
+<a href=#replicate_transaction_mgr>replicate_transaction_mgr</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#challenges>challenges</a><ul>
+<li>
+<a href=#reads_local_data>reads_local_data</a><ul>
+<li>
+<a href=#outdated_replica>outdated_replica</a></li>
+<li>
+<a href=#stay_up_to_date>stay_up_to_date</a><ul>
+<li>
+<a href=#outdated_replica>outdated_replica</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#spanner>spanner</a><a id="spanner"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Spanner
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#goals>goals</a>, <a href=#spanner_desc>spanner_desc</a>, <a href=#synchronized_time>synchronized_time</a>, <a href=#2pc_paxos>2pc_paxos</a>, <a href=#challenges>challenges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#spanner_desc>spanner_desc</a><a id="spanner_desc"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Provides distrubuted transactions over data that is widely separated
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spanner>spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#synchronized_time>synchronized_time</a><a id="synchronized_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+synchronized time
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#government_labs>government_labs</a>, <a href=#transaction_timestamp>transaction_timestamp</a>, <a href=#uncertainty>uncertainty</a>, <a href=#clocks_not_synced>clocks_not_synced</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot_isolation>snapshot_isolation</a>, <a href=#spanner>spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#2pc_paxos>2pc_paxos</a><a id="2pc_paxos"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+2-phase commit over paxos replicated participants
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#paxos>paxos</a>, <a href=#2pc>2pc</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spanner>spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#goals>goals</a><a id="goals"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+goals
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#external_consistency>external_consistency</a>, <a href=#read_only_transactions>read_only_transactions</a>, <a href=#strong_consistency>strong_consistency</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spanner>spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_only_transactions>read_only_transactions</a><a id="read_only_transactions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read-only transactions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#goals>goals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#strong_consistency>strong_consistency</a><a id="strong_consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Strong consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#goals>goals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#external_consistency>external_consistency</a><a id="external_consistency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+External Consistency
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ext_cons_def>ext_cons_def</a> (definition), <a href=#linearizability>linearizability</a>, <a href=#violation_ext_cons>violation_ext_cons</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#goals>goals</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#challenges>challenges</a><a id="challenges"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Challenges
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#reads_local_data>reads_local_data</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spanner>spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reads_local_data>reads_local_data</a><a id="reads_local_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reads from local data replica for speed
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#outdated_replica>outdated_replica</a>, <a href=#stay_up_to_date>stay_up_to_date</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#challenges>challenges</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stay_up_to_date>stay_up_to_date</a><a id="stay_up_to_date"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+How to stay up-to-date?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#outdated_replica>outdated_replica</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reads_local_data>reads_local_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#outdated_replica>outdated_replica</a><a id="outdated_replica"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Local replica may be out of date
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#reads_local_data>reads_local_data</a>, <a href=#stay_up_to_date>stay_up_to_date</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transactions>transactions</a><a id="transactions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transactions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#read_only>read_only</a>, <a href=#readwrite>readwrite</a>, <a href=#2_rules>2_rules</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#strong_consistency>strong_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#readwrite>readwrite</a><a id="readwrite"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Readwrite
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#huge_amt_messages>huge_amt_messages</a>, <a href=#locking_ensures_serialization>locking_ensures_serialization</a>, <a href=#2pc>2pc</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#locking_ensures_serialization>locking_ensures_serialization</a><a id="locking_ensures_serialization"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Locking ensures serialization
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#readwrite>readwrite</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#2pc>2pc</a><a id="2pc"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+2-phase commit
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#paxos_instead_of_servers>paxos_instead_of_servers</a>, <a href=#blocking>blocking</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#2pc_paxos>2pc_paxos</a>, <a href=#readwrite>readwrite</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#blocking>blocking</a><a id="blocking"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+blocking
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replicate_transaction_mgr>replicate_transaction_mgr</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#2pc>2pc</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#paxos>paxos</a><a id="paxos"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+paxos
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replicate_transaction_mgr>replicate_transaction_mgr</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#2pc_paxos>2pc_paxos</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replicate_transaction_mgr>replicate_transaction_mgr</a><a id="replicate_transaction_mgr"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Solved by replicating transaction manager
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blocking>blocking</a>, <a href=#paxos>paxos</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#paxos_instead_of_servers>paxos_instead_of_servers</a><a id="paxos_instead_of_servers"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Paxos replicated groups instead of individual servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#2pc>2pc</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#huge_amt_messages>huge_amt_messages</a><a id="huge_amt_messages"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Huge amount of messages
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#avoiding_preferrable>avoiding_preferrable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#readwrite>readwrite</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#avoiding_preferrable>avoiding_preferrable</a><a id="avoiding_preferrable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Slow enough that avoiding is preferrable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>, <a href=#huge_amt_messages>huge_amt_messages</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_only>read_only</a><a id="read_only"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Read-only
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#complex_approach>complex_approach</a>, <a href=#latest_copy_local_replica>latest_copy_local_replica</a>, <a href=#local_read>local_read</a>, <a href=#multi_version_db>multi_version_db</a>, <a href=#no_locks>no_locks</a>, <a href=#read_lower_ts>read_lower_ts</a>, <a href=#snapshot_isolation>snapshot_isolation</a>, <a href=#still_serializable>still_serializable</a>, <a href=#avoiding_preferrable>avoiding_preferrable</a> (justification for readonly transactions)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only_transactions>read_only_transactions</a>, <a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#still_serializable>still_serializable</a><a id="still_serializable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Serializable (still)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#linearizability>linearizability</a><a id="linearizability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Linearizability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#external_consistency>external_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#local_read>local_read</a><a id="local_read"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Local read
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#no_locks>no_locks</a><a id="no_locks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+No Locks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#latest_copy_local_replica>latest_copy_local_replica</a><a id="latest_copy_local_replica"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if you simply read the latest copy in the local replica?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#not_serializable>not_serializable</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_serializable>not_serializable</a><a id="not_serializable"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not serializable
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#latest_copy_local_replica>latest_copy_local_replica</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#snapshot_isolation>snapshot_isolation</a><a id="snapshot_isolation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Snapshot isolation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#synchronized_time>synchronized_time</a>, <a href=#transaction_timestamp>transaction_timestamp</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#complex_approach>complex_approach</a><a id="complex_approach"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Complex Approach
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ext_cons_def>ext_cons_def</a><a id="ext_cons_def"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+If one transaction commits, and another transaction starts in realtime, it is required to see that first commit
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#external_consistency>external_consistency</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transaction_timestamp>transaction_timestamp</a><a id="transaction_timestamp"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction Timestamp
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#exec_ts_order>exec_ts_order</a>, <a href=#blows_up_storage>blows_up_storage</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#snapshot_isolation>snapshot_isolation</a>, <a href=#synchronized_time>synchronized_time</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#exec_ts_order>exec_ts_order</a><a id="exec_ts_order"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+executions arranged by timestamp order
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction_timestamp>transaction_timestamp</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multi_version_db>multi_version_db</a><a id="multi_version_db"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multi-version database
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#read_lower_ts>read_lower_ts</a><a id="read_lower_ts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Only read transactions with lower timestamp
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#stale_data_allowed>stale_data_allowed</a>, <a href=#too_old>too_old</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_only>read_only</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#stale_data_allowed>stale_data_allowed</a><a id="stale_data_allowed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Stale data allowed because concurrency in linearizability
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#concurrent>concurrent</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_lower_ts>read_lower_ts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#concurrent>concurrent</a><a id="concurrent"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+concurrent
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#stale_data_allowed>stale_data_allowed</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#blows_up_storage>blows_up_storage</a><a id="blows_up_storage"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Blows up storage
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#forget_some_history>forget_some_history</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transaction_timestamp>transaction_timestamp</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#forget_some_history>forget_some_history</a><a id="forget_some_history"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+forget some history?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#blows_up_storage>blows_up_storage</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#too_old>too_old</a><a id="too_old"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if too old? (not in visible transaction)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#safe_time>safe_time</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#read_lower_ts>read_lower_ts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#safe_time>safe_time</a><a id="safe_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Safe Time
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#replicas_wait_to_respond>replicas_wait_to_respond</a>, <a href=#true_time>true_time</a> (what is produced by safe time (I think?))
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#too_old>too_old</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#replicas_wait_to_respond>replicas_wait_to_respond</a><a id="replicas_wait_to_respond"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Replicas do not respond until they know everything
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safe_time>safe_time</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clocks_not_synced>clocks_not_synced</a><a id="clocks_not_synced"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What if clocks aren't synced?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ro_ts_too_large>ro_ts_too_large</a>, <a href=#rw_okay>rw_okay</a>, <a href=#too_slow>too_slow</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#synchronized_time>synchronized_time</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rw_okay>rw_okay</a><a id="rw_okay"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Readwrite transactions are okay, due to locks
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks_not_synced>clocks_not_synced</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ro_ts_too_large>ro_ts_too_large</a><a id="ro_ts_too_large"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Readonly timestamp too large?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#wait_for_paxos>wait_for_paxos</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks_not_synced>clocks_not_synced</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wait_for_paxos>wait_for_paxos</a><a id="wait_for_paxos"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wait for Paxos leader to catch up
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#ro_ts_too_large>ro_ts_too_large</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#too_slow>too_slow</a><a id="too_slow"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Too slow?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#violation_ext_cons>violation_ext_cons</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#clocks_not_synced>clocks_not_synced</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#violation_ext_cons>violation_ext_cons</a><a id="violation_ext_cons"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Violation of external consistency
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#external_consistency>external_consistency</a>, <a href=#too_slow>too_slow</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#government_labs>government_labs</a><a id="government_labs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+"Time comes from government labs"
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#UTC>UTC</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#synchronized_time>synchronized_time</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#UTC>UTC</a><a id="UTC"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+UTC
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#GPS>GPS</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#government_labs>government_labs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#GPS>GPS</a><a id="GPS"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GPS Satellite
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#GPS_rec>GPS_rec</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#UTC>UTC</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#GPS_rec>GPS_rec</a><a id="GPS_rec"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+GPS receiver
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#time_master>time_master</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GPS>GPS</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#time_master>time_master</a><a id="time_master"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Time Master
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#true_time>true_time</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#GPS_rec>GPS_rec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#uncertainty>uncertainty</a><a id="uncertainty"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Uncertainty in time
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#network_var_delay>network_var_delay</a>, <a href=#sat_delay>sat_delay</a>, <a href=#time_pair>time_pair</a> (window of time to account for time uncertainty)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#synchronized_time>synchronized_time</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sat_delay>sat_delay</a><a id="sat_delay"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Propagation delay from satellite
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#uncertainty>uncertainty</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_var_delay>network_var_delay</a><a id="network_var_delay"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+network communication variable delay
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#uncertainty>uncertainty</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#true_time>true_time</a><a id="true_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+TrueTime
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#safe_time>safe_time</a>, <a href=#time_master>time_master</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#time_pair>time_pair</a><a id="time_pair"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pair of earliest/latest possible times
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#uncertainty>uncertainty</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#2_rules>2_rules</a><a id="2_rules"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+2 rules for transactions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#start_rule>start_rule</a> (rule), <a href=#commit_wait>commit_wait</a> (rule)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions>transactions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#start_rule>start_rule</a><a id="start_rule"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Start rule
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#ro_commit>ro_commit</a>, <a href=#rw_start>rw_start</a>, <a href=#start_rule_desc>start_rule_desc</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#2_rules>2_rules</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#start_rule_desc>start_rule_desc</a><a id="start_rule_desc"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction timestamp has to be equal to latest half of truetime pair.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#guaranteed_not_happened>guaranteed_not_happened</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#start_rule>start_rule</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#guaranteed_not_happened>guaranteed_not_happened</a><a id="guaranteed_not_happened"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Guaranteed not to have happned yet
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#start_rule_desc>start_rule_desc</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#commit_wait>commit_wait</a><a id="commit_wait"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Commit Wait
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#2_rules>2_rules</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rw_start>rw_start</a><a id="rw_start"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+R/W start
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#start_rule>start_rule</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ro_commit>ro_commit</a><a id="ro_commit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+R/O commit
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#start_rule>start_rule</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

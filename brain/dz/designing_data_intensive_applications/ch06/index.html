@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>designing_data_intensive_applications/ch06</title>
+<h1>ch06</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/designing_data_intensive_applications">designing_data_intensive_applications</a> / <a href="/brain/dz/designing_data_intensive_applications/ch06">ch06</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Chapter 6: Partitioning
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#partitions>partitions</a><ul>
+<li>
+<a href=#document_partitioned_indexes>document_partitioned_indexes</a><ul>
+<li>
+<a href=#global>global</a></li>
+<li>
+<a href=#secondary_indexes_stored_same_part>secondary_indexes_stored_same_part</a><ul>
+<li>
+<a href=#partitioned_separately>partitioned_separately</a></li>
+</ul>
+</li>
+<li>
+<a href=#term_partitioned_indexes>term_partitioned_indexes</a><ul>
+<li>
+<a href=#local>local</a></li>
+<li>
+<a href=#partitioned_separately>partitioned_separately</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#key_range>key_range</a><ul>
+<li>
+<a href=#split_if_part_too_long>split_if_part_too_long</a></li>
+</ul>
+</li>
+<li>
+<a href=#large_datasets_high_throughput>large_datasets_high_throughput</a></li>
+<li>
+<a href=#main_reason_scalability>main_reason_scalability</a></li>
+<li>
+<a href=#rebalancing>rebalancing</a><ul>
+<li>
+<a href=#dont_do_hash_mod_n>dont_do_hash_mod_n</a></li>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a><ul>
+<li>
+<a href=#empty_db_single_part>empty_db_single_part</a></li>
+<li>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a></li>
+<li>
+<a href=#partition_number_adaptive>partition_number_adaptive</a></li>
+<li>
+<a href=#split_part_exceeds_size>split_part_exceeds_size</a><ul>
+<li>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a></li>
+</ul>
+</li>
+<li>
+<a href=#suitable_key_range_hash_part>suitable_key_range_hash_part</a></li>
+</ul>
+</li>
+<li>
+<a href=#fixed_num_parts>fixed_num_parts</a><ul>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a><ul>
+<li>
+<a href=#empty_db_single_part>empty_db_single_part</a></li>
+<li>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a></li>
+<li>
+<a href=#partition_number_adaptive>partition_number_adaptive</a></li>
+<li>
+<a href=#split_part_exceeds_size>split_part_exceeds_size</a><ul>
+<li>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a></li>
+</ul>
+</li>
+<li>
+<a href=#suitable_key_range_hash_part>suitable_key_range_hash_part</a></li>
+</ul>
+</li>
+<li>
+<a href=#more_parts_than_nodes>more_parts_than_nodes</a></li>
+<li>
+<a href=#not_good_key_range>not_good_key_range</a><ul>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a><ul>
+<li>
+<a href=#empty_db_single_part>empty_db_single_part</a></li>
+<li>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a></li>
+<li>
+<a href=#partition_number_adaptive>partition_number_adaptive</a></li>
+<li>
+<a href=#split_part_exceeds_size>split_part_exceeds_size</a><ul>
+<li>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a></li>
+</ul>
+</li>
+<li>
+<a href=#suitable_key_range_hash_part>suitable_key_range_hash_part</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#partition_number>partition_number</a></li>
+<li>
+<a href=#account_mismatched_hardware>account_mismatched_hardware</a></li>
+</ul>
+</li>
+<li>
+<a href=#move_load_from_node>move_load_from_node</a></li>
+<li>
+<a href=#part_growth_prop_data>part_growth_prop_data</a><ul>
+<li>
+<a href=#part_shrinks_when_new_node>part_shrinks_when_new_node</a></li>
+</ul>
+</li>
+<li>
+<a href=#partitioning_proportional_nodes>partitioning_proportional_nodes</a><ul>
+<li>
+<a href=#fixed_part_num_per_node>fixed_part_num_per_node</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#secondary_indexes>secondary_indexes</a><ul>
+<li>
+<a href=#document_partitioning_index>document_partitioning_index</a><ul>
+<li>
+<a href=#local_index>local_index</a><ul>
+<li>
+<a href=#global_index>global_index</a><ul>
+<li>
+<a href=#faster_reads_slow_complicated_writes>faster_reads_slow_complicated_writes</a></li>
+<li>
+<a href=#term_partitioned>term_partitioned</a><ul>
+<li>
+<a href=#partitions_global_index>partitions_global_index</a></li>
+<li>
+<a href=#up_to_date_dist_trans>up_to_date_dist_trans</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#scatter_gather>scatter_gather</a><ul>
+<li>
+<a href=#prone_to_tail_latency>prone_to_tail_latency</a></li>
+<li>
+<a href=#query_all_combine>query_all_combine</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#document_partitioned_index>document_partitioned_index</a></li>
+</ul>
+</li>
+<li>
+<a href=#doesnt_map_neatly_part>doesnt_map_neatly_part</a></li>
+</ul>
+</li>
+<li>
+<a href=#sharding>sharding</a></li>
+<li>
+<a href=#spread_data_load_evenly>spread_data_load_evenly</a><ul>
+<li>
+<a href=#key_range_dist>key_range_dist</a><ul>
+<li>
+<a href=#keys_sorted_on_each_node>keys_sorted_on_each_node</a></li>
+<li>
+<a href=#not_good_key_range>not_good_key_range</a><ul>
+<li>
+<a href=#dynamic_partitioning>dynamic_partitioning</a><ul>
+<li>
+<a href=#empty_db_single_part>empty_db_single_part</a></li>
+<li>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a></li>
+<li>
+<a href=#partition_number_adaptive>partition_number_adaptive</a></li>
+<li>
+<a href=#split_part_exceeds_size>split_part_exceeds_size</a><ul>
+<li>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a></li>
+</ul>
+</li>
+<li>
+<a href=#suitable_key_range_hash_part>suitable_key_range_hash_part</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#part_bounds_adapt_data>part_bounds_adapt_data</a></li>
+<li>
+<a href=#range_queries_inefficient>range_queries_inefficient</a></li>
+<li>
+<a href=#access_patterns_hotspots>access_patterns_hotspots</a></li>
+<li>
+<a href=#compound_primary_key>compound_primary_key</a><ul>
+<li>
+<a href=#several_columns>several_columns</a><ul>
+<li>
+<a href=#good_for_many_to_one>good_for_many_to_one</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#partition_hash_keys>partition_hash_keys</a><ul>
+<li>
+<a href=#good_hash_func>good_hash_func</a><ul>
+<li>
+<a href=#fowler_noll_vo>fowler_noll_vo</a></li>
+<li>
+<a href=#MD5>MD5</a></li>
+</ul>
+</li>
+<li>
+<a href=#range_queries_inefficient>range_queries_inefficient</a></li>
+<li>
+<a href=#assign_part_hash_range>assign_part_hash_range</a><ul>
+<li>
+<a href=#consistent_hashing>consistent_hashing</a><ul>
+<li>
+<a href=#hash_partitioning>hash_partitioning</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#compound_primary_key>compound_primary_key</a><ul>
+<li>
+<a href=#several_columns>several_columns</a><ul>
+<li>
+<a href=#good_for_many_to_one>good_for_many_to_one</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#skewed_partitioning>skewed_partitioning</a><ul>
+<li>
+<a href=#hotspot_node>hotspot_node</a></li>
+<li>
+<a href=#nodes_more_data_others>nodes_more_data_others</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#term_partitioned_indexes>term_partitioned_indexes</a><ul>
+<li>
+<a href=#local>local</a></li>
+<li>
+<a href=#partitioned_separately>partitioned_separately</a></li>
+</ul>
+</li>
+<li>
+<a href=#break_data_up>break_data_up</a></li>
+<li>
+<a href=#combined_with_replication>combined_with_replication</a><ul>
+<li>
+<a href=#leader_follower_part>leader_follower_part</a><ul>
+<li>
+<a href=#node_more_than_one_part>node_more_than_one_part</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#MPP>MPP</a><ul>
+<li>
+<a href=#parallel_query_exec>parallel_query_exec</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partitions>partitions</a><a id="partitions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partitions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#document_partitioned_indexes>document_partitioned_indexes</a>, <a href=#key_range>key_range</a>, <a href=#large_datasets_high_throughput>large_datasets_high_throughput</a> (when to use), <a href=#main_reason_scalability>main_reason_scalability</a>, <a href=#rebalancing>rebalancing</a>, <a href=#secondary_indexes>secondary_indexes</a>, <a href=#sharding>sharding</a> (AKA), <a href=#spread_data_load_evenly>spread_data_load_evenly</a>, <a href=#term_partitioned_indexes>term_partitioned_indexes</a>, <a href=#break_data_up>break_data_up</a>, <a href=#combined_with_replication>combined_with_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#break_data_up>break_data_up</a><a id="break_data_up"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Break data up
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sharding>sharding</a><a id="sharding"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sharding
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#large_datasets_high_throughput>large_datasets_high_throughput</a><a id="large_datasets_high_throughput"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+For large datasets or very high throughput
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#main_reason_scalability>main_reason_scalability</a><a id="main_reason_scalability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Main reason: scalability
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#combined_with_replication>combined_with_replication</a><a id="combined_with_replication"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Usually combined with replication
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leader_follower_part>leader_follower_part</a> (example)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leader_follower_part>leader_follower_part</a><a id="leader_follower_part"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Leader-follower: partition leader assignment to one node, followers to other
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#node_more_than_one_part>node_more_than_one_part</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#combined_with_replication>combined_with_replication</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#spread_data_load_evenly>spread_data_load_evenly</a><a id="spread_data_load_evenly"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Goal: spread data and query load evenly across nodes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#key_range_dist>key_range_dist</a>, <a href=#partition_hash_keys>partition_hash_keys</a>, <a href=#skewed_partitioning>skewed_partitioning</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#key_range_dist>key_range_dist</a><a id="key_range_dist"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Key-range distribution
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#keys_sorted_on_each_node>keys_sorted_on_each_node</a>, <a href=#not_good_key_range>not_good_key_range</a>, <a href=#part_bounds_adapt_data>part_bounds_adapt_data</a>, <a href=#range_queries_inefficient>range_queries_inefficient</a>, <a href=#access_patterns_hotspots>access_patterns_hotspots</a>, <a href=#compound_primary_key>compound_primary_key</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spread_data_load_evenly>spread_data_load_evenly</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#part_bounds_adapt_data>part_bounds_adapt_data</a><a id="part_bounds_adapt_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partitions boundaries need to adapt to data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#key_range_dist>key_range_dist</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#keys_sorted_on_each_node>keys_sorted_on_each_node</a><a id="keys_sorted_on_each_node"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Keep keys sorted on each node
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#key_range_dist>key_range_dist</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#skewed_partitioning>skewed_partitioning</a><a id="skewed_partitioning"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Skewed Partitioning
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#hotspot_node>hotspot_node</a>, <a href=#nodes_more_data_others>nodes_more_data_others</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spread_data_load_evenly>spread_data_load_evenly</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#nodes_more_data_others>nodes_more_data_others</a><a id="nodes_more_data_others"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Some nodes have more data than others
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#skewed_partitioning>skewed_partitioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hotspot_node>hotspot_node</a><a id="hotspot_node"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hotspot node with high load
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#skewed_partitioning>skewed_partitioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partition_hash_keys>partition_hash_keys</a><a id="partition_hash_keys"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parition by hash of keys
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#good_hash_func>good_hash_func</a>, <a href=#range_queries_inefficient>range_queries_inefficient</a>, <a href=#assign_part_hash_range>assign_part_hash_range</a>, <a href=#compound_primary_key>compound_primary_key</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#spread_data_load_evenly>spread_data_load_evenly</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#access_patterns_hotspots>access_patterns_hotspots</a><a id="access_patterns_hotspots"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Certain access patterns can lead to hotspots
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#key_range_dist>key_range_dist</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#node_more_than_one_part>node_more_than_one_part</a><a id="node_more_than_one_part"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+NOdes can store more than one partition
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#leader_follower_part>leader_follower_part</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#good_hash_func>good_hash_func</a><a id="good_hash_func"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A good hash function takes skewed data and makes it uniformly distributed
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fowler_noll_vo>fowler_noll_vo</a> (example), <a href=#MD5>MD5</a> (example)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition_hash_keys>partition_hash_keys</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#MD5>MD5</a><a id="MD5"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+MD5 (cassandra, mongodb)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#good_hash_func>good_hash_func</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fowler_noll_vo>fowler_noll_vo</a><a id="fowler_noll_vo"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fowler-Noll-Vo (Voldemort)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#good_hash_func>good_hash_func</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#assign_part_hash_range>assign_part_hash_range</a><a id="assign_part_hash_range"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Assign each partition a range of hashes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#consistent_hashing>consistent_hashing</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition_hash_keys>partition_hash_keys</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#consistent_hashing>consistent_hashing</a><a id="consistent_hashing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Consistent hashing: ranges chosen pseudorandomly
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#hash_partitioning>hash_partitioning</a> (AKA)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#assign_part_hash_range>assign_part_hash_range</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+rarely used
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#range_queries_inefficient>range_queries_inefficient</a><a id="range_queries_inefficient"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Range Queries Inefficient
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition_hash_keys>partition_hash_keys</a>, <a href=#key_range_dist>key_range_dist</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#hash_partitioning>hash_partitioning</a><a id="hash_partitioning"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Hash Partitioning
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#consistent_hashing>consistent_hashing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#compound_primary_key>compound_primary_key</a><a id="compound_primary_key"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Compound Primary Key: compromise between key-range hash-range distribution (Cassandra)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#several_columns>several_columns</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partition_hash_keys>partition_hash_keys</a>, <a href=#key_range_dist>key_range_dist</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#several_columns>several_columns</a><a id="several_columns"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Several Columns: only first column hashed and used to determine parition. The rest are concatenated index for sorting data in SSTables
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#good_for_many_to_one>good_for_many_to_one</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compound_primary_key>compound_primary_key</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#good_for_many_to_one>good_for_many_to_one</a><a id="good_for_many_to_one"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Good for many-to-one relationships
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#several_columns>several_columns</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#secondary_indexes>secondary_indexes</a><a id="secondary_indexes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Secondary Indexes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#document_partitioning_index>document_partitioning_index</a>, <a href=#doesnt_map_neatly_part>doesnt_map_neatly_part</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#document_partitioning_index>document_partitioning_index</a><a id="document_partitioning_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Document Partitioning Index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#local_index>local_index</a> (AKA), <a href=#document_partitioned_index>document_partitioned_index</a> (AKA)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#secondary_indexes>secondary_indexes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#local_index>local_index</a><a id="local_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Local Index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#global_index>global_index</a> (vs), <a href=#scatter_gather>scatter_gather</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#document_partitioning_index>document_partitioning_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#global_index>global_index</a><a id="global_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Global Index
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#faster_reads_slow_complicated_writes>faster_reads_slow_complicated_writes</a>, <a href=#term_partitioned>term_partitioned</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#local_index>local_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#doesnt_map_neatly_part>doesnt_map_neatly_part</a><a id="doesnt_map_neatly_part"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Doesn't map neatly to partitions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#secondary_indexes>secondary_indexes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#scatter_gather>scatter_gather</a><a id="scatter_gather"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Scatter / Gather
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#prone_to_tail_latency>prone_to_tail_latency</a>, <a href=#query_all_combine>query_all_combine</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#local_index>local_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#document_partitioned_index>document_partitioned_index</a><a id="document_partitioned_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Document partitioned index
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#document_partitioning_index>document_partitioning_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#query_all_combine>query_all_combine</a><a id="query_all_combine"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Query all partitions, combine results
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#scatter_gather>scatter_gather</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#prone_to_tail_latency>prone_to_tail_latency</a><a id="prone_to_tail_latency"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Prone to tail latency amplification
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#scatter_gather>scatter_gather</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#term_partitioned>term_partitioned</a><a id="term_partitioned"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+term-partitioned
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#partitions_global_index>partitions_global_index</a>, <a href=#up_to_date_dist_trans>up_to_date_dist_trans</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_index>global_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partitions_global_index>partitions_global_index</a><a id="partitions_global_index"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partitions global index
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term_partitioned>term_partitioned</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#up_to_date_dist_trans>up_to_date_dist_trans</a><a id="up_to_date_dist_trans"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Up-to-date index requires distributed transactions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term_partitioned>term_partitioned</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#faster_reads_slow_complicated_writes>faster_reads_slow_complicated_writes</a><a id="faster_reads_slow_complicated_writes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reads faster, writers slower and more complicated
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#global_index>global_index</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#rebalancing>rebalancing</a><a id="rebalancing"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Rebalancing
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dont_do_hash_mod_n>dont_do_hash_mod_n</a>, <a href=#dynamic_partitioning>dynamic_partitioning</a>, <a href=#fixed_num_parts>fixed_num_parts</a>, <a href=#move_load_from_node>move_load_from_node</a> (description), <a href=#part_growth_prop_data>part_growth_prop_data</a>, <a href=#partitioning_proportional_nodes>partitioning_proportional_nodes</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#move_load_from_node>move_load_from_node</a><a id="move_load_from_node"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Move load from one node in cluster to another
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rebalancing>rebalancing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dont_do_hash_mod_n>dont_do_hash_mod_n</a><a id="dont_do_hash_mod_n"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Don't do hash mod N
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rebalancing>rebalancing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fixed_num_parts>fixed_num_parts</a><a id="fixed_num_parts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fixed number of partitions
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dynamic_partitioning>dynamic_partitioning</a> (vs), <a href=#more_parts_than_nodes>more_parts_than_nodes</a>, <a href=#not_good_key_range>not_good_key_range</a>, <a href=#partition_number>partition_number</a>, <a href=#account_mismatched_hardware>account_mismatched_hardware</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rebalancing>rebalancing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#more_parts_than_nodes>more_parts_than_nodes</a><a id="more_parts_than_nodes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+More partitions than nodes, move/steal partitions when new noded added
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fixed_num_parts>fixed_num_parts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#account_mismatched_hardware>account_mismatched_hardware</a><a id="account_mismatched_hardware"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can even account for mismatched hardware
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fixed_num_parts>fixed_num_parts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partition_number>partition_number</a><a id="partition_number"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partition Number: too large and rebalancing is expensive, too small and there's too much overhead.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#fixed_num_parts>fixed_num_parts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#not_good_key_range>not_good_key_range</a><a id="not_good_key_range"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Not good for key-range partitioning
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#dynamic_partitioning>dynamic_partitioning</a> (solution)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#key_range_dist>key_range_dist</a>, <a href=#fixed_num_parts>fixed_num_parts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#dynamic_partitioning>dynamic_partitioning</a><a id="dynamic_partitioning"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Dynamic Partitioning
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#empty_db_single_part>empty_db_single_part</a> (caveat), <a href=#merge_part_below_thresh>merge_part_below_thresh</a>, <a href=#partition_number_adaptive>partition_number_adaptive</a>, <a href=#split_part_exceeds_size>split_part_exceeds_size</a>, <a href=#suitable_key_range_hash_part>suitable_key_range_hash_part</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rebalancing>rebalancing</a>, <a href=#not_good_key_range>not_good_key_range</a>, <a href=#fixed_num_parts>fixed_num_parts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#split_part_exceeds_size>split_part_exceeds_size</a><a id="split_part_exceeds_size"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Split partition that exceeds certain size
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a> (related)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dynamic_partitioning>dynamic_partitioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#merge_part_below_thresh>merge_part_below_thresh</a><a id="merge_part_below_thresh"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Merge partition when it sinks below certain threshold
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dynamic_partitioning>dynamic_partitioning</a>, <a href=#split_part_exceeds_size>split_part_exceeds_size</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partition_number_adaptive>partition_number_adaptive</a><a id="partition_number_adaptive"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Number of partitions adapts to the total data volume
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dynamic_partitioning>dynamic_partitioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#suitable_key_range_hash_part>suitable_key_range_hash_part</a><a id="suitable_key_range_hash_part"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Suitable for key-range and hash-partioned data
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dynamic_partitioning>dynamic_partitioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#empty_db_single_part>empty_db_single_part</a><a id="empty_db_single_part"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+An initialized empty database starts with a single partition. All writes initially processed by single node while other nodes are idle.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#dynamic_partitioning>dynamic_partitioning</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partitioning_proportional_nodes>partitioning_proportional_nodes</a><a id="partitioning_proportional_nodes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partitioning proportional to nodes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#fixed_part_num_per_node>fixed_part_num_per_node</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rebalancing>rebalancing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#fixed_part_num_per_node>fixed_part_num_per_node</a><a id="fixed_part_num_per_node"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Fixed number of partitions per node
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitioning_proportional_nodes>partitioning_proportional_nodes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#part_growth_prop_data>part_growth_prop_data</a><a id="part_growth_prop_data"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partition size grows proportional to data size
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#part_shrinks_when_new_node>part_shrinks_when_new_node</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#rebalancing>rebalancing</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#part_shrinks_when_new_node>part_shrinks_when_new_node</a><a id="part_shrinks_when_new_node"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partition size shrink when new node is added
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#part_growth_prop_data>part_growth_prop_data</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#MPP>MPP</a><a id="MPP"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Massively parallel processing (MPP)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#parallel_query_exec>parallel_query_exec</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#parallel_query_exec>parallel_query_exec</a><a id="parallel_query_exec"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Parallel query execution
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#MPP>MPP</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#key_range>key_range</a><a id="key_range"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Key Range
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#split_if_part_too_long>split_if_part_too_long</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#split_if_part_too_long>split_if_part_too_long</a><a id="split_if_part_too_long"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Split into two subranges if partition gets too long
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#key_range>key_range</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#document_partitioned_indexes>document_partitioned_indexes</a><a id="document_partitioned_indexes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+document partitioned indexes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#global>global</a>, <a href=#secondary_indexes_stored_same_part>secondary_indexes_stored_same_part</a>, <a href=#term_partitioned_indexes>term_partitioned_indexes</a> (related)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#global>global</a><a id="global"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+global
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#document_partitioned_indexes>document_partitioned_indexes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#term_partitioned_indexes>term_partitioned_indexes</a><a id="term_partitioned_indexes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Term partitioned indexes
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#local>local</a>, <a href=#partitioned_separately>partitioned_separately</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#document_partitioned_indexes>document_partitioned_indexes</a>, <a href=#partitions>partitions</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#local>local</a><a id="local"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Local
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term_partitioned_indexes>term_partitioned_indexes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#partitioned_separately>partitioned_separately</a><a id="partitioned_separately"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Partitioned separately
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#term_partitioned_indexes>term_partitioned_indexes</a>, <a href=#secondary_indexes_stored_same_part>secondary_indexes_stored_same_part</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#secondary_indexes_stored_same_part>secondary_indexes_stored_same_part</a><a id="secondary_indexes_stored_same_part"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Secondary indexes stored on same partition as primary key/value
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#partitioned_separately>partitioned_separately</a> (vs)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#document_partitioned_indexes>document_partitioned_indexes</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

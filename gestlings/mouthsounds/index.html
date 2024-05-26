@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/gestlings/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>Mouth Sounds</title>
+<h1>Mouth Sounds</h1>
+Mouth sounds, shapes, and symbols.
+<video controls>
+<source src="/gestlings/res/mouthsounds.mp4" type="video/mp4">
+</video>
+</p>
+<p>A culmination of <a href="/gestlings/mouthtests">mouthtests</a>,
+<a href="/gestlings/sdfvm_mouth">sdfvm_mouth</a>, and <a href="/gestlings/mouthanim">mouthanim</a>. For
+sounds, some existing shapes for <code>tubular</code> were used (see
+<code>scratch/tubesculpt_shapemorf.lua</code>).
+</p>
+<div><b><i>&lt;&lt;mouthsounds.lua&gt;&gt;=</i></b></div><pre><code>gest = require("gest/gest")
+pprint = require("util/pprint")
+tal = require("tal/tal")
+path = require("path/path")
+json = require("util/json")
+
+
+&lt;&lt;tract_shapes&gt;&gt;
+&lt;&lt;sounds&gt;&gt;
+
+lil("bpnew bp 256 512")
+lil("gfxnew gfx 256 512")
+lil("bpset [grab bp] 0 0 0 256 256")
+lil("bpset [grab bp] 1 0 256 256 256")
+lil("bufnew buf 256")
+lil("grab buf")
+program = pop()
+lil("sdfvmnew vm")
+lil("grab vm")
+vm = pop()
+
+lil("grab gfx")
+lil("dup")
+lil("gfxopen tmp/mouthsounds.h264")
+
+lil("gfxclrset 1 1.0 1.0 1.0")
+lil("gfxclrset 0 0.0 0.0 0.0")
+lil("drop")
+
+
+&lt;&lt;mouth_shapes&gt;&gt;
+&lt;&lt;draw_symbols&gt;&gt;
+
+function frame(fs)
+    framenum = fs.framenum
+    if (framenum % 60 == 0) then
+        print(framenum)
+    end
+    lil("compute 15")
+    local current_mouth, next_mouth, pos = gestvm_last_values(fs.gvm)
+    local m1 = mouths[current_mouth]
+    local m2 = mouths[next_mouth]
+    local ms = mouth_interp(m1, m2, pos)
+    apply_mouth_shape(vm, ms)
+    lil("bpfill [bpget [grab bp] 0] 0")
+    lil("bpfill [bpget [grab bp] 1] 0")
+    lil("grab gfx")
+    lil("gfxfill 1")
+    draw_and_animate_symbols(current_mouth, next_mouth, pos)
+    lil("bpsdf [bpget [grab bp] 0] [grab vm] [grab buf]")
+    lil("dup")
+    lil("bptr [grab bp] 0 0 256 256 0 0 0")
+    lil("dup")
+    lil("bptr [grab bp] 0 256 256 256 0 256 0")
+    lil("dup; gfxtransfer; gfxappend")
+end
+frame_state = {
+    pos = 0,
+    framenum = 0,
+    next_mouth = 2,
+    current_mouth = 1,
+    gvm = indice_gesture_node
+}
+for i = 1, 60*45 do
+    frame_state.framenum = i
+    frame(frame_state)
+end
+lil([[
+grab gfx
+gfxclose
+gfxmp4 tmp/mouthsounds.h264 tmp/mouthsounds.mp4
+]])
+os.execute("ffmpeg -y -i tmp/mouthsounds.mp4 -i tmp/mouthsounds.wav -pix_fmt yuv420p -acodec aac res/mouthsounds.mp4")</pre></code>
+
+<h2>1. <a id="tract-shapes">Tract Shapes</a></h2>
+
+<div><b><i>&lt;&lt;tract_shapes&gt;&gt;=</i></b></div><pre><code>lil("shapemorfnew lut shapes/tubesculpt_testshapes.b64")
+lil("grab lut")
+lut = pop()
+lookup = shapemorf.generate_lookup(lut)
+
+for k,v in pairs(lookup) do
+    print(k, v)
+end
+
+gm = gest.behavior.gliss_medium
+gl = gest.behavior.gliss
+lin = gest.behavior.linear
+
+shapes = {
+    "2b1d8a",
+    "4e8a8e",
+    "83ae8a",
+    "172828",
+    "54f27d",
+    "8abe8d",
+}
+
+mantra = {
+    -- 1, 2, {1, 2}, 3, 4, {3, 4}, 5, 6, {5, 6}
+    1, 2, {1, 2}, {1, 4},
+    3, 4, {3, 4}, {5, 4},
+    5, 6, {5, 6}, {1, 6},
+}
+
+function mantra_to_path(mantra, shapes)
+    local gm = gest.behavior.gliss_medium
+    local gl = gest.behavior.gliss
+    local lin = gest.behavior.linear
+    local vt = path.vertex
+    local mantra_path = {}
+    local mantra_indices = {}
+    local dur = {1, 1}
+
+    for _,m in pairs(mantra) do
+        if type(m) == "table" then
+            table.insert(mantra_path, vt{shapes[m[1]], dur, lin})
+            table.insert(mantra_path, vt{shapes[m[2]], dur, gl})
+
+            table.insert(mantra_indices, vt{m[1], dur, lin})
+            table.insert(mantra_indices, vt{m[2], dur, gl})
+
+        else
+            table.insert(mantra_path, vt{shapes[m], dur, gm})
+
+            -- TODO: how to use the lookup table instead?
+            table.insert(mantra_indices, vt{m, dur, gm})
+        end
+    end
+
+    return mantra_path, mantra_indices
+end
+
+vt = path.vertex
+test_path, path_indices = mantra_to_path(mantra, shapes)
+
+words = {}
+
+tal.begin(words)
+-- pprint(test_path)
+
+tal.label(words, "vowshapes")
+path.path(tal, words, test_path, lookup)
+tal.jump(words, "vowshapes")
+tal.label(words, "vowindices")
+path.path(tal, words, path_indices, lookup)
+tal.jump(words, "vowindices")
+-- pprint(words)
+
+g = gest:new{tal = tal}
+g:create()
+g:compile(words)</pre></code>
+
+<h2>2. <a id="sounds">Sounds</a></h2>
+
+<div><b><i>&lt;&lt;sounds&gt;&gt;=</i></b></div><pre><code>signal_setup = {
+    "blkset 49",
+    "tubularnew 20.0 -1",
+    "regset zz 0",
+
+    "expmap [flipper [phasor 0.05 0]] 3",
+    "hold zz",
+    "regset zz 2",
+    "phasor [scale [regget 2] 1 8] 0",
+    "hold zz",
+    "regset zz 1"
+}
+
+shapemorf_gesture = {
+    table.concat({
+        -- gvm, lut, tubular, program , conductor
+        "shapemorf",
+        g:get(),
+        "[grab lut]",
+        "[regget 0]",
+        "[" .. g:gmemsymstr("vowshapes") .. "]",
+        "[regget 1]"
+    }, " "),
+}
+
+indice_gesture = {
+    table.concat({
+        -- gvm, lut, tubular, program , conductor
+        "gestvmnode",
+        g:get(),
+        "[" .. g:gmemsymstr("vowindices") .. "]",
+        "[regget 1]"
+    }, " "),
+}
+
+program = {
+    "regget 0",
+    "param 30",
+    "jitseg 0.3 -0.3 0.5 2 1",
+    -- "jitseg 10.3 -2.3 0.5 2 1",
+    "add zz zz",
+    "scale [regget 2] -2 19",
+    "add zz zz",
+    "mtof zz",
+    -- "param 0.3",
+    "scale [regget 2] 0.2 0.7",
+    "param 0.1",
+    "param 0.0",
+    "glot zz zz zz zz",
+    "tubular zz zz zz",
+    "butlp zz 3000", "mul zz [dblin [scale [regget 2] -3 -8]]",
+    "dup", "dup",
+    "bigverb zz zz [scale [regget 2] 0.9 0.97] 10000",
+    "drop", "dcblocker zz", "mul zz [dblin [scale [regget 2] -16 -13]]",
+    "add zz zz",
+    "mul zz [dblin -2]",
+
+    -- delay by some frames for latency compensation
+    -- this is tuned by ear/eye, but I'm sure there's
+    -- an actual value
+    table.concat({
+        "vardelay", "zz", 0, 4.0/60.0, 1.0
+    }, " "),
+
+    "dup",
+    "wavouts zz zz tmp/mouthsounds.wav",
+    "unhold [regget 2]",
+    "unhold [regget 1]"
+}
+
+function compile_lil_lines(lines)
+    for _, line in pairs(lines) do
+        lil(line)
+    end
+end
+
+compile_lil_lines(signal_setup)
+compile_lil_lines(shapemorf_gesture)
+compile_lil_lines(indice_gesture)
+lil("gestvmlast " .. g:get())
+indice_gesture_node = pop()
+compile_lil_lines(program)</pre></code>
+
+<h2>3. <a id="mouth-shapes">Mouth Shapes</a></h2>
+
+<div><b><i>&lt;&lt;mouth_shapes&gt;&gt;=</i></b></div><pre><code>function generate_program(syms, program)
+   mnobuf.append(program, syms.point)
+
+   for i=1,4 do
+       mnobuf.append(program, syms.scalar)
+       mnobuf.append_float(program, i - 1)
+       mnobuf.append(program, syms.uniform)
+   end
+
+   mnobuf.append(program, syms.poly4)
+
+   -- r5: rounded edge amount
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 5)
+   mnobuf.append(program, syms.uniform);
+
+   mnobuf.append(program, syms.roundness)
+   mnobuf.append(program, syms.point)
+
+   -- r6: circle radius
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 6)
+   mnobuf.append(program, syms.uniform);
+
+   mnobuf.append(program, syms.circle);
+
+   -- r4: circleness amount
+   mnobuf.append(program, syms.scalar);
+   mnobuf.append_float(program, 4)
+   mnobuf.append(program, syms.uniform);
+
+   mnobuf.append(program, syms.lerp);
+   mnobuf.append(program, syms.gtz);
+end
+fp = io.open("avatar/sdfvm_lookup_table.json")
+syms = json.decode(fp:read("*all"))
+fp:close()
+
+generate_program(syms, program)
+mouth1 = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+mouth2 = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.1, 0.5},
+        {-0.5, -0.5},
+        {0.5, -0.5},
+        {0.1, 0.5},
+    }
+}
+
+mouth1b = {
+    circleness = 0.8,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+mouth2b = {
+    circleness = 0.8,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.1, 0.5},
+        {-0.5, -0.5},
+        {0.5, -0.5},
+        {0.1, 0.5},
+    }
+}
+
+mouth3 = {
+    circleness = 0.0,
+    roundedge = 0.08,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.02},
+        {-0.5, -0.02},
+        {0.5, -0.02},
+        {0.5, 0.02},
+    }
+}
+
+mouth3b = {
+    circleness = 0.1,
+    roundedge = 0.08,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.02},
+        {-0.5, -0.02},
+        {0.5, -0.02},
+        {0.5, 0.02},
+    }
+}
+
+mouth4 = {
+    circleness = 0.0,
+    roundedge = 0.08,
+    circrad = 0.7,
+    points = {
+        {-0.2, 0.6},
+        {-0.02, -0.6},
+        {0.02, -0.6},
+        {0.2, 0.6},
+    }
+}
+
+mouth4b = {
+    circleness = 0.3,
+    roundedge = 0.08,
+    circrad = 0.7,
+    points = {
+        {-0.2, 0.6},
+        {-0.02, -0.6},
+        {0.02, -0.6},
+        {0.2, 0.6},
+    }
+}
+
+mouth5 = {
+    circleness = 0.9,
+    roundedge = 0.08,
+    circrad = 0.4,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+mouth1c = {
+    circleness = 0.0,
+    roundedge = 0.0,
+    circrad = 0.7,
+    points = {
+        {-0.5, 0.5},
+        {-0.1, -0.5},
+        {0.1, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+mouth2c = {
+    circleness = 0.0,
+    roundedge = 0.0,
+    circrad = 0.7,
+    points = {
+        {-0.1, 0.5},
+        {-0.5, -0.5},
+        {0.5, -0.5},
+        {0.1, 0.5},
+    }
+}
+
+mouth6 = {
+    circleness = 0.0,
+    roundedge = 0.0,
+    circrad = 0.7,
+    points = {
+        {-0.7, 0.7},
+        {-0.4, -0.4},
+        {0.4, -0.5},
+        {0.5, 0.5},
+    }
+}
+
+shearx = 0.2
+mouth7 = {
+    circleness = 0.1,
+    roundedge = 0.05,
+    circrad = 0.7,
+    points = {
+        {-0.3 + shearx, 0.5},
+        {-0.3 - shearx, -0.5},
+        {0.3 - shearx, -0.5},
+        {0.3 + shearx, 0.5},
+    }
+}
+
+shearx = 0.5
+mouth7b = {
+    circleness = 0.0,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.3 - shearx, 0.5},
+        {-0.3 + shearx, -0.5},
+        {0.3 + shearx, -0.5},
+        {0.3 - shearx, 0.5},
+    }
+}
+
+mouth2d = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.1, 0.5},
+        {-0.8, 0.3},
+        {0.8, 0.3},
+        {0.1, 0.5},
+    }
+}
+
+mouth1d = {
+    circleness = 0.1,
+    roundedge = 0.1,
+    circrad = 0.7,
+    points = {
+        {-0.8, 0.5},
+        {-0.1, 0.3},
+        {0.1, 0.3},
+        {0.8, 0.5},
+    }
+}
+
+
+mouths = {
+     mouth1, mouth4b, mouth7, mouth1c,
+     mouth5, mouth1d, mouth4, mouth4b,
+     mouth5, mouth1c, mouth2c, mouth6,
+     mouth7, mouth7b, mouth2d, mouth1d
+}
+
+function apply_mouth_shape(vm, mouth)
+    sdfvm.uniset_scalar(vm, 4, mouth.circleness)
+    sdfvm.uniset_scalar(vm, 5, mouth.roundedge)
+    sdfvm.uniset_scalar(vm, 6, mouth.circrad)
+
+    for i=1,4 do
+        local p = mouth.points[i]
+        sdfvm.uniset_vec2(vm, i-1, p[1], p[2])
+    end
+end
+function mouth_interp(m1, m2, pos)
+    local newmouth = {}
+
+    newmouth.circleness =
+        pos*m2.circleness +
+        (1 - pos)*m1.circleness
+
+    newmouth.roundedge =
+        pos*m2.roundedge +
+        (1 - pos)*m1.roundedge
+
+    newmouth.circrad =
+        pos*m2.circrad +
+        (1 - pos)*m1.circrad
+
+    newmouth.points = {}
+    for i=1,4 do
+        newmouth.points[i] = {}
+        newmouth.points[i][1] =
+            pos*m2.points[i][1] +
+            (1 - pos)*m1.points[i][1]
+        newmouth.points[i][2] =
+            pos*m2.points[i][2] +
+            (1 - pos)*m1.points[i][2]
+    end
+
+    return newmouth
+end</pre></code>
+
+<h2>4. <a id="symbols">Symbols</a></h2>
+
+<div><b><i>&lt;&lt;draw_symbols&gt;&gt;=</i></b></div><pre><code>function draw_shape(shp, square_size, xoff, yoff)
+    for c=1,#shp do
+        col=string.byte(shp, c)
+        col=tonumber(string.char(col), 16)
+        for row=1,4 do
+            local s = col & (1 &lt;&lt; (row -1))
+            if (s &gt; 0) then
+                lil(table.concat({
+                    "bprectf",
+                    "[bpget [grab bp] 1]",
+                    (c - 1)*square_size+xoff, (row - 1)*square_size+yoff,
+                    square_size, square_size, 1
+                }, " "))
+            end
+        end
+    end
+end
+
+function draw_and_animate_symbols(current_mouth, next_mouth, pos)
+    centerx = (256 // 2) - ((6*16) // 2)
+    centery = (256 // 2) - ((4*16) // 2)
+    centery_off1 = centery + math.floor((256//2)*pos)
+    squaresz = math.floor(16*pos)
+    centerx2 = (256 // 2) - ((6*squaresz) // 2)
+    centery2 = (256 // 2) - ((4*squaresz) // 2)
+    draw_shape(shapes[current_mouth], 16,
+        centerx, centery_off1)
+    draw_shape(shapes[next_mouth], squaresz,
+        centerx2, centery2)
+end</pre></code>
+</div>
+</body>
+</html>

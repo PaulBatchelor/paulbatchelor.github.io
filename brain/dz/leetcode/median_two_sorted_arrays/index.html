@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>leetcode/median_two_sorted_arrays</title>
+<h1>median_two_sorted_arrays</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/leetcode">leetcode</a> / <a href="/brain/dz/leetcode/median_two_sorted_arrays">median_two_sorted_arrays</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays. The overall run time complexity should be O(log (m+n)).
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#cpp_implementation>cpp_implementation</a><ul>
+<li>
+<a href=#binary_search>binary_search</a></li>
+</ul>
+</li>
+<li>
+<a href=#intuition>intuition</a><ul>
+<li>
+<a href=#is_log_always_divide_and_conquer>is_log_always_divide_and_conquer</a><ul>
+<li>
+<a href=#something_something_midpoint>something_something_midpoint</a><ul>
+<li>
+<a href=#what_can_be_said_about_two_midpoints>what_can_be_said_about_two_midpoints</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#iterate_until_nm_div2>iterate_until_nm_div2</a></li>
+<li>
+<a href=#merging_takes_linear_time>merging_takes_linear_time</a></li>
+<li>
+<a href=#total_size_n_plus_m>total_size_n_plus_m</a><ul>
+<li>
+<a href=#median_n_m_div_2>median_n_m_div_2</a><ul>
+<li>
+<a href=#iterate_until_nm_div2>iterate_until_nm_div2</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#URL>URL</a></li>
+<li>
+<a href=#cpp_impl_too_complicated>cpp_impl_too_complicated</a><ul>
+<li>
+<a href=#algorithm_theory>algorithm_theory</a><ul>
+<li>
+<a href=#leetcode_editorial>leetcode_editorial</a><ul>
+<li>
+<a href=#wikipedia_selection_algorithm>wikipedia_selection_algorithm</a><ul>
+<li>
+<a href=#find_n_m_2_smallest>find_n_m_2_smallest</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#wikipedia_selection_algorithm>wikipedia_selection_algorithm</a><ul>
+<li>
+<a href=#find_n_m_2_smallest>find_n_m_2_smallest</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#URL>URL</a><a id="URL"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+URL
+</td>
+</tr>
+<tr>
+<td>
+hyperlink
+</td>
+<td>
+<a href="https://leetcode.com/problems/median-of-two-sorted-arrays">https://leetcode.com/problems/median-of-two-sorted-arrays</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#intuition>intuition</a><a id="intuition"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The remark about performance being O(log(m + n)) to me sounds like a clue that this is a divide and conquer problem maybe?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#is_log_always_divide_and_conquer>is_log_always_divide_and_conquer</a>, <a href=#iterate_until_nm_div2>iterate_until_nm_div2</a> (guess. it's only a O((n + m)/2) solution though.), <a href=#merging_takes_linear_time>merging_takes_linear_time</a>, <a href=#total_size_n_plus_m>total_size_n_plus_m</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#total_size_n_plus_m>total_size_n_plus_m</a><a id="total_size_n_plus_m"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The total size of the thing is n + m.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#median_n_m_div_2>median_n_m_div_2</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#median_n_m_div_2>median_n_m_div_2</a><a id="median_n_m_div_2"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The median point is going to be located at (n + m)/2.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#iterate_until_nm_div2>iterate_until_nm_div2</a> (following this logic)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#total_size_n_plus_m>total_size_n_plus_m</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#iterate_until_nm_div2>iterate_until_nm_div2</a><a id="iterate_until_nm_div2"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A solution I thought of could be to have a loop that iterates to the (n + m)/2 element. In the loop, you'd go between the two arrays depending on which has the smallest value. If (n + m) is even, you'd just average (n + m)/2 plus 1. This has a runtime of O((n+m/2)) (linear), not log time.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>, <a href=#median_n_m_div_2>median_n_m_div_2</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#is_log_always_divide_and_conquer>is_log_always_divide_and_conquer</a><a id="is_log_always_divide_and_conquer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+does log time complexity (almost always) imply a divide and conquer approach? divide and conquer because log?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#something_something_midpoint>something_something_midpoint</a> (divide and conquer as thinking about midpoints)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#something_something_midpoint>something_something_midpoint</a><a id="something_something_midpoint"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+I wonder if the solution has something to do with midpoints? The median of each individual array is at points (n/2) and (m/2), respecitively. You can get midpoints of those, and so forth until the segment you are comparing is either of size 1 or 2. There's a divide and conquer pattern there.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#what_can_be_said_about_two_midpoints>what_can_be_said_about_two_midpoints</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#is_log_always_divide_and_conquer>is_log_always_divide_and_conquer</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#merging_takes_linear_time>merging_takes_linear_time</a><a id="merging_takes_linear_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Merging the arrays into a new array is a linear time operation. So the solution can't be that.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#intuition>intuition</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#what_can_be_said_about_two_midpoints>what_can_be_said_about_two_midpoints</a><a id="what_can_be_said_about_two_midpoints"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+What can be said about the midpoints of two separate but sorted arrays? The values are going to be less than, greater than, or equal to eachother. Somehow, this must be a factor right?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#something_something_midpoint>something_something_midpoint</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cpp_implementation>cpp_implementation</a><a id="cpp_implementation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+CPP implementation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#binary_search>binary_search</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#binary_search>binary_search</a><a id="binary_search"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+The solution apparently involves binary search algorithm.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cpp_implementation>cpp_implementation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cpp_impl_too_complicated>cpp_impl_too_complicated</a><a id="cpp_impl_too_complicated"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+There's too much code in the CPP solution, and the author has remarked about this as well. I'm looking for a more theoretical resources on this.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#algorithm_theory>algorithm_theory</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#algorithm_theory>algorithm_theory</a><a id="algorithm_theory"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Algorithm Theory
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#leetcode_editorial>leetcode_editorial</a>, <a href=#wikipedia_selection_algorithm>wikipedia_selection_algorithm</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#cpp_impl_too_complicated>cpp_impl_too_complicated</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#leetcode_editorial>leetcode_editorial</a><a id="leetcode_editorial"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Three solutions, one linear time, two log time.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#wikipedia_selection_algorithm>wikipedia_selection_algorithm</a> (this boils down to a selection algorithm using a pivot)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#algorithm_theory>algorithm_theory</a>
+</td>
+</tr>
+<tr>
+<td>
+hyperlink
+</td>
+<td>
+<a href="https://leetcode.com/problems/median-of-two-sorted-arrays/editorial/">https://leetcode.com/problems/median-of-two-sorted-arrays/editorial/</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#wikipedia_selection_algorithm>wikipedia_selection_algorithm</a><a id="wikipedia_selection_algorithm"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Wikipedia: selection algorithm, or an algorithm for finding the kth smallest value in a collection of ordered items.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#find_n_m_2_smallest>find_n_m_2_smallest</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#algorithm_theory>algorithm_theory</a>, <a href=#leetcode_editorial>leetcode_editorial</a>
+</td>
+</tr>
+<tr>
+<td>
+hyperlink
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Selection_algorithm">https://en.wikipedia.org/wiki/Selection_algorithm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#find_n_m_2_smallest>find_n_m_2_smallest</a><a id="find_n_m_2_smallest"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+This problem can be rephrased as find the (n + m)/2 smallest element between two sorted arrays. So you have to understand how to do the selection algorithm, and also how to do the implicit merging.
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#wikipedia_selection_algorithm>wikipedia_selection_algorithm</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>

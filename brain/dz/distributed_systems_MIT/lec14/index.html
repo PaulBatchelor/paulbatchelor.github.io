@@ -1,0 +1,3001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/brain/css/style.css">
+
+</head>
+<body>
+<div id="main">
+<p><title>distributed_systems_MIT/lec14</title>
+<h1>lec14</h1>
+<a href="/brain/dz">dz</a> / <a href="/brain/dz/distributed_systems_MIT">distributed_systems_MIT</a> / <a href="/brain/dz/distributed_systems_MIT/lec14">lec14</a>
+<p></p>
+<h2>Summary</h2>
+<p>
+Farm, OCC
+</p>
+<h2>Node Tree</h2>
+<ul>
+<li>
+<a href=#farm>farm</a><ul>
+<li>
+<a href=#vs_spanner>vs_spanner</a><ul>
+<li>
+<a href=#both_2pc>both_2pc</a></li>
+<li>
+<a href=#geographic_in_repl>geographic_in_repl</a></li>
+<li>
+<a href=#good_performance>good_performance</a></li>
+<li>
+<a href=#ro_trans_sync_time>ro_trans_sync_time</a></li>
+</ul>
+</li>
+<li>
+<a href=#OCC>OCC</a><ul>
+<li>
+<a href=#version_lockbits_enforce_serializability>version_lockbits_enforce_serializability</a></li>
+<li>
+<a href=#buffer_writes_locally>buffer_writes_locally</a></li>
+<li>
+<a href=#check_later_if_reads_okay>check_later_if_reads_okay</a></li>
+<li>
+<a href=#commit_then_validate>commit_then_validate</a><ul>
+<li>
+<a href=#validation>validation</a><ul>
+<li>
+<a href=#optimize_for_reads>optimize_for_reads</a><ul>
+<li>
+<a href=#straight_ro_transaction>straight_ro_transaction</a><ul>
+<li>
+<a href=#execute_one_sided_read>execute_one_sided_read</a></li>
+<li>
+<a href=#ro_valid_optimizer>ro_valid_optimizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#refetch_object_header>refetch_object_header</a><ul>
+<li>
+<a href=#check_versions_locks>check_versions_locks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#abort_on_conflicts>abort_on_conflicts</a><ul>
+<li>
+<a href=#exponential_backup>exponential_backup</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#RDMA_nics>RDMA_nics</a><ul>
+<li>
+<a href=#RDMA>RDMA</a><ul>
+<li>
+<a href=#LAN_only>LAN_only</a></li>
+<li>
+<a href=#clever_network_interface_card>clever_network_interface_card</a></li>
+<li>
+<a href=#one_sided_RDMA>one_sided_RDMA</a><ul>
+<li>
+<a href=#transactions_with_only_one_sided>transactions_with_only_one_sided</a><ul>
+<li>
+<a href=#farm_suggests_no>farm_suggests_no</a></li>
+</ul>
+</li>
+<li>
+<a href=#execute_one_sided_read>execute_one_sided_read</a></li>
+<li>
+<a href=#one_app_RDMA_another_RDMA>one_app_RDMA_another_RDMA</a><ul>
+<li>
+<a href=#append_to_log_op>append_to_log_op</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#remote_direct_memory_access>remote_direct_memory_access</a></li>
+</ul>
+</li>
+<li>
+<a href=#clever_network_interface_card>clever_network_interface_card</a></li>
+<li>
+<a href=#firmware_only>firmware_only</a></li>
+<li>
+<a href=#forced_occ>forced_occ</a></li>
+<li>
+<a href=#sequence_protocol>sequence_protocol</a></li>
+</ul>
+</li>
+<li>
+<a href=#bottlenecks>bottlenecks</a><ul>
+<li>
+<a href=#speed_of_light>speed_of_light</a></li>
+<li>
+<a href=#cpu_time>cpu_time</a></li>
+</ul>
+</li>
+<li>
+<a href=#commit_protocol>commit_protocol</a><ul>
+<li>
+<a href=#execute_phase>execute_phase</a><ul>
+<li>
+<a href=#txcommit_call>txcommit_call</a><ul>
+<li>
+<a href=#commit_phase>commit_phase</a><ul>
+<li>
+<a href=#trans_coord_all_yes>trans_coord_all_yes</a><ul>
+<li>
+<a href=#append_to_prim>append_to_prim</a><ul>
+<li>
+<a href=#commit_prim_record>commit_prim_record</a><ul>
+<li>
+<a href=#update_object_version_clear_lock_bit>update_object_version_clear_lock_bit</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#lock_phase>lock_phase</a><ul>
+<li>
+<a href=#trans_coord_all_yes>trans_coord_all_yes</a><ul>
+<li>
+<a href=#append_to_prim>append_to_prim</a><ul>
+<li>
+<a href=#commit_prim_record>commit_prim_record</a><ul>
+<li>
+<a href=#update_object_version_clear_lock_bit>update_object_version_clear_lock_bit</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#send_object_id>send_object_id</a><ul>
+<li>
+<a href=#append_to_log>append_to_log</a><ul>
+<li>
+<a href=#prim_active_log_process>prim_active_log_process</a><ul>
+<li>
+<a href=#version_changed>version_changed</a><ul>
+<li>
+<a href=#atomic_compare_and_swap>atomic_compare_and_swap</a><ul>
+<li>
+<a href=#multithread_race_transactions>multithread_race_transactions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#is_object_already_locked>is_object_already_locked</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#reads_everything_needed>reads_everything_needed</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#farm_api>farm_api</a><ul>
+<li>
+<a href=#txcommit>txcommit</a><ul>
+<li>
+<a href=#txcommit_call>txcommit_call</a><ul>
+<li>
+<a href=#commit_phase>commit_phase</a><ul>
+<li>
+<a href=#trans_coord_all_yes>trans_coord_all_yes</a><ul>
+<li>
+<a href=#append_to_prim>append_to_prim</a><ul>
+<li>
+<a href=#commit_prim_record>commit_prim_record</a><ul>
+<li>
+<a href=#update_object_version_clear_lock_bit>update_object_version_clear_lock_bit</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#lock_phase>lock_phase</a><ul>
+<li>
+<a href=#trans_coord_all_yes>trans_coord_all_yes</a><ul>
+<li>
+<a href=#append_to_prim>append_to_prim</a><ul>
+<li>
+<a href=#commit_prim_record>commit_prim_record</a><ul>
+<li>
+<a href=#update_object_version_clear_lock_bit>update_object_version_clear_lock_bit</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#send_object_id>send_object_id</a><ul>
+<li>
+<a href=#append_to_log>append_to_log</a><ul>
+<li>
+<a href=#prim_active_log_process>prim_active_log_process</a><ul>
+<li>
+<a href=#version_changed>version_changed</a><ul>
+<li>
+<a href=#atomic_compare_and_swap>atomic_compare_and_swap</a><ul>
+<li>
+<a href=#multithread_race_transactions>multithread_race_transactions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#is_object_already_locked>is_object_already_locked</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#txcreate>txcreate</a><ul>
+<li>
+<a href=#creates_transaction>creates_transaction</a></li>
+</ul>
+</li>
+<li>
+<a href=#txread>txread</a><ul>
+<li>
+<a href=#OID>OID</a><ul>
+<li>
+<a href=#compound_identifier>compound_identifier</a><ul>
+<li>
+<a href=#address>address</a></li>
+<li>
+<a href=#region_num>region_num</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#txwrite>txwrite</a><ul>
+<li>
+<a href=#OID>OID</a><ul>
+<li>
+<a href=#compound_identifier>compound_identifier</a><ul>
+<li>
+<a href=#address>address</a></li>
+<li>
+<a href=#region_num>region_num</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#OID>OID</a><ul>
+<li>
+<a href=#compound_identifier>compound_identifier</a><ul>
+<li>
+<a href=#address>address</a></li>
+<li>
+<a href=#region_num>region_num</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#forced_occ>forced_occ</a></li>
+<li>
+<a href=#high_performance>high_performance</a><ul>
+<li>
+<a href=#transaction_code>transaction_code</a></li>
+<li>
+<a href=#NVRAM>NVRAM</a><ul>
+<li>
+<a href=#multiple_servers_write_ram_enough>multiple_servers_write_ram_enough</a><ul>
+<li>
+<a href=#site_wide_power_failure>site_wide_power_failure</a><ul>
+<li>
+<a href=#battery_system>battery_system</a><ul>
+<li>
+<a href=#alert_system>alert_system</a><ul>
+<li>
+<a href=#server_saves_to_disk>server_saves_to_disk</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#only_works_for_power_fail>only_works_for_power_fail</a></li>
+</ul>
+</li>
+<li>
+<a href=#RDMA>RDMA</a><ul>
+<li>
+<a href=#LAN_only>LAN_only</a></li>
+<li>
+<a href=#clever_network_interface_card>clever_network_interface_card</a></li>
+<li>
+<a href=#one_sided_RDMA>one_sided_RDMA</a><ul>
+<li>
+<a href=#transactions_with_only_one_sided>transactions_with_only_one_sided</a><ul>
+<li>
+<a href=#farm_suggests_no>farm_suggests_no</a></li>
+</ul>
+</li>
+<li>
+<a href=#execute_one_sided_read>execute_one_sided_read</a></li>
+<li>
+<a href=#one_app_RDMA_another_RDMA>one_app_RDMA_another_RDMA</a><ul>
+<li>
+<a href=#append_to_log_op>append_to_log_op</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#remote_direct_memory_access>remote_direct_memory_access</a></li>
+</ul>
+</li>
+<li>
+<a href=#data_fits_RAM>data_fits_RAM</a><ul>
+<li>
+<a href=#NVRAM>NVRAM</a><ul>
+<li>
+<a href=#multiple_servers_write_ram_enough>multiple_servers_write_ram_enough</a><ul>
+<li>
+<a href=#site_wide_power_failure>site_wide_power_failure</a><ul>
+<li>
+<a href=#battery_system>battery_system</a><ul>
+<li>
+<a href=#alert_system>alert_system</a><ul>
+<li>
+<a href=#server_saves_to_disk>server_saves_to_disk</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#only_works_for_power_fail>only_works_for_power_fail</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#kernel_bypass>kernel_bypass</a><ul>
+<li>
+<a href=#skip_stack>skip_stack</a></li>
+<li>
+<a href=#DMA_in_app_memory>DMA_in_app_memory</a><ul>
+<li>
+<a href=#app_takes_tcp_responsibilities>app_takes_tcp_responsibilities</a><ul>
+<li>
+<a href=#sequence_protocol>sequence_protocol</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#app_code_acces_nic_without_kernel>app_code_acces_nic_without_kernel</a></li>
+</ul>
+</li>
+<li>
+<a href=#sharding>sharding</a></li>
+</ul>
+</li>
+<li>
+<a href=#network_cpu_bottleneck>network_cpu_bottleneck</a><ul>
+<li>
+<a href=#classic_network_stack_too_slow>classic_network_stack_too_slow</a><ul>
+<li>
+<a href=#classic_network_stack_top_down>classic_network_stack_top_down</a><ul>
+<li>
+<a href=#skip_stack>skip_stack</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#research_prototype>research_prototype</a></li>
+<li>
+<a href=#same_datacenter>same_datacenter</a></li>
+<li>
+<a href=#server_memory_layout>server_memory_layout</a><ul>
+<li>
+<a href=#logs_for_each_server>logs_for_each_server</a></li>
+<li>
+<a href=#pair_msg_queues>pair_msg_queues</a></li>
+<li>
+<a href=#region>region</a><ul>
+<li>
+<a href=#versioned_objects>versioned_objects</a><ul>
+<li>
+<a href=#version_num>version_num</a></li>
+<li>
+<a href=#lock_flag>lock_flag</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href=#sharded_primary_backup_pairs>sharded_primary_backup_pairs</a></li>
+</ul>
+</li>
+</ul>
+<h2>Nodes</h2>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#farm>farm</a><a id="farm"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Farm
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#vs_spanner>vs_spanner</a>, <a href=#OCC>OCC</a>, <a href=#RDMA_nics>RDMA_nics</a>, <a href=#bottlenecks>bottlenecks</a>, <a href=#commit_protocol>commit_protocol</a>, <a href=#farm_api>farm_api</a>, <a href=#forced_occ>forced_occ</a>, <a href=#high_performance>high_performance</a>, <a href=#network_cpu_bottleneck>network_cpu_bottleneck</a>, <a href=#research_prototype>research_prototype</a>, <a href=#same_datacenter>same_datacenter</a>, <a href=#server_memory_layout>server_memory_layout</a>, <a href=#sharded_primary_backup_pairs>sharded_primary_backup_pairs</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#RDMA_nics>RDMA_nics</a><a id="RDMA_nics"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RDMA nics
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#RDMA>RDMA</a>, <a href=#clever_network_interface_card>clever_network_interface_card</a>, <a href=#firmware_only>firmware_only</a>, <a href=#forced_occ>forced_occ</a> (RDMA NICs are the reason for using OCC), <a href=#sequence_protocol>sequence_protocol</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#vs_spanner>vs_spanner</a><a id="vs_spanner"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+vs spanner
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#both_2pc>both_2pc</a>, <a href=#geographic_in_repl>geographic_in_repl</a>, <a href=#good_performance>good_performance</a>, <a href=#ro_trans_sync_time>ro_trans_sync_time</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#both_2pc>both_2pc</a><a id="both_2pc"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Both use two-phase commit
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vs_spanner>vs_spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#geographic_in_repl>geographic_in_repl</a><a id="geographic_in_repl"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Spanner is geographic in replication
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vs_spanner>vs_spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ro_trans_sync_time>ro_trans_sync_time</a><a id="ro_trans_sync_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Uses read-only transactions using synchronized time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vs_spanner>vs_spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#bottlenecks>bottlenecks</a><a id="bottlenecks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Bottlenecks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#speed_of_light>speed_of_light</a>, <a href=#cpu_time>cpu_time</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#same_datacenter>same_datacenter</a><a id="same_datacenter"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+same datacenter
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#research_prototype>research_prototype</a><a id="research_prototype"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+research prototype
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#forced_occ>forced_occ</a><a id="forced_occ"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Forced to use OCC (optimistic concurrency control)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDMA_nics>RDMA_nics</a>, <a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#good_performance>good_performance</a><a id="good_performance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+good performance
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#vs_spanner>vs_spanner</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#speed_of_light>speed_of_light</a><a id="speed_of_light"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Speed of Light
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bottlenecks>bottlenecks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#cpu_time>cpu_time</a><a id="cpu_time"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+CPU time
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#bottlenecks>bottlenecks</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sharded_primary_backup_pairs>sharded_primary_backup_pairs</a><a id="sharded_primary_backup_pairs"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sharded on primary backup pairs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#high_performance>high_performance</a><a id="high_performance"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Ways farm gets high performance
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transaction_code>transaction_code</a>, <a href=#NVRAM>NVRAM</a>, <a href=#RDMA>RDMA</a>, <a href=#data_fits_RAM>data_fits_RAM</a>, <a href=#kernel_bypass>kernel_bypass</a>, <a href=#sharding>sharding</a> (main way farm gets high performance)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sharding>sharding</a><a id="sharding"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Sharding
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#high_performance>high_performance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#data_fits_RAM>data_fits_RAM</a><a id="data_fits_RAM"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Data fits in RAM
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#NVRAM>NVRAM</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#high_performance>high_performance</a>
+</td>
+</tr>
+<tr>
+<td>
+remarks
+</td>
+<td>
+much faster than disk
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transaction_code>transaction_code</a><a id="transaction_code"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Transaction code
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#high_performance>high_performance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#RDMA>RDMA</a><a id="RDMA"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+RDMA
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#LAN_only>LAN_only</a>, <a href=#clever_network_interface_card>clever_network_interface_card</a>, <a href=#one_sided_RDMA>one_sided_RDMA</a>, <a href=#remote_direct_memory_access>remote_direct_memory_access</a> (Acronym)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDMA_nics>RDMA_nics</a>, <a href=#high_performance>high_performance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#kernel_bypass>kernel_bypass</a><a id="kernel_bypass"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Kernal Bypass
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#skip_stack>skip_stack</a>, <a href=#DMA_in_app_memory>DMA_in_app_memory</a>, <a href=#app_code_acces_nic_without_kernel>app_code_acces_nic_without_kernel</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#high_performance>high_performance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#clever_network_interface_card>clever_network_interface_card</a><a id="clever_network_interface_card"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Clever network interface card (NIC)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDMA_nics>RDMA_nics</a>, <a href=#RDMA>RDMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#NVRAM>NVRAM</a><a id="NVRAM"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Non-volatile RAM (NVRAM)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#multiple_servers_write_ram_enough>multiple_servers_write_ram_enough</a>, <a href=#only_works_for_power_fail>only_works_for_power_fail</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#data_fits_RAM>data_fits_RAM</a>, <a href=#high_performance>high_performance</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#app_code_acces_nic_without_kernel>app_code_acces_nic_without_kernel</a><a id="app_code_acces_nic_without_kernel"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Applicaiton code can directly access network card without kernel
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#kernel_bypass>kernel_bypass</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multiple_servers_write_ram_enough>multiple_servers_write_ram_enough</a><a id="multiple_servers_write_ram_enough"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Is it enough to simply write to the RAM of multiple servers?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#site_wide_power_failure>site_wide_power_failure</a> (No, a sitewide power failure will wipe it all out)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#NVRAM>NVRAM</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#site_wide_power_failure>site_wide_power_failure</a><a id="site_wide_power_failure"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+A site-wide power failure will lose data
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#battery_system>battery_system</a> (prevantative measure against power failures)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#multiple_servers_write_ram_enough>multiple_servers_write_ram_enough</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#battery_system>battery_system</a><a id="battery_system"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Battery System
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#alert_system>alert_system</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#site_wide_power_failure>site_wide_power_failure</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#alert_system>alert_system</a><a id="alert_system"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Alert System
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#server_saves_to_disk>server_saves_to_disk</a> (on alert)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#battery_system>battery_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#server_saves_to_disk>server_saves_to_disk</a><a id="server_saves_to_disk"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Server saves RAM to disk
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#alert_system>alert_system</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#only_works_for_power_fail>only_works_for_power_fail</a><a id="only_works_for_power_fail"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Only works for power failure crash
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#NVRAM>NVRAM</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#network_cpu_bottleneck>network_cpu_bottleneck</a><a id="network_cpu_bottleneck"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Network CPU bottlenecks
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#classic_network_stack_too_slow>classic_network_stack_too_slow</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#classic_network_stack_too_slow>classic_network_stack_too_slow</a><a id="classic_network_stack_too_slow"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Classic Network Stack too slow for RPCs.
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#classic_network_stack_top_down>classic_network_stack_top_down</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#network_cpu_bottleneck>network_cpu_bottleneck</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#classic_network_stack_top_down>classic_network_stack_top_down</a><a id="classic_network_stack_top_down"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Classic Network stack order: app, buffer, TCP, NIC driver, DMA, NIC
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#skip_stack>skip_stack</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#classic_network_stack_too_slow>classic_network_stack_too_slow</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#skip_stack>skip_stack</a><a id="skip_stack"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Skip stack
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#classic_network_stack_top_down>classic_network_stack_top_down</a>, <a href=#kernel_bypass>kernel_bypass</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#DMA_in_app_memory>DMA_in_app_memory</a><a id="DMA_in_app_memory"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+DMA is directly in application memory
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#app_takes_tcp_responsibilities>app_takes_tcp_responsibilities</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#kernel_bypass>kernel_bypass</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#app_takes_tcp_responsibilities>app_takes_tcp_responsibilities</a><a id="app_takes_tcp_responsibilities"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Because it skips TCP, application takes on some TCP responsibilities
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#sequence_protocol>sequence_protocol</a> (NIC handles this too)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#DMA_in_app_memory>DMA_in_app_memory</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#remote_direct_memory_access>remote_direct_memory_access</a><a id="remote_direct_memory_access"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Remote Direct Memory Access
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDMA>RDMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#firmware_only>firmware_only</a><a id="firmware_only"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Firmware only: computer OS doesn't know about read/writes
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDMA_nics>RDMA_nics</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#sequence_protocol>sequence_protocol</a><a id="sequence_protocol"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Run their own reliable sequence protocol, similar to TCP
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDMA_nics>RDMA_nics</a>, <a href=#app_takes_tcp_responsibilities>app_takes_tcp_responsibilities</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#LAN_only>LAN_only</a><a id="LAN_only"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+LAN only
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDMA>RDMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#one_sided_RDMA>one_sided_RDMA</a><a id="one_sided_RDMA"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One-sided RDMA
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#transactions_with_only_one_sided>transactions_with_only_one_sided</a>, <a href=#execute_one_sided_read>execute_one_sided_read</a>, <a href=#one_app_RDMA_another_RDMA>one_app_RDMA_another_RDMA</a> (description)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#RDMA>RDMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#one_app_RDMA_another_RDMA>one_app_RDMA_another_RDMA</a><a id="one_app_RDMA_another_RDMA"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+One app uses RDMA to read/write RDMA of another app
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#append_to_log_op>append_to_log_op</a> (the typical operation for one-sided RDMA in Farm)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#one_sided_RDMA>one_sided_RDMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#append_to_log_op>append_to_log_op</a><a id="append_to_log_op"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+appends to log
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#one_app_RDMA_another_RDMA>one_app_RDMA_another_RDMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#transactions_with_only_one_sided>transactions_with_only_one_sided</a><a id="transactions_with_only_one_sided"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Can you implemented transactions with only one-sided RDMA?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#farm_suggests_no>farm_suggests_no</a> (still a question to think about though)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#one_sided_RDMA>one_sided_RDMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#farm_suggests_no>farm_suggests_no</a><a id="farm_suggests_no"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Farm would suggest the answer would be "no"
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#transactions_with_only_one_sided>transactions_with_only_one_sided</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#OCC>OCC</a><a id="OCC"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Optimistic Concurrency Control (OCC)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#version_lockbits_enforce_serializability>version_lockbits_enforce_serializability</a>, <a href=#buffer_writes_locally>buffer_writes_locally</a>, <a href=#check_later_if_reads_okay>check_later_if_reads_okay</a>, <a href=#commit_then_validate>commit_then_validate</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#buffer_writes_locally>buffer_writes_locally</a><a id="buffer_writes_locally"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Buffer Writes Locally
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OCC>OCC</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#check_later_if_reads_okay>check_later_if_reads_okay</a><a id="check_later_if_reads_okay"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Check later if reads are okay
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OCC>OCC</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#commit_then_validate>commit_then_validate</a><a id="commit_then_validate"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+commit then validate
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#validation>validation</a>, <a href=#abort_on_conflicts>abort_on_conflicts</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OCC>OCC</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#abort_on_conflicts>abort_on_conflicts</a><a id="abort_on_conflicts"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Abort on conflicts
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#exponential_backup>exponential_backup</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#commit_then_validate>commit_then_validate</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#validation>validation</a><a id="validation"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Validation
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#optimize_for_reads>optimize_for_reads</a>, <a href=#refetch_object_header>refetch_object_header</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#commit_then_validate>commit_then_validate</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#farm_api>farm_api</a><a id="farm_api"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+API
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#txcommit>txcommit</a>, <a href=#txcreate>txcreate</a>, <a href=#txread>txread</a>, <a href=#txwrite>txwrite</a>, <a href=#OID>OID</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#txcreate>txcreate</a><a id="txcreate"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+txCreate()
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#creates_transaction>creates_transaction</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm_api>farm_api</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#txread>txread</a><a id="txread"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+txRead()
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#OID>OID</a> (input argument)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm_api>farm_api</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#OID>OID</a><a id="OID"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Object ID (OID)
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#compound_identifier>compound_identifier</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#txread>txread</a>, <a href=#txwrite>txwrite</a>, <a href=#farm_api>farm_api</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#creates_transaction>creates_transaction</a><a id="creates_transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Creates Transaction
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#txcreate>txcreate</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#txwrite>txwrite</a><a id="txwrite"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+txWrite()
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#OID>OID</a> (input argument)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm_api>farm_api</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#exponential_backup>exponential_backup</a><a id="exponential_backup"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Exponential backup maybe used?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#abort_on_conflicts>abort_on_conflicts</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#compound_identifier>compound_identifier</a><a id="compound_identifier"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Compound Identifier
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#address>address</a>, <a href=#region_num>region_num</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OID>OID</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#region_num>region_num</a><a id="region_num"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Region Number
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compound_identifier>compound_identifier</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#address>address</a><a id="address"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Address
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#compound_identifier>compound_identifier</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#server_memory_layout>server_memory_layout</a><a id="server_memory_layout"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Server Memory Layout
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#logs_for_each_server>logs_for_each_server</a>, <a href=#pair_msg_queues>pair_msg_queues</a>, <a href=#region>region</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#region>region</a><a id="region"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Region
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#versioned_objects>versioned_objects</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#server_memory_layout>server_memory_layout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#versioned_objects>versioned_objects</a><a id="versioned_objects"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Versioned Objects
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#version_num>version_num</a>, <a href=#lock_flag>lock_flag</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#region>region</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#version_num>version_num</a><a id="version_num"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+version number
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#versioned_objects>versioned_objects</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lock_flag>lock_flag</a><a id="lock_flag"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lock flag
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#versioned_objects>versioned_objects</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#pair_msg_queues>pair_msg_queues</a><a id="pair_msg_queues"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Pair of Message Queues
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#server_memory_layout>server_memory_layout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#logs_for_each_server>logs_for_each_server</a><a id="logs_for_each_server"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Logs, one for each of the other servers
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#server_memory_layout>server_memory_layout</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#commit_protocol>commit_protocol</a><a id="commit_protocol"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Commit Protocol
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#execute_phase>execute_phase</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm>farm</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#execute_phase>execute_phase</a><a id="execute_phase"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Execute Phase
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#txcommit_call>txcommit_call</a>, <a href=#reads_everything_needed>reads_everything_needed</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#commit_protocol>commit_protocol</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#reads_everything_needed>reads_everything_needed</a><a id="reads_everything_needed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Reads everything it needs
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#execute_phase>execute_phase</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#txcommit_call>txcommit_call</a><a id="txcommit_call"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+txcommit call
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#commit_phase>commit_phase</a> (happens when all yes)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#txcommit>txcommit</a>, <a href=#execute_phase>execute_phase</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#txcommit>txcommit</a><a id="txcommit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+txCommit
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#txcommit_call>txcommit_call</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#farm_api>farm_api</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#commit_phase>commit_phase</a><a id="commit_phase"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+commit phase
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#trans_coord_all_yes>trans_coord_all_yes</a>, <a href=#lock_phase>lock_phase</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#txcommit_call>txcommit_call</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#lock_phase>lock_phase</a><a id="lock_phase"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Lock Phase
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#trans_coord_all_yes>trans_coord_all_yes</a>, <a href=#send_object_id>send_object_id</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#commit_phase>commit_phase</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#send_object_id>send_object_id</a><a id="send_object_id"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+client sends each primary server identity of udpated object
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#append_to_log>append_to_log</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#lock_phase>lock_phase</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#trans_coord_all_yes>trans_coord_all_yes</a><a id="trans_coord_all_yes"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Tranasaction coordinator notifies primary servers "all yes"
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#append_to_prim>append_to_prim</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#commit_phase>commit_phase</a>, <a href=#lock_phase>lock_phase</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#append_to_log>append_to_log</a><a id="append_to_log"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Append to log
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#prim_active_log_process>prim_active_log_process</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#send_object_id>send_object_id</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#prim_active_log_process>prim_active_log_process</a><a id="prim_active_log_process"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Primaries actively process new logs, and send yes/no vote
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#version_changed>version_changed</a>, <a href=#is_object_already_locked>is_object_already_locked</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#append_to_log>append_to_log</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#is_object_already_locked>is_object_already_locked</a><a id="is_object_already_locked"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+is object already locked?
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#prim_active_log_process>prim_active_log_process</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#version_changed>version_changed</a><a id="version_changed"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+has the version number changed?
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#atomic_compare_and_swap>atomic_compare_and_swap</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#prim_active_log_process>prim_active_log_process</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#atomic_compare_and_swap>atomic_compare_and_swap</a><a id="atomic_compare_and_swap"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Atomic compare_and_swap
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#multithread_race_transactions>multithread_race_transactions</a> (rationale for atomic operation)
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#version_changed>version_changed</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#multithread_race_transactions>multithread_race_transactions</a><a id="multithread_race_transactions"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Multithreading can cause races between transactions
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#atomic_compare_and_swap>atomic_compare_and_swap</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#append_to_prim>append_to_prim</a><a id="append_to_prim"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+append to primary log
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#commit_prim_record>commit_prim_record</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#trans_coord_all_yes>trans_coord_all_yes</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#commit_prim_record>commit_prim_record</a><a id="commit_prim_record"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+commit primary record
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#update_object_version_clear_lock_bit>update_object_version_clear_lock_bit</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#append_to_prim>append_to_prim</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#update_object_version_clear_lock_bit>update_object_version_clear_lock_bit</a><a id="update_object_version_clear_lock_bit"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Update object and version number, clear lock bit
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#commit_prim_record>commit_prim_record</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#version_lockbits_enforce_serializability>version_lockbits_enforce_serializability</a><a id="version_lockbits_enforce_serializability"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Version numbering and lock bits enforce serializability in OCC
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#OCC>OCC</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#optimize_for_reads>optimize_for_reads</a><a id="optimize_for_reads"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Optimization to treat objects read by transactions, not written
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#straight_ro_transaction>straight_ro_transaction</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#validation>validation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#refetch_object_header>refetch_object_header</a><a id="refetch_object_header"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Refetch object header
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#check_versions_locks>check_versions_locks</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#validation>validation</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#check_versions_locks>check_versions_locks</a><a id="check_versions_locks"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Checks for version changes since start and if the lock bit is set
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#refetch_object_header>refetch_object_header</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#straight_ro_transaction>straight_ro_transaction</a><a id="straight_ro_transaction"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Straight read-only transaction
+</td>
+</tr>
+<tr>
+<td>
+children
+</td>
+<td>
+<a href=#execute_one_sided_read>execute_one_sided_read</a>, <a href=#ro_valid_optimizer>ro_valid_optimizer</a>
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#optimize_for_reads>optimize_for_reads</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#execute_one_sided_read>execute_one_sided_read</a><a id="execute_one_sided_read"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+Execute with fast one-sided read
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#straight_ro_transaction>straight_ro_transaction</a>, <a href=#one_sided_RDMA>one_sided_RDMA</a>
+</td>
+</tr>
+</table><br>
+<table border="1px">
+<tr>
+<td colspan=2>
+<a href=#ro_valid_optimizer>ro_valid_optimizer</a><a id="ro_valid_optimizer"></a>
+</td>
+</tr>
+<tr>
+<td>
+content
+</td>
+<td>
+read-only validation optimizer
+</td>
+</tr>
+<tr>
+<td>
+parents
+</td>
+<td>
+<a href=#straight_ro_transaction>straight_ro_transaction</a>
+</td>
+</tr>
+</table><br>
+</p>
+</div>
+</body>
+</html>
