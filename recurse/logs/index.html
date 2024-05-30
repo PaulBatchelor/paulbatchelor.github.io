@@ -17,9 +17,135 @@ in HTML.
 </p>
 <p></p>
 
+<h3><a href="#2024_05_30" id="2024_05_30">2024-05-30</a> Day 11.</h3>
+
+<p>More heads down today. Probably not going into the hub. 
+</p>
+<p> Prev: C Creatures, Chats, WASM Group, More Rust Audio Pairing 
+</p>
+<p> Next: Implement Glottis algorithm, and hopefully some tract stuff?
+</p>
+<p><a href="#2024_05_30_09_00" id="2024_05_30_09_00">09:00</a>: Morning Triage</p>
+<p><a href="#2024_05_30_09_25" id="2024_05_30_09_25">09:25</a>: Didn't complete this yesterday. Completing today. #implement-glot</p>
+<p><a href="#2024_05_30_09_26" id="2024_05_30_09_26">09:26</a>: Thinking about tackling some of this port today #implement-tract</p>
+<div class="comment-block">
+<p>I want to push myself to get some singing sounds in Rust by the end of the week.
+</p>
+</div>
+<p><a href="#2024_05_30_09_32" id="2024_05_30_09_32">09:32</a>: Building glot initializer #implement-glot</p>
+<div class="comment-block">
+<p>Struct initialization feels like a pain point to me.
+</p>
+</div>
+<p><a href="#2024_05_30_09_55" id="2024_05_30_09_55">09:55</a>: HP/LP filter uses similar struct, how to do inheritance like things? #implement-glot</p>
+<div class="comment-block">
+<p>Using this as a learning opportunity. 
+</p>
+<p> Okay, looks like I want to implement a filter as a trait. See: &lt;&lt;<a href="/recurse/dz/rust/books/rust_by_example#traits">rust/books/rust_by_example/traits</a>&gt;&gt; and &lt;&lt;<a href="/recurse/dz/rust/books/rust_book#traits">rust/books/rust_book/traits</a>&gt;&gt;.
+</p>
+</div>
+<p><a href="#2024_05_30_10_12" id="2024_05_30_10_12">10:12</a>: Trying to get traits to work is premature optimization and too much time, making a new task for it. #implement-glot #refactor-glotfilt-traits</p>
+<div class="comment-block">
+<p>I want to set aside some time to actually do this right. It's not quite fitting in my head at the moment, and I need to keep moving forward. Ultimately, what we want is to be able to have a nice way to define two two types: highpass and lowpass, which are two types that use identical data structs but slightly different methods. 
+</p>
+<p> I imagine it'll be pretty trivial to return and refactor. So far, this has been my experience with Rust.
+</p>
+</div>
+<p><a href="#2024_05_30_10_16" id="2024_05_30_10_16">10:16</a>: Back to Butterworth porting #implement-glot</p>
+<div class="comment-block">
+<p>These are needed to filter the noise source in the glottal model.
+</p>
+</div>
+<p><a href="#2024_05_30_10_18" id="2024_05_30_10_18">10:18</a>: Oh wait, I implemented the butterworth filter in boing^3 #implement-glot</p>
+<div class="comment-block">
+<p>I'll just copy that over. duh.
+</p>
+</div>
+<p><a href="#2024_05_30_10_23" id="2024_05_30_10_23">10:23</a>: Ugh, how do I use modules locally? need a refresher. #implement-glot</p>
+<div class="comment-block">
+<p>Revisiting &lt;&lt;<a href="/recurse/dz/rust#organizing_code_project_structure">rust/organizing_code_project_structure</a>&gt;&gt;. 
+</p>
+<p> Here is the winning code block for imports. 
+<pre><code>use crate::butterworth::{ButterworthLowPass, ButterworthHighPass};</pre></code>
+<p></p>
+<p> Also needed to make sure that lib.rs had butterworth imported too.
+</p>
+</div>
+<p><a href="#2024_05_30_10_36" id="2024_05_30_10_36">10:36</a>: Back to filling out rest of the glot struct #implement-glot</p>
+<div class="comment-block">
+<p>I will need to return to implement the highpass filter.
+</p>
+</div>
+<p><a href="#2024_05_30_10_45" id="2024_05_30_10_45">10:45</a>: implement setup_waveform #implement-glot</p>
+<p><a href="#2024_05_30_11_02" id="2024_05_30_11_02">11:02</a>: implement hanning table #implement-glot</p>
+<p><a href="#2024_05_30_11_06" id="2024_05_30_11_06">11:06</a>: implement highpass #implement-glot</p>
+<p><a href="#2024_05_30_11_09" id="2024_05_30_11_09">11:09</a>: initializer done. now some of the smaller methods #implement-glot</p>
+<p><a href="#2024_05_30_11_15" id="2024_05_30_11_15">11:15</a>: Port tick function. #implement-glot</p>
+<p><a href="#2024_05_30_11_30" id="2024_05_30_11_30">11:30</a>: I think there's enough in place for some initial sound #implement-glot</p>
+<p><a href="#2024_05_30_11_37" id="2024_05_30_11_37">11:37</a>: Uh oh, it panicked. #implement-glot</p>
+<div class="comment-block">
+<p>There was an attempt to multiply with overflow. It seems to be a problem with the RNG. 
+</p>
+<p> disabling noise source for now.
+</p>
+</div>
+<p><a href="#2024_05_30_11_40" id="2024_05_30_11_40">11:40</a>: No sound. Debugging in my future. #implement-glot</p>
+<p><a href="#2024_05_30_11_55" id="2024_05_30_11_55">11:55</a>: troubleshooting: why isn't there any sound? #implement-glot</p>
+<div class="comment-block">
+<br>
+<pre><code>rm -f glot_simple.wav
+cargo run --example glot_simple
+mnolth wavdraw glot_simple.wav glot_simple.pbm</pre></code>
+<p></p>
+<p> didn't finish setup_waveform()
+</p>
+</div>
+<p><a href="#2024_05_30_12_12" id="2024_05_30_12_12">12:12</a>: Lunch</p>
+<p><a href="#2024_05_30_13_11" id="2024_05_30_13_11">13:11</a>: Line by line checking with reference #implement-glot</p>
+<div class="comment-block">
+<p>I will log as I go. 
+</p>
+<p> setup_waveform: found multiply that should have been add. otherwise, it looks okay. 
+</p>
+<p> settuptable looks good. -- rest of initializer looks good. -- tick(): I messed up most of the exp function translations. Rust has a weird notation for this. instead of <code>exp(x)</code>, rust does <code>x.exp()</code>.
+</p>
+</div>
+<p><a href="#2024_05_30_13_26" id="2024_05_30_13_26">13:26</a>: It seems to work! Now back to the LCG overflow issue. #implment-glot</p>
+<div class="comment-block">
+<p>Looking at checked multiplies, &lt;&lt;<a href="/recurse/dz/rust#checked_mul">rust/checked_mul</a>&gt;&gt;, but that doesn't seem quite right. I want to do wraparound. 
+</p>
+<p> It seems to be okay with this solution: 
+<pre><code>fn rand(&mut self) -&gt; u32 {
+    self.rng = (self.rng.wrapping_mul(1103515245) + 12345) % LCG_MAX;
+    return self.rng;
+}</pre></code>
+<p></p>
+<p> <code>wrapping_mul</code> was what I needed to keep the panic away. See &lt;&lt;<a href="/recurse/dz/rust#wrapping_mul">rust/wrapping_mul</a>&gt;&gt;.
+</p>
+</div>
+<p><a href="#2024_05_30_14_00" id="2024_05_30_14_00">14:00</a>: final thoughts #implement-glot</p>
+<div class="comment-block">
+<p>I have finished porting the glottal source component of my singing synthesizer from C to Rust. It was a bit of a tedious effort, but luckily the setbacks were small. 
+</p>
+<p> The port can be found here: <a href="https://github.com/PaulBatchelor/voxbox/blob/main/src/glot.rs">https://github.com/PaulBatchelor/voxbox/blob/main/src/glot.rs</a>. 
+</p>
+<p> Sample code writing to WAV file: <a href="https://github.com/PaulBatchelor/voxbox/blob/main/examples/glot_simple.rs">https://github.com/PaulBatchelor/voxbox/blob/main/examples/glot_simple.rs</a>. 
+</p>
+<p> This implements a glottal source model based on the one described by Hui-Ling Lu in their dissertation. It includes a version of the LF glottal flow derivative waveform model (based off an implementation by Neil Thapen of Pink Trombone), as well as a synchronous pulsed noise component for breathiness and aspiration. 
+</p>
+<p> On the first pass manually translating C to Rust, I ran into some issues. Most of the issues ended up being related to the way Rust handles math functions. Instead of doing something like <code>exp(x)</code> like you'd expect, Rust tends to use notation like <code>x.exp()</code>, and I messed up the notation. 
+</p>
+<p> By itself, the glottal source component sounds pretty unremarkable. It will need a tract filter before it starts to sound talky.
+</p>
+</div>
+<p><a href="#2024_05_30_15_09" id="2024_05_30_15_09">15:09</a>: publish glot algorithm to website.</p>
+</p>
+
 <h3><a href="#2024_05_29" id="2024_05_29">2024-05-29</a> Day 10.</h3>
 
-<p>Prev: Audio Hang, Software Foundations, Graphics Hang, Rust Next: Port Glottis Algorithm to Rust, C Creatures, WASM Group
+<p>Prev: Audio Hang, Software Foundations, Graphics Hang, Rust 
+</p>
+<p> Next: Port Glottis Algorithm to Rust, C Creatures, WASM Group
 </p>
 <p><a href="#2024_05_29_09_00" id="2024_05_29_09_00">09:00</a>: Morning Curation</p>
 <p><a href="#2024_05_29_09_43" id="2024_05_29_09_43">09:43</a>: Some initial work on glottis scaffolding #implement-glot</p>
