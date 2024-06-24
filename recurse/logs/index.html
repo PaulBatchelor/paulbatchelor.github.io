@@ -17,6 +17,253 @@ in HTML.
 </p>
 <p></p>
 
+<h3><a href="#2024_06_23" id="2024_06_23">2024-06-23</a> Day 35.</h3>
+
+<p>48 Days left of batch. 
+</p>
+<p> Thinkpad ordered yesterday. Should be arriving by the 28th, So, I'll have about 40 days or so of use with it while I'm here. I got a quote for the m1, and it was less than I expected, so I might still do that. With the thinkpad, I'll never have any days where I'm without a portable computer. This is the important thing. 
+</p>
+<p> I was thinking all day about "A Blob Named Bucket", doing research on game engines and graphics libraries, and trying to get things to work on my Linux box. I think the best contender so far is Sokol. I'm hoping to do most of the game logic in Rust. A hybridized C + Rust approach may work too, if I can get it all compiled down to a wasm file working on the web.
+</p>
+<p><a href="#2024_06_23_09_20" id="2024_06_23_09_20">09:20</a>: I turn on my computer and create this log file.</p>
+<p><a href="#2024_06_23_09_27" id="2024_06_23_09_27">09:27</a>: Found this 2d sprite repo today with sokol/sdl. Looks perfect. #investigate-2d-gameengine</p>
+<div class="comment-block">
+<p>link: <a href="https://github.com/seyhajin/webgl2-wasm-sdl-sokol-sprite">https://github.com/seyhajin/webgl2-wasm-sdl-sokol-sprite</a>. 
+</p>
+<p> WASM builds and runs okay with emcc. I was hoping it would have had a sprite moving, but it's just projecting a static texture. 
+</p>
+<p> I'm starting to feel diminishing returns, as this "simple idea" might turn out to be not as simple as I thought, and might require more time/focus than I have right now. 
+</p>
+<p> Fail early. Fail often.
+</p>
+</div>
+<p><a href="#2024_06_23_09_55" id="2024_06_23_09_55">09:55</a>: Back to studying "sapp" #investigate-2d-gameengine #timelog:00:04:52</p>
+<div class="comment-block">
+<p>the "spine" examples seemed to be closest to what I was looking for, but it turns out it's also not what I'm looking for and intended for much larger games that I'd like to build: <a href="http://en.esotericsoftware.com/spine-in-depth">http://en.esotericsoftware.com/spine-in-depth</a>.
+</p>
+</div>
+<p><a href="#2024_06_23_10_00" id="2024_06_23_10_00">10:00</a>: Trying out a Sokol add-on for 2d graphics someone made #investigate-2d-gameengine #timelog:00:12:07</p>
+<div class="comment-block">
+<p>link: <a href="https://github.com/edubart/sokol_gp">https://github.com/edubart/sokol_gp</a> 
+</p>
+<p> The OSX build in this makefile is out of date. Getting errors. I'd like to see this work, so I'm going to try and get this running on my Linux box. If that fails, I'm back to just learning more about <code>sokol_gfx.h</code> and actually reading the documentation. 
+</p>
+<p> Okay! The makefile works on my Linux box! Good. Progress. 
+</p>
+<p> Making a dagzet graph for sokol.
+</p>
+</div>
+<p><a href="#2024_06_23_10_17" id="2024_06_23_10_17">10:17</a>: Studying sokol_gfx more in depth #investigate-2d-gameengine</p>
+<div class="comment-block">
+<p>I want to get the text rendered to a PDF somehow, so I can read it on my remarkable. 
+</p>
+<p> Learned about <code>:hardcopy</code> in vim. <code>:hardcopy > foo.ps</code>. 
+</p>
+<p> set popts+=number:y will include line numbers 
+</p>
+<p> There are two kinds of programmers: those who understand why text editors have a "hardcopy" printing feature in 2024, and those who do not. 
+</p>
+<p> Uploaded PDF to Remarkable.
+</p>
+</div>
+<p><a href="#2024_06_23_10_30" id="2024_06_23_10_30">10:30</a>: Reading =sokol_gfx= header comments on remarkable #investigate-2d-gameengine #timelog:00:25:36</p>
+<p><a href="#2024_06_23_13_00" id="2024_06_23_13_00">13:00</a>: Trying out Gate #investigate-2d-gameengine #timelog:00:34:10</p>
+<div class="comment-block">
+<p>Found this while looking up how to do pixel art on OpenGL: <a href="https://github.com/SergiusIW/gate">https://github.com/SergiusIW/gate</a> 
+</p>
+<p> running into linker problems. 
+</p>
+<p> Solved by adding <code>println!("cargo:rustc-linker-arg</code>-L/opt/homebrew/lib")=. 
+</p>
+<p> Now it is panicking because it can't find OpenGL/GLES library. Probably something to do with it being a Mac? 
+</p>
+<p> Working out test file. <a href="https://stackoverflow.com/questions/26745284/cmake-not-finding-gl-h-on-os-x">https://stackoverflow.com/questions/26745284/cmake-not-finding-gl-h-on-os-x</a>. This worked fine, though I had to change the include file from <code>GL/gl.h</code> to <code>OpenGL/gl.h</code>. 
+</p>
+<p> Digging into gate library a little more, since it is just SDL underneath it. 
+</p>
+<p> There's only so much stack tracing and debugging I can do before I call it quits here. This is another nope.
+</p>
+</div>
+<p><a href="#2024_06_23_13_45" id="2024_06_23_13_45">13:45</a>: Another look at sokol gp on OSX #investigate-2d-gameengine #timelog:00:39:00</p>
+<div class="comment-block">
+<p>I think the sokol headers are out of date. OSX references things like cocoa, new sokol headers references metal. 
+</p>
+<p> Nope. Fortunately, there's documentation on the build incantation used to build <code>cube-sapp.c</code> in the sokol-samples repo: 
+<pre><code>cc sapp/cube-sapp.c -I ../fips-build/sokol-samples/sapp-metal-osx-make-release/sapp/ libs/sokol/sokol.m -o cube-sapp -DSOKOL_METAL -fobjc-arc -I ../sokol -I libs/ -framework Metal -framework Cocoa -framework MetalKit -framework Quartz -framework AudioToolbox</pre></code>
+<p></p>
+<p> I want to update the Makefile in sokol gp to match this better 
+</p>
+<p> Made a build.sh script. Still getting a lot of weird metal-related junk errors. 
+</p>
+<p> Took the clear-sapp example in the sokol-samples and gradually added lines from the rectangle sample in the sokol gp repo. We have a rotating rectangle now!
+</p>
+</div>
+<p><a href="#2024_06_23_15_50" id="2024_06_23_15_50">15:50</a>: Making decisions on file design #htmlize-codestudy-files #timelog:00:15:11</p>
+<div class="comment-block">
+<p>Files are stored in <code>dz_textfiles</code>. 
+</p>
+<p> Files given some sort of path, which can be analogous to a dagzet namespace URL. I'd probably opt to replace things like periods with underscores though. 
+</p>
+<p> Take something like <code>codestudy/potential/mag_sign.cpp</code>, that could a page called <code>codestudy/potential/mag_sign_cpp</code>. Some assumptions could be made that <code>codestudy/potential</code> would already exist and that <code>mag_sign_cpp</code> wouldn't be a pre-existing node. 
+</p>
+<p> A janet function could be written to generate the appropriate HTML given a file path. This could then be called using inline Janet, which could then be created procedurally using a script.
+</p>
+</div>
+<p><a href="#2024_06_23_16_05" id="2024_06_23_16_05">16:05</a>: Bottoms-up: create initial render page. #htmlize-codestudy-files</p>
+<div class="comment-block">
+<p>Gosh there's so friction getting this to work cuz everything is so connected. I wanted to just write Janet code, but I needed other things, so I put it inside a placeholder org file and ran parse, but the CSS parse path is wrong.
+</p>
+</div>
+<p><a href="#2024_06_23_16_37" id="2024_06_23_16_37">16:37</a>: We're going to need to re-work the HTML generator in weewiki.janet #htmlize-codestudy-files #timelog:00:32:04</p>
+<div class="comment-block">
+<p>I need to point to a brand new CSS file. Overwriting the usual one isn't going to work. Stopping for now because this will require fresh thinking.
+</p>
+</div>
+<p><a href="#2024_06_23_18_23" id="2024_06_23_18_23">18:23</a>: Reading #react-adding-interactivity #timelog:00:23:08</p>
+<p><a href="#2024_06_23_19_14" id="2024_06_23_19_14">19:14</a>: Attempts to import small sokol gp example  #investigate-2d-gameengine #timelog:00:28:31</p>
+<p><a href="#2024_06_23_19_41" id="2024_06_23_19_41">19:41</a>: Imported. Builds on OSX and Linux now. #investigate-2d-gameengine</p>
+<p><a href="#2024_06_23_19_47" id="2024_06_23_19_47">19:47</a>: Import ink.</p>
+</p>
+
+<h3><a href="#2024_06_22" id="2024_06_22">2024-06-22</a> Day 34.</h3>
+
+<p>49 Days left of batch. 
+</p>
+<p> Saturday. Nothing really planned. This is intentional.
+</p>
+<p><a href="#2024_06_22_10_02" id="2024_06_22_10_02">10:02</a>: Initial concept sketches #blob-brainstorm #timelog:00:10:36</p>
+<p><a href="#2024_06_22_10_35" id="2024_06_22_10_35">10:35</a>: Late morning logging.</p>
+<p><a href="#2024_06_22_10_42" id="2024_06_22_10_42">10:42</a>: How hard is it to throw some pixels to a framebuffer in webgl? #blob-brainstorm #timelog:00:42:09</p>
+<div class="comment-block">
+<p>let's find out!
+</p>
+</div>
+<p><a href="#2024_06_22_14_20" id="2024_06_22_14_20">14:20</a>: Exploring pixels #investigate-2d-gameengine #timelog:00:11:15</p>
+<div class="comment-block">
+<p>Link: <a href="https://github.com/parasyte/pixels">https://github.com/parasyte/pixels</a>. 
+</p>
+<p> Space invaders example works on my Mac. Good lord that's a lot of dependencies though (it's okay, it's okay, just grit your teeth and do it). 
+</p>
+<p> Web example runs on my mac. Noticing use of wasm-bindgen. Is it time for me to bite the bullet and actually learn this? I wouldn't be able to get it done in a weekend.
+</p>
+</div>
+<p><a href="#2024_06_22_14_34" id="2024_06_22_14_34">14:34</a>: Now time to look at Sokol #investigate-2d-gameengine #timelog:00:08:12</p>
+<div class="comment-block">
+<p>Link: <a href="https://github.com/floooh/sokol">https://github.com/floooh/sokol</a>. 
+</p>
+<p> More "comfortable" because it's closer to a tech stack I know already. I've never used it before, so the learning curve may be just as big. But let's see! 
+</p>
+<p> Sigh... Emscripten. 
+</p>
+<p> Uhhhh... my harddrive just filled up I think. 
+</p>
+<p> This is an omen. I am ditching Sokol for this.
+</p>
+</div>
+<p><a href="#2024_06_22_14_43" id="2024_06_22_14_43">14:43</a>: Freeing up space on my harddrive</p>
+<div class="comment-block">
+<p>Damn. Fast internet fills up disk space quickly.
+</p>
+</div>
+<p><a href="#2024_06_22_14_55" id="2024_06_22_14_55">14:55</a>: Now we try Pixels on my Linux box #investigate-2d-gameengine #timelog:00:08:49</p>
+<div class="comment-block">
+<p>This is the ultimate test because nothing every wants to work.
+</p>
+</div>
+<p><a href="#2024_06_22_15_05" id="2024_06_22_15_05">15:05</a>: Well that didn't work. Attempting softbuffer on Alpine Linux? #investigate-2d-gameengine #timelog:00:07:59</p>
+<div class="comment-block">
+<p>Link: <a href="https://github.com/rust-windowing/softbuffer">https://github.com/rust-windowing/softbuffer</a>.
+</p>
+</div>
+<p><a href="#2024_06_22_15_14" id="2024_06_22_15_14">15:14</a>: Well that's a no go. Sokol on Alpine linux? #investigate-2d-gameengine #timelog:00:08:10</p>
+<div class="comment-block">
+<p>Good ol' glfw backend works. I do not really like the strange build system.
+</p>
+</div>
+<p><a href="#2024_06_22_15_24" id="2024_06_22_15_24">15:24</a>: Another stab at pixels on Alpine linux. #investigate-2d-gameengine</p>
+<p><a href="#2024_06_22_15_27" id="2024_06_22_15_27">15:27</a>: Trying sway to try run sway. wish me luck. #investigate-2d-gameengine #timelog:00:58:26</p>
+<p><a href="#2024_06_22_16_23" id="2024_06_22_16_23">16:23</a>: Got enough of sway working to re-run pixels invaders example. Still, no luck #investigate-2d-gameengine</p>
+<div class="comment-block">
+<p>I'm starting to think a solution might involving having different backends, with as much logic in the Rust layer. This might take too long as well. Sigh. Graphics.
+</p>
+</div>
+</p>
+
+<h3><a href="#2024_06_21" id="2024_06_21">2024-06-21</a> Day 33.</h3>
+
+<p>50 Days Left of Batch 
+</p>
+<p> Prev: VoxBoxOSC works!, Tongue Control in VoxBox, React Reading (finished up "Describing the UI chapter"). 
+</p>
+<p> Next || <a href="/recurse/tasks/htmlize_codestudy_files">htmlize-codestudy-files</a>: Did not get to this yesterday. Hopefully today. || <a href="/recurse/tasks/react_adding_interactivity">react-adding-interactivity</a>: More reading on React. || <a href="/recurse/tasks/voxbox_change_nose_length">voxbox-change-nose-length</a>: shouldn't be too difficult to do || <a href="/recurse/tasks/voxbox_better_size_control">voxbox-better-size-control</a>: if there's time today, try to look at this. || <a href="/recurse/tasks/demo_poke">demo-poke</a>: Start brainstorming the "poke" demo
+</p>
+<p><a href="#2024_06_21_08_58" id="2024_06_21_08_58">08:58</a>: Morning Triage</p>
+<p><a href="#2024_06_21_09_07" id="2024_06_21_09_07">09:07</a>: Small task, hoping to get to it today. #voxbox-change-nose-length</p>
+<p><a href="#2024_06_21_09_08" id="2024_06_21_09_08">09:08</a>: Will look at this today if there's time #voxbox-better-size-control</p>
+<p><a href="#2024_06_21_09_10" id="2024_06_21_09_10">09:10</a>: created. initial brainstorming today? #demo-poke</p>
+<p><a href="#2024_06_21_09_17" id="2024_06_21_09_17">09:17</a>: Writing up zulip checkin.</p>
+<p><a href="#2024_06_21_09_30" id="2024_06_21_09_30">09:30</a>: Done with morning logging.</p>
+<p><a href="#2024_06_21_09_48" id="2024_06_21_09_48">09:48</a>: Pack up for Apple appointment</p>
+<p><a href="#2024_06_21_12_00" id="2024_06_21_12_00">12:00</a>: Lunch</p>
+<p><a href="#2024_06_21_13_01" id="2024_06_21_13_01">13:01</a>: The poke should be a tickle. Think tickle-me-elmo, or the Pillsbury Doughboy #demo-poke</p>
+<p><a href="#2024_06_21_13_02" id="2024_06_21_13_02">13:02</a>: Adding tractlen control to OSC model #voxbox-better-size-control #timelog:00:03:47</p>
+<div class="comment-block">
+<p>This will be a good way to test out tract length while on my Linux box. -- Actually, this won't work. Interpolation doesn't smooth discontinuities, but allows smoothing transitions with floating point values. I will need to build an example.
+</p>
+</div>
+<p><a href="#2024_06_21_13_08" id="2024_06_21_13_08">13:08</a>: Building tract length example instead #voxbox-better-size-control #timelog:00:06:00</p>
+<p><a href="#2024_06_21_13_15" id="2024_06_21_13_15">13:15</a>: The glitches are there (deliberately), now to see if they can be smoothed #voxbox-better-size-control #timelog:00:30:00</p>
+<p><a href="#2024_06_21_13_45" id="2024_06_21_13_45">13:45</a>: This is not working as expected #voxbox-better-size-control</p>
+<div class="comment-block">
+<p>I was hoping this would be a quick matter of linear interpolation between the last two samples at the output, but I I'm still getting issues. It's starting to turn into more of a DSP problem than I'd like it be, which is not why I'm here at this program. So, I'm putting it to rest for now. 
+</p>
+<p> The attempts are managed in the "tractlen" branch on my voxbox repo
+</p>
+</div>
+<p><a href="#2024_06_21_14_50" id="2024_06_21_14_50">14:50</a>: trying one more thing... #voxbox-better-size-control #timelog:00:18:43</p>
+<div class="comment-block">
+<p>Somehow I think the fractional tract length needs to be considered while computing the scatering junctions. But I'm not sure how yet. I added in best guess but it's not right. Okay I really really need to stop this.
+</p>
+</div>
+<p><a href="#2024_06_21_15_21" id="2024_06_21_15_21">15:21</a>: Reading and notetaking #react-adding-interactivity #timelog:00:19:07</p>
+<p><a href="#2024_06_21_15_43" id="2024_06_21_15_43">15:43</a>: More reading and notetaking #react-adding-interactivity #timelog:00:18:49</p>
+<p><a href="#2024_06_21_16_40" id="2024_06_21_16_40">16:40</a>: Attempts to study sourcehut CSS again #htmlize-codestudy-files #timelog:00:15:59</p>
+<p><a href="#2024_06_21_16_46" id="2024_06_21_16_46">16:46</a>: Ha, okay I managed to make it go. Magic! #htmlize-codestudy-files</p>
+<p><a href="#2024_06_21_16_53" id="2024_06_21_16_53">16:53</a>: Did some clean-up. I now need to start pre-planning htmlization #htmlize-codestudy-files</p>
+<p><a href="#2024_06_21_16_55" id="2024_06_21_16_55">16:55</a>: Re-familiarizing myself with the schemas used here. #htmlize-codestudy-files</p>
+<div class="comment-block">
+<p>What does the schema look like? What kind of information does it have? How do file names get translated into things "seen" by dagzet? How to make sure file range links go to the right place? All this and more... later...
+</p>
+</div>
+<p><a href="#2024_06_21_16_57" id="2024_06_21_16_57">16:57</a>: Attempt to quickly change the nose length like tract #voxbox-change-nose-length #timelog:00:23:10</p>
+<div class="comment-block">
+<p>This would be the quick and dirty approach, no interpolation.
+</p>
+</div>
+<p><a href="#2024_06_21_17_00" id="2024_06_21_17_00">17:00</a>: There is a lot of duplicate code between the tract and nose #voxbox-change-nose-length</p>
+<div class="comment-block">
+<p>Including this tract size behavior. I am ignoring that fact right now.
+</p>
+</div>
+<p><a href="#2024_06_21_17_06" id="2024_06_21_17_06">17:06</a>: attempting to integrate with singer sliders demo #voxbox-change-nose-length</p>
+<p><a href="#2024_06_21_17_11" id="2024_06_21_17_11">17:11</a>: Uh-oh. why is my JS code not working. I didn't do anything?</p>
+<div class="comment-block">
+<p>Oh okay. Just needed to clean some caching and rebuild.
+</p>
+</div>
+<p><a href="#2024_06_21_17_22" id="2024_06_21_17_22">17:22</a>: Things sound right in the example! #voxbox-change-nose-length</p>
+<div class="comment-block">
+<p>The velum now sounds more nasally everywhere pretty evenly.
+</p>
+</div>
+<p><a href="#2024_06_21_20_15" id="2024_06_21_20_15">20:15</a>: Attempt to sequence the first few bars of "Milowda" using vocal synthesizer</p>
+<div class="comment-block">
+<p>Found some sheet music. I want to hear how the sonorities sound.
+</p>
+</div>
+<p><a href="#2024_06_21_21_49" id="2024_06_21_21_49">21:49</a>: Got some initial milowda chords. Attached it to the file "milowda_chords.mp3"</p>
+</p>
+
 <h3><a href="#2024_06_20" id="2024_06_20">2024-06-20</a> Day 32.</h3>
 
 <p>51 Days Left of Batch 
