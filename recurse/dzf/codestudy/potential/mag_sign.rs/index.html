@@ -1,0 +1,507 @@
+<p><!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="/recurse/css/code.css">
+<title>codestudy/potential/mag_sign.rs</title>
+</head>
+<body>
+<div class="container-fluid code-viewport">
+<div class="row mr-0">
+<div class="code-view">
+<pre class="lines"><a href="#L1" id="L1">1</a>
+<a href="#L2" id="L2">2</a>
+<a href="#L3" id="L3">3</a>
+<a href="#L4" id="L4">4</a>
+<a href="#L5" id="L5">5</a>
+<a href="#L6" id="L6">6</a>
+<a href="#L7" id="L7">7</a>
+<a href="#L8" id="L8">8</a>
+<a href="#L9" id="L9">9</a>
+<a href="#L10" id="L10">10</a>
+<a href="#L11" id="L11">11</a>
+<a href="#L12" id="L12">12</a>
+<a href="#L13" id="L13">13</a>
+<a href="#L14" id="L14">14</a>
+<a href="#L15" id="L15">15</a>
+<a href="#L16" id="L16">16</a>
+<a href="#L17" id="L17">17</a>
+<a href="#L18" id="L18">18</a>
+<a href="#L19" id="L19">19</a>
+<a href="#L20" id="L20">20</a>
+<a href="#L21" id="L21">21</a>
+<a href="#L22" id="L22">22</a>
+<a href="#L23" id="L23">23</a>
+<a href="#L24" id="L24">24</a>
+<a href="#L25" id="L25">25</a>
+<a href="#L26" id="L26">26</a>
+<a href="#L27" id="L27">27</a>
+<a href="#L28" id="L28">28</a>
+<a href="#L29" id="L29">29</a>
+<a href="#L30" id="L30">30</a>
+<a href="#L31" id="L31">31</a>
+<a href="#L32" id="L32">32</a>
+<a href="#L33" id="L33">33</a>
+<a href="#L34" id="L34">34</a>
+<a href="#L35" id="L35">35</a>
+<a href="#L36" id="L36">36</a>
+<a href="#L37" id="L37">37</a>
+<a href="#L38" id="L38">38</a>
+<a href="#L39" id="L39">39</a>
+<a href="#L40" id="L40">40</a>
+<a href="#L41" id="L41">41</a>
+<a href="#L42" id="L42">42</a>
+<a href="#L43" id="L43">43</a>
+<a href="#L44" id="L44">44</a>
+<a href="#L45" id="L45">45</a>
+<a href="#L46" id="L46">46</a>
+<a href="#L47" id="L47">47</a>
+<a href="#L48" id="L48">48</a>
+<a href="#L49" id="L49">49</a>
+<a href="#L50" id="L50">50</a>
+<a href="#L51" id="L51">51</a>
+<a href="#L52" id="L52">52</a>
+<a href="#L53" id="L53">53</a>
+<a href="#L54" id="L54">54</a>
+<a href="#L55" id="L55">55</a>
+<a href="#L56" id="L56">56</a>
+<a href="#L57" id="L57">57</a>
+<a href="#L58" id="L58">58</a>
+<a href="#L59" id="L59">59</a>
+<a href="#L60" id="L60">60</a>
+<a href="#L61" id="L61">61</a>
+<a href="#L62" id="L62">62</a>
+<a href="#L63" id="L63">63</a>
+<a href="#L64" id="L64">64</a>
+<a href="#L65" id="L65">65</a>
+<a href="#L66" id="L66">66</a>
+<a href="#L67" id="L67">67</a>
+<a href="#L68" id="L68">68</a>
+<a href="#L69" id="L69">69</a>
+<a href="#L70" id="L70">70</a>
+<a href="#L71" id="L71">71</a>
+<a href="#L72" id="L72">72</a>
+<a href="#L73" id="L73">73</a>
+<a href="#L74" id="L74">74</a>
+<a href="#L75" id="L75">75</a>
+<a href="#L76" id="L76">76</a>
+<a href="#L77" id="L77">77</a>
+<a href="#L78" id="L78">78</a>
+<a href="#L79" id="L79">79</a>
+<a href="#L80" id="L80">80</a>
+<a href="#L81" id="L81">81</a>
+<a href="#L82" id="L82">82</a>
+<a href="#L83" id="L83">83</a>
+<a href="#L84" id="L84">84</a>
+<a href="#L85" id="L85">85</a>
+<a href="#L86" id="L86">86</a>
+<a href="#L87" id="L87">87</a>
+<a href="#L88" id="L88">88</a>
+<a href="#L89" id="L89">89</a>
+<a href="#L90" id="L90">90</a>
+<a href="#L91" id="L91">91</a>
+<a href="#L92" id="L92">92</a>
+<a href="#L93" id="L93">93</a>
+<a href="#L94" id="L94">94</a>
+<a href="#L95" id="L95">95</a>
+<a href="#L96" id="L96">96</a>
+<a href="#L97" id="L97">97</a>
+<a href="#L98" id="L98">98</a>
+<a href="#L99" id="L99">99</a>
+<a href="#L100" id="L100">100</a>
+<a href="#L101" id="L101">101</a>
+<a href="#L102" id="L102">102</a>
+<a href="#L103" id="L103">103</a>
+<a href="#L104" id="L104">104</a>
+<a href="#L105" id="L105">105</a>
+<a href="#L106" id="L106">106</a>
+<a href="#L107" id="L107">107</a>
+<a href="#L108" id="L108">108</a>
+<a href="#L109" id="L109">109</a>
+<a href="#L110" id="L110">110</a>
+<a href="#L111" id="L111">111</a>
+<a href="#L112" id="L112">112</a>
+<a href="#L113" id="L113">113</a>
+<a href="#L114" id="L114">114</a>
+<a href="#L115" id="L115">115</a>
+<a href="#L116" id="L116">116</a>
+<a href="#L117" id="L117">117</a>
+<a href="#L118" id="L118">118</a>
+<a href="#L119" id="L119">119</a>
+<a href="#L120" id="L120">120</a>
+<a href="#L121" id="L121">121</a>
+<a href="#L122" id="L122">122</a>
+</pre></div>
+<div class="highlight">
+<div>
+use&nbsp;crate::module_config::{RackInput,&nbsp;RackOutput};
+</div>
+<div>
+use&nbsp;crate::rack::{InputPort,&nbsp;OutputPort,&nbsp;Port};
+</div>
+<div>
+<br>
+</div>
+<div>
+fn&nbsp;mag_sign_process(inputs:&nbsp;&MagSignInput,&nbsp;outputs:&nbsp;&mut&nbsp;MagSignOutput)&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;Upper&nbsp;half&nbsp;processing:&nbsp;decomposition
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;outputs.magnitude.set_polyphony_from(&inputs.bipolar);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;outputs.sign.set_polyphony_from(&inputs.bipolar);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;bipolar&nbsp;=&nbsp;inputs.bipolar.as_slice();
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;magnitude&nbsp;=&nbsp;outputs.magnitude.as_slice_mut();
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;sign&nbsp;=&nbsp;outputs.sign.as_slice_mut();
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bipolar
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.iter()
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.zip(magnitude.iter_mut().zip(sign.iter_mut()))
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.for_each(|(bipolar_in,&nbsp;(magnitude_out,&nbsp;sign_out))|&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*magnitude_out,&nbsp;*sign_out)&nbsp;=&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;!bipolar_in.is_nan()&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(bipolar_in.abs(),&nbsp;bipolar_in.signum())
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;Map&nbsp;NaNs&nbsp;to&nbsp;positive&nbsp;0.
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(0.0,&nbsp;1.0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;};
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;});
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;Lower&nbsp;half&nbsp;processing:&nbsp;recomposition
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;We&nbsp;only&nbsp;produce&nbsp;as&nbsp;many&nbsp;output&nbsp;channels&nbsp;as&nbsp;we&nbsp;have&nbsp;input&nbsp;signs.&nbsp;We
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;can&nbsp;pad&nbsp;the&nbsp;input&nbsp;magnitudes&nbsp;with&nbsp;0.0,&nbsp;but&nbsp;the&nbsp;signs&nbsp;are&nbsp;impossible
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;to&nbsp;default&nbsp;to&nbsp;either&nbsp;positive&nbsp;or&nbsp;negative&nbsp;without&nbsp;biasing&nbsp;the&nbsp;output.
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;outputs.bipolar.set_polyphony_from(&inputs.sign);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;magnitude&nbsp;=&nbsp;inputs.magnitude.as_slice();
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;sign&nbsp;=&nbsp;inputs.sign.as_slice();
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;bipolar&nbsp;=&nbsp;outputs.bipolar.as_slice_mut();
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;We&nbsp;could&nbsp;have&nbsp;fewer&nbsp;magnitudes&nbsp;than&nbsp;signs,&nbsp;so&nbsp;we&nbsp;extend&nbsp;the&nbsp;magnitudes&nbsp;with
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;an&nbsp;infinite&nbsp;iterator&nbsp;of&nbsp;0.0.&nbsp;This&nbsp;will&nbsp;be&nbsp;zipped&nbsp;with&nbsp;the&nbsp;signs,&nbsp;so&nbsp;the
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;resulting&nbsp;zip&nbsp;iterator&nbsp;will&nbsp;be&nbsp;the&nbsp;length&nbsp;of&nbsp;the&nbsp;signs.
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;zeros&nbsp;=&nbsp;Some(0.0).iter().cycle();
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;mag_sign_pairs&nbsp;=&nbsp;magnitude.iter().chain(zeros).zip(sign.iter());
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bipolar
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.iter_mut()
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.zip(mag_sign_pairs)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.for_each(|(bipolar_out,&nbsp;(magnitude_in,&nbsp;sign_in))|&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*bipolar_out&nbsp;=&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;result&nbsp;=&nbsp;magnitude_in.copysign(*sign_in);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;!result.is_nan()&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.0
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;};
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;})
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+pub&nbsp;fn&nbsp;mag_sign_process_raw(inputs:&nbsp;*const&nbsp;Port,&nbsp;outputs:&nbsp;*mut&nbsp;Port)&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;inputs&nbsp;=&nbsp;MagSignInput::from_raw_ptr(inputs);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;mut&nbsp;outputs&nbsp;=&nbsp;MagSignOutput::from_raw_ptr(outputs);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;mag_sign_process(&inputs,&nbsp;&mut&nbsp;outputs)
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+struct&nbsp;MagSignInput<'a>&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;bipolar:&nbsp;InputPort<'a>,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;magnitude:&nbsp;InputPort<'a>,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;sign:&nbsp;InputPort<'a>,
+</div>
+<div>
+}
+</div>
+<div>
+impl&nbsp;RackInput&nbsp;for&nbsp;MagSignInput<'_>&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;COUNT:&nbsp;usize&nbsp;=&nbsp;3;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;fn&nbsp;get_name(index:&nbsp;usize)&nbsp;->&nbsp;&'static&nbsp;str&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert!(index&nbsp;<&nbsp;Self::COUNT);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;match&nbsp;index&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;=>&nbsp;"Bipolar",
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;=>&nbsp;"Magnitude",
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2&nbsp;=>&nbsp;"Sign",
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_&nbsp;=>&nbsp;unreachable!(),
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;fn&nbsp;from_raw_ptr(ports:&nbsp;*const&nbsp;Port)&nbsp;->&nbsp;Self&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;bipolar&nbsp;=&nbsp;InputPort::from_raw_port_index(ports,&nbsp;0);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;magnitude&nbsp;=&nbsp;InputPort::from_raw_port_index(ports,&nbsp;1);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;sign&nbsp;=&nbsp;InputPort::from_raw_port_index(ports,&nbsp;2);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MagSignInput&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bipolar,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;magnitude,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sign,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+struct&nbsp;MagSignOutput<'a>&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;magnitude:&nbsp;OutputPort<'a>,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;sign:&nbsp;OutputPort<'a>,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;bipolar:&nbsp;OutputPort<'a>,
+</div>
+<div>
+}
+</div>
+<div>
+impl&nbsp;RackOutput&nbsp;for&nbsp;MagSignOutput<'_>&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;COUNT:&nbsp;usize&nbsp;=&nbsp;3;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;fn&nbsp;get_name(index:&nbsp;usize)&nbsp;->&nbsp;&'static&nbsp;str&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert!(index&nbsp;<&nbsp;Self::COUNT);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;match&nbsp;index&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;=>&nbsp;"Magnitude",
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;=>&nbsp;"Sign",
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2&nbsp;=>&nbsp;"Bipolar",
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_&nbsp;=>&nbsp;unreachable!(),
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;fn&nbsp;from_raw_ptr(ports:&nbsp;*mut&nbsp;Port)&nbsp;->&nbsp;Self&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;magnitude&nbsp;=&nbsp;OutputPort::from_raw_port_index(ports,&nbsp;0);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;sign&nbsp;=&nbsp;OutputPort::from_raw_port_index(ports,&nbsp;1);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;bipolar&nbsp;=&nbsp;OutputPort::from_raw_port_index(ports,&nbsp;2);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MagSignOutput&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;magnitude,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sign,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bipolar,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+</div>
+</div></div>
+</body>
+</html>
+</p>
