@@ -17,6 +17,196 @@ in HTML.
 </p>
 <p></p>
 
+<h3><a href="#2024_06_28" id="2024_06_28">2024-06-28</a> Day 40.</h3>
+
+<p>42 days left of batch.
+</p>
+<p><a href="#2024_06_28_07_28" id="2024_06_28_07_28">07:28</a>: Get Sokol example working on new laptop #investigate-tic80</p>
+<div class="comment-block">
+<p>Precursor to getting tic-80 working. Oh wow that was easy. Little did I know I was 30 seconds away from getting this working last night.
+</p>
+</div>
+<p><a href="#2024_06_28_07_30" id="2024_06_28_07_30">07:30</a>: Back to tic-80 compilation on new laptop #investigate-tic80</p>
+<div class="comment-block">
+<p>Now that sokol example works, I think I figured out all the graphics issues
+</p>
+</div>
+<p><a href="#2024_06_28_07_36" id="2024_06_28_07_36">07:36</a>: TIC-80 builds, runs tetris, no sound yet #investigate-tic80</p>
+<p><a href="#2024_06_28_07_47" id="2024_06_28_07_47">07:47</a>: Sound works. Studying music demo. #investigate-tic80</p>
+<div class="comment-block">
+<p>I like the scale and form factor of this.
+</p>
+</div>
+<p><a href="#2024_06_28_08_08" id="2024_06_28_08_08">08:08</a>: trying to see where export is hanging #investigate-tic80</p>
+<p><a href="#2024_06_28_08_12" id="2024_06_28_08_12">08:12</a>: tried running in gdb and gdb crashed. musl issues? #investigate-tic80</p>
+<p><a href="#2024_06_28_08_44" id="2024_06_28_08_44">08:44</a>: tic80 export works on mac #investigate-tic80</p>
+<div class="comment-block">
+<p>The bundle includes the tic80 card and a wasm file. I have no idea where the wasm comes from. It's not a file included in the source, and there doesn't seem to be any clear indication where/how it is being generated. My best guess is that somewhere it gets made with emscripten because I see mentions of it when I grep for wasm-y things.
+</p>
+</div>
+<p><a href="#2024_06_28_09_39" id="2024_06_28_09_39">09:39</a>: At the hub.</p>
+<p><a href="#2024_06_28_09_40" id="2024_06_28_09_40">09:40</a>: Back to investigating missing nodes #bug-missing-nodes #timelog:01:25:41</p>
+<p><a href="#2024_06_28_09_41" id="2024_06_28_09_41">09:41</a>: Oh crap the ulitimate spinner is available</p>
+<div class="comment-block">
+<p>I missed my chance months ago (waited months for this). Can't afford it. Oh well. Still buying.
+</p>
+</div>
+<p><a href="#2024_06_28_09_52" id="2024_06_28_09_52">09:52</a>: =generate_graph_data.lua= and =genpage.lua= #bug-missing-nodes</p>
+<div class="comment-block">
+<p>These are the missing files
+</p>
+</div>
+<p><a href="#2024_06_28_09_55" id="2024_06_28_09_55">09:55</a>: Run =dz_wikigen.sh= to trigger debug message #bug-missing-nodes</p>
+<p><a href="#2024_06_28_09_57" id="2024_06_28_09_57">09:57</a>: The nodelist is not being created correctly. why? #bug-missing-nodes</p>
+<p><a href="#2024_06_28_10_00" id="2024_06_28_10_00">10:00</a>: genpage.pagedata: output nodes being made via params.nodelist #bug-missing-nodes</p>
+<div class="comment-block">
+<p>How is this being created?
+</p>
+</div>
+<p><a href="#2024_06_28_10_00" id="2024_06_28_10_00">10:00</a>: Lua issues, debug flag is not working #bug-missing-nodes</p>
+<p><a href="#2024_06_28_10_12" id="2024_06_28_10_12">10:12</a>: Lua function setting the global variable sets it to true somehow? #bug-missing-nodes</p>
+<p><a href="#2024_06_28_10_13" id="2024_06_28_10_13">10:13</a>: Oh wait, I was setting this #bug-missing-nodes</p>
+<p><a href="#2024_06_28_10_18" id="2024_06_28_10_18">10:18</a>: okay weird. the debug flag is being unset somewhere apparently #bug-missing-nodes</p>
+<div class="comment-block">
+<p>Not the problem I wanted to troubleshoot, but hey I need this for the visibility.
+</p>
+</div>
+<p><a href="#2024_06_28_10_22" id="2024_06_28_10_22">10:22</a>: more testing for visibility with traverse_node() #bug-missing-nodes</p>
+<div class="comment-block">
+<p>The debug mode flag is never set to true here. Confirmed with printing and filtering output. 
+</p>
+<p> Also confirmed that it doesn't matter if you're using the function <code>dbg</code> I made or checking the variable itself. It's the same. So, I'm pretty sure the <code>dbg</code> shortcut function is fine. 
+</p>
+<p> I need to be able to track down when this is being set, and then unset.
+</p>
+</div>
+<p><a href="#2024_06_28_10_29" id="2024_06_28_10_29">10:29</a>: the debug flag is definitely being set exactly once #bug-missing-nodes</p>
+<div class="comment-block">
+<p>I think what's happening is the variable is being copied over when it is loaded up in the module. Hoping to fix this by using a big global that can be read everywhere.
+</p>
+</div>
+<p><a href="#2024_06_28_10_35" id="2024_06_28_10_35">10:35</a>: Okay, global debug flag didn't work. Rethinking approach #bug-missing-nodes</p>
+<div class="comment-block">
+<p>This is NOT what I'm debugging. I just need visibility.
+</p>
+</div>
+<p><a href="#2024_06_28_10_39" id="2024_06_28_10_39">10:39</a>: Crap. I was setting the debug flag too late. Oh well. #bug-missing-nodes</p>
+<div class="comment-block">
+<p>I have a clumsier approach now, but it works, and I've wasted too much time chasing this pre-bug to improve it.
+</p>
+</div>
+<p><a href="#2024_06_28_10_42" id="2024_06_28_10_42">10:42</a>: Missing node names show up in input node list supplied to genpage #bug-missing-nodes</p>
+<div class="comment-block">
+<p>Confirmed that the nodes do come up, but they aren't being traversed for whatever reason.
+</p>
+</div>
+<p><a href="#2024_06_28_10_44" id="2024_06_28_10_44">10:44</a>: Do missing nodes show up in topsort? #bug-missing-nodes</p>
+<p><a href="#2024_06_28_10_48" id="2024_06_28_10_48">10:48</a>: Topsort isn't returning enough nodes. Why? #bug-missing-nodes</p>
+<div class="comment-block">
+<p>should be 33, but I'm getting 20.
+</p>
+</div>
+<p><a href="#2024_06_28_11_17" id="2024_06_28_11_17">11:17</a>: Let's find ou the missing nodes #bug-missing-nodes</p>
+<div class="comment-block">
+<p>I tried looking for something to make sense in the code, but I can't yet see a pattern for what is there and what isn't there.
+</p>
+</div>
+<p><a href="#2024_06_28_11_21" id="2024_06_28_11_21">11:21</a>: Missing nodes seem to line up with the missing nodes on page #bug-missing-nodes</p>
+<div class="comment-block">
+<p>Clocking out for now
+</p>
+</div>
+<p><a href="#2024_06_28_13_34" id="2024_06_28_13_34">13:34</a>: Troubleshooting tic80 export on thinkpad #investigate-tic80 #timelog:00:44:37</p>
+<p><a href="#2024_06_28_13_42" id="2024_06_28_13_42">13:42</a>: onExportHTML call seems to return hmmm #investigate-tic80</p>
+<div class="comment-block">
+<p>printf-ing to console works, even if gdb crashes
+</p>
+</div>
+<p><a href="#2024_06_28_13_45" id="2024_06_28_13_45">13:45</a>: =tic_net_get()=: that doesn't sound great #investigate-tic80</p>
+<div class="comment-block">
+<p>Sounds like it might be trying to download something from the internet? Yeah, that could be a problem here.
+</p>
+</div>
+<p><a href="#2024_06_28_13_51" id="2024_06_28_13_51">13:51</a>: =tic_net_get()= might not be getting called #investigate-tic80</p>
+<div class="comment-block">
+<p>Firslty, the printf I placed there isn't showing up. Secondly, it makes a call to <code>empscripten_fetch</code>, which I do not (think I) have. 
+</p>
+<p> Maybe it is defined elsewhere? 
+</p>
+<p> Ah, there are multiple definitions here. Wonder which one is the actual one.
+</p>
+</div>
+<p><a href="#2024_06_28_13_57" id="2024_06_28_13_57">13:57</a>: =tic_net_get()= is an empty function. #investigate-tic80</p>
+<div class="comment-block">
+<p>The tic cart loaders are pre-compiled wasm files. The path is <code>/export/1.2-dev/html</code>.
+</p>
+</div>
+<p><a href="#2024_06_28_14_08" id="2024_06_28_14_08">14:08</a>: The tic cart loader, as far as I can tell, is closed source. #investigate-tic80</p>
+<div class="comment-block">
+<p>Basically, HTML export works by fetching from a URL. This downloads a zipfile that already has the wasm in there. Exporting is simply a matter of dropping that TIC file in the in the zip file.
+</p>
+</div>
+<p><a href="#2024_06_28_14_11" id="2024_06_28_14_11">14:11</a>: Options moving forward #investigate-tic80</p>
+<div class="comment-block">
+<p>So, it's looking like doing any kind of hacking on this would be a fairly ambitious task that would take up most of my time. It looks like this wasm file is the only thing I have. What I'd like to do is to somehow patch it, potentially. And get it to load in custom code for audio playback. 
+</p>
+<p> It's not a no, though it would dramatically change what it is I came here to do. Instead of doing funny vocal synth stuff, I'd be going deep into trying to reverse engineer this thing. Feels very much in the spirit of RC. And this is more motivating to me than more frontend-y stuff. There may be less polished things to show, though.
+</p>
+</div>
+<p><a href="#2024_06_28_14_21" id="2024_06_28_14_21">14:21</a>: Looking into wasm2wat #investigate-wabt #timelog:00:22:34</p>
+<div class="comment-block">
+<p>Needed for reverse engineering tic80 wasm bundle. 
+</p>
+<p> I love how easy it was to build, and the tools look very neat.
+</p>
+</div>
+<p><a href="#2024_06_28_14_45" id="2024_06_28_14_45">14:45</a>: thoughts on reverse engineering tic80 #investigate-tic80</p>
+<div class="comment-block">
+<p>Using this to make any sense of tic80 feels like something that would take me maybe months to a year to do maybe. Hacking the tic80 source code itself would take less time. I'd probably have better luck building my own cartridge loader. 
+</p>
+<p> I think if I wanted to go deep on wasm rather than frontend stacks, I'd definitely want to look into this. This stuff sparks joy more than javascript/React.
+</p>
+</div>
+<p><a href="#2024_06_28_14_46" id="2024_06_28_14_46">14:46</a>: how is a tic cart saved? #investigate-tic80 #timelog:00:22:00</p>
+<div class="comment-block">
+<p>I am pretty sure it's lua5.3, based on grepping for version for the built in luajit. 
+</p>
+<p> Functions defined in <code>cart.c</code>. Looking at <code>music.tic</code>, the code for the seems to be at the very bottom.
+</p>
+</div>
+<p><a href="#2024_06_28_16_48" id="2024_06_28_16_48">16:48</a>: The Big Plans #what-now-week6 #timelog:00:26:42</p>
+<div class="comment-block">
+<p>Ink on paper.
+</p>
+</div>
+<p><a href="#2024_06_28_17_20" id="2024_06_28_17_20">17:20</a>: some triage and organizing</p>
+<p><a href="#2024_06_28_17_23" id="2024_06_28_17_23">17:23</a>: Friday concluding thoughts #what-now-week6 #timelog:00:27:00</p>
+<div class="comment-block">
+<p>I want to focus on designing more musical experiences using my vocal synthesizer, that run in the browser. 
+</p>
+<p> This, however, is not enough of a project, and risks being too design oriented rather than technically oriented. I am also quite seriously considering putting some work into hacking my vocal synthesis DSP written in Rust into tic80. 
+</p>
+<p> Why tic80? I like the aesthetic. And hacking the software's source code seems to very much be in the spirit of RC. It is also possible to export to WASM, but not with the hacks. As a stretch, it may be possible to somehow hack the wasm TIC cartridge wasm blob, or even write a custom TIC loader based on the TIC-80 codebase. 
+</p>
+<p> Design and presentation is still and important factor. There will be two kinds musical interactions: ensemble and solo. The main ensemble sining project will probably be something similar to blob opera. The main solo singing project will be "A Blob Named Bucket", a chittering singinig virtual pet that you have to coax out of hiding with food. 
+</p>
+<p> A Blob Named Bucket will be the more complicated project, requiring a procedurally generated critter generator, and a character engine simulator Bucket's behavior. For this reason, these components will be broken up into smaller self-contained demos. These need to be self contained because it's likely I may not be able to get to the final project. 
+</p>
+<p> The ensemble demo will probably just be for the web using p5, and will building off of the chords demo I made in the first half. 
+</p>
+<p> TIC-80 demos will do their best to follow some of the ideas in the p5 demos. Could be thought of as "redux" versions? I want to do my best to refine the mechanics of these demos, reduce until they are distilled into simple elegant forms of sonic interaction. 
+</p>
+<p> Tooling will need to be made as well. These will probably be HTML/WASM, and for practice, I will use React for these.
+</p>
+</div>
+<p><a href="#2024_06_28_17_38" id="2024_06_28_17_38">17:38</a>: Careers strategy #what-now-week6 #what-now-week7</p>
+<div class="comment-block">
+<p>I did not think about this too hard for this. That's what next week can be for?
+</p>
+</div>
+<p><a href="#2024_06_28_17_40" id="2024_06_28_17_40">17:40</a>: End of planning in week6 #what-now-week6</p>
+</p>
+
 <h3><a href="#2024_06_27" id="2024_06_27">2024-06-27</a> Day 39.</h3>
 
 <p>44 days left of batch. 
@@ -28,11 +218,6 @@ in HTML.
 <p> next: || <a href="/recurse/tasks/nexthacking">nexthacking</a>: NeXT hacking today with JB. || <a href="/recurse/tasks/investigate_tic80">investigate-tic80</a>: Some initial tic80 investigations. I want to see how feasible it is to hack the audio engine to play new synthesizers like my singing synthesizer. || <a href="/recurse/tasks/what_now_week6">what-now-week6</a>: I didn't really get around to this yesterday. || <a href="/recurse/tasks/bug_missing_nodes">bug-missing-nodes</a>: Bug hunting
 </p>
 <p><a href="#2024_06_27_08_04" id="2024_06_27_08_04">08:04</a>: Log started.</p>
-<p><a href="#2024_06_27_07_28" id="2024_06_27_07_28">07:28</a>: Get Sokol example working on new laptop #investigate-tic80</p>
-<div class="comment-block">
-<p>Precursor to getting tic-80 working. Oh wow that was easy. Little did I know I was 30 seconds away from getting this working last night.
-</p>
-</div>
 <p><a href="#2024_06_27_08_05" id="2024_06_27_08_05">08:05</a>: How easy is it to build tic-80? #investigate-tic80 #timelog:00:30:26</p>
 <div class="comment-block">
 <p>Source &lt;&lt;<a href="/recurse/dz/gamedev/tic80#github">gamedev/tic80/github</a>&gt;&gt;. 
@@ -60,21 +245,10 @@ in HTML.
 <p> If there is pipewire support for JACK that works with TIC-80, I'd probably want to use that to get sound working on my Linux box. Further reading &lt;&lt;<a href="/recurse/dz/audio#pipewire_docs">audio/pipewire_docs</a>&gt;&gt;.
 </p>
 </div>
-<p><a href="#2024_06_27_07_30" id="2024_06_27_07_30">07:30</a>: Back to tic-80 compilation on new laptop #investigate-tic80</p>
-<div class="comment-block">
-<p>Now that sokol example works, I think I figured out all the graphics issues
-</p>
-</div>
 <p><a href="#2024_06_27_08_38" id="2024_06_27_08_38">08:38</a>: Morning triage.</p>
-<p><a href="#2024_06_27_07_36" id="2024_06_27_07_36">07:36</a>: TIC-80 builds, runs tetris, no sound yet #investigate-tic80</p>
 <p><a href="#2024_06_27_08_48" id="2024_06_27_08_48">08:48</a>: Deprioritizing. #voxbox-shape-morphing</p>
 <div class="comment-block">
 <p>It's going to need to get done, but I can't have it in the priority bin like this.
-</p>
-</div>
-<p><a href="#2024_06_27_07_47" id="2024_06_27_07_47">07:47</a>: Sound works. Studying music demo. #investigate-tic80</p>
-<div class="comment-block">
-<p>I like the scale and form factor of this.
 </p>
 </div>
 <p><a href="#2024_06_27_08_49" id="2024_06_27_08_49">08:49</a>: I think I've done enough for this research #investigate-2d-gameengine</p>
@@ -86,7 +260,6 @@ in HTML.
 <p> There's always p5.js and friends for very quick rapid prototyping. I really need to convince myself to try using these for time constraints.
 </p>
 </div>
-<p><a href="#2024_06_27_08_08" id="2024_06_27_08_08">08:08</a>: trying to see where export is hanging #investigate-tic80</p>
 <p><a href="#2024_06_27_08_52" id="2024_06_27_08_52">08:52</a>: I really need to get this done soon. #bucket-initial-scoping</p>
 <div class="comment-block">
 <p>Basically, "A Blob Named Bucket" will most likely be a culmination of other mechanics I try out. 
@@ -96,194 +269,27 @@ in HTML.
 <p> You know what. I'm going to story-board the gameplay for bucket. That's what is missing.
 </p>
 </div>
-<p><a href="#2024_06_27_08_12" id="2024_06_27_08_12">08:12</a>: tried running in gdb and gdb crashed. musl issues? #investigate-tic80</p>
 <p><a href="#2024_06_27_08_55" id="2024_06_27_08_55">08:55</a>: Task created #bucket-storyboard #bucket-initial-scoping</p>
 <div class="comment-block">
 <p>A good follow-up to my initial scoping. I'm kind of paralyzed with tech stack choices, and I'm very limited with time, so boiling down game design is a good choice. I know how with a certain degree of accuracy how long pen and paper takes.
 </p>
 </div>
-<p><a href="#2024_06_27_08_44" id="2024_06_27_08_44">08:44</a>: tic80 export works on mac #investigate-tic80</p>
-<div class="comment-block">
-<p>The bundle includes the tic80 card and a wasm file. I have no idea where the wasm comes from. It's not a file included in the source, and there doesn't seem to be any clear indication where/how it is being generated. My best guess is that somewhere it gets made with emscripten because I see mentions of it when I grep for wasm-y things.
-</p>
-</div>
 <p><a href="#2024_06_27_08_58" id="2024_06_27_08_58">08:58</a>: Finished reading this chapter yesterday #react-describing-ui</p>
-<p><a href="#2024_06_27_09_39" id="2024_06_27_09_39">09:39</a>: At the hub.</p>
 <p><a href="#2024_06_27_09_00" id="2024_06_27_09_00">09:00</a>: Next react chapter: managing state #react-managing-state</p>
-<p><a href="#2024_06_27_09_40" id="2024_06_27_09_40">09:40</a>: Back to investigating missing nodes #bug-missing-nodes #timelog:01:25:41</p>
 <p><a href="#2024_06_27_09_01" id="2024_06_27_09_01">09:01</a>: poke demo moved back to main #demo-poke</p>
 <div class="comment-block">
 <p>Probably won't get to it until next week. This has been added to my priority group.
 </p>
 </div>
-<p><a href="#2024_06_27_09_41" id="2024_06_27_09_41">09:41</a>: Oh crap the ulitimate spinner is available</p>
-<div class="comment-block">
-<p>I missed my chance months ago (waited months for this). Can't afford it. Oh well. Still buying.
-</p>
-</div>
 <p><a href="#2024_06_27_09_03" id="2024_06_27_09_03">09:03</a>: Getting zulip check-in ready</p>
-<p><a href="#2024_06_27_09_52" id="2024_06_27_09_52">09:52</a>: =generate_graph_data.lua= and =genpage.lua= #bug-missing-nodes</p>
-<div class="comment-block">
-<p>These are the missing files
-</p>
-</div>
 <p><a href="#2024_06_27_09_28" id="2024_06_27_09_28">09:28</a>: Some NeXT research #nexthacking #timelog:00:07:08</p>
 <div class="comment-block">
 <p>See: &lt;&lt;<a href="/recurse/dz/retrocomputing#next">retrocomputing/next</a>&gt;&gt;</p>
 </div>
-<p><a href="#2024_06_27_09_55" id="2024_06_27_09_55">09:55</a>: Run =dz_wikigen.sh= to trigger debug message #bug-missing-nodes</p>
 <p><a href="#2024_06_27_09_39" id="2024_06_27_09_39">09:39</a>: Quick time looking at the missing nodes #bug-missing-nodes #timelog:00:17:01</p>
-<p><a href="#2024_06_27_09_57" id="2024_06_27_09_57">09:57</a>: The nodelist is not being created correctly. why? #bug-missing-nodes</p>
 <p><a href="#2024_06_27_10_00" id="2024_06_27_10_00">10:00</a>: NeXT-ing</p>
-<p><a href="#2024_06_27_10_00" id="2024_06_27_10_00">10:00</a>: genpage.pagedata: output nodes being made via params.nodelist #bug-missing-nodes</p>
-<div class="comment-block">
-<p>How is this being created?
-</p>
-</div>
 <p><a href="#2024_06_27_16_00" id="2024_06_27_16_00">16:00</a>: Presentations</p>
-<p><a href="#2024_06_27_10_00" id="2024_06_27_10_00">10:00</a>: Lua issues, debug flag is not working #bug-missing-nodes</p>
 <p><a href="#2024_06_27_20_30" id="2024_06_27_20_30">20:30</a>: Home</p>
-<p><a href="#2024_06_27_10_12" id="2024_06_27_10_12">10:12</a>: Lua function setting the global variable sets it to true somehow? #bug-missing-nodes</p>
-<p><a href="#2024_06_27_10_13" id="2024_06_27_10_13">10:13</a>: Oh wait, I was setting this #bug-missing-nodes</p>
-<p><a href="#2024_06_27_10_18" id="2024_06_27_10_18">10:18</a>: okay weird. the debug flag is being unset somewhere apparently #bug-missing-nodes</p>
-<div class="comment-block">
-<p>Not the problem I wanted to troubleshoot, but hey I need this for the visibility.
-</p>
-</div>
-<p><a href="#2024_06_27_10_22" id="2024_06_27_10_22">10:22</a>: more testing for visibility with traverse_node() #bug-missing-nodes</p>
-<div class="comment-block">
-<p>The debug mode flag is never set to true here. Confirmed with printing and filtering output. 
-</p>
-<p> Also confirmed that it doesn't matter if you're using the function <code>dbg</code> I made or checking the variable itself. It's the same. So, I'm pretty sure the <code>dbg</code> shortcut function is fine. 
-</p>
-<p> I need to be able to track down when this is being set, and then unset.
-</p>
-</div>
-<p><a href="#2024_06_27_10_29" id="2024_06_27_10_29">10:29</a>: the debug flag is definitely being set exactly once #bug-missing-nodes</p>
-<div class="comment-block">
-<p>I think what's happening is the variable is being copied over when it is loaded up in the module. Hoping to fix this by using a big global that can be read everywhere.
-</p>
-</div>
-<p><a href="#2024_06_27_10_35" id="2024_06_27_10_35">10:35</a>: Okay, global debug flag didn't work. Rethinking approach #bug-missing-nodes</p>
-<div class="comment-block">
-<p>This is NOT what I'm debugging. I just need visibility.
-</p>
-</div>
-<p><a href="#2024_06_27_10_39" id="2024_06_27_10_39">10:39</a>: Crap. I was setting the debug flag too late. Oh well. #bug-missing-nodes</p>
-<div class="comment-block">
-<p>I have a clumsier approach now, but it works, and I've wasted too much time chasing this pre-bug to improve it.
-</p>
-</div>
-<p><a href="#2024_06_27_10_42" id="2024_06_27_10_42">10:42</a>: Missing node names show up in input node list supplied to genpage #bug-missing-nodes</p>
-<div class="comment-block">
-<p>Confirmed that the nodes do come up, but they aren't being traversed for whatever reason.
-</p>
-</div>
-<p><a href="#2024_06_27_10_44" id="2024_06_27_10_44">10:44</a>: Do missing nodes show up in topsort? #bug-missing-nodes</p>
-<p><a href="#2024_06_27_10_48" id="2024_06_27_10_48">10:48</a>: Topsort isn't returning enough nodes. Why? #bug-missing-nodes</p>
-<div class="comment-block">
-<p>should be 33, but I'm getting 20.
-</p>
-</div>
-<p><a href="#2024_06_27_11_17" id="2024_06_27_11_17">11:17</a>: Let's find ou the missing nodes #bug-missing-nodes</p>
-<div class="comment-block">
-<p>I tried looking for something to make sense in the code, but I can't yet see a pattern for what is there and what isn't there.
-</p>
-</div>
-<p><a href="#2024_06_27_11_21" id="2024_06_27_11_21">11:21</a>: Missing nodes seem to line up with the missing nodes on page #bug-missing-nodes</p>
-<div class="comment-block">
-<p>Clocking out for now
-</p>
-</div>
-<p><a href="#2024_06_27_13_34" id="2024_06_27_13_34">13:34</a>: Troubleshooting tic80 export on thinkpad #investigate-tic80 #timelog:00:44:37</p>
-<p><a href="#2024_06_27_13_42" id="2024_06_27_13_42">13:42</a>: onExportHTML call seems to return hmmm #investigate-tic80</p>
-<div class="comment-block">
-<p>printf-ing to console works, even if gdb crashes
-</p>
-</div>
-<p><a href="#2024_06_27_13_45" id="2024_06_27_13_45">13:45</a>: =tic_net_get()=: that doesn't sound great #investigate-tic80</p>
-<div class="comment-block">
-<p>Sounds like it might be trying to download something from the internet? Yeah, that could be a problem here.
-</p>
-</div>
-<p><a href="#2024_06_27_13_51" id="2024_06_27_13_51">13:51</a>: =tic_net_get()= might not be getting called #investigate-tic80</p>
-<div class="comment-block">
-<p>Firslty, the printf I placed there isn't showing up. Secondly, it makes a call to <code>empscripten_fetch</code>, which I do not (think I) have. 
-</p>
-<p> Maybe it is defined elsewhere? 
-</p>
-<p> Ah, there are multiple definitions here. Wonder which one is the actual one.
-</p>
-</div>
-<p><a href="#2024_06_27_13_57" id="2024_06_27_13_57">13:57</a>: =tic_net_get()= is an empty function. #investigate-tic80</p>
-<div class="comment-block">
-<p>The tic cart loaders are pre-compiled wasm files. The path is <code>/export/1.2-dev/html</code>.
-</p>
-</div>
-<p><a href="#2024_06_27_14_08" id="2024_06_27_14_08">14:08</a>: The tic cart loader, as far as I can tell, is closed source. #investigate-tic80</p>
-<div class="comment-block">
-<p>Basically, HTML export works by fetching from a URL. This downloads a zipfile that already has the wasm in there. Exporting is simply a matter of dropping that TIC file in the in the zip file.
-</p>
-</div>
-<p><a href="#2024_06_27_14_11" id="2024_06_27_14_11">14:11</a>: Options moving forward #investigate-tic80</p>
-<div class="comment-block">
-<p>So, it's looking like doing any kind of hacking on this would be a fairly ambitious task that would take up most of my time. It looks like this wasm file is the only thing I have. What I'd like to do is to somehow patch it, potentially. And get it to load in custom code for audio playback. 
-</p>
-<p> It's not a no, though it would dramatically change what it is I came here to do. Instead of doing funny vocal synth stuff, I'd be going deep into trying to reverse engineer this thing. Feels very much in the spirit of RC. And this is more motivating to me than more frontend-y stuff. There may be less polished things to show, though.
-</p>
-</div>
-<p><a href="#2024_06_27_14_21" id="2024_06_27_14_21">14:21</a>: Looking into wasm2wat #investigate-wabt #timelog:00:22:34</p>
-<div class="comment-block">
-<p>Needed for reverse engineering tic80 wasm bundle. 
-</p>
-<p> I love how easy it was to build, and the tools look very neat.
-</p>
-</div>
-<p><a href="#2024_06_27_14_45" id="2024_06_27_14_45">14:45</a>: thoughts on reverse engineering tic80 #investigate-tic80</p>
-<div class="comment-block">
-<p>Using this to make any sense of tic80 feels like something that would take me maybe months to a year to do maybe. Hacking the tic80 source code itself would take less time. I'd probably have better luck building my own cartridge loader. 
-</p>
-<p> I think if I wanted to go deep on wasm rather than frontend stacks, I'd definitely want to look into this. This stuff sparks joy more than javascript/React.
-</p>
-</div>
-<p><a href="#2024_06_27_14_46" id="2024_06_27_14_46">14:46</a>: how is a tic cart saved? #investigate-tic80 #timelog:00:22:00</p>
-<div class="comment-block">
-<p>I am pretty sure it's lua5.3, based on grepping for version for the built in luajit. 
-</p>
-<p> Functions defined in <code>cart.c</code>. Looking at <code>music.tic</code>, the code for the seems to be at the very bottom.
-</p>
-</div>
-<p><a href="#2024_06_27_16_48" id="2024_06_27_16_48">16:48</a>: The Big Plans #what-now-week6 #timelog:00:26:42</p>
-<div class="comment-block">
-<p>Ink on paper.
-</p>
-</div>
-<p><a href="#2024_06_27_17_20" id="2024_06_27_17_20">17:20</a>: some triage and organizing</p>
-<p><a href="#2024_06_27_17_23" id="2024_06_27_17_23">17:23</a>: Friday concluding thoughts #what-now-week6 #timelog:00:27:00</p>
-<div class="comment-block">
-<p>I want to focus on designing more musical experiences using my vocal synthesizer, that run in the browser. 
-</p>
-<p> This, however, is not enough of a project, and risks being too design oriented rather than technically oriented. I am also quite seriously considering putting some work into hacking my vocal synthesis DSP written in Rust into tic80. 
-</p>
-<p> Why tic80? I like the aesthetic. And hacking the software's source code seems to very much be in the spirit of RC. It is also possible to export to WASM, but not with the hacks. As a stretch, it may be possible to somehow hack the wasm TIC cartridge wasm blob, or even write a custom TIC loader based on the TIC-80 codebase. 
-</p>
-<p> Design and presentation is still and important factor. There will be two kinds musical interactions: ensemble and solo. The main ensemble sining project will probably be something similar to blob opera. The main solo singing project will be "A Blob Named Bucket", a chittering singinig virtual pet that you have to coax out of hiding with food. 
-</p>
-<p> A Blob Named Bucket will be the more complicated project, requiring a procedurally generated critter generator, and a character engine simulator Bucket's behavior. For this reason, these components will be broken up into smaller self-contained demos. These need to be self contained because it's likely I may not be able to get to the final project. 
-</p>
-<p> The ensemble demo will probably just be for the web using p5, and will building off of the chords demo I made in the first half. 
-</p>
-<p> TIC-80 demos will do their best to follow some of the ideas in the p5 demos. Could be thought of as "redux" versions? I want to do my best to refine the mechanics of these demos, reduce until they are distilled into simple elegant forms of sonic interaction. 
-</p>
-<p> Tooling will need to be made as well. These will probably be HTML/WASM, and for practice, I will use React for these.
-</p>
-</div>
-<p><a href="#2024_06_27_17_38" id="2024_06_27_17_38">17:38</a>: Careers strategy #what-now-week6 #what-now-week7</p>
-<div class="comment-block">
-<p>I did not think about this too hard for this. That's what next week can be for?
-</p>
-</div>
-<p><a href="#2024_06_27_17_40" id="2024_06_27_17_40">17:40</a>: End of planning in week6 #what-now-week6</p>
 </p>
 
 <h3><a href="#2024_06_26" id="2024_06_26">2024-06-26</a> Day 38.</h3>
