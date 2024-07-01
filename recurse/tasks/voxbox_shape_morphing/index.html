@@ -16,6 +16,60 @@ task id: voxbox-shape-morphing
 <p>It's going to need to get done, but I can't have it in the priority bin like this.
 </p>
 </div>
+<p><a href="#2024_06_30_09_52" id="2024_06_30_09_52">2024-06-30 09:52</a>: core mechanic for this shouldn't be too hard #voxbox-shape-morphing</p>
+<p><a href="#2024_06_30_11_37" id="2024_06_30_11_37">2024-06-30 11:37</a>: Initial voxbox-ing setup #voxbox-shape-morphing</p>
+<p><a href="#2024_06_30_11_39" id="2024_06_30_11_39">2024-06-30 11:39</a>: Oh, right. I need to build mplayer form source #voxbox-shape-morphing #mplayer-jack-thinkpad</p>
+<div class="comment-block">
+<p>This thinkpad isn't fully provisioned yet. Upstream mplayer doesn't have jack support, so I need to build it from source. 
+</p>
+<p> I remember this taking a while. Uh, maybe I should look at other things. 
+</p>
+<p> Nevermind? It just finsihed as I wrote this. That's not a great sign. 
+</p>
+<p> Ran into build issues. Great. Downloading from git, using the APKBUILD as hints. 
+</p>
+<p> MPlayer is kinda SVN? But this build script is using git?
+</p>
+</div>
+<p><a href="#2024_06_30_13_51" id="2024_06_30_13_51">2024-06-30 13:51</a>: Finally getting around to implementing initial shape morphing #voxbox-shape-morphing #timelog:00:09:00</p>
+<div class="comment-block">
+<p>I think...
+</p>
+</div>
+<p><a href="#2024_06_30_13_58" id="2024_06_30_13_58">2024-06-30 13:58</a>: This isn't going to work the way I thought, and I'm happy about that. #voxbox-shape-morphing</p>
+<div class="comment-block">
+<p>Initially I was going to add a small method to the tract that linearly interpolates two DRM tract shapes, given a position. BUT, the DRM shapes aren't in there. So, I actually have to plan out a new interface.
+</p>
+</div>
+<p><a href="#2024_06_30_14_00" id="2024_06_30_14_00">2024-06-30 14:00</a>: Working out interface (ink and paper) #voxbox-shape-morphing #timelog:00:14:34</p>
+<p><a href="#2024_06_30_14_48" id="2024_06_30_14_48">2024-06-30 14:48</a>: Re-examining GSG code. Generics possible? #voxbox-shape-morphing #timelog:00:25:03</p>
+<div class="comment-block">
+<p>Basically, I want to generalize the values that can be interpolated. It is currently set to be 32-bit floats, BUT, it'd be nice to make them generics. That way, the shape morphing can work on those generics.
+</p>
+</div>
+<p><a href="#2024_06_30_15_01" id="2024_06_30_15_01">2024-06-30 15:01</a>: some initial refactoring completed #voxbox-shape-morphing</p>
+<div class="comment-block">
+<p>The core Gesture and GestureVertex structs take in generic arguments, with the rest hardcoded to take in f32. This was much less friction than I expected. 
+</p>
+<p> Next steps: have the linear gesture signal generator take in generics as well. After that, the generics can be refit to take in shapes. Somehow. (Indices? references?)
+</p>
+</div>
+<p><a href="#2024_06_30_19_37" id="2024_06_30_19_37">2024-06-30 19:37</a>: refactor linear gesture to take in generics #voxbox-shape-morphing #timelog:00:21:41</p>
+<div class="comment-block">
+<p>Okay that didn't work.
+</p>
+</div>
+<p><a href="#2024_06_30_19_49" id="2024_06_30_19_49">2024-06-30 19:49</a>: stop writing code, think about the problem. Why generics? #voxbox-shape-morphing</p>
+<div class="comment-block">
+<p>This gesture is currently hard-coded to work with floats as values. Which, most of the time, is fine. However, for shape morphing, the values that need to be interpolated aren't floating point values, but tables. 
+</p>
+<p> The hope with generics was to be able to elegantly use the existing linear gesture logic to create gestures that morphed between DRM shapes. 
+</p>
+<p> Things would be set up in such a way that when <code>tick()</code> would be called, it would know to interplate between two DRM tables and store it somewhere in another table. That table could then be taken and passed to the vocal tract. 
+</p>
+<p> Stopping for now because I've had enough of a day.
+</p>
+</div>
 </div>
 </body>
 </html>

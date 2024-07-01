@@ -128,6 +128,56 @@ task id: bug-missing-nodes
 <p>This is insightful: the cpp node shows up 2/3 times. The missing node here is <code>magsign_cpp</code>. So, <code>cpp</code> might be forever missing if <code>magsign_cpp</code> is missing. That's enough for today.
 </p>
 </div>
+<p><a href="#2024_06_30_18_17" id="2024_06_30_18_17">2024-06-30 18:17</a>: Another session of troubleshooting #bug-missing-nodes #timelog:00:51:53</p>
+<p><a href="#2024_06_30_18_24" id="2024_06_30_18_24">2024-06-30 18:24</a>: Ah, the node IDs changed I think. good for me. #bug-missing-nodes</p>
+<div class="comment-block">
+<p>Actually not too much of an issue, I have enough printing happening now that I can update when/if needed.
+</p>
+</div>
+<p><a href="#2024_06_30_18_29" id="2024_06_30_18_29">2024-06-30 18:29</a>: Examining all the connections now #bug-missing-nodes</p>
+<div class="comment-block">
+<p>The <code>magsign_cpp</code> is what we are investigating. What would need to happen for it to not show up in <code>cpp</code>?
+</p>
+</div>
+<p><a href="#2024_06_30_18_33" id="2024_06_30_18_33">2024-06-30 18:33</a>: =magsign_struct= is the only child that doesn't exist #bug-missing-nodes</p>
+<div class="comment-block">
+<p>Not sure if that is helpful or not. 
+</p>
+<p> Of the three, It's also the only one that only shows up once as a left-node (it only has one parent node). That parent is <code>magsign_cpp</code>.
+</p>
+</div>
+<p><a href="#2024_06_30_18_39" id="2024_06_30_18_39">2024-06-30 18:39</a>: It's probably the external nodes. #bug-missing-nodes</p>
+<div class="comment-block">
+<p>As we go down this tree, we are approaching the only two external nodes here: <code>rust/std</code> and <code>rust/std_iter_zip</code>. The TOC generates the links just fine, but it just seems like anything that has those links doesn't want to show up.
+</p>
+</div>
+<p><a href="#2024_06_30_18_40" id="2024_06_30_18_40">2024-06-30 18:40</a>: Also, edges for those external are returning NULL. #bug-missing-nodes</p>
+<div class="comment-block">
+<p>What's up with that?
+</p>
+</div>
+<p><a href="#2024_06_30_18_43" id="2024_06_30_18_43">2024-06-30 18:43</a>: People of Earth, we have our smoking gun. #bug-missing-nodes</p>
+<div class="comment-block">
+<p>Removing those external nodes causes it to render properly.
+</p>
+</div>
+<p><a href="#2024_06_30_18_47" id="2024_06_30_18_47">2024-06-30 18:47</a>: Working out another hunch #bug-missing-nodes</p>
+<div class="comment-block">
+<p>I don't think the edges are supposed to be nil, even though they are here. 
+</p>
+<p> I have another hunch: there is a local node called "rust", and the namespace for these external nodes also starts with "rust". Going to re-introduce the external nodes, and change the local "rust" node to be "rustrust". It could be that there is some faulty logic related to string matching somewhere. 
+</p>
+<p> Neither worked. Okay, so I have to check out those nil edges now.
+</p>
+</div>
+<p><a href="#2024_06_30_18_51" id="2024_06_30_18_51">2024-06-30 18:51</a>: Tracking down those nil edges. #bug-missing-nodes</p>
+<p><a href="#2024_06_30_19_00" id="2024_06_30_19_00">2024-06-30 19:00</a>: I think I did it. #bug-missing-nodes</p>
+<div class="comment-block">
+<p>While populating a local copy of the edges table (to be pruned later by the topsort algo), I added a check to see if the left node id shows up in the nodes list. If it doesn't, it indicates that it is an externally linked node outside of the namespace. 
+</p>
+<p> TL;DR: Check for foreign nodes.
+</p>
+</div>
 </div>
 </body>
 </html>
