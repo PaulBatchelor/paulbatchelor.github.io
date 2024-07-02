@@ -235,7 +235,7 @@ pub&nbsp;struct&nbsp;Port&nbsp;{
 impl&nbsp;Default&nbsp;for&nbsp;Port&nbsp;{
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;fn&nbsp;default()&nbsp;->&nbsp;Self&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;fn&nbsp;default()&nbsp;-&gt;&nbsp;Self&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;voltages&nbsp;=&nbsp;[0.0;&nbsp;PORT_MAX_CHANNELS];
@@ -316,7 +316,7 @@ pub&nbsp;struct&nbsp;Light&nbsp;{
 //&nbsp;A&nbsp;wrapper&nbsp;type&nbsp;over&nbsp;a&nbsp;reference&nbsp;to&nbsp;a&nbsp;Port&nbsp;inside&nbsp;the&nbsp;Rack&nbsp;engine.
 </div>
 <div>
-pub&nbsp;struct&nbsp;InputPort<'a>&nbsp;{
+pub&nbsp;struct&nbsp;InputPort&lt;'a&gt;&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;inner:&nbsp;&'a&nbsp;Port,
@@ -328,13 +328,13 @@ pub&nbsp;struct&nbsp;InputPort<'a>&nbsp;{
 <br>
 </div>
 <div>
-impl<'a>&nbsp;InputPort<'a>&nbsp;{
+impl&lt;'a&gt;&nbsp;InputPort&lt;'a&gt;&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;This&nbsp;is&nbsp;a&nbsp;safe&nbsp;interface,&nbsp;which&nbsp;is&nbsp;mostly&nbsp;for&nbsp;unit&nbsp;tests.
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;wrap(port:&nbsp;&'a&nbsp;Port)&nbsp;->&nbsp;Self&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;wrap(port:&nbsp;&'a&nbsp;Port)&nbsp;-&gt;&nbsp;Self&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;InputPort&nbsp;{&nbsp;inner:&nbsp;port&nbsp;}
@@ -349,7 +349,7 @@ impl<'a>&nbsp;InputPort<'a>&nbsp;{
 &nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;Construct&nbsp;an&nbsp;InputPort&nbsp;from&nbsp;a&nbsp;raw&nbsp;pointer&nbsp;from&nbsp;across&nbsp;the&nbsp;FFI.
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;from_raw_port(port:&nbsp;*const&nbsp;Port)&nbsp;->&nbsp;Self&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;from_raw_port(port:&nbsp;*const&nbsp;Port)&nbsp;-&gt;&nbsp;Self&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;inner&nbsp;=&nbsp;unsafe&nbsp;{&nbsp;&*port&nbsp;};
@@ -373,7 +373,7 @@ impl<'a>&nbsp;InputPort<'a>&nbsp;{
 &nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;few&nbsp;of&nbsp;these&nbsp;in&nbsp;a&nbsp;row.
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;from_raw_port_index(port:&nbsp;*const&nbsp;Port,&nbsp;index:&nbsp;usize)&nbsp;->&nbsp;Self&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;from_raw_port_index(port:&nbsp;*const&nbsp;Port,&nbsp;index:&nbsp;usize)&nbsp;-&gt;&nbsp;Self&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;inner&nbsp;=&nbsp;unsafe&nbsp;{
@@ -403,7 +403,7 @@ impl<'a>&nbsp;InputPort<'a>&nbsp;{
 &nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;isn't&nbsp;connected&nbsp;(i.e.&nbsp;has&nbsp;0&nbsp;channels).
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;get_voltage_monophonic(&self)&nbsp;->&nbsp;Option<f32>&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;get_voltage_monophonic(&self)&nbsp;-&gt;&nbsp;Option&lt;f32&gt;&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.as_slice().first().copied()
@@ -421,10 +421,10 @@ impl<'a>&nbsp;InputPort<'a>&nbsp;{
 &nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;0&nbsp;channels.
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;get_polyphony_count(&self)&nbsp;->&nbsp;usize&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;get_polyphony_count(&self)&nbsp;-&gt;&nbsp;usize&nbsp;{
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug_assert!(self.inner.channels&nbsp;<=&nbsp;PORT_MAX_CHANNELS&nbsp;as&nbsp;u8);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug_assert!(self.inner.channels&nbsp;&lt;=&nbsp;PORT_MAX_CHANNELS&nbsp;as&nbsp;u8);
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.inner.channels&nbsp;as&nbsp;usize
@@ -439,7 +439,7 @@ impl<'a>&nbsp;InputPort<'a>&nbsp;{
 &nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;Get&nbsp;all&nbsp;of&nbsp;the&nbsp;voltages&nbsp;as&nbsp;a&nbsp;slice.
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;as_slice(&self)&nbsp;->&nbsp;&[f32]&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;as_slice(&self)&nbsp;-&gt;&nbsp;&[f32]&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;n&nbsp;=&nbsp;self.get_polyphony_count();
@@ -457,7 +457,7 @@ impl<'a>&nbsp;InputPort<'a>&nbsp;{
 <br>
 </div>
 <div>
-pub&nbsp;struct&nbsp;OutputPort<'a>&nbsp;{
+pub&nbsp;struct&nbsp;OutputPort&lt;'a&gt;&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;inner:&nbsp;&'a&nbsp;mut&nbsp;Port,
@@ -469,10 +469,10 @@ pub&nbsp;struct&nbsp;OutputPort<'a>&nbsp;{
 <br>
 </div>
 <div>
-impl<'a>&nbsp;OutputPort<'a>&nbsp;{
+impl&lt;'a&gt;&nbsp;OutputPort&lt;'a&gt;&nbsp;{
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;wrap(port:&nbsp;&'a&nbsp;mut&nbsp;Port)&nbsp;->&nbsp;Self&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;wrap(port:&nbsp;&'a&nbsp;mut&nbsp;Port)&nbsp;-&gt;&nbsp;Self&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OutputPort&nbsp;{&nbsp;inner:&nbsp;port&nbsp;}
@@ -484,7 +484,7 @@ impl<'a>&nbsp;OutputPort<'a>&nbsp;{
 <br>
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;from_raw_port(port:&nbsp;*mut&nbsp;Port)&nbsp;->&nbsp;Self&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;from_raw_port(port:&nbsp;*mut&nbsp;Port)&nbsp;-&gt;&nbsp;Self&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;inner&nbsp;=&nbsp;unsafe&nbsp;{&nbsp;&mut&nbsp;*port&nbsp;};
@@ -499,7 +499,7 @@ impl<'a>&nbsp;OutputPort<'a>&nbsp;{
 <br>
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;from_raw_port_index(port:&nbsp;*mut&nbsp;Port,&nbsp;index:&nbsp;usize)&nbsp;->&nbsp;Self&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;from_raw_port_index(port:&nbsp;*mut&nbsp;Port,&nbsp;index:&nbsp;usize)&nbsp;-&gt;&nbsp;Self&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;inner&nbsp;=&nbsp;unsafe&nbsp;{
@@ -625,7 +625,7 @@ impl<'a>&nbsp;OutputPort<'a>&nbsp;{
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;n&nbsp;=&nbsp;other.get_polyphony_count();
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug_assert!(n&nbsp;<=&nbsp;PORT_MAX_CHANNELS);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug_assert!(n&nbsp;&lt;=&nbsp;PORT_MAX_CHANNELS);
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.set_polyphony_count(n);
@@ -643,7 +643,7 @@ impl<'a>&nbsp;OutputPort<'a>&nbsp;{
 &nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;should&nbsp;already&nbsp;have&nbsp;been&nbsp;set&nbsp;before&nbsp;calling&nbsp;this.
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;as_slice_mut(&mut&nbsp;self)&nbsp;->&nbsp;&mut&nbsp;[f32]&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;as_slice_mut(&mut&nbsp;self)&nbsp;-&gt;&nbsp;&mut&nbsp;[f32]&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;n&nbsp;=&nbsp;self.inner.channels&nbsp;as&nbsp;usize;
@@ -664,13 +664,13 @@ impl<'a>&nbsp;OutputPort<'a>&nbsp;{
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;n&nbsp;=&nbsp;voltages.len();
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert!(n&nbsp;<=&nbsp;PORT_MAX_CHANNELS);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert!(n&nbsp;&lt;=&nbsp;PORT_MAX_CHANNELS);
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.set_polyphony_count(n);
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;n&nbsp;>&nbsp;0&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;n&nbsp;&gt;&nbsp;0&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.as_slice_mut().copy_from_slice(voltages)
@@ -688,7 +688,7 @@ impl<'a>&nbsp;OutputPort<'a>&nbsp;{
 <br>
 </div>
 <div>
-pub&nbsp;struct&nbsp;ModuleLight<'a>&nbsp;{
+pub&nbsp;struct&nbsp;ModuleLight&lt;'a&gt;&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;inner:&nbsp;&'a&nbsp;mut&nbsp;Light,
@@ -700,7 +700,7 @@ pub&nbsp;struct&nbsp;ModuleLight<'a>&nbsp;{
 <br>
 </div>
 <div>
-impl&nbsp;ModuleLight<'_>&nbsp;{
+impl&nbsp;ModuleLight&lt;'_&gt;&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;set_brightness(&mut&nbsp;self,&nbsp;brightness:&nbsp;f32)&nbsp;{
@@ -718,7 +718,7 @@ impl&nbsp;ModuleLight<'_>&nbsp;{
 <br>
 </div>
 <div>
-pub&nbsp;struct&nbsp;ModuleParam<'a>&nbsp;{
+pub&nbsp;struct&nbsp;ModuleParam&lt;'a&gt;&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;inner:&nbsp;&'a&nbsp;Param,
@@ -730,10 +730,10 @@ pub&nbsp;struct&nbsp;ModuleParam<'a>&nbsp;{
 <br>
 </div>
 <div>
-impl&nbsp;ModuleParam<'_>&nbsp;{
+impl&nbsp;ModuleParam&lt;'_&gt;&nbsp;{
 </div>
 <div>
-&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;get_value(&self)&nbsp;->&nbsp;f32&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;pub&nbsp;fn&nbsp;get_value(&self)&nbsp;-&gt;&nbsp;f32&nbsp;{
 </div>
 <div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.inner.value
