@@ -17,6 +17,9 @@ in HTML.
 </p>
 <p><ul id="top">
 <li>
+<a href="#2024_07_03">2024-07-03</a> Day 45. Jitter, Summer 2s First day in Hub
+</li>
+<li>
 <a href="#2024_07_02">2024-07-02</a> Day 44. Initial Tiny Creature Sounds, MIDI knobs, slightly more typescript, Zig
 </li>
 <li>
@@ -149,6 +152,151 @@ in HTML.
 <a href="#2024_05_20">2024-05-20</a> Day 1. First day of recurse. Organize.
 </li>
 </ul>
+</p>
+
+<h3><a href="#2024_07_03" id="2024_07_03">2024-07-03</a> Day 45. Jitter, Summer 2s First day in Hub</h3>
+
+<a href="#top">jump to top</a>
+<p>37 days left of batch. 
+</p>
+<p> Prev: Tiny Creature Sounds / Told Told Some People About It / Then I installed zig 
+</p>
+<p> Next: || <a href="/recurse/tasks/create_chatter_sounds">create-chatter-sounds</a>: Build up some jitter constructs. || <a href="/recurse/tasks/add_demos_page">add-demos-page</a>: Quickly made a demos page with links. || <a href="/recurse/tasks/react_managing_state">react-managing-state</a>: Most likely will have time to do some reading on this. || <a href="/recurse/tasks/resume_setup">resume-setup</a>: Building the metadata structure out more. || <a href="/recurse/tasks/dagzet_lists">dagzet-lists</a>: Implement ordered lists in dagzet (needed for dagzet setup).
+</p>
+<p><a href="#2024_07_03_07_59" id="2024_07_03_07_59">07:59</a>: Adding some words to landing page</p>
+<p><a href="#2024_07_03_08_00" id="2024_07_03_08_00">08:00</a>: Morning triage.</p>
+<p><a href="#2024_07_03_08_08" id="2024_07_03_08_08">08:08</a>: I want to build some jitter constructs today #create-chatter-sounds</p>
+<div class="comment-block">
+<p>The first will be a randi like module clocked with an external phasor. The second will be a phasor whose rate can be randomized every period. Together, they can build a pretty decent jitter signal. 
+</p>
+<p> I'll probably be extracting my LCG logic into an RNG module as well.
+</p>
+</div>
+<p><a href="#2024_07_03_08_10" id="2024_07_03_08_10">08:10</a>: Going to tackle this this morning #add-demos-page</p>
+<p><a href="#2024_07_03_08_11" id="2024_07_03_08_11">08:11</a>: Ordered lists in dagzet needed for resume #resume-setup #dagzet-lists</p>
+<div class="comment-block">
+<p>I know, I know, I'm overengineering this.
+</p>
+</div>
+<p><a href="#2024_07_03_08_17" id="2024_07_03_08_17">08:17</a>: Kickstart: way to set up neovim with LSP? #investigate-kickstart-neovim</p>
+<div class="comment-block">
+<p>Dan mentioned using VSCode again, and I'm inclined to take his advice. However, before I try that, I want to see if I can get some decent LSP things working with NeoVim. Would be especially helpful if I can get it running on this Alpine thinkpad. 
+</p>
+<p> Found Kickstart while trying to google "typescript in neovim". This was the other thing mentioned too: <a href="https://github.com/pmizio/typescript-tools.nvim">https://github.com/pmizio/typescript-tools.nvim</a>.
+</p>
+</div>
+<p><a href="#2024_07_03_08_21" id="2024_07_03_08_21">08:21</a>: Getting ready to publish.</p>
+<p><a href="#2024_07_03_08_36" id="2024_07_03_08_36">08:36</a>: Start implementing ordered lists in dagzet #dagzet-lists #timelog:00:45:56</p>
+<div class="comment-block">
+<p>As reference, there is my resume dagzet code which has some prototype syntax.
+</p>
+</div>
+<p><a href="#2024_07_03_08_35" id="2024_07_03_08_35">08:35</a>: I really need to rewrite dagzet #dagzet-rust</p>
+<div class="comment-block">
+<p>My lua implementation was always designed to just be a prototype, and nowadays it's getting quite heavy. Now that I'm a bit more familiar with the language, I don't think it'd be too difficult to build it in Rust, tbh. I think the standard library has enough rich data types that it should be pretty straightforward.
+</p>
+</div>
+<p><a href="#2024_07_03_08_52" id="2024_07_03_08_52">08:52</a>: Now I need to think about table schema #dagzet-lists</p>
+<div class="comment-block">
+<p>I think I know what I want in the schema, but it comes down to naming. Working out the words here. 
+</p>
+<p> A list belongs to a node, and has items in the list, which are other nodes in the current namespace. Each item has a position in the list, which is known. I will want these positions to be zero-indexed.
+</p>
+</div>
+<p><a href="#2024_07_03_09_05" id="2024_07_03_09_05">09:05</a>: I am inconsistent with design philosophy here #dagzet-lists</p>
+<div class="comment-block">
+<p>This approach I'm using for representing lists is more SQL-y compared to say, how I'm handling <code>dz_lines</code>. I'm using more rows: each list item gets a row with a position. In theory, I should be able to reconstruct the list using some join and amalgamation operation in vanilla SQL. 
+</p>
+<p> By comparison, the other parts of this code represent lists as JSON arrays encoded as strings. SQLite does come with JSON bindings now by default, so it seems this is reasonably portable. But it does require that extra JSON parser, and a part of me wonders if that was the right decision. 
+</p>
+<p> So, consider this an experiement. I'll have both: more SQL-driven and more JSON-driven, and I'll see which one feels better over time.
+</p>
+</div>
+<p><a href="#2024_07_03_09_10" id="2024_07_03_09_10">09:10</a>: Making SQL query to reproduce the list #dagzet-lists</p>
+<div class="comment-block">
+<p>Nice! There was a double join on the same table I had to do and I pretty much just guessed it. 
+</p>
+<p> The query I made: 
+<pre><code>SELECT dz_nodes.name, group_concat(itemlist.name) FROM dz_lists
+INNER JOIN dz_nodes on dz_nodes.id == dz_lists.node,
+dz_nodes as itemlist on itemlist.id == dz_lists.item
+GROUP BY dz_nodes.name
+ORDER BY dz_lists.position;</pre></code>
+</p>
+</div>
+<p><a href="#2024_07_03_09_35" id="2024_07_03_09_35">09:35</a>: Off to make a simple RNG module #create-chatter-sounds #timelog:00:07:07</p>
+<p><a href="#2024_07_03_09_41" id="2024_07_03_09_41">09:41</a>: Implementing randi #create-chatter-sounds #timelog:00:17:31</p>
+<p><a href="#2024_07_03_09_59" id="2024_07_03_09_59">09:59</a>: Testing random line on chatter example #create-chatter-sounds #timelog:00:08:54</p>
+<p><a href="#2024_07_03_10_09" id="2024_07_03_10_09">10:09</a>: Working out jitter line #create-chatter-sounds</p>
+<div class="comment-block">
+<p>An ideal jitter line would be a random line segment clocked a phasor that some kind of variable fluctuation in timing. But how does that phasor's rate get controlled? 
+</p>
+<p> The best answer I can come up with is to have a specialized phasor whose rate can be smoothly randomized within a range. This, combined with the random line generator made previously, would build up the components for a jitter line generator. 
+</p>
+<p> As a test, this random phasor could be used on the chatter test to modulate how quickly the shapes are changing.
+</p>
+</div>
+<p><a href="#2024_07_03_10_18" id="2024_07_03_10_18">10:18</a>: Building out random phasor #create-chatter-sounds #timelog:00:21:22</p>
+<div class="comment-block">
+<p>Yes, I think I'm going to call it RandomPhasor. I'm going to copy and paste the phasor code for now, since there's not a lot of code. It just doesn't seem worth it to DRY it right now.
+</p>
+</div>
+<p><a href="#2024_07_03_10_53" id="2024_07_03_10_53">10:53</a>: Implementing Jitter, then that's enough of this for the day #create-chatter-sounds #timelog:00:19:03</p>
+<div class="comment-block">
+<p>This completes the idea I was thinking about
+</p>
+</div>
+<p><a href="#2024_07_03_11_50" id="2024_07_03_11_50">11:50</a>: Got roped into conversation, but clock is resumed #create-chatter-sounds</p>
+<p><a href="#2024_07_03_15_31" id="2024_07_03_15_31">15:31</a>: had lunch, lots of conversations, now on floor 5.</p>
+<p><a href="#2024_07_03_15_32" id="2024_07_03_15_32">15:32</a>: back to adding structure to resume. #resume-setup #timelog:00:40:44</p>
+<p><a href="#2024_07_03_15_50" id="2024_07_03_15_50">15:50</a>: I need to think about how I'm going to template this. #resume-setup</p>
+<div class="comment-block">
+<p>As a sidetrack, try to see how hard text templates
+</p>
+</div>
+<p><a href="#2024_07_03_16_16" id="2024_07_03_16_16">16:16</a>: This was a very unproductive 40 minutes. #resume-setup</p>
+<div class="comment-block">
+<p>I tried exploring go templates briefly. I don't think this is really going to help me. The data format is what is most important. I think I'm just going whip something up in janet, shell, or lua.
+</p>
+</div>
+<p><a href="#2024_07_03_17_59" id="2024_07_03_17_59">17:59</a>: After crashing at my place, Back at the hub.</p>
+<div class="comment-block">
+<p>Triaging, figuring out what to do next.
+</p>
+</div>
+<p><a href="#2024_07_03_18_02" id="2024_07_03_18_02">18:02</a>: Time to whip up a demo page. #add-demos-page #timelog:00:20:48</p>
+<div class="comment-block">
+<p>Oh. Looks like I had a placeholder page here already. 
+</p>
+<p> Ah, what makes this interesting is that these demos aren't wiki pages, can't use <code>ref</code>, and you can't have them be typical links either. 
+</p>
+<p> add a new janet function for creating these links called "pagelink" which doesn't do any checks.
+</p>
+</div>
+<p><a href="#2024_07_03_18_37" id="2024_07_03_18_37">18:37</a>: React Reading: Extracting State Logic into a Reducer #timelog:00:46:27</p>
+<p><a href="#2024_07_03_19_39" id="2024_07_03_19_39">19:39</a>: Evening Triaging</p>
+<p><a href="#2024_07_03_19_40" id="2024_07_03_19_40">19:40</a>: I keep putting this off. #demo-react-UI</p>
+<div class="comment-block">
+<p>Part of my hesitation with my initial "port it to react" is: how bulky will this end up being on my website? Do I even want it there? Does it even matter if it just is code that's here in my Recurse monorepo and nowhere else?
+</p>
+</div>
+<p><a href="#2024_07_03_19_42" id="2024_07_03_19_42">19:42</a>: Created "demos" taskgroup.</p>
+<div class="comment-block">
+<p>See: <a href="#">demos/taskgroups/demos</a>.
+</p>
+</div>
+<p><a href="#2024_07_03_19_45" id="2024_07_03_19_45">19:45</a>: Creating task to investigate size of react apps. #demo-react-UI #how-big-are-react-apps</p>
+<div class="comment-block">
+<p>One of my concerns with building a react app is that if I host these on my droplet, it's going to clog things up in and take space. What I want to know is: when I go through the process of minifying and exporting the code, how much space does it end up being? What goes into uploading and running this on my webserver? 
+</p>
+<p> My other concern (which I'm trying not to think about too hard about) is: my website is 99% static, and introducing JS could mean adding an attack surface to my website. Probably just being paranoid.
+</p>
+</div>
+<p><a href="#2024_07_03_19_49" id="2024_07_03_19_49">19:49</a>: two minutes. quick some haiku ideas.</p>
+<div class="comment-block">
+<p>built jitter signals / summer 2 conversations / then I napped a bit
+</p>
+</div>
 </p>
 
 <h3><a href="#2024_07_02" id="2024_07_02">2024-07-02</a> Day 44. Initial Tiny Creature Sounds, MIDI knobs, slightly more typescript, Zig</h3>

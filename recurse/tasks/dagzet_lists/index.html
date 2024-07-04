@@ -11,6 +11,44 @@
 <h1>Implement dagzet ordered lists</h1>
 task id: dagzet-lists
 </p>
+<p><a href="#2024_07_03_08_11" id="2024_07_03_08_11">2024-07-03 08:11</a>: Ordered lists in dagzet needed for resume #resume-setup #dagzet-lists</p>
+<div class="comment-block">
+<p>I know, I know, I'm overengineering this.
+</p>
+</div>
+<p><a href="#2024_07_03_08_36" id="2024_07_03_08_36">2024-07-03 08:36</a>: Start implementing ordered lists in dagzet #dagzet-lists #timelog:00:45:56</p>
+<div class="comment-block">
+<p>As reference, there is my resume dagzet code which has some prototype syntax.
+</p>
+</div>
+<p><a href="#2024_07_03_08_52" id="2024_07_03_08_52">2024-07-03 08:52</a>: Now I need to think about table schema #dagzet-lists</p>
+<div class="comment-block">
+<p>I think I know what I want in the schema, but it comes down to naming. Working out the words here. 
+</p>
+<p> A list belongs to a node, and has items in the list, which are other nodes in the current namespace. Each item has a position in the list, which is known. I will want these positions to be zero-indexed.
+</p>
+</div>
+<p><a href="#2024_07_03_09_05" id="2024_07_03_09_05">2024-07-03 09:05</a>: I am inconsistent with design philosophy here #dagzet-lists</p>
+<div class="comment-block">
+<p>This approach I'm using for representing lists is more SQL-y compared to say, how I'm handling <code>dz_lines</code>. I'm using more rows: each list item gets a row with a position. In theory, I should be able to reconstruct the list using some join and amalgamation operation in vanilla SQL. 
+</p>
+<p> By comparison, the other parts of this code represent lists as JSON arrays encoded as strings. SQLite does come with JSON bindings now by default, so it seems this is reasonably portable. But it does require that extra JSON parser, and a part of me wonders if that was the right decision. 
+</p>
+<p> So, consider this an experiement. I'll have both: more SQL-driven and more JSON-driven, and I'll see which one feels better over time.
+</p>
+</div>
+<p><a href="#2024_07_03_09_10" id="2024_07_03_09_10">2024-07-03 09:10</a>: Making SQL query to reproduce the list #dagzet-lists</p>
+<div class="comment-block">
+<p>Nice! There was a double join on the same table I had to do and I pretty much just guessed it. 
+</p>
+<p> The query I made: 
+<pre><code>SELECT dz_nodes.name, group_concat(itemlist.name) FROM dz_lists
+INNER JOIN dz_nodes on dz_nodes.id == dz_lists.node,
+dz_nodes as itemlist on itemlist.id == dz_lists.item
+GROUP BY dz_nodes.name
+ORDER BY dz_lists.position;</pre></code>
+</p>
+</div>
 </div>
 </body>
 </html>
