@@ -17,6 +17,9 @@ in HTML.
 </p>
 <p><ul id="top">
 <li>
+<a href="#2024_07_08">2024-07-08</a> Day 50. Week 8. More TIC80  code exploration, unexpected Wacom Tablet, staggered voice algorithm
+</li>
+<li>
 <a href="#2024_07_07">2024-07-07</a> Day 49. Mini drawing tablets, TIC-80 audio code
 </li>
 <li>
@@ -164,6 +167,119 @@ in HTML.
 <a href="#2024_05_20">2024-05-20</a> Day 1. First day of recurse. Organize.
 </li>
 </ul>
+</p>
+
+<h3><a href="#2024_07_08" id="2024_07_08">2024-07-08</a> Day 50. Week 8. More TIC80  code exploration, unexpected Wacom Tablet, staggered voice algorithm</h3>
+
+<a href="#top">jump to top</a>
+<p>32 days left of batch. 
+</p>
+<p> prev: TIC-80 Sound Code / Drawing tablets for music? / Planning next demo. 
+</p>
+<p> next: || <a href="/recurse/tasks/LC75">LC75</a>: Begin leetcode today I guess? || <a href="/recurse/tasks/investigate_tic80_audio">investigate-tic80-audio</a>: Get a better sense how the audio callback works, then create follow-ups. || <a href="/recurse/tasks/demo_react_UI">demo-react-UI</a>: continue getting WebAudio code ported to typescript. || <a href="/recurse/tasks/resume_setup">resume-setup</a>: Finishing touches I swear. || <a href="/recurse/tasks/consider_poke_follow_up">consider-poke-follow-up</a>: Create some feasible tasks today. 
+</p>
+<p> Ears have been quite blocked this weekend. Still blocked today.
+</p>
+<p><a href="#2024_07_08_08_03" id="2024_07_08_08_03">08:03</a>: Morning triage</p>
+<p><a href="#2024_07_08_08_15" id="2024_07_08_08_15">08:15</a>: Leetcode task created. #LC75</p>
+<p><a href="#2024_07_08_08_17" id="2024_07_08_08_17">08:17</a>: Try to get project links working today #resume-setup</p>
+<div class="comment-block">
+<p>Timebox it to about 30 minutes. Give it one last look, then send it to Jobs Chat.
+</p>
+</div>
+<p><a href="#2024_07_08_08_18" id="2024_07_08_08_18">08:18</a>: Downgrading shape morphing #voxbox-shape-morphing</p>
+<div class="comment-block">
+<p>The approach here isn't interactive enough, and I think I need to keep focusing on interaction. I'd rather have one mediocre vowel shape and interaction than several excellent vowel shapes and no interaction.
+</p>
+</div>
+<p><a href="#2024_07_08_08_27" id="2024_07_08_08_27">08:27</a>: GOing to try to make some follow-up poke tasks today  #consider-poke-follow-up</p>
+<p><a href="#2024_07_08_08_29" id="2024_07_08_08_29">08:29</a>: Been thinking a lot about the mechanics of this over the last few days #concept-concerto</p>
+<div class="comment-block">
+<p>Things involving Gesture mechanics. Specifically, the concept of getting some kind of "auto-accompaniment" to work with Gesture signal generator systems. Something something event scheduler. Might be good to write some things down.
+</p>
+</div>
+<p><a href="#2024_07_08_08_32" id="2024_07_08_08_32">08:32</a>: Writing better error handling for gendb</p>
+<p><a href="#2024_07_08_09_01" id="2024_07_08_09_01">09:01</a>: Phew. Okay. Now, we can publish.</p>
+<p><a href="#2024_07_08_09_10" id="2024_07_08_09_10">09:10</a>: TIC-80 investigations part 2. #investigate-tic80-audio #timelog:01:017:34</p>
+<p><a href="#2024_07_08_09_19" id="2024_07_08_09_19">09:19</a>: 8-bit audio. #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>I shouldn't be terribly surprised by this, but the output is 8-bit.
+</p>
+</div>
+<p><a href="#2024_07_08_09_24" id="2024_07_08_09_24">09:24</a>: 8khz 8-bit singing vocals don't sound too terrible</p>
+<div class="comment-block">
+<p>Tested on my linear gesture demo using SoX. The darker sound actually works favorably for this synthesizer. 
+</p>
+<p> Converting to LPC10 (via sox), however, sucks. The pitch is wrong.
+</p>
+</div>
+<p><a href="#2024_07_08_09_48" id="2024_07_08_09_48">09:48</a>: second-guessing myself on the 8-bit depth #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>It could be that that's just a raw byte format. The sound code here is fairly involved. I'm going to need to look at this more.
+</p>
+</div>
+<p><a href="#2024_07_08_09_50" id="2024_07_08_09_50">09:50</a>: Unclear what is a buffer and what is a tick #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>It is unclear to me when things are computing a single sample of audio (tick), and when it's writing to a buffer. 
+</p>
+<p> For example, SOKOL seems to be writing shorts (16-bit). 
+</p>
+<p> What I do know is that samples eventually show up in something called "product->samples.buffer", but I cannot find that definition yet (there's a lot of macro magic in this repo). There is also a buffer count too. It appears that these could be interleaved samples.
+</p>
+</div>
+<p><a href="#2024_07_08_10_20" id="2024_07_08_10_20">10:20</a>: So much is implicitly defined #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>As far as I can tell, <code>product.samples</code> is dynamically generated. It's not actually anywhere in a struct. The <code>tic80</code> stuct I have yet to actually find. Same goes for <code>product.samples.buffer</code> and <code>product.samples.count</code>.  
+</p>
+<p> There are two top audio callbacks that tell tic80 to generate soud (how much sound not sure? but it's definitely multi-channel). I'm looking at the one sokol uses called <code>studio_sound</code>. This calls <code>tic_core_synth_sound()</code>, which I assume writes to <code>product.samples.buffer</code> somehow. If I can inject an effects processor right after the buffer is fully written, I think that can be enough for me.
+</p>
+</div>
+<p><a href="#2024_07_08_10_30" id="2024_07_08_10_30">10:30</a>: =runPcm()= and =stereo_synthesize()= are things to look at #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>These calls seem to happen right before they are resampled.
+</p>
+</div>
+<p><a href="#2024_07_08_11_00" id="2024_07_08_11_00">11:00</a>: Lunch</p>
+<p><a href="#2024_07_08_12_00" id="2024_07_08_12_00">12:00</a>: Talk with Chirag</p>
+<p><a href="#2024_07_08_13_00" id="2024_07_08_13_00">13:00</a>: C Creatures</p>
+<p><a href="#2024_07_08_14_38" id="2024_07_08_14_38">14:38</a>: Play with Carsten's drawing tablet #drawing-tablet-experiments</p>
+<div class="comment-block">
+<p>Can it work on linux okay? I can I use libevdev with it?
+</p>
+</div>
+<p><a href="#2024_07_08_14_40" id="2024_07_08_14_40">14:40</a>: It works out of the box #drawing-tablet-experiments</p>
+<p><a href="#2024_07_08_14_45" id="2024_07_08_14_45">14:45</a>: Oh wow, you can use this one as a touch pad too!</p>
+<div class="comment-block">
+<p>It even does touch to click this is incredible.
+</p>
+</div>
+<p><a href="#2024_07_08_14_51" id="2024_07_08_14_51">14:51</a>: Working through some evdev sample code I found online</p>
+<p><a href="#2024_07_08_15_13" id="2024_07_08_15_13">15:13</a>: Initial polling program working! #drawing-tablet-experiments</p>
+<div class="comment-block">
+<p>X max: 21600, Y max: 13500, Physical units: 8.5 x 6 inches, 
+</p>
+<p> Along the Y-axis, this evenly comes too 2250 pixels/inch. The X axis is about 2541.1764. Huh.
+</p>
+</div>
+<p><a href="#2024_07_08_15_24" id="2024_07_08_15_24">15:24</a>: How to turn off wacom touchpad (in sway)?</p>
+<p><a href="#2024_07_08_15_49" id="2024_07_08_15_49">15:49</a>: After some googling and JQ-ing, got both pen and finger disabled #timelog:01:09:42</p>
+<div class="comment-block">
+<p>They still work in my test poller.
+</p>
+</div>
+<p><a href="#2024_07_08_15_59" id="2024_07_08_15_59">15:59</a>: Quick attempt at project links #resume-setup #timelog:00:20:06</p>
+<div class="comment-block">
+<p>I think I already have URL code in the TeX code? 
+</p>
+<p> oops maybe not
+</p>
+</div>
+<p><a href="#2024_07_08_16_27" id="2024_07_08_16_27">16:27</a>: React Reading: Scaling up with Reducer and Context #react-managing-state #timelog:00:20:48</p>
+<div class="comment-block">
+<p>This concludes the "managing state" chapter.
+</p>
+</div>
+<p><a href="#2024_07_08_18_42" id="2024_07_08_18_42">18:42</a>: Some "staggered voice" system design planning #concept-concerto #timelog:00:32:48</p>
 </p>
 
 <h3><a href="#2024_07_07" id="2024_07_07">2024-07-07</a> Day 49. Mini drawing tablets, TIC-80 audio code</h3>
