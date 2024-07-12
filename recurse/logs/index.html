@@ -17,6 +17,9 @@ in HTML.
 </p>
 <p><ul id="top">
 <li>
+<a href="#2024_07_11">2024-07-11</a> Day 53. All you need is NAND.
+</li>
+<li>
 <a href="#2024_07_10">2024-07-10</a> Day 52. I do not understand how tic80 sound works.
 </li>
 <li>
@@ -173,6 +176,119 @@ in HTML.
 <a href="#2024_05_20">2024-05-20</a> Day 1. First day of recurse. Organize.
 </li>
 </ul>
+</p>
+
+<h3><a href="#2024_07_11" id="2024_07_11">2024-07-11</a> Day 53. All you need is NAND.</h3>
+
+<a href="#top">jump to top</a>
+<p>29 days left of batch. 
+</p>
+<p> Prev: I truly do not / understand how the sound works / inside TIC-80 
+</p>
+<p> Next: || <a href="/recurse/tasks/poke_sound_warning">poke-sound-warning</a>: shoot I forgot to do this one yesterday. || <a href="/recurse/tasks/tic80_sine_tone">tic80-sine-tone</a>: Not completely out of ideas yet || <a href="/recurse/tasks/drawing_tablet_demo">drawing-tablet-demo</a>: time to transition from experiment to demo || <a href="/recurse/tasks/dagzet_rust">dagzet-rust</a>: peak at this, if there is time?
+</p>
+<p><a href="#2024_07_11_08_28" id="2024_07_11_08_28">08:28</a>: This is not worth any more of my time.</p>
+<div class="comment-block">
+<p>Considering how few of these I'm realistically going to get to, it's going to be easier to just manually print them to PDF to get them on my RM. Solid attempt though, had a good adventure.
+</p>
+</div>
+<p><a href="#2024_07_11_08_32" id="2024_07_11_08_32">08:32</a>: Ooops forgot. First thing today #poke-sound-warning</p>
+<p><a href="#2024_07_11_08_33" id="2024_07_11_08_33">08:33</a>: I have a few more ideas on how to do this #tic80-sine-tone</p>
+<div class="comment-block">
+<p>Look at <code>tic_core_sound_tick_start</code> and  <code>tic_core_sound_tick_end</code>.
+</p>
+</div>
+<p><a href="#2024_07_11_08_35" id="2024_07_11_08_35">08:35</a>: Officially concluded. #drawing-tablet-experiments</p>
+<div class="comment-block">
+<p>Now onto demo
+</p>
+</div>
+<p><a href="#2024_07_11_08_37" id="2024_07_11_08_37">08:37</a>: Drawing tablet demo: mono singing voice #drawing-tablet-demo</p>
+<div class="comment-block">
+<p>Going to try and timebox this to just today. What I want is to get pitch snapping on x-axis, reverb and delay effects, as well as y-axis intensity control.
+</p>
+</div>
+<p><a href="#2024_07_11_08_39" id="2024_07_11_08_39">08:39</a>: Some initial boilerplate rust code would be nice to set up today if there's time #dagzet-rust</p>
+<p><a href="#2024_07_11_08_40" id="2024_07_11_08_40">08:40</a>: Publishing</p>
+<p><a href="#2024_07_11_08_51" id="2024_07_11_08_51">08:51</a>: Gotta add a sound warning to poke. #poke-sound-warning #timelog:00:04:57</p>
+<p><a href="#2024_07_11_09_01" id="2024_07_11_09_01">09:01</a>: Another stab at this tic80 sound stuff #tic80-sine-tone</p>
+<p><a href="#2024_07_11_09_06" id="2024_07_11_09_06">09:06</a>: looking at ringbuf in tick end function #poke-sound-warning</p>
+<div class="comment-block">
+<p>It seems like there's a ring buffer of registers, and a register holds the data for one frame of audio. A frame consists of 4 channels of sound. Each channel is represented as a 32-bit signed integer. 
+</p>
+<p> When the end tick function is called, it gets the current register in the ring buffer, copies the register information in memory (RAM) to that ring buffer, then copies the "pcm" and "stereo" data bits as well. The ring buffer head is then incremented, but it's inside some conditional. I can't fully grok the conditional, but it seems to be some kind of bounds checking? I'm going to ignore it mostly for now.
+</p>
+</div>
+<p><a href="#2024_07_11_09_18" id="2024_07_11_09_18">09:18</a>: Flipping back to =studio_sound= again. Does it get called? #tic80-sine-tone</p>
+<div class="comment-block">
+<p>Yup, it's getting called.
+</p>
+</div>
+<p><a href="#2024_07_11_09_22" id="2024_07_11_09_22">09:22</a>: Back to sokol. Are we in sokol? #tic80-sine-tone</p>
+<div class="comment-block">
+<p>No. No we are not in Sokol.
+</p>
+</div>
+<p><a href="#2024_07_11_09_26" id="2024_07_11_09_26">09:26</a>: We are in SDL! #tic80-sine-tone</p>
+<div class="comment-block">
+<p>I've zoomed up to the top-most callback level which looks familiar enough to me. Still, it's doing stuff in a less than straight-forward way than usual. 
+</p>
+<p> This is the code worth digging into a bit, which is responsible for copying TIC-80 PCM data into SDL's audio buffer. I have reformatted it a bit to make it more readable. Initially, it was all on one line. 
+<pre><code>*stream++ =
+((u8*)tic-&gt;product.samples.buffer[
+    tic-&gt;product.samples.count *
+    TIC80_SAMPLESIZE -
+    platform.audio.bufferRemaining--
+];</pre></code>
+<p></p>
+<p> The <code>stream</code> variable here is a chunk of u8 vars. 
+</p>
+<p> The <code>TIC80_SAMPLESIZE</code> ends up being 2. This could either mean it's a stereo frame of 8-bit values, or the sample type is 16-bit and the samples are interleaved if it's stereo. Unclear. 
+</p>
+<p> The <code>bufferRemaining</code> variable is decreasing by 1 every sample, and being subtracted from the total number of bytes that the buffer has. This feels like a bit of round-a-about way to avoid using a for loop structure. 
+</p>
+<p> When the audio buffer counter goes to zero, it fills up the tic80 buffer again using <code>studio_sound</code>. It continues doing this until the SDL buffer is filled.
+</p>
+</div>
+<p><a href="#2024_07_11_09_50" id="2024_07_11_09_50">09:50</a>: =tic_core_synth_sound= updates tail #tic80-sine-tone</p>
+<div class="comment-block">
+<p>Meanwhile, <code>tic_core_synth_head</code> updates the head. The relevant bits of code look almost identical.
+</p>
+</div>
+<p><a href="#2024_07_11_09_53" id="2024_07_11_09_53">09:53</a>: Just printed tick start/ends and sound synth #tic80-sine-tone</p>
+<div class="comment-block">
+<p>There's some kind of async stuff happening I think. A tick start always follows up with a tick end, so that's being called on one thread. Meanwhile, the synth sound function can be called a few times in between these ticks. Sometimes once or twice, or not at all.
+</p>
+</div>
+<p><a href="#2024_07_11_09_56" id="2024_07_11_09_56">09:56</a>: Where are the tick start/end functions being called? #tic80-sine-tone</p>
+<div class="comment-block">
+<p>There's mention of a <code>tic80_tick</code> function, but when I try to printf from it, nothing shows up. 
+</p>
+<p> Okay found it! inside <code>gpuTick()</code> from SDL, the call chain is <code>studio_tick</code>, <code>renderStudio</code>, then calls to <code>tic_core_tick_start</code> and <code>tic_core_tick_end</code>, which makes calls to the sound tick starts and ends.
+</p>
+</div>
+<p><a href="#2024_07_11_10_10" id="2024_07_11_10_10">10:10</a>: That's enough for now #tic80-sine-tone #timelog:01:13:35</p>
+<div class="comment-block">
+<p>It's looking to be an interesting sound problem, because the timing of sound rendering is related to the drawing callback. There's things like jitter and frame-drops. How does it handle that sort of thing? Does the so-called "blip buffer" smooth things out somehow?
+</p>
+</div>
+<p><a href="#2024_07_11_11_00" id="2024_07_11_11_00">11:00</a>: Chat with Sonali</p>
+<p><a href="#2024_07_11_12_47" id="2024_07_11_12_47">12:47</a>: Time to start drawing tablet demo #drawing-tablet-demo #timelog:01:28:59</p>
+<p><a href="#2024_07_11_13_53" id="2024_07_11_13_53">13:53</a>: Some light refactoring #drawing-tablet-demo</p>
+<p><a href="#2024_07_11_14_20" id="2024_07_11_14_20">14:20</a>: Lots of very welcome distractions #drawing-tablet-demo</p>
+<div class="comment-block">
+<p>But we are back. Attempting to clean up main a little bit. Starting with the arg parsing.
+</p>
+</div>
+<p><a href="#2024_07_11_14_42" id="2024_07_11_14_42">14:42</a>: Add an interrupt signal. #drawing-tablet-demo</p>
+<div class="comment-block">
+<p>It keeps screwing up my terminal window when I ctrl-C.
+</p>
+</div>
+<p><a href="#2024_07_11_14_46" id="2024_07_11_14_46">14:46</a>: Move out tablet control to separate file. #drawing-tablet-demo</p>
+<p><a href="#2024_07_11_15_10" id="2024_07_11_15_10">15:10</a>: Make the pitch snap #drawing-tablet-demo</p>
+<p><a href="#2024_07_11_16_00" id="2024_07_11_16_00">16:00</a>: Presentations / Mini Dinner</p>
+<p><a href="#2024_07_11_17_41" id="2024_07_11_17_41">17:41</a>: Reading: boolean algebra #read-elem-compsys #timelog:01:30:42</p>
 </p>
 
 <h3><a href="#2024_07_10" id="2024_07_10">2024-07-10</a> Day 52. I do not understand how tic80 sound works.</h3>
