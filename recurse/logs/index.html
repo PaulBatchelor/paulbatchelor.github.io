@@ -17,6 +17,9 @@ in HTML.
 </p>
 <p><ul id="top">
 <li>
+<a href="#2024_07_12">2024-07-12</a> Day 54. Trios, triads, and bytebeats.
+</li>
+<li>
 <a href="#2024_07_11">2024-07-11</a> Day 53. All you need is NAND.
 </li>
 <li>
@@ -178,6 +181,111 @@ in HTML.
 </ul>
 </p>
 
+<h3><a href="#2024_07_12" id="2024_07_12">2024-07-12</a> Day 54. Trios, triads, and bytebeats.</h3>
+
+<a href="#top">jump to top</a>
+<p>28 days left of batch. 
+</p>
+<p> Prev: More sine tone attempts / More singing drawing tablets / All you need is NAND 
+</p>
+<p> Next: || <a href="/recurse/tasks/compeng_resources">compeng-resources</a> import CE links into knowledge graph. || <a href="/recurse/tasks/dagzet_rust">dagzet-rust</a> Try to get to this today? || <a href="/recurse/tasks/tic80_sine_tone">tic80-sine-tone</a>: timebox this today, see if I can make more progress. || <a href="/recurse/tasks/demo_trio">demo-trio</a>: initial code, get chords working.
+</p>
+<p><a href="#2024_07_12_08_13" id="2024_07_12_08_13">08:13</a>: Morning triage.</p>
+<p><a href="#2024_07_12_08_14" id="2024_07_12_08_14">08:14</a>: Did not get to this yesterday. Today maybe? #dagzet-rust</p>
+<p><a href="#2024_07_12_08_44" id="2024_07_12_08_44">08:44</a>: I think I nerfed the experience with quantization #drawing-tablet-demo</p>
+<div class="comment-block">
+<p>I think I might have nerfed the experience with the pitch quanitization to be honest. It seems like the people I showed the quantized version to used it for less time compared to when it was "fretless". People really enjoyed the fluidic expressiveness of the pitch control and getting it to emote things using just inflection. Food for thought for another demo?
+</p>
+</div>
+<p><a href="#2024_07_12_08_55" id="2024_07_12_08_55">08:55</a>: This would be a good weekend project #add-day-titles</p>
+<p><a href="#2024_07_12_08_56" id="2024_07_12_08_56">08:56</a>: I have still not started this. Sigh. #LC75</p>
+<p><a href="#2024_07_12_08_57" id="2024_07_12_08_57">08:57</a>: Don't know if this is worth my time to actually read right now #react-escape-hatches</p>
+<p><a href="#2024_07_12_08_58" id="2024_07_12_08_58">08:58</a>: This concept feels pretty fleshed out #concept-concerto #demo-trio</p>
+<div class="comment-block">
+<p>I think I might call it "trio", and the elevator pitch is that you control one voice in a trio, and there is an algorithm that controls the other two pitches to form 3 part harmony. 
+</p>
+<p> Follow-up task created: <a href="/recurse/tasks/demo_trio">demo-trio</a>.
+</p>
+</div>
+<p><a href="#2024_07_12_08_59" id="2024_07_12_08_59">08:59</a>: First step in trio: get instantaneous chords #demo-trio</p>
+<p><a href="#2024_07_12_09_02" id="2024_07_12_09_02">09:02</a>: Publishing</p>
+<p><a href="#2024_07_12_09_16" id="2024_07_12_09_16">09:16</a>: initial thoughts #dagzet-rust #timelog:00:18:23</p>
+<div class="comment-block">
+<p>My hope is that the lua implementatoin is trivial enough that I can bring it over to rust without too many complications. I will outline some of the broad strokes steps required to get this program up and running. 
+</p>
+<p> While writing these thoughts  
+</p>
+<p> The first thing I'll need to be able to do is read a file from disk, possibly entirely into memory. The dagzet parser works line by by line, so if there's some iterator abstraction that allows me be to do this, great. 
+</p>
+<p> For parsing commands, I need to be able to read the first three characters of each line to determine the command code. Commands are two characters followed by a space, with the rest of the line being being arguments. 
+</p>
+<p> Commands need to map to functions which can parse the argument data of that line, and potentially append or modifiy a rust data struct representing the graph being built up somehow. But, just setting up a convenient way to map commands to functions would be great. There will be quite a few, and I often find myself wanting to add more commands to meet my needs. I made use of Lua tables to create a look-up table of callbacks. Hopefully I can do a similar thing in Rust without too much fuss? 
+</p>
+<p> I need to be able to split data up by spaces. Lua does not have a built-in <code>split()</code> like you'd see in other languages. I'm hoping Rust standard library has one somewhere (this functionality should be standard not outsourced to a crate right? right?!) 
+</p>
+<p> I need a top-level data struct that can be populated with information that is parsed. I the lua implementation, I used tables: usually as a hashmap or array structure, sometimes an array of array. IIRC Rust STD has hashmaps, and vectors I think should be enough. I can't foresee too many ownership issues due to how imperative this is, but who knows. 
+</p>
+<p> I need to implement topological sort (Kahn's algorithm). My lua approach used node IDs instead of references, so I think this is going to be mostly Rust-friendly to port. Still, I get the feeling that I may be forgetting something that will be a pain point with Rust. 
+</p>
+<p> When it has been determined that the graph contains no cycles, generate the SQLite code to standard output. This seems pretty straight forward to me, more or less going through the generated struct (read-only) and printing equivalent SQLite code.
+</p>
+</div>
+<p><a href="#2024_07_12_09_45" id="2024_07_12_09_45">09:45</a>: Starting initial boilerplate code. #dagzet-rust #timelog:01:07:29 </p>
+<p><a href="#2024_07_12_09_46" id="2024_07_12_09_46">09:46</a>: get it to read lines of a file #dagzet-rust</p>
+<div class="comment-block">
+<p>Going to try to use neovim for this now. 
+</p>
+<p> tangent: trying to get auto-import working. Found: &lt;&lt;<a href="#">neovim/nvim_cmp</a>&gt;&gt;. 
+</p>
+<p> how to get this working with lazy, README only has vim-plug? 
+</p>
+<p> Wait, it's already installed, according to the Lazy control panel. What does InsertEnter mean? 
+</p>
+<p> Okay, I get the recommendations, but I don't know how to insert it. 
+</p>
+<p> Got it! Typing "File" then hitting ctrl-y does it. 
+</p>
+<br>
+<br>
+</div>
+<p><a href="#2024_07_12_10_19" id="2024_07_12_10_19">10:19</a>: haha. flopping around with rust compiler on trivial things. nailing it. #dagzet-rust</p>
+<p><a href="#2024_07_12_10_24" id="2024_07_12_10_24">10:24</a>: give it a file on the command line #dagzet-rust</p>
+<p><a href="#2024_07_12_10_39" id="2024_07_12_10_39">10:39</a>: Parse lines, find their command code. #dagzet-rust</p>
+<p><a href="#2024_07_12_10_51" id="2024_07_12_10_51">10:51</a>: That's some good enough boilerplate. #dagzet-rust</p>
+<div class="comment-block">
+<p>I have it parsing command codes in the test file, and there is some placeholder stuff where I can eventually do stuff with those commands.
+</p>
+</div>
+<p><a href="#2024_07_12_12_15" id="2024_07_12_12_15">12:15</a>: Back at hub. Setting myself up.</p>
+<div class="comment-block">
+<p>I got a nice big screen here. Looks nice.
+</p>
+</div>
+<p><a href="#2024_07_12_12_21" id="2024_07_12_12_21">12:21</a>: Initial boilerplate code, maybe some chords #demo-trio #timelog:01:33:13</p>
+<p><a href="#2024_07_12_12_22" id="2024_07_12_12_22">12:22</a>: make copy of the singer test. #demo-trio</p>
+<p><a href="#2024_07_12_12_36" id="2024_07_12_12_36">12:36</a>: getting the pitch control happening in rust instead of C #demo-trio</p>
+<p><a href="#2024_07_12_12_51" id="2024_07_12_12_51">12:51</a>: time for initial chord logic? #demo-trio</p>
+<div class="comment-block">
+<p>For now: given a pitch (octave-wrapped, 0-11), find the corresponding triad. Use a lookup table (vector, probably).
+</p>
+</div>
+<p><a href="#2024_07_12_12_54" id="2024_07_12_12_54">12:54</a>: consolidate voice into struct #demo-trio</p>
+<p><a href="#2024_07_12_13_05" id="2024_07_12_13_05">13:05</a>: two intial instances #demo-trio</p>
+<p><a href="#2024_07_12_13_16" id="2024_07_12_13_16">13:16</a>: initial chord look-up table #demo-trio</p>
+<p><a href="#2024_07_12_13_51" id="2024_07_12_13_51">13:51</a>: initial chord logic works! #demo-trio</p>
+<div class="comment-block">
+<p>I'm going to need to rework this to make it work with gesture and chords, but this is a good start.
+</p>
+</div>
+<p><a href="#2024_07_12_13_56" id="2024_07_12_13_56">13:56</a>: changing the smooth times makes a HUGE difference wow #demo-trio</p>
+<p><a href="#2024_07_12_16_43" id="2024_07_12_16_43">16:43</a>: Fell into pairing all day.</p>
+<div class="comment-block">
+<p>Side note: the LED sign is 96x38
+</p>
+</div>
+<p><a href="#2024_07_12_18_21" id="2024_07_12_18_21">18:21</a>: Wrapping up</p>
+</p>
+
 <h3><a href="#2024_07_11" id="2024_07_11">2024-07-11</a> Day 53. All you need is NAND.</h3>
 
 <a href="#top">jump to top</a>
@@ -300,6 +408,7 @@ in HTML.
 </p>
 <p> Next: || <a href="/recurse/tasks/tic80_sine_tone">tic80-sine-tone</a>: begin initial work on this || <a href="/recurse/tasks/drawing_tablet_experiments">drawing-tablet-experiments</a>: get new tablet working || <a href="/recurse/tasks/drawing_tablet_demo">drawing-tablet-demo</a>: start building out the singing demo.
 </p>
+<p><a href="#2024_07_10_09_38" id="2024_07_10_09_38">09:38</a>: Sending this off. #resume-setup</p>
 <p><a href="#2024_07_10_10_47" id="2024_07_10_10_47">10:47</a>: Late morning triage</p>
 <p><a href="#2024_07_10_11_11" id="2024_07_10_11_11">11:11</a>: This feels complete #demo-react-UI #voxsculpt-preset-manager</p>
 <div class="comment-block">
@@ -374,6 +483,10 @@ in HTML.
 </div>
 <p><a href="#2024_07_10_18_05" id="2024_07_10_18_05">18:05</a>: brainstorming #concept-concerto #timelog:00:05:53</p>
 <p><a href="#2024_07_10_18_15" id="2024_07_10_18_15">18:15</a>: brainstorming #concept-concerto #timelog:00:14:53</p>
+<div class="comment-block">
+<p>>>>>>>> 03b7a0f0726864212f2607659576cc56a672c515
+</p>
+</div>
 </p>
 
 <h3><a href="#2024_07_09" id="2024_07_09">2024-07-09</a> Day 51. Singing Drawing Tablets</h3>

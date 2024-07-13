@@ -17,6 +17,54 @@ task id: dagzet-rust
 </p>
 </div>
 <p><a href="#2024_07_11_08_39" id="2024_07_11_08_39">2024-07-11 08:39</a>: Some initial boilerplate rust code would be nice to set up today if there's time #dagzet-rust</p>
+<p><a href="#2024_07_12_08_14" id="2024_07_12_08_14">2024-07-12 08:14</a>: Did not get to this yesterday. Today maybe? #dagzet-rust</p>
+<p><a href="#2024_07_12_09_16" id="2024_07_12_09_16">2024-07-12 09:16</a>: initial thoughts #dagzet-rust #timelog:00:18:23</p>
+<div class="comment-block">
+<p>My hope is that the lua implementatoin is trivial enough that I can bring it over to rust without too many complications. I will outline some of the broad strokes steps required to get this program up and running. 
+</p>
+<p> While writing these thoughts  
+</p>
+<p> The first thing I'll need to be able to do is read a file from disk, possibly entirely into memory. The dagzet parser works line by by line, so if there's some iterator abstraction that allows me be to do this, great. 
+</p>
+<p> For parsing commands, I need to be able to read the first three characters of each line to determine the command code. Commands are two characters followed by a space, with the rest of the line being being arguments. 
+</p>
+<p> Commands need to map to functions which can parse the argument data of that line, and potentially append or modifiy a rust data struct representing the graph being built up somehow. But, just setting up a convenient way to map commands to functions would be great. There will be quite a few, and I often find myself wanting to add more commands to meet my needs. I made use of Lua tables to create a look-up table of callbacks. Hopefully I can do a similar thing in Rust without too much fuss? 
+</p>
+<p> I need to be able to split data up by spaces. Lua does not have a built-in <code>split()</code> like you'd see in other languages. I'm hoping Rust standard library has one somewhere (this functionality should be standard not outsourced to a crate right? right?!) 
+</p>
+<p> I need a top-level data struct that can be populated with information that is parsed. I the lua implementation, I used tables: usually as a hashmap or array structure, sometimes an array of array. IIRC Rust STD has hashmaps, and vectors I think should be enough. I can't foresee too many ownership issues due to how imperative this is, but who knows. 
+</p>
+<p> I need to implement topological sort (Kahn's algorithm). My lua approach used node IDs instead of references, so I think this is going to be mostly Rust-friendly to port. Still, I get the feeling that I may be forgetting something that will be a pain point with Rust. 
+</p>
+<p> When it has been determined that the graph contains no cycles, generate the SQLite code to standard output. This seems pretty straight forward to me, more or less going through the generated struct (read-only) and printing equivalent SQLite code.
+</p>
+</div>
+<p><a href="#2024_07_12_09_45" id="2024_07_12_09_45">2024-07-12 09:45</a>: Starting initial boilerplate code. #dagzet-rust #timelog:01:07:29 </p>
+<p><a href="#2024_07_12_09_46" id="2024_07_12_09_46">2024-07-12 09:46</a>: get it to read lines of a file #dagzet-rust</p>
+<div class="comment-block">
+<p>Going to try to use neovim for this now. 
+</p>
+<p> tangent: trying to get auto-import working. Found: &lt;&lt;<a href="#">neovim/nvim_cmp</a>&gt;&gt;. 
+</p>
+<p> how to get this working with lazy, README only has vim-plug? 
+</p>
+<p> Wait, it's already installed, according to the Lazy control panel. What does InsertEnter mean? 
+</p>
+<p> Okay, I get the recommendations, but I don't know how to insert it. 
+</p>
+<p> Got it! Typing "File" then hitting ctrl-y does it. 
+</p>
+<br>
+<br>
+</div>
+<p><a href="#2024_07_12_10_19" id="2024_07_12_10_19">2024-07-12 10:19</a>: haha. flopping around with rust compiler on trivial things. nailing it. #dagzet-rust</p>
+<p><a href="#2024_07_12_10_24" id="2024_07_12_10_24">2024-07-12 10:24</a>: give it a file on the command line #dagzet-rust</p>
+<p><a href="#2024_07_12_10_39" id="2024_07_12_10_39">2024-07-12 10:39</a>: Parse lines, find their command code. #dagzet-rust</p>
+<p><a href="#2024_07_12_10_51" id="2024_07_12_10_51">2024-07-12 10:51</a>: That's some good enough boilerplate. #dagzet-rust</p>
+<div class="comment-block">
+<p>I have it parsing command codes in the test file, and there is some placeholder stuff where I can eventually do stuff with those commands.
+</p>
+</div>
 </div>
 </body>
 </html>
