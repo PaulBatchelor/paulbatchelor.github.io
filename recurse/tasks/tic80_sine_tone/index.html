@@ -53,6 +53,13 @@ task id: tic80-sine-tone
 </p>
 </div>
 <p><a href="#2024_07_11_09_01" id="2024_07_11_09_01">2024-07-11 09:01</a>: Another stab at this tic80 sound stuff #tic80-sine-tone</p>
+<p><a href="#2024_07_11_09_06" id="2024_07_11_09_06">2024-07-11 09:06</a>: looking at ringbuf in tick end function #tic80-sine-tone</p>
+<div class="comment-block">
+<p>It seems like there's a ring buffer of registers, and a register holds the data for one frame of audio. A frame consists of 4 channels of sound. Each channel is represented as a 32-bit signed integer. 
+</p>
+<p> When the end tick function is called, it gets the current register in the ring buffer, copies the register information in memory (RAM) to that ring buffer, then copies the "pcm" and "stereo" data bits as well. The ring buffer head is then incremented, but it's inside some conditional. I can't fully grok the conditional, but it seems to be some kind of bounds checking? I'm going to ignore it mostly for now.
+</p>
+</div>
 <p><a href="#2024_07_11_09_18" id="2024_07_11_09_18">2024-07-11 09:18</a>: Flipping back to =studio_sound= again. Does it get called? #tic80-sine-tone</p>
 <div class="comment-block">
 <p>Yup, it's getting called.
@@ -106,6 +113,116 @@ task id: tic80-sine-tone
 <p>It's looking to be an interesting sound problem, because the timing of sound rendering is related to the drawing callback. There's things like jitter and frame-drops. How does it handle that sort of thing? Does the so-called "blip buffer" smooth things out somehow?
 </p>
 </div>
+<p><a href="#2024_07_13_14_09" id="2024_07_13_14_09">2024-07-13 14:09</a>: Let's try to get back to this tic80 things #tic80-sine-tone #timelog:01:34:09</p>
+<p><a href="#2024_07_13_14_11" id="2024_07_13_14_11">2024-07-13 14:11</a>: I need to better understand the timing relationships #tic80-sine-tone</p>
+<div class="comment-block">
+<p>I'm not entirely convinced that DSP works at a constant samplerate, because I think the timing is controlled from the drawing function. 
+</p>
+<p> My belief right now is that the audio callback works by taking any samples produced since the last time it was set, and then stretching it out to fit the required number of samples needed for the host audio callback.
+</p>
+</div>
+<p><a href="#2024_07_13_14_19" id="2024_07_13_14_19">2024-07-13 14:19</a>: "opaqueness" these pointers are very opaque #tic80-sine-tone</p>
+<div class="comment-block">
+<p>I was trying to describe my issue with this codebase. What makes this impenetrable is that is that the use of macros makes it very opaque. I can't simply grep or use ctags to find definitions in the codebase. 
+</p>
+<p> Take, for instance, this line (breaks and indentation my own):
+</p>
+</div>
+<p><a href="#2024_07_13_14_36" id="2024_07_13_14_36">2024-07-13 14:36</a>: printf-ing some constants #tic80-sine-tone</p>
+<div class="comment-block">
+<p>The output of <code>blip_read_samples</code> is reading a pretty constant 735 samples at a time, which is the number of samples read at 60fps. So it is actually working at the host audio rate. My timing theory is feeling a little shaky. 
+</p>
+<p> <code>TIC80_FRAMERATE</code> is hard coded to be 60, so it's filling the max amount. Based on the READMEs, I think it doesn't have to be? It seems like the <code>blip_buf</code> library is designed to discretize sound chips that don't necessarily have a clock. You just note the times when amplitude changes, and then it turns that into a buffer of audio samples.
+</p>
+</div>
+<p><a href="#2024_07_13_14_53" id="2024_07_13_14_53">2024-07-13 14:53</a>: =blip_end_frame= is weird. #tic80-sine-tone</p>
+<div class="comment-block">
+<p>For starters: there is no <code>blip_start_frame</code>. A call to <code>blip_end_frame</code> implicitly begins a new frame. 
+</p>
+<p> When it is called, a constant called <code>END_TIME</code> is used. 
+</p>
+<p> The <code>END_TIME</code> is defined as <code>CLOCKRATE / TIC80_FRAMERATE</code>. The framerate I already knows being hardcoded as 60. What is <code>CLOCKRATE</code>, and where is it defined? 
+</p>
+<p> <code>CLOCKRATE</code> is defined as <code>(255<<13)</code> in <code>core.h</code>, or 2088960. I do not understand the signifigance of this value. Going to try to look up that number, as well as the hex version of <code>0x1fe000</code>. 
+</p>
+<p> I put it into chatGPT, this is what it said:
+</p>
+</div>
+<p><a href="#2024_07_13_15_18" id="2024_07_13_15_18">2024-07-13 15:18</a>: =ENDTIME=, how is it used in =sound.c=? #tic80-sine-tone</p>
+<div class="comment-block">
+<p>It's used in <code>runPcm</code>, there's some math done so that the loop works on a fixed PCM buffer size of <code>TIC_PCM_SIZE</code>, which is 128, but the incrementor is in these "clock units", not sample units.
+</p>
+</div>
+<p><a href="#2024_07_13_15_27" id="2024_07_13_15_27">2024-07-13 15:27</a>: tic80 audio is weird because =blip-buf= is weird #tic80-sine-tone</p>
+<p><a href="#2024_07_13_15_34" id="2024_07_13_15_34">2024-07-13 15:34</a>: When/where is =update_amp= called? #tic80-sine-tone</p>
+<div class="comment-block">
+<p>Whenever this is called, a new delta is added to the blip buffer (delta-encoding). This seems to basically mean, "add a sample to the resampling buffer". 
+</p>
+<p> called in <code>runPcm</code>. It seems to be writing PCM data (128 samples) to the blip buffer. 
+</p>
+<p> called in <code>runEnvelope</code> and <code>runNoise</code>. There's a similar pattern to both of these, where a "period" is determined from some frequency value.
+</p>
+</div>
+<p><a href="#2024_07_13_16_28" id="2024_07_13_16_28">2024-07-13 16:28</a>: Another attempt. #tic80-sine-tone #timelog:02:07:33</p>
+<p><a href="#2024_07_13_16_29" id="2024_07_13_16_29">2024-07-13 16:29</a>: Let's isolate where those opening blips are coming from #tic80-sine-tone</p>
+<div class="comment-block">
+<p>In the <code>sfx</code> callback, which is in <code>tic_core_sound_tick_start</code>.
+</p>
+</div>
+<p><a href="#2024_07_13_16_38" id="2024_07_13_16_38">2024-07-13 16:38</a>: runPcm isn't doing anything. #tic80-sine-tone</p>
+<div class="comment-block">
+<p>when I comment the call <code>runPcm</code>, sound still works. This must some way to get PCM data in like sample playback stuff.
+</p>
+</div>
+<p><a href="#2024_07_13_16_41" id="2024_07_13_16_41">2024-07-13 16:41</a>: Making test noise now. #tic80-sine-tone</p>
+<div class="comment-block">
+<p>If my intuition is understanding this correctly, I think this program takes in a pile of delta time values, and turns that into a workable buffer? I have two optional things to try. One could be: write new deltas directly to the blip. Another could be, write to the existing PCM channel. 
+</p>
+<p> I got noise working! But, It's stereo noise, and I was expecting mono noise. I forgot that stereo synthesize is called twice, once for each channel. 
+</p>
+<p> Noise is working! It is being written to the ringbuf PCM data before calls to <code>stereo_synthesize</code> are made. I'm noticing gaps in the noise when I go between the editor and the console.
+</p>
+</div>
+<p><a href="#2024_07_13_17_03" id="2024_07_13_17_03">2024-07-13 17:03</a>: now, to make it a square. #tic80-sine-tone</p>
+<div class="comment-block">
+<p>I get the sense that I might not be handling the data type correctly. It might be short (16-bit) ints, not 8-bit ones. A pitched square will for sure be able to figure it out. 
+</p>
+<p> The pitch is wrong. I'm assuming a 44.1 samplerate in the square calculation. But the blip-buf might be targetting another samplerate like 8kHz or something.
+</p>
+</div>
+<p><a href="#2024_07_13_17_18" id="2024_07_13_17_18">2024-07-13 17:18</a>: trying to understand how blip initialization works #tic80-sine-tone</p>
+<div class="comment-block">
+<p>So the function <code>blip_set_rates</code> is definitely being set to be the host sample rate of 44.1kHz, however, the blip buffer gets initialized to be only a 10th of that size, making it effectively  ~4khz max. Right? And that's assuming 1 channel. There are 4 channels that need to share that buffer, so that's like 1kHz?
+</p>
+</div>
+<p><a href="#2024_07_13_17_26" id="2024_07_13_17_26">2024-07-13 17:26</a>: Trying the square the blip-buf way. #tic80-sine-tone</p>
+<div class="comment-block">
+<p>Okay. I'm fighting blip-buf itself somehow? I don't want to waste any more time trying to figure that out.
+</p>
+</div>
+<p><a href="#2024_07_13_17_44" id="2024_07_13_17_44">2024-07-13 17:44</a>: Writing a square after blip-buf #tic80-sine-tone</p>
+<p><a href="#2024_07_13_17_59" id="2024_07_13_17_59">2024-07-13 17:59</a>: Finally found the tic80 struct? #tic80-sine-tone</p>
+<div class="comment-block">
+<p>It wasn't opaque, I just wasn't looking in the top level directory. It's in <code>include/tic80.h</code>. Wow. That's embarassing.
+</p>
+</div>
+<p><a href="#2024_07_13_18_14" id="2024_07_13_18_14">2024-07-13 18:14</a>: What could be causing the crackling? #tic80-sine-tone</p>
+<div class="comment-block">
+<p>My square shouldn't be crackling. I refuse to believe that it's buffer xrun. Sure does sound like it though.
+</p>
+</div>
+<p><a href="#2024_07_13_18_17" id="2024_07_13_18_17">2024-07-13 18:17</a>: zeroing out the buffer should have caused the blip to be off #tic80-sine-tone</p>
+<div class="comment-block">
+<p>This is a clue.
+</p>
+</div>
+<p><a href="#2024_07_13_18_25" id="2024_07_13_18_25">2024-07-13 18:25</a>: Good lord we have a square now. #tic80-sine-tone</p>
+<div class="comment-block">
+<p>I just messed up the logic for filling up interleaved audio.
+</p>
+</div>
+<p><a href="#2024_07_13_18_26" id="2024_07_13_18_26">2024-07-13 18:26</a>: Getting ready to make my damn sine. #tic80-sine-tone</p>
+<p><a href="#2024_07_13_18_30" id="2024_07_13_18_30">2024-07-13 18:30</a>: sine tone created. it is done now. #tic80-sine-tone</p>
 </div>
 </body>
 </html>
