@@ -17,6 +17,9 @@ in HTML.
 </p>
 <p><ul id="top">
 <li>
+<a href="#2024_07_15">2024-07-15</a> Day 57.
+</li>
+<li>
 <a href="#2024_07_14">2024-07-14</a> Day 56. Week 9. Linear Gesture Builder for mnolth
 </li>
 <li>
@@ -185,6 +188,101 @@ in HTML.
 <a href="#2024_05_20">2024-05-20</a> Day 1. First day of recurse. Organize.
 </li>
 </ul>
+</p>
+
+<h3><a href="#2024_07_15" id="2024_07_15">2024-07-15</a> Day 57.</h3>
+
+<a href="#top">jump to top</a>
+<p>Prev: Wanted lines with sound / Built the necessary tools / Abandoned the Thought 
+</p>
+<p> Next: || <a href="/recurse/tasks/event_driven_gesture">event-driven-gesture</a>: initial work on event-driven gesture interface || <a href="/recurse/tasks/dagzet_rust">dagzet-rust</a>: more dagzet work, cuz I didn't get to it yesterday. 
+</p>
+<p> Very tired and groggy today. I've been going to bed too late, and waking up too early.
+</p>
+<p><a href="#2024_07_15_08_41" id="2024_07_15_08_41">08:41</a>: Morning Triage</p>
+<p><a href="#2024_07_15_08_42" id="2024_07_15_08_42">08:42</a>: After all that work yesterday, I didn't use any of it #linear-gesture-interface</p>
+<div class="comment-block">
+<p>I'll briefly try to defend the notion that it was mostly a good effort. For starters, I got very a convenient linear gesture interface, which required some moderate thinking about design in rust with ownership in mind. Secondly, I got Rust code working in mnolth for the first time, and this is important because it shows that I can leverage what I've done before to boost what I'm working on right now.
+</p>
+</div>
+<p><a href="#2024_07_15_08_45" id="2024_07_15_08_45">08:45</a>: As it turns out, there was no time yesterday. #dagzet-rust</p>
+<p><a href="#2024_07_15_09_01" id="2024_07_15_09_01">09:01</a>: hoping to start work on event-driven gesture today #event-driven-gesture</p>
+<div class="comment-block">
+<p>Using the trait system in place, the problem is a matter of how to build the "next" gesture. I'm thinking of implementing an event queue, possibly fixed sized. 
+</p>
+<p> I think the plan is to have this work in a single-threaded context first, then building abstractions around that inside of an existing event system. (in a webaudio worklet, this would wrap around the "onmessage" passing interface used).
+</p>
+</div>
+<p><a href="#2024_07_15_09_11" id="2024_07_15_09_11">09:11</a>: Publishing.</p>
+<div class="comment-block">
+<p>Zulip will be a re-cap of last week with a link to the weekly page.
+</p>
+</div>
+<p><a href="#2024_07_15_09_50" id="2024_07_15_09_50">09:50</a>: dagzet in rust today #dagzet-rust #timelog:01:24:57</p>
+<p><a href="#2024_07_15_09_53" id="2024_07_15_09_53">09:53</a>: Beginning initial top-level struct #dagzet-rust</p>
+<div class="comment-block">
+<p>Eventually this will be populated with data from the commands.
+</p>
+</div>
+<p><a href="#2024_07_15_10_02" id="2024_07_15_10_02">10:02</a>: Now would be a good time to figure out rust docstrings #dagzet-rust</p>
+<div class="comment-block">
+<p>Being able to add in-line descriptions of struct contents that get rendered to rust documentation would be helpful.
+</p>
+</div>
+<p><a href="#2024_07_15_10_44" id="2024_07_15_10_44">10:44</a>: namespace and graph remarks mostly figured out #dagzet-rust</p>
+<div class="comment-block">
+<p>I have a incremental TDD approach to porting this, which feels nice.
+</p>
+</div>
+<p><a href="#2024_07_15_10_45" id="2024_07_15_10_45">10:45</a>: Make use of =Option= to indicate uninitialized values #dagzet-rust</p>
+<p><a href="#2024_07_15_11_14" id="2024_07_15_11_14">11:14</a>: Better error handling, new node command incomplete #dagzet-rust</p>
+<div class="comment-block">
+<p>I'm making use of Result and putting return codes into a single Enum. This is just mirroring how I'd do it in C. Hopefully it's idiomatic enough in Rust.
+</p>
+</div>
+<p><a href="#2024_07_15_13_49" id="2024_07_15_13_49">13:49</a>: Gesture event queue initial scaffolding #event-driven-gesture #timelog:01:46:56</p>
+<p><a href="#2024_07_15_14_27" id="2024_07_15_14_27">14:27</a>: What are the common verbs used to describe queueo operatoins? #event-driven-gesture</p>
+<div class="comment-block">
+<p>push/pop makes sense to me, but those are stack terms not queue terms. 
+</p>
+<p> Wikipedia tells me they use the terms "dequeue" and "enqueue". 
+</p>
+<p> Side note: my tired brain is having a great time parsing the "ueue"s of these words. Imagine if you pronounced it "wehweh". Hilarious.
+</p>
+</div>
+<p><a href="#2024_07_15_14_59" id="2024_07_15_14_59">14:59</a>: Unions are unsafe. doh. #event-driven-gesture</p>
+<div class="comment-block">
+<p>I'm kludging it into a struct with optionals for now. This doesn't spark joy. I'm going to test this well, and when/if I refactor, I can rely on these tests.
+</p>
+</div>
+<p><a href="#2024_07_15_15_11" id="2024_07_15_15_11">15:11</a>: Get tests working for pushing other event types #event-driven-gesture</p>
+<p><a href="#2024_07_15_15_15" id="2024_07_15_15_15">15:15</a>: interface is wrong. too much data allocation #event-driven-gesture</p>
+<div class="comment-block">
+<p>For enqueue, I should only be passing specific data types, and then mutating the internal event array. Right now, deep copying an entire event. 
+</p>
+<p> For dequeue, I should either return a reference or an id that eventually resolve to a reference.
+</p>
+</div>
+<p><a href="#2024_07_15_15_49" id="2024_07_15_15_49">15:49</a>: More work on dagzet in rust #rust-dagzet #timelog:00:35:58</p>
+<p><a href="#2024_07_15_15_50" id="2024_07_15_15_50">15:50</a>: Let's run clippy on my dagzet project so far #rust-dagzet</p>
+<div class="comment-block">
+<p>Turns out it doesn't have a lot to say. 
+</p>
+<p> Voxbox, on the other hand, is a mess.
+</p>
+</div>
+<p><a href="#2024_07_15_15_52" id="2024_07_15_15_52">15:52</a>: cargo clippy is a mess on this repo #voxbox-cargo-clippy</p>
+<div class="comment-block">
+<p>I also think some of the examples are broken?
+</p>
+</div>
+<p><a href="#2024_07_15_16_19" id="2024_07_15_16_19">16:19</a>: finished new node command, now lines. #rust-dagzet</p>
+<p><a href="#2024_07_15_16_32" id="2024_07_15_16_32">16:32</a>: Looking at bytebeat stuff with dan</p>
+<p><a href="#2024_07_15_17_09" id="2024_07_15_17_09">17:09</a>: pairing on visuals</p>
+<div class="comment-block">
+<p>019:00 home
+</p>
+</div>
 </p>
 
 <h3><a href="#2024_07_14" id="2024_07_14">2024-07-14</a> Day 56. Week 9. Linear Gesture Builder for mnolth</h3>
