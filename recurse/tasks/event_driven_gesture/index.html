@@ -41,6 +41,98 @@ task id: event-driven-gesture
 <p> For dequeue, I should either return a reference or an id that eventually resolve to a reference.
 </p>
 </div>
+<p><a href="#2024_07_17_09_02" id="2024_07_17_09_02">2024-07-17 09:02</a>: Hoping to get an example by end of day. #event-driven-gesture</p>
+<p><a href="#2024_07_17_10_04" id="2024_07_17_10_04">2024-07-17 10:04</a>: back to this event queue #event-driven-gesture #timelog:01:26:19</p>
+<p><a href="#2024_07_17_10_05" id="2024_07_17_10_05">2024-07-17 10:05</a>: Did I rework the abstraction already? #event-driven-gesture</p>
+<p><a href="#2024_07_17_10_11" id="2024_07_17_10_11">2024-07-17 10:11</a>: Making clippy happy. #event-driven-gesture</p>
+<div class="comment-block">
+<p>I don't love this. This feels like busywork.
+</p>
+</div>
+<p><a href="#2024_07_17_10_16" id="2024_07_17_10_16">2024-07-17 10:16</a>: Monowav errors with cargo clippy #event-driven-gesture</p>
+<div class="comment-block">
+<p>I'm crashing when I run cargo clippy. Let's make it not crash. I can deal with the warnings later.
+</p>
+</div>
+<p><a href="#2024_07_17_10_26" id="2024_07_17_10_26">2024-07-17 10:26</a>: Back to event queue, gotta work with other types #event-driven-gesture</p>
+<div class="comment-block">
+<p>Scalars are being handled, now to work with the other types.
+</p>
+</div>
+<p><a href="#2024_07_17_10_47" id="2024_07_17_10_47">2024-07-17 10:47</a>: I am annoyed with clippy now #event-driven-gesture</p>
+<div class="comment-block">
+<p>This is why nothing gets done. I've been wasting time trying to make Clippy happy all in the name of supposedly "better" code, and I'm almost 45 minutes with nothing to show. 
+</p>
+<p> It warps the brain, seeing all these squigglys in an editor. Like a teacher marking up an essay in red. I don't think it's actually possible to turn syntax off in nvim. The usualy "syntax off" trick doesn't work.
+</p>
+</div>
+<p><a href="#2024_07_17_10_49" id="2024_07_17_10_49">2024-07-17 10:49</a>: I think the event queue is done? #event-driven-gesture</p>
+<div class="comment-block">
+<p>I think it's reasonable to think about starting the Gesture.
+</p>
+</div>
+<p><a href="#2024_07_17_10_52" id="2024_07_17_10_52">2024-07-17 10:52</a>: Incorporating initial event queue into Gesture. #event-driven-gesture</p>
+<div class="comment-block">
+<p>I'm liking these incremental tests. What's a good way to test that things are working as expected? 
+</p>
+<p> For starters, I need to be able to initialize this gesture by pushing an initial set of events.
+</p>
+</div>
+<p><a href="#2024_07_17_11_31" id="2024_07_17_11_31">2024-07-17 11:31</a>: got a test to pass for producing first event #event-driven-gesture</p>
+<p><a href="#2024_07_17_13_33" id="2024_07_17_13_33">2024-07-17 13:33</a>: Event driven gestures part 2 #event-driven-gesture #timelog:02:03:08</p>
+<p><a href="#2024_07_17_13_41" id="2024_07_17_13_41">2024-07-17 13:41</a>: Need to test that events change when expected #event-driven-gesture</p>
+<div class="comment-block">
+<p>Behavior we want: events should only be processed at the start of a new phase. 
+</p>
+<p> Situation: I push an event A and call <code>preinit</code>. I then push event B, after the tick is called. What is the expected set of states for each period? 
+</p>
+<p> Pre-init sets things up so that our first period for sure starts with A. I believe that first tick sets things up such that the next state it is transitioning to is also A. Either that, or it is uninitialized. Not sure. Checking.
+</p>
+</div>
+<p><a href="#2024_07_17_14_13" id="2024_07_17_14_13">2024-07-17 14:13</a>: event queue is not working as expected #event-driven-gesture</p>
+<div class="comment-block">
+<p>My test is currently failing to get the next point as expected. 
+</p>
+<p> Oh wait, it's because I'm checking the external clock's phase changes, not the internal change.
+</p>
+</div>
+<p><a href="#2024_07_17_14_26" id="2024_07_17_14_26">2024-07-17 14:26</a>: Trying to see what happens when using =new_period= #event-driven-gesture</p>
+<p><a href="#2024_07_17_14_36" id="2024_07_17_14_36">2024-07-17 14:36</a>: I am using println to set up a timeline of events #event-driven-gesture</p>
+<div class="comment-block">
+<p>The order that things get set is very crucial. I want to see if I am doing the timing correctly here.
+</p>
+</div>
+<p><a href="#2024_07_17_14_45" id="2024_07_17_14_45">2024-07-17 14:45</a>: I am trying to understand the timeline #event-driven-gesture</p>
+<div class="comment-block">
+<p>It is eventually correct, but I have to wait about 5 samples after the first period. 
+</p>
+<p> Before the first tick, event A is pushed, and then preinit is called. This triggets the <code>next</code> event to happen, which dequeues the event and sets the value. 
+</p>
+<p> At the first tick, next vertex is called immediately. There are no values. The cached vertex is left unchanged, so it is still A. 
+</p>
+<p> Note to self: I am using <code>new_period</code> wrong. The timeline 
+</p>
+<p> Event B is pushed as an event before the next tick. It will not be read until the next period. When will the next period happen? The current phasor is currently set to have a incrementor value of 0.1, so 10 samples per period. The rate multiplier has been set to be 2/3, which is like slowing things down by a factor of 1.5. The test <b>does</b> seem to pass after about 15 samples through trial and error.
+</p>
+</div>
+<p><a href="#2024_07_17_14_57" id="2024_07_17_14_57">2024-07-17 14:57</a>: I am tracking the change in phase wrong. #event-driven-gesture</p>
+<div class="comment-block">
+<p>I need keep track of the interal rephasored value and watch for new periods there. 
+</p>
+<p> Works!
+</p>
+</div>
+<p><a href="#2024_07_17_15_06" id="2024_07_17_15_06">2024-07-17 15:06</a>: Now, onto waits #event-driven-gesture</p>
+<div class="comment-block">
+<p>Wait are events that tell the clock to wait some number of periods before processing the next events in the queue. 
+</p>
+<p> A wait time of 1 will wait one whole period before allowing further events in the queue to be processed.  
+</p>
+<p> If I push a wait of 1, and then a scalar in the middle of period A, the start of the next period, B will dequeue the wait, and then suspend reading other events. At the next period C, there will no longer be a wait, and the next value will be set.
+</p>
+</div>
+<p><a href="#2024_07_17_15_47" id="2024_07_17_15_47">2024-07-17 15:47</a>: Tests have been made. They fail. Now to implement it. #event-driven-gesture</p>
+<p><a href="#2024_07_17_15_53" id="2024_07_17_15_53">2024-07-17 15:53</a>: Wait implemented, tests pass. #event-driven-gesture</p>
 </div>
 </body>
 </html>
