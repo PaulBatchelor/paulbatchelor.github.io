@@ -36,6 +36,106 @@ task id: demo-trio
 </p>
 </div>
 <p><a href="#2024_07_12_13_56" id="2024_07_12_13_56">2024-07-12 13:56</a>: changing the smooth times makes a HUGE difference wow #demo-trio</p>
+<p><a href="#2024_07_18_08_39" id="2024_07_18_08_39">2024-07-18 08:39</a>: complete in theory. time to test in trio demo. #event-driven-gesture #demo-trio</p>
+<div class="comment-block">
+<p>Attempt voice staggering using event-driven gesture algorithm, see what goes wrong.
+</p>
+</div>
+<p><a href="#2024_07_18_12_35" id="2024_07_18_12_35">2024-07-18 12:35</a>: Time to revisit the trio. #demo-trio #timelog:03:01:06</p>
+<div class="comment-block">
+<p>Now that I supposedly have an event-driven gesture, I need to begin work incorporating those mechanics into the existing demo.
+</p>
+</div>
+<p><a href="#2024_07_18_12_36" id="2024_07_18_12_36">2024-07-18 12:36</a>: refamiliarizing myself with the work. #demo-trio</p>
+<p><a href="#2024_07_18_13_00" id="2024_07_18_13_00">2024-07-18 13:00</a>: light refactoring. main clock added. #demo-trio</p>
+<div class="comment-block">
+<p>Now, for the initial process of introducing these eventful gestures. 
+</p>
+<p> Before any events can be added to any gestures, we need to be able to simulate adding events. Events should only be added after the lead has held onto a pitch for one period. 
+</p>
+<p> The easiest way to do this using a global timer that keeps track the phasor ticks, which occur once a second. If a u32 is used, how many seconds is that? 
+</p>
+<p> Okay, so that's about a millenium short of 50k years. I think there's no general risk of things overflowing. I will be long dead and forgotten before that happens to a potential user. 
+</p>
+<p> Is this enough granularity though if I want to detect pitch changes? Maybe not actually.
+</p>
+</div>
+<p><a href="#2024_07_18_13_11" id="2024_07_18_13_11">2024-07-18 13:11</a>: How to tell if pitch has lasted for a period. #demo-trio</p>
+<div class="comment-block">
+<p>Might need to ink this one out.
+</p>
+</div>
+<p><a href="#2024_07_18_13_27" id="2024_07_18_13_27">2024-07-18 13:27</a>: Inked out an idea #demo-trio</p>
+<div class="comment-block">
+<p>First, implement things so that it detects changes in pitch. Then, build a sample and hold with along with a global monotonically increasing clock that increments at the start of every tick. 
+</p>
+<p> Now, any time a pitch change occurs in the lead, it can be compared against the sampled pitch. If the pitch is different, but the timestamps aren't, the whole period is marked as having been changed for the rest of the period. 
+</p>
+<p> The "dirty bit" trick is used in situations where the pitch changes quickly inside a period.
+</p>
+</div>
+<p><a href="#2024_07_18_13_32" id="2024_07_18_13_32">2024-07-18 13:32</a>: Implementing pitch changes, alert on change. #demo-trio</p>
+<p><a href="#2024_07_18_13_37" id="2024_07_18_13_37">2024-07-18 13:37</a>: implementing clock and sample and hold #demo-trio</p>
+<p><a href="#2024_07_18_13_50" id="2024_07_18_13_50">2024-07-18 13:50</a>: shoot. I'm actually unable to articulate when a change *should* happen #demo-trio</p>
+<div class="comment-block">
+<p>I think there may be another state required. 
+</p>
+<p> How about this: If there has been a requested pitch change from the current lead pitch, and this request has been held for a period, apply this changed pitch to the current lead. 
+</p>
+<p> This should happen at the start of every period.
+</p>
+</div>
+<p><a href="#2024_07_18_14_05" id="2024_07_18_14_05">2024-07-18 14:05</a>: well, now my logic isn't working at all. #demo-trio</p>
+<div class="comment-block">
+<p>I was setting things to be negative oops.
+</p>
+</div>
+<p><a href="#2024_07_18_14_11" id="2024_07_18_14_11">2024-07-18 14:11</a>: this timing logic is trickier than I expected #demo-trio</p>
+<p><a href="#2024_07_18_14_15" id="2024_07_18_14_15">2024-07-18 14:15</a>: Going to try caching the lead value between takes. #demo-trio</p>
+<div class="comment-block">
+<p>Caching the lead value and also storing the last changed value may be what I'm looking for. 
+</p>
+<p> Essentially, this lead value needs ot be updated regardeless, but the other two voices need to be delayed.
+</p>
+</div>
+<p><a href="#2024_07_18_14_19" id="2024_07_18_14_19">2024-07-18 14:19</a>: Okay, the complexity comes from the lead value needing to be updated #demo-trio</p>
+<div class="comment-block">
+<p>I can't simply cache the last lead pitch every time because I'm setting it every time.
+</p>
+</div>
+<p><a href="#2024_07_18_14_23" id="2024_07_18_14_23">2024-07-18 14:23</a>: The delayed behavior works as expected now. #demo-trio</p>
+<div class="comment-block">
+<p>Now I am looking to delay chord changes on the upper/lower voices.
+</p>
+</div>
+<p><a href="#2024_07_18_14_28" id="2024_07_18_14_28">2024-07-18 14:28</a>: I think I might be able to work staggering without gesture #demo-trio</p>
+<div class="comment-block">
+<p>I think I'm going to have to do this anyways because the event scheduler in the eventful gesture is so small, and can really only take one vertice at a time.
+</p>
+</div>
+<p><a href="#2024_07_18_14_34" id="2024_07_18_14_34">2024-07-18 14:34</a>: reworking things for variable stagger times #demo-trio</p>
+<div class="comment-block">
+<p>The logic would need to be: lower gets set first, then upper. 
+</p>
+<p> Initially I had it so that the chord would be determined, and then you'd send off the events with delays. Rethinking this a bit. 
+</p>
+<p> I want it so that the upper pitch only changes if it waits 2 beats, and the lower pitch changes if it waits 1 beat.
+</p>
+</div>
+<p><a href="#2024_07_18_14_48" id="2024_07_18_14_48">2024-07-18 14:48</a>: I'm going to try having another state variable #demo-trio</p>
+<div class="comment-block">
+<p>I want to have a state when the lower changed, but the upper hasn't. When the upper gets changed, the lower changed gets setup.
+</p>
+</div>
+<p><a href="#2024_07_18_15_01" id="2024_07_18_15_01">2024-07-18 15:01</a>: Now I want the voices to be staggered on too #demo-trio</p>
+<p><a href="#2024_07_18_15_08" id="2024_07_18_15_08">2024-07-18 15:08</a>: Weird timing bugs #demo-trio</p>
+<p><a href="#2024_07_18_15_14" id="2024_07_18_15_14">2024-07-18 15:14</a>: Try to reset clock on new voice. #demo-trio</p>
+<p><a href="#2024_07_18_15_34" id="2024_07_18_15_34">2024-07-18 15:34</a>: Clock works, but the voices aren't resetting pitches #demo-trio</p>
+<div class="comment-block">
+<p>This causes some very rude sounding glisses sometimes.
+</p>
+</div>
+<p><a href="#2024_07_18_15_45" id="2024_07_18_15_45">2024-07-18 15:45</a>: it works. clocking out. #demo-trio</p>
 </div>
 </body>
 </html>
