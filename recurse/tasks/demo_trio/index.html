@@ -136,6 +136,48 @@ task id: demo-trio
 </p>
 </div>
 <p><a href="#2024_07_18_15_45" id="2024_07_18_15_45">2024-07-18 15:45</a>: it works. clocking out. #demo-trio</p>
+<p><a href="#2024_07_19_08_19" id="2024_07_19_08_19">2024-07-19 08:19</a>: Clock resets are going to throw off gesture algorithm #demo-trio</p>
+<div class="comment-block">
+<p>One of the things I am doing in Trio is forcing a phase reset on pen down so the voices always stagger the same way. The funderlying rephasor in the gesture signal generator does not have a way of handling phase resets, so it'll assume a faster tempo change and cause unwanted jumps in time. The rephasor needs a way to be told that there has been a phase reset, which would cause it to skip calculating the delta time in the next sample tick. 
+</p>
+<p> I wonder if we can build a test around this?
+</p>
+</div>
+<p><a href="#2024_07_19_08_26" id="2024_07_19_08_26">2024-07-19 08:26</a>: Task created for gesture reset #gesture-reset #demo-trio</p>
+<div class="comment-block">
+<p>I want to not only do the fix, but create a test in the test suite that showcases the problem before the fix is created, just so I know that I properly understand the problem that I am trying to solve.
+</p>
+</div>
+<p><a href="#2024_07_19_14_31" id="2024_07_19_14_31">2024-07-19 14:31</a>: Time to actually hook up gesture to trio #demo-trio #timelog:00:36:25</p>
+<p><a href="#2024_07_19_15_04" id="2024_07_19_15_04">2024-07-19 15:04</a>: Things sound better than expected. #demo-trio</p>
+<div class="comment-block">
+<p>It did not crash. Not one crash. Thanks, Rust.
+</p>
+</div>
+<p><a href="#2024_07_19_15_07" id="2024_07_19_15_07">2024-07-19 15:07</a>: A quick break. #demo-trio</p>
+<p><a href="#2024_07_19_15_25" id="2024_07_19_15_25">2024-07-19 15:25</a>: More trio tweaks #demo-trio #timelog:00:50:22</p>
+<p><a href="#2024_07_19_15_26" id="2024_07_19_15_26">2024-07-19 15:26</a>: Need a way to instantaneously set value of gesture. #demo-trio</p>
+<div class="comment-block">
+<p>This can be like a method or something like <code>immediate()</code>. Setting the next/prev values to be some scalar value should work for the most part. The event queue should also be cleared as well.
+</p>
+</div>
+<p><a href="#2024_07_19_15_53" id="2024_07_19_15_53">2024-07-19 15:53</a>: Weird bug: playing the same note twice doesn't trigger events #demo-trio</p>
+<p><a href="#2024_07_19_16_04" id="2024_07_19_16_04">2024-07-19 16:04</a>: A rewrite might be in order for this voice state management #demo-trio</p>
+<div class="comment-block">
+<p>There's too much spaghetti right now. I think I need to actually attempt to model this as a state machine and add some tests. Otherwise, I'm never going to figure out the issue, and this code will become too unwieldy to maintain.
+</p>
+</div>
+<p><a href="#2024_07_19_16_13" id="2024_07_19_16_13">2024-07-19 16:13</a>: Gesture is unpredictable. #demo-trio</p>
+<div class="comment-block">
+<p>Not sure if this is my scheduling logic, or some subtle bug with the gesture event queue, or a mix of both. 
+</p>
+<p> Testing is definitely in order. But like, not today. I'm pretty drained. 
+</p>
+<p> Yeah, considering I want to change the chord selection logic, it's going to be even worse. This needs a rewrite. 
+</p>
+<p> I have built what is essentially a concurrent event system. So yeah, this is tough one to do correctly.
+</p>
+</div>
 </div>
 </body>
 </html>

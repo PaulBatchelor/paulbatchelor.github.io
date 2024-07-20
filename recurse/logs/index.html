@@ -17,6 +17,9 @@ in HTML.
 </p>
 <p><ul id="top">
 <li>
+<a href="#2024_07_19">2024-07-19</a> Day 61. Gestured Voices Work in Trio.
+</li>
+<li>
 <a href="#2024_07_18">2024-07-18</a> Day 60. Staggered voices work in Trio.
 </li>
 <li>
@@ -197,6 +200,180 @@ in HTML.
 <a href="#2024_05_20">2024-05-20</a> Day 1. First day of recurse. Organize.
 </li>
 </ul>
+</p>
+
+<h3><a href="#2024_07_19" id="2024_07_19">2024-07-19</a> Day 61. Gestured Voices Work in Trio.</h3>
+
+<a href="#top">jump to top</a>
+<p>21 days left of batch. 
+</p>
+<p> Prev: Negation in NAND / is a requirement for / Turing completeness 
+</p>
+<p> Next: || <a href="/recurse/tasks/dagzet_rust">dagzet-rust</a>: connection remarks, and plan next steps. cycle checking? sqlite code generation? || <a href="/recurse/tasks/demo_trio">demo-trio</a>: get the event-driven gesture working || <a href="/recurse/tasks/gesture_reset">gesture-reset</a>: implement gesture reset that happens on phase reset.
+</p>
+<p><a href="#2024_07_19_07_48" id="2024_07_19_07_48">07:48</a>: Morning triage</p>
+<p><a href="#2024_07_19_08_12" id="2024_07_19_08_12">08:12</a>: Connection remarks next, then what? #dagzet-rust</p>
+<div class="comment-block">
+<p>My goal is to use this rust port as a drop-in replacement for my current dagzet program. So, a good thing to do would be to write a program that scrapes all the current commands used in my RC dagzet instance. 
+</p>
+<p> I also have more than enough here to begin working on implementing topological sort and SQLite code generation.
+</p>
+</div>
+<p><a href="#2024_07_19_08_19" id="2024_07_19_08_19">08:19</a>: Clock resets are going to throw off gesture algorithm #demo-trio</p>
+<div class="comment-block">
+<p>One of the things I am doing in Trio is forcing a phase reset on pen down so the voices always stagger the same way. The funderlying rephasor in the gesture signal generator does not have a way of handling phase resets, so it'll assume a faster tempo change and cause unwanted jumps in time. The rephasor needs a way to be told that there has been a phase reset, which would cause it to skip calculating the delta time in the next sample tick. 
+</p>
+<p> I wonder if we can build a test around this?
+</p>
+</div>
+<p><a href="#2024_07_19_08_26" id="2024_07_19_08_26">08:26</a>: Task created for gesture reset #gesture-reset #demo-trio</p>
+<div class="comment-block">
+<p>I want to not only do the fix, but create a test in the test suite that showcases the problem before the fix is created, just so I know that I properly understand the problem that I am trying to solve.
+</p>
+</div>
+<p><a href="#2024_07_19_08_29" id="2024_07_19_08_29">08:29</a>: Publishing</p>
+<p><a href="#2024_07_19_09_04" id="2024_07_19_09_04">09:04</a>: Connection remarks in dagzet #dagzet-rust #timelog:01:02:06</p>
+<p><a href="#2024_07_19_09_06" id="2024_07_19_09_06">09:06</a>: Connection remarks notes: more difficult than expected #dagzet-rust</p>
+<div class="comment-block">
+<p>This is more difficult than I expected. A connection remark needs to reference a connection (the last connection made). So, how does one reasonably accomplish this? 
+</p>
+<p> Since the connections are a pair, one approach is to use a 2-dimensional hashmap of values. It feels like a lot more space is used up here. It also duplicates some of the logic in the connections hashmap. 
+</p>
+<p> Another thing to do is to somehow reference the connection. An actual Rust memory reference could cause the borrow checker to be grumpy. Using unique ID values to reference each connection, and having that be a key in a hash table could work. This could become a bookkeeping problem if I ever added the ability to remove connections, but there are no plans to add such a feature. 
+</p>
+<p> Connection ID can be their position in the "connections" vector. 
+</p>
+<p> Since there is no way to selecting a specific connection, it is reasonable to assume that the last connection will always be implicitely be what remarks are being written to. So, the ID will always be length of the vector (minus one for the index).
+</p>
+</div>
+<p><a href="#2024_07_19_09_23" id="2024_07_19_09_23">09:23</a>: Making tests for connection remarks #dagzet-rust</p>
+<p><a href="#2024_07_19_09_33" id="2024_07_19_09_33">09:33</a>: Implementing connection remarks #dagzet-rust</p>
+<p><a href="#2024_07_19_09_59" id="2024_07_19_09_59">09:59</a>: I am weirdly stumped as to why this test is failing #dagzet-rust</p>
+<div class="comment-block">
+<p>It was silently erroring. I needed to add a namespace.
+</p>
+</div>
+<p><a href="#2024_07_19_10_16" id="2024_07_19_10_16">10:16</a>: Time for unknown nodes. #dagzet-rust #timelog:00:21:57</p>
+<p><a href="#2024_07_19_10_20" id="2024_07_19_10_20">10:20</a>: before topsort, but unknown nodes #dagzet-rust</p>
+<div class="comment-block">
+<p>I initially thought I was ready for topsort and cycle checking. But unknown node resolution should happen first. 
+</p>
+<p> An edge list should be created from the connections for the topsort. But those should all be resolved ID values. "Check unknown" nodes should return a set of nodes that do not exist in the node. 
+</p>
+<p> Rust does have a set in their library! Huzzah! Called HashSet. That's what I need.
+</p>
+</div>
+<p><a href="#2024_07_19_10_26" id="2024_07_19_10_26">10:26</a>: Building test for unknown node checker #dagzet-rust</p>
+<p><a href="#2024_07_19_10_37" id="2024_07_19_10_37">10:37</a>: Implementing unknown nodes. #dagzet-rust</p>
+<p><a href="#2024_07_19_10_39" id="2024_07_19_10_39">10:39</a>: Begin cycle checking #dagzet-rust #timelog:00:22:41</p>
+<p><a href="#2024_07_19_10_42" id="2024_07_19_10_42">10:42</a>: How to make this a testable component? #dagzet-rust</p>
+<div class="comment-block">
+<p>The trick here is that the connections need to be resolved, which is another step to test independently. 
+</p>
+<p> A connection list, after it has been verified, should be turned into an edge list. This function is still allowed to error out. This edge list then gets passed in to the cycle checker. 
+</p>
+<p> Note: Topsort makes use of sets that will expand and grow. I expect to dynamically generate these inside the function. 
+</p>
+<p> Generating an edgelist should come first. Panic on missing nodes for now. that can be fixed later. 
+</p>
+<p> The top-level cycle checker should be a method called <code>check_for_cycles</code>. The original implementation was able to get some information on these cycles. 
+</p>
+<p> Looks like the original topsort populates a "loops found" list. I will do the same, only it'll be a HashSet. On success it will return an Ok, otherwise an error code.
+</p>
+</div>
+<p><a href="#2024_07_19_10_51" id="2024_07_19_10_51">10:51</a>: Implementing initial cycle checker test #dagzet-rust</p>
+<p><a href="#2024_07_19_11_02" id="2024_07_19_11_02">11:02</a>: Placeholder tests and functions in place. #dagzet-rust</p>
+<div class="comment-block">
+<p>Implementation will come next. Signing off for now.
+</p>
+</div>
+<p><a href="#2024_07_19_12_26" id="2024_07_19_12_26">12:26</a>: Implement Phasor Reset (attempt) #gesture-reset #timelog:01:06:58</p>
+<p><a href="#2024_07_19_12_32" id="2024_07_19_12_32">12:32</a>: Implementing initial phasor reset test #gesture-reset</p>
+<div class="comment-block">
+<p>Somehow, this needs to simulate a phasor reset, and measure specifically what goes wrong.
+</p>
+</div>
+<p><a href="#2024_07_19_13_14" id="2024_07_19_13_14">13:14</a>: My initial idea of skipping a sample didn't work #gesture-reset</p>
+<div class="comment-block">
+<p>I need to re-remember how this rephasor works. Luckily, I wrote documentation for the C implementation. 
+</p>
+<p> The current rust implementation is a little cryptic. Add docstrings now.
+</p>
+</div>
+<p><a href="#2024_07_19_13_33" id="2024_07_19_13_33">13:33</a>: comments added. going to scratch my head how to solve this one #gesture-reset</p>
+<p><a href="#2024_07_19_13_58" id="2024_07_19_13_58">13:58</a>: More thoughts on rephasor reset #rephasor-reset #timelog:00:32:20</p>
+<div class="comment-block">
+<p>Establishing a line of thought here. 
+</p>
+<p> A phasor reset occurs when the ramp suddenly resets back to 0 in the middle of period. 
+</p>
+<p> In this scenario, the reset happens as a result of an intentional interrupt. It is known precisely when this interrupt happens. The rephasor is called immediately after this interrupt. For this reason, the idea is it can be told ahead of time that the phasor reset itself, and to act occordingly. 
+</p>
+<p> Other than the interrupt, it is assumed that the clock is moving at a steady rate. 
+</p>
+<p> In order for the rephasor to handle a reset phasor properly, it must keep the overall increment amount approximately equal to the increment amount of the phasor. Any jumps indicate a failure to handle this result properly. 
+</p>
+<p> Assmuming rephasor scale amount is 1 (same as input), the increment of the rephasor is determined from the correction coefficient and the delta of the previous sample. 
+</p>
+<p> Possible solution: don't update anything with the clock reset artifact in it. Wait for it to pass through the system before updating correction and incrementor. 
+</p>
+<p> I think waiting two ticks should do it.
+</p>
+</div>
+<p><a href="#2024_07_19_14_12" id="2024_07_19_14_12">14:12</a>: Trying to implement wait counter method #rephasor-reset</p>
+<p><a href="#2024_07_19_14_21" id="2024_07_19_14_21">14:21</a>: now test is passing when it shouldn't #rephasor-reset</p>
+<p><a href="#2024_07_19_14_23" id="2024_07_19_14_23">14:23</a>: oh, perhaps this is a non issue #rephasor-reset</p>
+<div class="comment-block">
+<p>I wrote the test wrong which is why it was failing in the first place. But, now it works. 
+</p>
+<p> I think this test might be resilient against this particular kind of reset beacuse the phase goes to exactly 0 and also that the overall slope doesn't change. 
+</p>
+<p> No changes needed. But the test is in there to prove this.
+</p>
+</div>
+<p><a href="#2024_07_19_14_31" id="2024_07_19_14_31">14:31</a>: Time to actually hook up gesture to trio #demo-trio #timelog:00:36:25</p>
+<p><a href="#2024_07_19_14_48" id="2024_07_19_14_48">14:48</a>: This code is approaching "putting out fires" mode #deom-trio</p>
+<div class="comment-block">
+<p>I'm feeling a little overwhelmed at the moment. 
+</p>
+<p> Erased my changes. Took a breath.
+</p>
+</div>
+<p><a href="#2024_07_19_15_04" id="2024_07_19_15_04">15:04</a>: Things sound better than expected. #demo-trio</p>
+<div class="comment-block">
+<p>It did not crash. Not one crash. Thanks, Rust.
+</p>
+</div>
+<p><a href="#2024_07_19_15_07" id="2024_07_19_15_07">15:07</a>: A quick break. #demo-trio</p>
+<p><a href="#2024_07_19_15_25" id="2024_07_19_15_25">15:25</a>: More trio tweaks #demo-trio #timelog:00:50:22</p>
+<p><a href="#2024_07_19_15_26" id="2024_07_19_15_26">15:26</a>: Need a way to instantaneously set value of gesture. #demo-trio</p>
+<div class="comment-block">
+<p>This can be like a method or something like <code>immediate()</code>. Setting the next/prev values to be some scalar value should work for the most part. The event queue should also be cleared as well.
+</p>
+</div>
+<p><a href="#2024_07_19_15_53" id="2024_07_19_15_53">15:53</a>: Weird bug: playing the same note twice doesn't trigger events #demo-trio</p>
+<p><a href="#2024_07_19_16_04" id="2024_07_19_16_04">16:04</a>: A rewrite might be in order for this voice state management #demo-trio</p>
+<div class="comment-block">
+<p>There's too much spaghetti right now. I think I need to actually attempt to model this as a state machine and add some tests. Otherwise, I'm never going to figure out the issue, and this code will become too unwieldy to maintain.
+</p>
+</div>
+<p><a href="#2024_07_19_16_13" id="2024_07_19_16_13">16:13</a>: Gesture is unpredictable. #demo-trio</p>
+<div class="comment-block">
+<p>Not sure if this is my scheduling logic, or some subtle bug with the gesture event queue, or a mix of both. 
+</p>
+<p> Testing is definitely in order. But like, not today. I'm pretty drained. 
+</p>
+<p> Yeah, considering I want to change the chord selection logic, it's going to be even worse. This needs a rewrite. 
+</p>
+<p> I have built what is essentially a concurrent event system. So yeah, this is tough one to do correctly.
+</p>
+</div>
+<p><a href="#2024_07_19_16_20" id="2024_07_19_16_20">16:20</a>: Working on weekly recap now.</p>
+<p><a href="#2024_07_19_19_17" id="2024_07_19_19_17">19:17</a>: Reading #read-elem-compsys #timelog:00:43:04</p>
+<div class="comment-block">
+<p>More reading on sequential logic.
+</p>
+</div>
 </p>
 
 <h3><a href="#2024_07_18" id="2024_07_18">2024-07-18</a> Day 60. Staggered voices work in Trio.</h3>

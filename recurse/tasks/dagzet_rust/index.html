@@ -161,6 +161,68 @@ task id: dagzet-rust
 <p>Variation on a theme, I suspect. Unplugging and getting lunch now.
 </p>
 </div>
+<p><a href="#2024_07_19_08_12" id="2024_07_19_08_12">2024-07-19 08:12</a>: Connection remarks next, then what? #dagzet-rust</p>
+<div class="comment-block">
+<p>My goal is to use this rust port as a drop-in replacement for my current dagzet program. So, a good thing to do would be to write a program that scrapes all the current commands used in my RC dagzet instance. 
+</p>
+<p> I also have more than enough here to begin working on implementing topological sort and SQLite code generation.
+</p>
+</div>
+<p><a href="#2024_07_19_09_04" id="2024_07_19_09_04">2024-07-19 09:04</a>: Connection remarks in dagzet #dagzet-rust #timelog:01:02:06</p>
+<p><a href="#2024_07_19_09_06" id="2024_07_19_09_06">2024-07-19 09:06</a>: Connection remarks notes: more difficult than expected #dagzet-rust</p>
+<div class="comment-block">
+<p>This is more difficult than I expected. A connection remark needs to reference a connection (the last connection made). So, how does one reasonably accomplish this? 
+</p>
+<p> Since the connections are a pair, one approach is to use a 2-dimensional hashmap of values. It feels like a lot more space is used up here. It also duplicates some of the logic in the connections hashmap. 
+</p>
+<p> Another thing to do is to somehow reference the connection. An actual Rust memory reference could cause the borrow checker to be grumpy. Using unique ID values to reference each connection, and having that be a key in a hash table could work. This could become a bookkeeping problem if I ever added the ability to remove connections, but there are no plans to add such a feature. 
+</p>
+<p> Connection ID can be their position in the "connections" vector. 
+</p>
+<p> Since there is no way to selecting a specific connection, it is reasonable to assume that the last connection will always be implicitely be what remarks are being written to. So, the ID will always be length of the vector (minus one for the index).
+</p>
+</div>
+<p><a href="#2024_07_19_09_23" id="2024_07_19_09_23">2024-07-19 09:23</a>: Making tests for connection remarks #dagzet-rust</p>
+<p><a href="#2024_07_19_09_33" id="2024_07_19_09_33">2024-07-19 09:33</a>: Implementing connection remarks #dagzet-rust</p>
+<p><a href="#2024_07_19_09_59" id="2024_07_19_09_59">2024-07-19 09:59</a>: I am weirdly stumped as to why this test is failing #dagzet-rust</p>
+<div class="comment-block">
+<p>It was silently erroring. I needed to add a namespace.
+</p>
+</div>
+<p><a href="#2024_07_19_10_16" id="2024_07_19_10_16">2024-07-19 10:16</a>: Time for unknown nodes. #dagzet-rust #timelog:00:21:57</p>
+<p><a href="#2024_07_19_10_20" id="2024_07_19_10_20">2024-07-19 10:20</a>: before topsort, but unknown nodes #dagzet-rust</p>
+<div class="comment-block">
+<p>I initially thought I was ready for topsort and cycle checking. But unknown node resolution should happen first. 
+</p>
+<p> An edge list should be created from the connections for the topsort. But those should all be resolved ID values. "Check unknown" nodes should return a set of nodes that do not exist in the node. 
+</p>
+<p> Rust does have a set in their library! Huzzah! Called HashSet. That's what I need.
+</p>
+</div>
+<p><a href="#2024_07_19_10_26" id="2024_07_19_10_26">2024-07-19 10:26</a>: Building test for unknown node checker #dagzet-rust</p>
+<p><a href="#2024_07_19_10_37" id="2024_07_19_10_37">2024-07-19 10:37</a>: Implementing unknown nodes. #dagzet-rust</p>
+<p><a href="#2024_07_19_10_39" id="2024_07_19_10_39">2024-07-19 10:39</a>: Begin cycle checking #dagzet-rust #timelog:00:22:41</p>
+<p><a href="#2024_07_19_10_42" id="2024_07_19_10_42">2024-07-19 10:42</a>: How to make this a testable component? #dagzet-rust</p>
+<div class="comment-block">
+<p>The trick here is that the connections need to be resolved, which is another step to test independently. 
+</p>
+<p> A connection list, after it has been verified, should be turned into an edge list. This function is still allowed to error out. This edge list then gets passed in to the cycle checker. 
+</p>
+<p> Note: Topsort makes use of sets that will expand and grow. I expect to dynamically generate these inside the function. 
+</p>
+<p> Generating an edgelist should come first. Panic on missing nodes for now. that can be fixed later. 
+</p>
+<p> The top-level cycle checker should be a method called <code>check_for_cycles</code>. The original implementation was able to get some information on these cycles. 
+</p>
+<p> Looks like the original topsort populates a "loops found" list. I will do the same, only it'll be a HashSet. On success it will return an Ok, otherwise an error code.
+</p>
+</div>
+<p><a href="#2024_07_19_10_51" id="2024_07_19_10_51">2024-07-19 10:51</a>: Implementing initial cycle checker test #dagzet-rust</p>
+<p><a href="#2024_07_19_11_02" id="2024_07_19_11_02">2024-07-19 11:02</a>: Placeholder tests and functions in place. #dagzet-rust</p>
+<div class="comment-block">
+<p>Implementation will come next. Signing off for now.
+</p>
+</div>
 </div>
 </body>
 </html>
