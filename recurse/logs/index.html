@@ -17,10 +17,13 @@ in HTML.
 </p>
 <p><ul id="top">
 <li>
+<a href="#2024_07_22">2024-07-22</a> Day 64. Haptic Knob Controllers.
+</li>
+<li>
 <a href="#2024_07_21">2024-07-21</a> Day 63. Week 10.
 </li>
 <li>
-<a href="#2024_07_20">2024-07-20</a> Day 62.
+<a href="#2024_07_20">2024-07-20</a> Day 62. My generics start to become unhinged.
 </li>
 <li>
 <a href="#2024_07_19">2024-07-19</a> Day 61. Gestured Voices Work in Trio.
@@ -208,6 +211,95 @@ in HTML.
 </ul>
 </p>
 
+<h3><a href="#2024_07_22" id="2024_07_22">2024-07-22</a> Day 64. Haptic Knob Controllers.</h3>
+
+<a href="#top">jump to top</a>
+<p>18 days left of batch. 
+</p>
+<p> I think Haikus have run their course. 
+</p>
+<p> Prev: briefly worked on rust Dagzet stuff <a href="/recurse/tasks/dagzet_rust">dagzet-rust</a>, I have an idea of what I need to build out still to get it working on the RC knowledge graph here: <a href="/recurse/dz">check it out</a>. 
+</p>
+<p> Next: || <a href="/recurse/tasks/dagzet_rust">dagzet-rust</a>: work on file range command, in addition others. || <a href="/recurse/tasks/LC75">LC75</a>: study planning ideas || <a href="/recurse/tasks/demo_trio">demo-trio</a>: draft out voice state machine
+</p>
+<p><a href="#2024_07_22_08_50" id="2024_07_22_08_50">08:50</a>: Morning Triage.</p>
+<p><a href="#2024_07_22_08_57" id="2024_07_22_08_57">08:57</a>: How can I work on this stuff offline? #LC75</p>
+<div class="comment-block">
+<p>Leetcode provides validation of solutions, which is nice. But having a format that distills the problems into something offline for reference would be nice. 
+</p>
+<p> I think I might just manually transcribe the questions to markdown and put them in a repo.
+</p>
+</div>
+<p><a href="#2024_07_22_09_03" id="2024_07_22_09_03">09:03</a>: good time to figure out pikchr? #demo-trio</p>
+<div class="comment-block">
+<p>I'm trying to more formally establish a way to manage how the voice scheduling works for trio.
+</p>
+</div>
+<p><a href="#2024_07_22_09_07" id="2024_07_22_09_07">09:07</a>: Publish</p>
+<p><a href="#2024_07_22_09_16" id="2024_07_22_09_16">09:16</a>: Some initial inking of voice scheduler #demo-trio-voice-scheduler #timelog:00:49:09</p>
+<p><a href="#2024_07_22_10_36" id="2024_07_22_10_36">10:36</a>: Attempts at initial code and tests #demo-trio-voice-scheduler</p>
+<p><a href="#2024_07_22_11_23" id="2024_07_22_11_23">11:23</a>: How to set up event scheduling logic? #demo-trio-voice-scheduler #timelog:00:59:47</p>
+<div class="comment-block">
+<p>I have the basic actions and primitives for the most part. Now, they need to be composed and worked together to trigger events for the other voices. 
+</p>
+<p> These events need to be triggered exactly once. 
+</p>
+<p> Event triggers at the start of a tick. 
+</p>
+<p> In a test, one should be able to tick() then ask the state questions. Is the voice supposed to launch? Is it playing already? Did the voice just turn off? Is it supposed to turn off? Etc, etc. 
+</p>
+<p> These events need to happen exactly once. Tick, check and see if things need to be done, tick, those things are done. 
+</p>
+<p> prev/curr state system could probably do this? At each tick, update prev to be curr. So, that means changes and probing would have to happen together before the next tick?
+</p>
+</div>
+<p><a href="#2024_07_22_13_10" id="2024_07_22_13_10">13:10</a>: Inking out thoughts on triggers #demo-trio-voice-scheduler #timelog:00:20:12</p>
+<p><a href="#2024_07_22_13_35" id="2024_07_22_13_35">13:35</a>: Attempts to implement triggers #demo-trio-voice-scheduler #timelog:01:57:19</p>
+<p><a href="#2024_07_22_13_53" id="2024_07_22_13_53">13:53</a>: Core trigger built. Now to try to use them #demo-trio-voice-scheduler</p>
+<p><a href="#2024_07_22_14_36" id="2024_07_22_14_36">14:36</a>: Inking and brainstorming #demo-trio-voice-scheduler</p>
+<div class="comment-block">
+<p>I was trying to figure out when to trigger certain events like gates and pitch changes. I was has having difficulty getting to the bottom of pitch changes for auto voices: when they are initially turned on (happens when the gate is first on), the pitch needs to be instantaneous, otherwise it is scheduled. How does the voice know the difference? What state information is needed?
+</p>
+</div>
+<p><a href="#2024_07_22_14_43" id="2024_07_22_14_43">14:43</a>: Introduce two boolean gates indicating on/off state for auto-voices? #demo-trio-voice-scheduler</p>
+<div class="comment-block">
+<p>This is the best I got so far. 
+</p>
+<p> Consider the state needed to determine a pitch change for an autovoice: it happens when when the lead note is on, and the timer has reached a particular value. An extra value could be used to determine whether to immediate set or schedule based on if the voice is turned on. 
+</p>
+<p> An auto voice will always be immediately set to a pitch first, and would therefore set the voice flag to on. Subsequent voice changes will be scheduled until this voice flag is turned off. 
+</p>
+<p> The only way the voice flag is turned off is when an gate off event happens. This will turn off all the voices in the state.
+</p>
+</div>
+<p><a href="#2024_07_22_14_51" id="2024_07_22_14_51">14:51</a>: attempting to code this line of thinking up #demo-trio-voice-scheduler</p>
+<div class="comment-block">
+<p>I'm tempted to have this be a set of state separate from the current set of state. I believe you could make the case that the flow of information is one-way: changes from the main state influence the states of the auto voices, and not the other way around. 
+</p>
+<p> Separating state like this I think will make it easier to test.
+</p>
+</div>
+<p><a href="#2024_07_22_15_14" id="2024_07_22_15_14">15:14</a>: These states need triggers hooked into them now. #demo-trio-voice-scheduler</p>
+<p><a href="#2024_07_22_15_41" id="2024_07_22_15_41">15:41</a>: initial firing logic works for a lower voice #demo-trio-voice-scheduler</p>
+<div class="comment-block">
+<p>Right now, it doesn't know the difference between an instantaneous vs scheduled pitch change, but the scaffolding is there.
+</p>
+</div>
+<p><a href="#2024_07_22_16_55" id="2024_07_22_16_55">16:55</a>: dagzet things? #dagzet-rust #timelog:00:05:00</p>
+<p><a href="#2024_07_22_18_55" id="2024_07_22_18_55">18:55</a>: dagzet: file range work #dagzet-rust #timelog:00:28:08</p>
+<p><a href="#2024_07_22_19_16" id="2024_07_22_19_16">19:16</a>: initial tests pass, but they are wrong #dagzet-rust</p>
+<p><a href="#2024_07_22_19_38" id="2024_07_22_19_38">19:38</a>: Attempts to get the file range table working. #dagzet-rust</p>
+<div class="comment-block">
+<p>Okay, nevermind.
+</p>
+</div>
+<p><a href="#2024_07_22_20_16" id="2024_07_22_20_16">20:16</a>: Got distracted.</p>
+<div class="comment-block">
+<p>Haptic rotary knob controllers. What was I supposed to do?
+</p>
+</div>
+</p>
+
 <h3><a href="#2024_07_21" id="2024_07_21">2024-07-21</a> Day 63. Week 10.</h3>
 
 <a href="#top">jump to top</a>
@@ -279,7 +371,7 @@ in HTML.
 </div>
 </p>
 
-<h3><a href="#2024_07_20" id="2024_07_20">2024-07-20</a> Day 62.</h3>
+<h3><a href="#2024_07_20" id="2024_07_20">2024-07-20</a> Day 62. My generics start to become unhinged.</h3>
 
 <a href="#top">jump to top</a>
 <p>20 days left of batch. 
@@ -1001,9 +1093,7 @@ in HTML.
 <h3><a href="#2024_07_15" id="2024_07_15">2024-07-15</a> Day 57. Event-driven Gesture, Dagzet, Testing in Rust</h3>
 
 <a href="#top">jump to top</a>
-<p>25 days left of batch. Prev: Wanted lines with sound / Built the necessary tools / Abandoned the Thought 
-</p>
-<p> Next: || <a href="/recurse/tasks/event_driven_gesture">event-driven-gesture</a>: initial work on event-driven gesture interface || <a href="/recurse/tasks/dagzet_rust">dagzet-rust</a>: more dagzet work, cuz I didn't get to it yesterday. 
+<p>25 days left of batch. Prev: Wanted lines with sound / Built the necessary tools / Abandoned the Thought Next: || <a href="/recurse/tasks/event_driven_gesture">event-driven-gesture</a>: initial work on event-driven gesture interface || <a href="/recurse/tasks/dagzet_rust">dagzet-rust</a>: more dagzet work, cuz I didn't get to it yesterday. 
 </p>
 <p> Very tired and groggy today. I've been going to bed too late, and waking up too early.
 </p>
@@ -1074,9 +1164,7 @@ in HTML.
 <p><a href="#2024_07_15_15_49" id="2024_07_15_15_49">15:49</a>: More work on dagzet in rust #dagzet-rust #timelog:00:35:58</p>
 <p><a href="#2024_07_15_15_50" id="2024_07_15_15_50">15:50</a>: Let's run clippy on my dagzet project so far #dagzet-rust</p>
 <div class="comment-block">
-<p>Turns out it doesn't have a lot to say. 
-</p>
-<p> Voxbox, on the other hand, is a mess.
+<p>Turns out it doesn't have a lot to say. Voxbox, on the other hand, is a mess.
 </p>
 </div>
 <p><a href="#2024_07_15_15_52" id="2024_07_15_15_52">15:52</a>: cargo clippy is a mess on this repo #voxbox-cargo-clippy</p>
