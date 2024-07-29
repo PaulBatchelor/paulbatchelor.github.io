@@ -22,6 +22,201 @@ task id: demo-trio-chords
 <p>The initial structures: chords, and valid chord transitions.
 </p>
 </div>
+<p><a href="#2024_07_26_09_51" id="2024_07_26_09_51">2024-07-26 09:51</a>: Implement query. #demo-trio-chords #timelog:00:59:53</p>
+<div class="comment-block">
+<p>Query: given a current chord, and a new lead note, find all the valid chords to transition to.
+</p>
+</div>
+<p><a href="#2024_07_26_12_57" id="2024_07_26_12_57">2024-07-26 12:57</a>: transition tracker #demo-trio-chords #timelog:02:41:39</p>
+<p><a href="#2024_07_26_14_06" id="2024_07_26_14_06">2024-07-26 14:06</a>: Something is wrong with the query. #demo-trio-chords</p>
+<div class="comment-block">
+<p>I am trying to transition D4 in the key of C. This should give me two chords (G and Dm). But I'm getting no chords. 
+</p>
+<p> Ah, my "RE" constant was miscoded. Phew.
+</p>
+</div>
+<p><a href="#2024_07_26_14_13" id="2024_07_26_14_13">2024-07-26 14:13</a>: Need a way to remove candidate chords in place #demo-trio-chords</p>
+<div class="comment-block">
+<p>Chords need to be removed.
+</p>
+</div>
+<p><a href="#2024_07_26_14_23" id="2024_07_26_14_23">2024-07-26 14:23</a>: I'm running into overflow issues. Why? #demo-trio-chords</p>
+<div class="comment-block">
+<p>Oh just figured it out. I was using "chord index" instead of "index".
+</p>
+</div>
+<p><a href="#2024_07_26_15_07" id="2024_07_26_15_07">2024-07-26 15:07</a>: Initial test created for note transition chord test #demo-trio-chords</p>
+<div class="comment-block">
+<p>This has an interface that applies the heuristic to the candidate, which effectively removes the previous chord in place.
+</p>
+</div>
+<p><a href="#2024_07_26_15_12" id="2024_07_26_15_12">2024-07-26 15:12</a>: kind of a clunky interface, but it can be reworked later #demo-trio-chords</p>
+<div class="comment-block">
+<p>I'm querying the chord, removeing the previous transition chord, and updating the note pair table in 3 separate steps. It feels maybe too low-level and could be consolidated better?
+</p>
+</div>
+<p><a href="#2024_07_26_15_22" id="2024_07_26_15_22">2024-07-26 15:22</a>: remove previous transition not working as expected #demo-trio-chords</p>
+<div class="comment-block">
+<p>It has no effect at all apparently.
+</p>
+</div>
+<p><a href="#2024_07_26_15_34" id="2024_07_26_15_34">2024-07-26 15:34</a>: I think I found an off by one error #demo-trio-chords</p>
+<div class="comment-block">
+<p>I'm 99% sure it's the problem, but is it worth the problem? 
+</p>
+<p> There are two kinds of references right now: zero-index and one-indexed. The one-indexed ones are used because it means 0 can be reserved for None. <code>was_used_last</code> expects a zero-indexed chord. But really, these indexes are transparent for the most part. <code>add_chord</code> returns a zero-indexed position as well. 
+</p>
+<p> I think it makes sense to 1-index everything because that 0 is so critical.
+</p>
+</div>
+<p><a href="#2024_07_26_15_52" id="2024_07_26_15_52">2024-07-26 15:52</a>: Fixed indexing #demo-trio-chords</p>
+<div class="comment-block">
+<p>Wow, that was tedious. Glad I had the tests. It almost makes me wished I used <code>Option<T></code>...
+</p>
+</div>
+<p><a href="#2024_07_26_15_56" id="2024_07_26_15_56">2024-07-26 15:56</a>: What happens if the current note doesn't have a valid state transition? #demo-trio-chords</p>
+<div class="comment-block">
+<p>There is no way to account for this yet. It will catch it as having zero candidates though.
+</p>
+</div>
+<p><a href="#2024_07_26_15_58" id="2024_07_26_15_58">2024-07-26 15:58</a>: I'm now realizing that my look-up table should just be 12x12, not 12x11 #demo-trio-chords</p>
+<div class="comment-block">
+<p>Because it's harder to calculate what that second index is going to be. There also needs to be a check to make sure prev/next is not equal.
+</p>
+</div>
+<p><a href="#2024_07_27_20_18" id="2024_07_27_20_18">2024-07-27 20:18</a>: implementing fallback chords #demo-trio-chords #timelog:00:17:27</p>
+<div class="comment-block">
+<p>It occured to me yesterday that I am actually close to a proof-of-concept system. I already have one heuristic working. I don't need to build out the others yet. 
+</p>
+<p> I do need to build a fallback set of chords in case a chord isn't found for a particular note.
+</p>
+</div>
+<p><a href="#2024_07_27_20_44" id="2024_07_27_20_44">2024-07-27 20:44</a>: Figuring out how to actually hook this up #demo-trio-chords #timelog:00:28:53</p>
+<p><a href="#2024_07_27_21_42" id="2024_07_27_21_42">2024-07-27 21:42</a>: Find upper/lower voices of chord... how to? #demo-trio-chords</p>
+<div class="comment-block">
+<p>Instead of a lookup table, dynamically find the closest voices above and below a lead note given a chord.
+</p>
+</div>
+<p><a href="#2024_07_27_21_52" id="2024_07_27_21_52">2024-07-27 21:52</a>: Note to self: chord select needs to reset on note off some how #demo-trio-chords</p>
+<p><a href="#2024_07_27_21_57" id="2024_07_27_21_57">2024-07-27 21:57</a>: Initial tests made. That's all I can do. #demo-trio-chords</p>
+<div class="comment-block">
+<p>I am incredibly exhausted today. What a long day.
+</p>
+</div>
+<p><a href="#2024_07_28_11_00" id="2024_07_28_11_00">2024-07-28 11:00</a>: Implement upper/lower voice finder. #demo-trio-chords #timelog:00:09:43</p>
+<p><a href="#2024_07_28_11_11" id="2024_07_28_11_11">2024-07-28 11:11</a>: Plan out how to insert chords #demo-trio-chords #timelog:00:34:42</p>
+<p><a href="#2024_07_28_11_41" id="2024_07_28_11_41">2024-07-28 11:41</a>: I have built an initial "Chord Manager" #demo-trio-chords</p>
+<div class="comment-block">
+<p>I believe I have identified the entry points for the chord manager in the existing code, and I have built an initial dummy interface for it. There is a failing test now with the methods. 
+</p>
+<p> If I can implement this interface, I think it'll be ready for actual integration.
+</p>
+</div>
+<p><a href="#2024_07_28_11_47" id="2024_07_28_11_47">2024-07-28 11:47</a>: Implementing chord manager #demo-trio-chords #timelog:00:49:00</p>
+<p><a href="#2024_07_28_11_49" id="2024_07_28_11_49">2024-07-28 11:49</a>: Populating the chord table. #demo-trio-chords</p>
+<p><a href="#2024_07_28_12_22" id="2024_07_28_12_22">2024-07-28 12:22</a>: Upper/lower movement could be different #demo-trio-chords</p>
+<div class="comment-block">
+<p>Upper/lower voice selection is based on minimal distance from lead voice. This could also change to be based on the minimal distance from the voice it is currently at while also being above/below the lead. 
+</p>
+<p> Writing this down, I'm realizing there's potential for chaos (an upper voice that somehow keeps drifting upwards, for instance). Could be a cool thing though.
+</p>
+</div>
+<p><a href="#2024_07_28_12_36" id="2024_07_28_12_36">2024-07-28 12:36</a>: tests seem to pass for the initial chord manager #demo-trio-chords</p>
+<p><a href="#2024_07_28_12_37" id="2024_07_28_12_37">2024-07-28 12:37</a>: Let's see if I can make this work #demo-trio-chords #timelog:00:17:39</p>
+<p><a href="#2024_07_28_12_56" id="2024_07_28_12_56">2024-07-28 12:56</a>: I want a minor VI in there #demo-trio-chords #timelog:00:20:00</p>
+<p><a href="#2024_07_28_13_03" id="2024_07_28_13_03">2024-07-28 13:03</a>: Harmonic continuinity is coming through, but better voice leading needed #demo-trio-chords</p>
+<div class="comment-block">
+<p>Also running into a bug with chord harmonies. I get wrong chords. If I keep tapping on Do, I'll land on sustained chords, which aren't correct.
+</p>
+</div>
+<p><a href="#2024_07_28_13_07" id="2024_07_28_13_07">2024-07-28 13:07</a>: Oh right, I think I need to make sure duplicates are ignored #demo-trio-chords</p>
+<div class="comment-block">
+<p>Still not fixing the bug I described above. The lower note is incorrectly holding onto the note of the previous chord for some reason.
+</p>
+</div>
+<p><a href="#2024_07_28_13_16" id="2024_07_28_13_16">2024-07-28 13:16</a>: Pulling myself away. #demo-trio-chords</p>
+<p><a href="#2024_07_28_14_49" id="2024_07_28_14_49">2024-07-28 14:49</a>: Fixing the weird initial chord bug #demo-trio-chords #timelog:00:07:32</p>
+<div class="comment-block">
+<p>Retriggering the lowest note causes it to alternate between a major chord (correct) and a sustained chord (incorrect) The upper note is correct, while the lower note is incorrect.
+</p>
+</div>
+<p><a href="#2024_07_28_14_59" id="2024_07_28_14_59">2024-07-28 14:59</a>: It never chooses anything but the top 2 right now #demo-trio-chords</p>
+<p><a href="#2024_07_28_15_06" id="2024_07_28_15_06">2024-07-28 15:06</a>: Minimal movement, and better choices #demo-trio-chords #timelog:00:19:50</p>
+<div class="comment-block">
+<p>The state transitions aren't shuffling through the states as well as I'd like. Also, there's too much unnecessary voice movement. 
+</p>
+<p> How can the system choose interesting chords and also minimize movement? 
+</p>
+<p> Specifically: I want the system to be introduced to the minor 4 (without resorting to randomness), and I want the voices to resolve in an expected way. 
+</p>
+<p> It is a constraint problem. Each voice has different behavior. 
+</p>
+<p> Upper voice should move as little as possible while still being above the lead voice. 
+</p>
+<p> Lower voice should move the minimum number of steps required to complete the chord, based on what the current upper and lead pitches are. 
+</p>
+<p> New heuristic idea: of the candidates, choose the least used chord so far. Probably keep a running heat map. This solves the chord selection problem, but not the voice leading issue 
+</p>
+<p> Another heuristic for chord selection is to find a candidate chord that requires the least amount of movement, given the current upper/lower pitches. This would require storing the current pitches of upper/lower, calculating the upper/lower pitches for each chord, and getting the combined step change for each chord. The one with the lowest score wins. 
+</p>
+<p> These are two different heuristics for selection, and I can imagine there would be a way to choose one over the other.
+</p>
+</div>
+<p><a href="#2024_07_28_15_27" id="2024_07_28_15_27">2024-07-28 15:27</a>: Implement the "least used chord" heuristic #demo-trio-chords #timelog:00:58:01</p>
+<p><a href="#2024_07_28_16_24" id="2024_07_28_16_24">2024-07-28 16:24</a>: Heuristic implemented in tests, now to try it out #demo-trio-chords #timelog:00:09:35</p>
+<p><a href="#2024_07_28_16_36" id="2024_07_28_16_36">2024-07-28 16:36</a>: Least Movement Heuristic thoughts, test building #demo-trio-chords</p>
+<div class="comment-block">
+<p>Least movement: for each candidates, get the working upper and lower notes of those chords given the current lead pitch. Get the absolute differences between those and the current lower/upper. The one with the lowest score wins. 
+</p>
+<p> A good hybrid could be something called "Lazy Least Used". Go for the least used, but only if the movement required is under a certain score. Otherwise, choose the one with least movement
+</p>
+</div>
+<p><a href="#2024_07_28_16_42" id="2024_07_28_16_42">2024-07-28 16:42</a>: Working out a least movement test. #demo-trio-chords #timelog:00:18:34</p>
+<div class="comment-block">
+<p>Firstly, make sure the low-level chord measurement mechanics are in place and working properly. Then, simulate a chord change.
+</p>
+</div>
+<p><a href="#2024_07_28_16_57" id="2024_07_28_16_57">2024-07-28 16:57</a>: Implement measure movement core logic #demo-trio-chords #timelog:00:04:33</p>
+<p><a href="#2024_07_28_17_02" id="2024_07_28_17_02">2024-07-28 17:02</a>: Work out least movement heuristic test #demo-trio-chords #timelog:00:23:06</p>
+<p><a href="#2024_07_28_17_10" id="2024_07_28_17_10">2024-07-28 17:10</a>: Staggered voices complicate things #demo-trio-chords</p>
+<div class="comment-block">
+<p>You need to store what the pitch actually is somewhat reliably. There isn't currently a caching mechanism in place for this. 
+</p>
+<p> The entry points for this happen when a pitch is actually scheduled.
+</p>
+</div>
+<p><a href="#2024_07_28_17_20" id="2024_07_28_17_20">2024-07-28 17:20</a>: What happens if you schedule a note that is the same? #demo-trio-chords</p>
+<div class="comment-block">
+<p>Minimal movement means lots of situations where a note stays the same. 
+</p>
+<p> Shouldn't really matter, for now. It'll cause more complication if a check is introduced (for example, handle what happens if there is no previous note).
+</p>
+</div>
+<p><a href="#2024_07_28_17_26" id="2024_07_28_17_26">2024-07-28 17:26</a>: Implement least movement heuristic #demo-trio-chords #timelog:00:23:20</p>
+<p><a href="#2024_07_28_17_50" id="2024_07_28_17_50">2024-07-28 17:50</a>: Hook it up into the system #demo-trio-chords #timelog:00:19:03</p>
+<p><a href="#2024_07_28_18_05" id="2024_07_28_18_05">2024-07-28 18:05</a>: why is it crashing now? #demo-trio-chords</p>
+<p><a href="#2024_07_28_18_21" id="2024_07_28_18_21">2024-07-28 18:21</a>: It works! Next steps #demo-trio-chords</p>
+<div class="comment-block">
+<p>Lazy Least Frequent Heuristic, Y-axis expression. 
+</p>
+<p> Nice thing to have: some way to go from staggered to instantaneous behavior.
+</p>
+</div>
+<p><a href="#2024_07_28_18_26" id="2024_07_28_18_26">2024-07-28 18:26</a>: LeastMovement crashes due to unwrap still #demo-trio-chords #timelog:00:06:33</p>
+<div class="comment-block">
+<p>Fixed.
+</p>
+</div>
+<p><a href="#2024_07_28_19_47" id="2024_07_28_19_47">2024-07-28 19:47</a>: Attemping the Lazy Least Frequent Heuristic #demo-trio-chords #timelog:00:14:43</p>
+<div class="comment-block">
+<p>This one seems difficult to make a test for. I am tempted to just implemented it without tests, as the amount of effort it would take to find the perfect test situation wouldn't be worth it.
+</p>
+</div>
+<p><a href="#2024_07_28_20_03" id="2024_07_28_20_03">2024-07-28 20:03</a>: It appears to be working. #demo-trio-chords</p>
+<div class="comment-block">
+<p>This is a good stopping point for my chords engine.
+</p>
+</div>
 </div>
 </body>
 </html>
