@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/recurse/css/style.css">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
+<body>
+<div id="main">
+<p><title>investigate tic80 audio</title>
+<h1>investigate tic80 audio</h1>
+task id: investigate-tic80-audio
+</p>
+<p><a href="#2024_07_07_09_48" id="2024_07_07_09_48">2024-07-07 09:48</a>: want to examine audio code and capabilities in tic80 today #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>How hackable is it? Is it feasible to shove my rust DSP code into the TIC80, audio callback, and control it from tic80 code? 
+</p>
+<p> I think this could be a fruitful way to build an ecosystem of toys that match my current aesthetic. I have semi-long term plans for this potentially. 
+</p>
+<p> I say "semi-potentially" because for its constraints, the software has quite a complex software stack. I don't expect this to be the most portable thing in the world. The most portable things are ideas, and after that, bytes of data (8 bits to a byte is fairly universal). There is a cartridge format, which may end up being a promising data format for portability, but we'll see. 
+</p>
+<p> Short term (as in this batch), portability or longevity is not a concern. I just want to hack stuff.
+</p>
+</div>
+<p><a href="#2024_07_07_14_07" id="2024_07_07_14_07">2024-07-07 14:07</a>: Examining TIC-80 codebase for audio #investigate-tic80-audio #timelog:00:21:25</p>
+<div class="comment-block">
+<p>The idea is to find the files, then add them to codestudy. 
+</p>
+<p> I think I found the music. One file <code>sound.c</code>, almost 600 lines. Not too bad, actually. 
+</p>
+<p> Adding to codestudy. 
+</p>
+<p> why didn't sound.c import? 
+</p>
+<p> oh it did, but the CSS broke. why did it break? Gotta look into this. again.
+</p>
+</div>
+<p><a href="#2024_07_07_15_23" id="2024_07_07_15_23">2024-07-07 15:23</a>: Back to tic80 #investigate-tic80-audio #timelog:00:49:55</p>
+<p><a href="#2024_07_07_15_42" id="2024_07_07_15_42">2024-07-07 15:42</a>: What things call these functions? #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>I want to see an audio callback.
+</p>
+</div>
+<p><a href="#2024_07_07_17_06" id="2024_07_07_17_06">2024-07-07 17:06</a>: Next steps #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>I think I'm pretty close to understanding how the callback stores audio into buffers. There's a resampling step which I need to figure out more, but I believe I know where I can inject custom DSP. At that point, I'll be ready to make a follow-up task.
+</p>
+</div>
+<p><a href="#2024_07_08_09_10" id="2024_07_08_09_10">2024-07-08 09:10</a>: TIC-80 investigations part 2. #investigate-tic80-audio #timelog:01:017:34</p>
+<p><a href="#2024_07_08_09_19" id="2024_07_08_09_19">2024-07-08 09:19</a>: 8-bit audio. #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>I shouldn't be terribly surprised by this, but the output is 8-bit.
+</p>
+</div>
+<p><a href="#2024_07_08_09_48" id="2024_07_08_09_48">2024-07-08 09:48</a>: second-guessing myself on the 8-bit depth #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>It could be that that's just a raw byte format. The sound code here is fairly involved. I'm going to need to look at this more.
+</p>
+</div>
+<p><a href="#2024_07_08_09_50" id="2024_07_08_09_50">2024-07-08 09:50</a>: Unclear what is a buffer and what is a tick #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>It is unclear to me when things are computing a single sample of audio (tick), and when it's writing to a buffer. 
+</p>
+<p> For example, SOKOL seems to be writing shorts (16-bit). 
+</p>
+<p> What I do know is that samples eventually show up in something called "product->samples.buffer", but I cannot find that definition yet (there's a lot of macro magic in this repo). There is also a buffer count too. It appears that these could be interleaved samples.
+</p>
+</div>
+<p><a href="#2024_07_08_10_20" id="2024_07_08_10_20">2024-07-08 10:20</a>: So much is implicitly defined #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>As far as I can tell, <code>product.samples</code> is dynamically generated. It's not actually anywhere in a struct. The <code>tic80</code> stuct I have yet to actually find. Same goes for <code>product.samples.buffer</code> and <code>product.samples.count</code>.  
+</p>
+<p> There are two top audio callbacks that tell tic80 to generate soud (how much sound not sure? but it's definitely multi-channel). I'm looking at the one sokol uses called <code>studio_sound</code>. This calls <code>tic_core_synth_sound()</code>, which I assume writes to <code>product.samples.buffer</code> somehow. If I can inject an effects processor right after the buffer is fully written, I think that can be enough for me.
+</p>
+</div>
+<p><a href="#2024_07_08_10_30" id="2024_07_08_10_30">2024-07-08 10:30</a>: =runPcm()= and =stereo_synthesize()= are things to look at #investigate-tic80-audio</p>
+<div class="comment-block">
+<p>These calls seem to happen right before they are resampled.
+</p>
+</div>
+<p><a href="#2024_07_09_08_19" id="2024_07_09_08_19">2024-07-09 08:19</a>: Initial investigation completed, now onto initial challenge: sine tone test. #investigate-tic80-audio #tic80-sine-tone</p>
+<div class="comment-block">
+<p>I think I know about enough to get started on hacking in a sine tone into the TIC-80 sound codebase. 
+</p>
+<p> A sine tone is ideal because it's a pitched pure tone, and it can be easy to tell if I'm getting the buffering and sample rate correct. If I can get a sine.
+</p>
+</div>
+</div>
+</body>
+</html>

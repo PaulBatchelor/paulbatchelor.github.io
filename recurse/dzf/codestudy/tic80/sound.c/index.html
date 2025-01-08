@@ -1,0 +1,2411 @@
+<p><!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="/recurse/css/code.css">
+<title>codestudy/tic80/sound.c</title>
+</head>
+<body>
+<div class="container-fluid code-viewport">
+<div class="row mr-0">
+<div class="code-view">
+<pre class="lines"><a href="#L1" id="L1">1</a>
+<a href="#L2" id="L2">2</a>
+<a href="#L3" id="L3">3</a>
+<a href="#L4" id="L4">4</a>
+<a href="#L5" id="L5">5</a>
+<a href="#L6" id="L6">6</a>
+<a href="#L7" id="L7">7</a>
+<a href="#L8" id="L8">8</a>
+<a href="#L9" id="L9">9</a>
+<a href="#L10" id="L10">10</a>
+<a href="#L11" id="L11">11</a>
+<a href="#L12" id="L12">12</a>
+<a href="#L13" id="L13">13</a>
+<a href="#L14" id="L14">14</a>
+<a href="#L15" id="L15">15</a>
+<a href="#L16" id="L16">16</a>
+<a href="#L17" id="L17">17</a>
+<a href="#L18" id="L18">18</a>
+<a href="#L19" id="L19">19</a>
+<a href="#L20" id="L20">20</a>
+<a href="#L21" id="L21">21</a>
+<a href="#L22" id="L22">22</a>
+<a href="#L23" id="L23">23</a>
+<a href="#L24" id="L24">24</a>
+<a href="#L25" id="L25">25</a>
+<a href="#L26" id="L26">26</a>
+<a href="#L27" id="L27">27</a>
+<a href="#L28" id="L28">28</a>
+<a href="#L29" id="L29">29</a>
+<a href="#L30" id="L30">30</a>
+<a href="#L31" id="L31">31</a>
+<a href="#L32" id="L32">32</a>
+<a href="#L33" id="L33">33</a>
+<a href="#L34" id="L34">34</a>
+<a href="#L35" id="L35">35</a>
+<a href="#L36" id="L36">36</a>
+<a href="#L37" id="L37">37</a>
+<a href="#L38" id="L38">38</a>
+<a href="#L39" id="L39">39</a>
+<a href="#L40" id="L40">40</a>
+<a href="#L41" id="L41">41</a>
+<a href="#L42" id="L42">42</a>
+<a href="#L43" id="L43">43</a>
+<a href="#L44" id="L44">44</a>
+<a href="#L45" id="L45">45</a>
+<a href="#L46" id="L46">46</a>
+<a href="#L47" id="L47">47</a>
+<a href="#L48" id="L48">48</a>
+<a href="#L49" id="L49">49</a>
+<a href="#L50" id="L50">50</a>
+<a href="#L51" id="L51">51</a>
+<a href="#L52" id="L52">52</a>
+<a href="#L53" id="L53">53</a>
+<a href="#L54" id="L54">54</a>
+<a href="#L55" id="L55">55</a>
+<a href="#L56" id="L56">56</a>
+<a href="#L57" id="L57">57</a>
+<a href="#L58" id="L58">58</a>
+<a href="#L59" id="L59">59</a>
+<a href="#L60" id="L60">60</a>
+<a href="#L61" id="L61">61</a>
+<a href="#L62" id="L62">62</a>
+<a href="#L63" id="L63">63</a>
+<a href="#L64" id="L64">64</a>
+<a href="#L65" id="L65">65</a>
+<a href="#L66" id="L66">66</a>
+<a href="#L67" id="L67">67</a>
+<a href="#L68" id="L68">68</a>
+<a href="#L69" id="L69">69</a>
+<a href="#L70" id="L70">70</a>
+<a href="#L71" id="L71">71</a>
+<a href="#L72" id="L72">72</a>
+<a href="#L73" id="L73">73</a>
+<a href="#L74" id="L74">74</a>
+<a href="#L75" id="L75">75</a>
+<a href="#L76" id="L76">76</a>
+<a href="#L77" id="L77">77</a>
+<a href="#L78" id="L78">78</a>
+<a href="#L79" id="L79">79</a>
+<a href="#L80" id="L80">80</a>
+<a href="#L81" id="L81">81</a>
+<a href="#L82" id="L82">82</a>
+<a href="#L83" id="L83">83</a>
+<a href="#L84" id="L84">84</a>
+<a href="#L85" id="L85">85</a>
+<a href="#L86" id="L86">86</a>
+<a href="#L87" id="L87">87</a>
+<a href="#L88" id="L88">88</a>
+<a href="#L89" id="L89">89</a>
+<a href="#L90" id="L90">90</a>
+<a href="#L91" id="L91">91</a>
+<a href="#L92" id="L92">92</a>
+<a href="#L93" id="L93">93</a>
+<a href="#L94" id="L94">94</a>
+<a href="#L95" id="L95">95</a>
+<a href="#L96" id="L96">96</a>
+<a href="#L97" id="L97">97</a>
+<a href="#L98" id="L98">98</a>
+<a href="#L99" id="L99">99</a>
+<a href="#L100" id="L100">100</a>
+<a href="#L101" id="L101">101</a>
+<a href="#L102" id="L102">102</a>
+<a href="#L103" id="L103">103</a>
+<a href="#L104" id="L104">104</a>
+<a href="#L105" id="L105">105</a>
+<a href="#L106" id="L106">106</a>
+<a href="#L107" id="L107">107</a>
+<a href="#L108" id="L108">108</a>
+<a href="#L109" id="L109">109</a>
+<a href="#L110" id="L110">110</a>
+<a href="#L111" id="L111">111</a>
+<a href="#L112" id="L112">112</a>
+<a href="#L113" id="L113">113</a>
+<a href="#L114" id="L114">114</a>
+<a href="#L115" id="L115">115</a>
+<a href="#L116" id="L116">116</a>
+<a href="#L117" id="L117">117</a>
+<a href="#L118" id="L118">118</a>
+<a href="#L119" id="L119">119</a>
+<a href="#L120" id="L120">120</a>
+<a href="#L121" id="L121">121</a>
+<a href="#L122" id="L122">122</a>
+<a href="#L123" id="L123">123</a>
+<a href="#L124" id="L124">124</a>
+<a href="#L125" id="L125">125</a>
+<a href="#L126" id="L126">126</a>
+<a href="#L127" id="L127">127</a>
+<a href="#L128" id="L128">128</a>
+<a href="#L129" id="L129">129</a>
+<a href="#L130" id="L130">130</a>
+<a href="#L131" id="L131">131</a>
+<a href="#L132" id="L132">132</a>
+<a href="#L133" id="L133">133</a>
+<a href="#L134" id="L134">134</a>
+<a href="#L135" id="L135">135</a>
+<a href="#L136" id="L136">136</a>
+<a href="#L137" id="L137">137</a>
+<a href="#L138" id="L138">138</a>
+<a href="#L139" id="L139">139</a>
+<a href="#L140" id="L140">140</a>
+<a href="#L141" id="L141">141</a>
+<a href="#L142" id="L142">142</a>
+<a href="#L143" id="L143">143</a>
+<a href="#L144" id="L144">144</a>
+<a href="#L145" id="L145">145</a>
+<a href="#L146" id="L146">146</a>
+<a href="#L147" id="L147">147</a>
+<a href="#L148" id="L148">148</a>
+<a href="#L149" id="L149">149</a>
+<a href="#L150" id="L150">150</a>
+<a href="#L151" id="L151">151</a>
+<a href="#L152" id="L152">152</a>
+<a href="#L153" id="L153">153</a>
+<a href="#L154" id="L154">154</a>
+<a href="#L155" id="L155">155</a>
+<a href="#L156" id="L156">156</a>
+<a href="#L157" id="L157">157</a>
+<a href="#L158" id="L158">158</a>
+<a href="#L159" id="L159">159</a>
+<a href="#L160" id="L160">160</a>
+<a href="#L161" id="L161">161</a>
+<a href="#L162" id="L162">162</a>
+<a href="#L163" id="L163">163</a>
+<a href="#L164" id="L164">164</a>
+<a href="#L165" id="L165">165</a>
+<a href="#L166" id="L166">166</a>
+<a href="#L167" id="L167">167</a>
+<a href="#L168" id="L168">168</a>
+<a href="#L169" id="L169">169</a>
+<a href="#L170" id="L170">170</a>
+<a href="#L171" id="L171">171</a>
+<a href="#L172" id="L172">172</a>
+<a href="#L173" id="L173">173</a>
+<a href="#L174" id="L174">174</a>
+<a href="#L175" id="L175">175</a>
+<a href="#L176" id="L176">176</a>
+<a href="#L177" id="L177">177</a>
+<a href="#L178" id="L178">178</a>
+<a href="#L179" id="L179">179</a>
+<a href="#L180" id="L180">180</a>
+<a href="#L181" id="L181">181</a>
+<a href="#L182" id="L182">182</a>
+<a href="#L183" id="L183">183</a>
+<a href="#L184" id="L184">184</a>
+<a href="#L185" id="L185">185</a>
+<a href="#L186" id="L186">186</a>
+<a href="#L187" id="L187">187</a>
+<a href="#L188" id="L188">188</a>
+<a href="#L189" id="L189">189</a>
+<a href="#L190" id="L190">190</a>
+<a href="#L191" id="L191">191</a>
+<a href="#L192" id="L192">192</a>
+<a href="#L193" id="L193">193</a>
+<a href="#L194" id="L194">194</a>
+<a href="#L195" id="L195">195</a>
+<a href="#L196" id="L196">196</a>
+<a href="#L197" id="L197">197</a>
+<a href="#L198" id="L198">198</a>
+<a href="#L199" id="L199">199</a>
+<a href="#L200" id="L200">200</a>
+<a href="#L201" id="L201">201</a>
+<a href="#L202" id="L202">202</a>
+<a href="#L203" id="L203">203</a>
+<a href="#L204" id="L204">204</a>
+<a href="#L205" id="L205">205</a>
+<a href="#L206" id="L206">206</a>
+<a href="#L207" id="L207">207</a>
+<a href="#L208" id="L208">208</a>
+<a href="#L209" id="L209">209</a>
+<a href="#L210" id="L210">210</a>
+<a href="#L211" id="L211">211</a>
+<a href="#L212" id="L212">212</a>
+<a href="#L213" id="L213">213</a>
+<a href="#L214" id="L214">214</a>
+<a href="#L215" id="L215">215</a>
+<a href="#L216" id="L216">216</a>
+<a href="#L217" id="L217">217</a>
+<a href="#L218" id="L218">218</a>
+<a href="#L219" id="L219">219</a>
+<a href="#L220" id="L220">220</a>
+<a href="#L221" id="L221">221</a>
+<a href="#L222" id="L222">222</a>
+<a href="#L223" id="L223">223</a>
+<a href="#L224" id="L224">224</a>
+<a href="#L225" id="L225">225</a>
+<a href="#L226" id="L226">226</a>
+<a href="#L227" id="L227">227</a>
+<a href="#L228" id="L228">228</a>
+<a href="#L229" id="L229">229</a>
+<a href="#L230" id="L230">230</a>
+<a href="#L231" id="L231">231</a>
+<a href="#L232" id="L232">232</a>
+<a href="#L233" id="L233">233</a>
+<a href="#L234" id="L234">234</a>
+<a href="#L235" id="L235">235</a>
+<a href="#L236" id="L236">236</a>
+<a href="#L237" id="L237">237</a>
+<a href="#L238" id="L238">238</a>
+<a href="#L239" id="L239">239</a>
+<a href="#L240" id="L240">240</a>
+<a href="#L241" id="L241">241</a>
+<a href="#L242" id="L242">242</a>
+<a href="#L243" id="L243">243</a>
+<a href="#L244" id="L244">244</a>
+<a href="#L245" id="L245">245</a>
+<a href="#L246" id="L246">246</a>
+<a href="#L247" id="L247">247</a>
+<a href="#L248" id="L248">248</a>
+<a href="#L249" id="L249">249</a>
+<a href="#L250" id="L250">250</a>
+<a href="#L251" id="L251">251</a>
+<a href="#L252" id="L252">252</a>
+<a href="#L253" id="L253">253</a>
+<a href="#L254" id="L254">254</a>
+<a href="#L255" id="L255">255</a>
+<a href="#L256" id="L256">256</a>
+<a href="#L257" id="L257">257</a>
+<a href="#L258" id="L258">258</a>
+<a href="#L259" id="L259">259</a>
+<a href="#L260" id="L260">260</a>
+<a href="#L261" id="L261">261</a>
+<a href="#L262" id="L262">262</a>
+<a href="#L263" id="L263">263</a>
+<a href="#L264" id="L264">264</a>
+<a href="#L265" id="L265">265</a>
+<a href="#L266" id="L266">266</a>
+<a href="#L267" id="L267">267</a>
+<a href="#L268" id="L268">268</a>
+<a href="#L269" id="L269">269</a>
+<a href="#L270" id="L270">270</a>
+<a href="#L271" id="L271">271</a>
+<a href="#L272" id="L272">272</a>
+<a href="#L273" id="L273">273</a>
+<a href="#L274" id="L274">274</a>
+<a href="#L275" id="L275">275</a>
+<a href="#L276" id="L276">276</a>
+<a href="#L277" id="L277">277</a>
+<a href="#L278" id="L278">278</a>
+<a href="#L279" id="L279">279</a>
+<a href="#L280" id="L280">280</a>
+<a href="#L281" id="L281">281</a>
+<a href="#L282" id="L282">282</a>
+<a href="#L283" id="L283">283</a>
+<a href="#L284" id="L284">284</a>
+<a href="#L285" id="L285">285</a>
+<a href="#L286" id="L286">286</a>
+<a href="#L287" id="L287">287</a>
+<a href="#L288" id="L288">288</a>
+<a href="#L289" id="L289">289</a>
+<a href="#L290" id="L290">290</a>
+<a href="#L291" id="L291">291</a>
+<a href="#L292" id="L292">292</a>
+<a href="#L293" id="L293">293</a>
+<a href="#L294" id="L294">294</a>
+<a href="#L295" id="L295">295</a>
+<a href="#L296" id="L296">296</a>
+<a href="#L297" id="L297">297</a>
+<a href="#L298" id="L298">298</a>
+<a href="#L299" id="L299">299</a>
+<a href="#L300" id="L300">300</a>
+<a href="#L301" id="L301">301</a>
+<a href="#L302" id="L302">302</a>
+<a href="#L303" id="L303">303</a>
+<a href="#L304" id="L304">304</a>
+<a href="#L305" id="L305">305</a>
+<a href="#L306" id="L306">306</a>
+<a href="#L307" id="L307">307</a>
+<a href="#L308" id="L308">308</a>
+<a href="#L309" id="L309">309</a>
+<a href="#L310" id="L310">310</a>
+<a href="#L311" id="L311">311</a>
+<a href="#L312" id="L312">312</a>
+<a href="#L313" id="L313">313</a>
+<a href="#L314" id="L314">314</a>
+<a href="#L315" id="L315">315</a>
+<a href="#L316" id="L316">316</a>
+<a href="#L317" id="L317">317</a>
+<a href="#L318" id="L318">318</a>
+<a href="#L319" id="L319">319</a>
+<a href="#L320" id="L320">320</a>
+<a href="#L321" id="L321">321</a>
+<a href="#L322" id="L322">322</a>
+<a href="#L323" id="L323">323</a>
+<a href="#L324" id="L324">324</a>
+<a href="#L325" id="L325">325</a>
+<a href="#L326" id="L326">326</a>
+<a href="#L327" id="L327">327</a>
+<a href="#L328" id="L328">328</a>
+<a href="#L329" id="L329">329</a>
+<a href="#L330" id="L330">330</a>
+<a href="#L331" id="L331">331</a>
+<a href="#L332" id="L332">332</a>
+<a href="#L333" id="L333">333</a>
+<a href="#L334" id="L334">334</a>
+<a href="#L335" id="L335">335</a>
+<a href="#L336" id="L336">336</a>
+<a href="#L337" id="L337">337</a>
+<a href="#L338" id="L338">338</a>
+<a href="#L339" id="L339">339</a>
+<a href="#L340" id="L340">340</a>
+<a href="#L341" id="L341">341</a>
+<a href="#L342" id="L342">342</a>
+<a href="#L343" id="L343">343</a>
+<a href="#L344" id="L344">344</a>
+<a href="#L345" id="L345">345</a>
+<a href="#L346" id="L346">346</a>
+<a href="#L347" id="L347">347</a>
+<a href="#L348" id="L348">348</a>
+<a href="#L349" id="L349">349</a>
+<a href="#L350" id="L350">350</a>
+<a href="#L351" id="L351">351</a>
+<a href="#L352" id="L352">352</a>
+<a href="#L353" id="L353">353</a>
+<a href="#L354" id="L354">354</a>
+<a href="#L355" id="L355">355</a>
+<a href="#L356" id="L356">356</a>
+<a href="#L357" id="L357">357</a>
+<a href="#L358" id="L358">358</a>
+<a href="#L359" id="L359">359</a>
+<a href="#L360" id="L360">360</a>
+<a href="#L361" id="L361">361</a>
+<a href="#L362" id="L362">362</a>
+<a href="#L363" id="L363">363</a>
+<a href="#L364" id="L364">364</a>
+<a href="#L365" id="L365">365</a>
+<a href="#L366" id="L366">366</a>
+<a href="#L367" id="L367">367</a>
+<a href="#L368" id="L368">368</a>
+<a href="#L369" id="L369">369</a>
+<a href="#L370" id="L370">370</a>
+<a href="#L371" id="L371">371</a>
+<a href="#L372" id="L372">372</a>
+<a href="#L373" id="L373">373</a>
+<a href="#L374" id="L374">374</a>
+<a href="#L375" id="L375">375</a>
+<a href="#L376" id="L376">376</a>
+<a href="#L377" id="L377">377</a>
+<a href="#L378" id="L378">378</a>
+<a href="#L379" id="L379">379</a>
+<a href="#L380" id="L380">380</a>
+<a href="#L381" id="L381">381</a>
+<a href="#L382" id="L382">382</a>
+<a href="#L383" id="L383">383</a>
+<a href="#L384" id="L384">384</a>
+<a href="#L385" id="L385">385</a>
+<a href="#L386" id="L386">386</a>
+<a href="#L387" id="L387">387</a>
+<a href="#L388" id="L388">388</a>
+<a href="#L389" id="L389">389</a>
+<a href="#L390" id="L390">390</a>
+<a href="#L391" id="L391">391</a>
+<a href="#L392" id="L392">392</a>
+<a href="#L393" id="L393">393</a>
+<a href="#L394" id="L394">394</a>
+<a href="#L395" id="L395">395</a>
+<a href="#L396" id="L396">396</a>
+<a href="#L397" id="L397">397</a>
+<a href="#L398" id="L398">398</a>
+<a href="#L399" id="L399">399</a>
+<a href="#L400" id="L400">400</a>
+<a href="#L401" id="L401">401</a>
+<a href="#L402" id="L402">402</a>
+<a href="#L403" id="L403">403</a>
+<a href="#L404" id="L404">404</a>
+<a href="#L405" id="L405">405</a>
+<a href="#L406" id="L406">406</a>
+<a href="#L407" id="L407">407</a>
+<a href="#L408" id="L408">408</a>
+<a href="#L409" id="L409">409</a>
+<a href="#L410" id="L410">410</a>
+<a href="#L411" id="L411">411</a>
+<a href="#L412" id="L412">412</a>
+<a href="#L413" id="L413">413</a>
+<a href="#L414" id="L414">414</a>
+<a href="#L415" id="L415">415</a>
+<a href="#L416" id="L416">416</a>
+<a href="#L417" id="L417">417</a>
+<a href="#L418" id="L418">418</a>
+<a href="#L419" id="L419">419</a>
+<a href="#L420" id="L420">420</a>
+<a href="#L421" id="L421">421</a>
+<a href="#L422" id="L422">422</a>
+<a href="#L423" id="L423">423</a>
+<a href="#L424" id="L424">424</a>
+<a href="#L425" id="L425">425</a>
+<a href="#L426" id="L426">426</a>
+<a href="#L427" id="L427">427</a>
+<a href="#L428" id="L428">428</a>
+<a href="#L429" id="L429">429</a>
+<a href="#L430" id="L430">430</a>
+<a href="#L431" id="L431">431</a>
+<a href="#L432" id="L432">432</a>
+<a href="#L433" id="L433">433</a>
+<a href="#L434" id="L434">434</a>
+<a href="#L435" id="L435">435</a>
+<a href="#L436" id="L436">436</a>
+<a href="#L437" id="L437">437</a>
+<a href="#L438" id="L438">438</a>
+<a href="#L439" id="L439">439</a>
+<a href="#L440" id="L440">440</a>
+<a href="#L441" id="L441">441</a>
+<a href="#L442" id="L442">442</a>
+<a href="#L443" id="L443">443</a>
+<a href="#L444" id="L444">444</a>
+<a href="#L445" id="L445">445</a>
+<a href="#L446" id="L446">446</a>
+<a href="#L447" id="L447">447</a>
+<a href="#L448" id="L448">448</a>
+<a href="#L449" id="L449">449</a>
+<a href="#L450" id="L450">450</a>
+<a href="#L451" id="L451">451</a>
+<a href="#L452" id="L452">452</a>
+<a href="#L453" id="L453">453</a>
+<a href="#L454" id="L454">454</a>
+<a href="#L455" id="L455">455</a>
+<a href="#L456" id="L456">456</a>
+<a href="#L457" id="L457">457</a>
+<a href="#L458" id="L458">458</a>
+<a href="#L459" id="L459">459</a>
+<a href="#L460" id="L460">460</a>
+<a href="#L461" id="L461">461</a>
+<a href="#L462" id="L462">462</a>
+<a href="#L463" id="L463">463</a>
+<a href="#L464" id="L464">464</a>
+<a href="#L465" id="L465">465</a>
+<a href="#L466" id="L466">466</a>
+<a href="#L467" id="L467">467</a>
+<a href="#L468" id="L468">468</a>
+<a href="#L469" id="L469">469</a>
+<a href="#L470" id="L470">470</a>
+<a href="#L471" id="L471">471</a>
+<a href="#L472" id="L472">472</a>
+<a href="#L473" id="L473">473</a>
+<a href="#L474" id="L474">474</a>
+<a href="#L475" id="L475">475</a>
+<a href="#L476" id="L476">476</a>
+<a href="#L477" id="L477">477</a>
+<a href="#L478" id="L478">478</a>
+<a href="#L479" id="L479">479</a>
+<a href="#L480" id="L480">480</a>
+<a href="#L481" id="L481">481</a>
+<a href="#L482" id="L482">482</a>
+<a href="#L483" id="L483">483</a>
+<a href="#L484" id="L484">484</a>
+<a href="#L485" id="L485">485</a>
+<a href="#L486" id="L486">486</a>
+<a href="#L487" id="L487">487</a>
+<a href="#L488" id="L488">488</a>
+<a href="#L489" id="L489">489</a>
+<a href="#L490" id="L490">490</a>
+<a href="#L491" id="L491">491</a>
+<a href="#L492" id="L492">492</a>
+<a href="#L493" id="L493">493</a>
+<a href="#L494" id="L494">494</a>
+<a href="#L495" id="L495">495</a>
+<a href="#L496" id="L496">496</a>
+<a href="#L497" id="L497">497</a>
+<a href="#L498" id="L498">498</a>
+<a href="#L499" id="L499">499</a>
+<a href="#L500" id="L500">500</a>
+<a href="#L501" id="L501">501</a>
+<a href="#L502" id="L502">502</a>
+<a href="#L503" id="L503">503</a>
+<a href="#L504" id="L504">504</a>
+<a href="#L505" id="L505">505</a>
+<a href="#L506" id="L506">506</a>
+<a href="#L507" id="L507">507</a>
+<a href="#L508" id="L508">508</a>
+<a href="#L509" id="L509">509</a>
+<a href="#L510" id="L510">510</a>
+<a href="#L511" id="L511">511</a>
+<a href="#L512" id="L512">512</a>
+<a href="#L513" id="L513">513</a>
+<a href="#L514" id="L514">514</a>
+<a href="#L515" id="L515">515</a>
+<a href="#L516" id="L516">516</a>
+<a href="#L517" id="L517">517</a>
+<a href="#L518" id="L518">518</a>
+<a href="#L519" id="L519">519</a>
+<a href="#L520" id="L520">520</a>
+<a href="#L521" id="L521">521</a>
+<a href="#L522" id="L522">522</a>
+<a href="#L523" id="L523">523</a>
+<a href="#L524" id="L524">524</a>
+<a href="#L525" id="L525">525</a>
+<a href="#L526" id="L526">526</a>
+<a href="#L527" id="L527">527</a>
+<a href="#L528" id="L528">528</a>
+<a href="#L529" id="L529">529</a>
+<a href="#L530" id="L530">530</a>
+<a href="#L531" id="L531">531</a>
+<a href="#L532" id="L532">532</a>
+<a href="#L533" id="L533">533</a>
+<a href="#L534" id="L534">534</a>
+<a href="#L535" id="L535">535</a>
+<a href="#L536" id="L536">536</a>
+<a href="#L537" id="L537">537</a>
+<a href="#L538" id="L538">538</a>
+<a href="#L539" id="L539">539</a>
+<a href="#L540" id="L540">540</a>
+<a href="#L541" id="L541">541</a>
+<a href="#L542" id="L542">542</a>
+<a href="#L543" id="L543">543</a>
+<a href="#L544" id="L544">544</a>
+<a href="#L545" id="L545">545</a>
+<a href="#L546" id="L546">546</a>
+<a href="#L547" id="L547">547</a>
+<a href="#L548" id="L548">548</a>
+<a href="#L549" id="L549">549</a>
+<a href="#L550" id="L550">550</a>
+<a href="#L551" id="L551">551</a>
+<a href="#L552" id="L552">552</a>
+<a href="#L553" id="L553">553</a>
+<a href="#L554" id="L554">554</a>
+<a href="#L555" id="L555">555</a>
+<a href="#L556" id="L556">556</a>
+<a href="#L557" id="L557">557</a>
+<a href="#L558" id="L558">558</a>
+<a href="#L559" id="L559">559</a>
+<a href="#L560" id="L560">560</a>
+<a href="#L561" id="L561">561</a>
+<a href="#L562" id="L562">562</a>
+<a href="#L563" id="L563">563</a>
+<a href="#L564" id="L564">564</a>
+<a href="#L565" id="L565">565</a>
+<a href="#L566" id="L566">566</a>
+<a href="#L567" id="L567">567</a>
+<a href="#L568" id="L568">568</a>
+<a href="#L569" id="L569">569</a>
+<a href="#L570" id="L570">570</a>
+<a href="#L571" id="L571">571</a>
+<a href="#L572" id="L572">572</a>
+<a href="#L573" id="L573">573</a>
+<a href="#L574" id="L574">574</a>
+<a href="#L575" id="L575">575</a>
+<a href="#L576" id="L576">576</a>
+<a href="#L577" id="L577">577</a>
+<a href="#L578" id="L578">578</a>
+<a href="#L579" id="L579">579</a>
+<a href="#L580" id="L580">580</a>
+<a href="#L581" id="L581">581</a>
+<a href="#L582" id="L582">582</a>
+<a href="#L583" id="L583">583</a>
+<a href="#L584" id="L584">584</a>
+<a href="#L585" id="L585">585</a>
+<a href="#L586" id="L586">586</a>
+<a href="#L587" id="L587">587</a>
+<a href="#L588" id="L588">588</a>
+<a href="#L589" id="L589">589</a>
+<a href="#L590" id="L590">590</a>
+<a href="#L591" id="L591">591</a>
+<a href="#L592" id="L592">592</a>
+<a href="#L593" id="L593">593</a>
+<a href="#L594" id="L594">594</a>
+<a href="#L595" id="L595">595</a>
+<a href="#L596" id="L596">596</a>
+<a href="#L597" id="L597">597</a>
+<a href="#L598" id="L598">598</a>
+</pre></div>
+<div class="highlight">
+<div>
+//&nbsp;MIT&nbsp;License
+</div>
+<div>
+<br>
+</div>
+<div>
+//&nbsp;Copyright&nbsp;(c)&nbsp;2020&nbsp;Vadim&nbsp;Grigoruk&nbsp;@nesbox&nbsp;//&nbsp;grigoruk@gmail.com
+</div>
+<div>
+<br>
+</div>
+<div>
+//&nbsp;Permission&nbsp;is&nbsp;hereby&nbsp;granted,&nbsp;free&nbsp;of&nbsp;charge,&nbsp;to&nbsp;any&nbsp;person&nbsp;obtaining&nbsp;a&nbsp;copy
+</div>
+<div>
+//&nbsp;of&nbsp;this&nbsp;software&nbsp;and&nbsp;associated&nbsp;documentation&nbsp;files&nbsp;(the&nbsp;"Software"),&nbsp;to&nbsp;deal
+</div>
+<div>
+//&nbsp;in&nbsp;the&nbsp;Software&nbsp;without&nbsp;restriction,&nbsp;including&nbsp;without&nbsp;limitation&nbsp;the&nbsp;rights
+</div>
+<div>
+//&nbsp;to&nbsp;use,&nbsp;copy,&nbsp;modify,&nbsp;merge,&nbsp;publish,&nbsp;distribute,&nbsp;sublicense,&nbsp;and/or&nbsp;sell
+</div>
+<div>
+//&nbsp;copies&nbsp;of&nbsp;the&nbsp;Software,&nbsp;and&nbsp;to&nbsp;permit&nbsp;persons&nbsp;to&nbsp;whom&nbsp;the&nbsp;Software&nbsp;is
+</div>
+<div>
+//&nbsp;furnished&nbsp;to&nbsp;do&nbsp;so,&nbsp;subject&nbsp;to&nbsp;the&nbsp;following&nbsp;conditions:
+</div>
+<div>
+<br>
+</div>
+<div>
+//&nbsp;The&nbsp;above&nbsp;copyright&nbsp;notice&nbsp;and&nbsp;this&nbsp;permission&nbsp;notice&nbsp;shall&nbsp;be&nbsp;included&nbsp;in&nbsp;all
+</div>
+<div>
+//&nbsp;copies&nbsp;or&nbsp;substantial&nbsp;portions&nbsp;of&nbsp;the&nbsp;Software.
+</div>
+<div>
+<br>
+</div>
+<div>
+//&nbsp;THE&nbsp;SOFTWARE&nbsp;IS&nbsp;PROVIDED&nbsp;"AS&nbsp;IS",&nbsp;WITHOUT&nbsp;WARRANTY&nbsp;OF&nbsp;ANY&nbsp;KIND,&nbsp;EXPRESS&nbsp;OR
+</div>
+<div>
+//&nbsp;IMPLIED,&nbsp;INCLUDING&nbsp;BUT&nbsp;NOT&nbsp;LIMITED&nbsp;TO&nbsp;THE&nbsp;WARRANTIES&nbsp;OF&nbsp;MERCHANTABILITY,
+</div>
+<div>
+//&nbsp;FITNESS&nbsp;FOR&nbsp;A&nbsp;PARTICULAR&nbsp;PURPOSE&nbsp;AND&nbsp;NONINFRINGEMENT.&nbsp;IN&nbsp;NO&nbsp;EVENT&nbsp;SHALL&nbsp;THE
+</div>
+<div>
+//&nbsp;AUTHORS&nbsp;OR&nbsp;COPYRIGHT&nbsp;HOLDERS&nbsp;BE&nbsp;LIABLE&nbsp;FOR&nbsp;ANY&nbsp;CLAIM,&nbsp;DAMAGES&nbsp;OR&nbsp;OTHER
+</div>
+<div>
+//&nbsp;LIABILITY,&nbsp;WHETHER&nbsp;IN&nbsp;AN&nbsp;ACTION&nbsp;OF&nbsp;CONTRACT,&nbsp;TORT&nbsp;OR&nbsp;OTHERWISE,&nbsp;ARISING&nbsp;FROM,
+</div>
+<div>
+//&nbsp;OUT&nbsp;OF&nbsp;OR&nbsp;IN&nbsp;CONNECTION&nbsp;WITH&nbsp;THE&nbsp;SOFTWARE&nbsp;OR&nbsp;THE&nbsp;USE&nbsp;OR&nbsp;OTHER&nbsp;DEALINGS&nbsp;IN&nbsp;THE
+</div>
+<div>
+//&nbsp;SOFTWARE.
+</div>
+<div>
+<br>
+</div>
+<div>
+<br>
+</div>
+<div>
+#include&nbsp;"api.h"
+</div>
+<div>
+#include&nbsp;"core.h"
+</div>
+<div>
+<br>
+</div>
+<div>
+#include&nbsp;&lt;string.h&gt;
+</div>
+<div>
+#include&nbsp;&lt;limits.h&gt;
+</div>
+<div>
+#include&nbsp;"tic_assert.h"
+</div>
+<div>
+#include&nbsp;"blip_buf.h"
+</div>
+<div>
+<br>
+</div>
+<div>
+#define&nbsp;ENVELOPE_FREQ_SCALE&nbsp;2
+</div>
+<div>
+#define&nbsp;SECONDS_PER_MINUTE&nbsp;60
+</div>
+<div>
+#define&nbsp;NOTES_PER_MINUTE&nbsp;(TIC80_FRAMERATE&nbsp;/&nbsp;NOTES_PER_BEAT&nbsp;*&nbsp;SECONDS_PER_MINUTE)
+</div>
+<div>
+#define&nbsp;PIANO_START&nbsp;8
+</div>
+<div>
+#define&nbsp;ENDTIME&nbsp;(CLOCKRATE&nbsp;/&nbsp;TIC80_FRAMERATE)
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;const&nbsp;u16&nbsp;NoteFreqs[]&nbsp;=&nbsp;{&nbsp;0x10,&nbsp;0x11,&nbsp;0x12,&nbsp;0x13,&nbsp;0x15,&nbsp;0x16,&nbsp;0x17,&nbsp;0x18,&nbsp;0x1a,&nbsp;0x1c,&nbsp;0x1d,&nbsp;0x1f,&nbsp;0x21,&nbsp;0x23,&nbsp;0x25,&nbsp;0x27,&nbsp;0x29,&nbsp;0x2c,&nbsp;0x2e,&nbsp;0x31,&nbsp;0x34,&nbsp;0x37,&nbsp;0x3a,&nbsp;0x3e,&nbsp;0x41,&nbsp;0x45,&nbsp;0x49,&nbsp;0x4e,&nbsp;0x52,&nbsp;0x57,&nbsp;0x5c,&nbsp;0x62,&nbsp;0x68,&nbsp;0x6e,&nbsp;0x75,&nbsp;0x7b,&nbsp;0x83,&nbsp;0x8b,&nbsp;0x93,&nbsp;0x9c,&nbsp;0xa5,&nbsp;0xaf,&nbsp;0xb9,&nbsp;0xc4,&nbsp;0xd0,&nbsp;0xdc,&nbsp;0xe9,&nbsp;0xf7,&nbsp;0x106,&nbsp;0x115,&nbsp;0x126,&nbsp;0x137,&nbsp;0x14a,&nbsp;0x15d,&nbsp;0x172,&nbsp;0x188,&nbsp;0x19f,&nbsp;0x1b8,&nbsp;0x1d2,&nbsp;0x1ee,&nbsp;0x20b,&nbsp;0x22a,&nbsp;0x24b,&nbsp;0x26e,&nbsp;0x293,&nbsp;0x2ba,&nbsp;0x2e4,&nbsp;0x310,&nbsp;0x33f,&nbsp;0x370,&nbsp;0x3a4,&nbsp;0x3dc,&nbsp;0x417,&nbsp;0x455,&nbsp;0x497,&nbsp;0x4dd,&nbsp;0x527,&nbsp;0x575,&nbsp;0x5c8,&nbsp;0x620,&nbsp;0x67d,&nbsp;0x6e0,&nbsp;0x749,&nbsp;0x7b8,&nbsp;0x82d,&nbsp;0x8a9,&nbsp;0x92d,&nbsp;0x9b9,&nbsp;0xa4d,&nbsp;0xaea,&nbsp;0xb90,&nbsp;0xc40,&nbsp;0xcfa,&nbsp;0xdc0,&nbsp;0xe91,&nbsp;0xf6f,&nbsp;0x105a,&nbsp;0x1153,&nbsp;0x125b,&nbsp;0x1372,&nbsp;0x149a,&nbsp;0x15d4,&nbsp;0x1720,&nbsp;0x1880&nbsp;};
+</div>
+<div>
+static_assert(COUNT_OF(NoteFreqs)&nbsp;==&nbsp;NOTES&nbsp;*&nbsp;OCTAVES&nbsp;+&nbsp;PIANO_START,&nbsp;"count_of_freqs");
+</div>
+<div>
+static_assert(sizeof(tic_sound_register)&nbsp;==&nbsp;16&nbsp;+&nbsp;2,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tic_sound_register");
+</div>
+<div>
+static_assert(sizeof(tic_sample)&nbsp;==&nbsp;66,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tic_sample");
+</div>
+<div>
+static_assert(sizeof(tic_track_pattern)&nbsp;==&nbsp;3&nbsp;*&nbsp;MUSIC_PATTERN_ROWS,&nbsp;&nbsp;"tic_track_pattern");
+</div>
+<div>
+static_assert(sizeof(tic_track)&nbsp;==&nbsp;3&nbsp;*&nbsp;MUSIC_FRAMES&nbsp;+&nbsp;3,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tic_track");
+</div>
+<div>
+static_assert(tic_music_cmd_count&nbsp;==&nbsp;1&nbsp;&lt;&lt;&nbsp;MUSIC_CMD_BITS,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tic_music_cmd_count");
+</div>
+<div>
+static_assert(sizeof(tic_music_state)&nbsp;==&nbsp;4,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"tic_music_state_size");
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;s32&nbsp;getTempo(tic_core*&nbsp;core,&nbsp;const&nbsp;tic_track*&nbsp;track)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;core-&gt;state.music.tempo&nbsp;&lt;&nbsp;0
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?&nbsp;track-&gt;tempo&nbsp;+&nbsp;DEFAULT_TEMPO
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;core-&gt;state.music.tempo;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;s32&nbsp;getSpeed(tic_core*&nbsp;core,&nbsp;const&nbsp;tic_track*&nbsp;track)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;core-&gt;state.music.speed&nbsp;&lt;&nbsp;0
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?&nbsp;track-&gt;speed&nbsp;+&nbsp;DEFAULT_SPEED
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;core-&gt;state.music.speed;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;s32&nbsp;tick2row(tic_core*&nbsp;core,&nbsp;const&nbsp;tic_track*&nbsp;track,&nbsp;s32&nbsp;tick)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;BPM&nbsp;=&nbsp;tempo&nbsp;*&nbsp;6&nbsp;/&nbsp;speed
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;speed&nbsp;=&nbsp;getSpeed(core,&nbsp;track);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;speed
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?&nbsp;tick&nbsp;*&nbsp;getTempo(core,&nbsp;track)&nbsp;*&nbsp;DEFAULT_SPEED&nbsp;/&nbsp;speed&nbsp;/&nbsp;NOTES_PER_MINUTE
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;0;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;s32&nbsp;row2tick(tic_core*&nbsp;core,&nbsp;const&nbsp;tic_track*&nbsp;track,&nbsp;s32&nbsp;row)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;tempo&nbsp;=&nbsp;getTempo(core,&nbsp;track);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;tempo
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?&nbsp;row&nbsp;*&nbsp;getSpeed(core,&nbsp;track)&nbsp;*&nbsp;NOTES_PER_MINUTE&nbsp;/&nbsp;tempo&nbsp;/&nbsp;DEFAULT_SPEED
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;0;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;inline&nbsp;s32&nbsp;param2val(const&nbsp;tic_track_row*&nbsp;row)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;(row-&gt;param1&nbsp;&lt;&lt;&nbsp;4)&nbsp;|&nbsp;row-&gt;param2;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;update_amp(blip_buffer_t*&nbsp;blip,&nbsp;tic_sound_register_data*&nbsp;data,&nbsp;s32&nbsp;new_amp)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;delta&nbsp;=&nbsp;new_amp&nbsp;-&nbsp;data-&gt;amp;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;data-&gt;amp&nbsp;+=&nbsp;delta;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;blip_add_delta(blip,&nbsp;data-&gt;time,&nbsp;delta);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;inline&nbsp;s32&nbsp;freq2period(s32&nbsp;freq)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;enum
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MinPeriodValue&nbsp;=&nbsp;10,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MaxPeriodValue&nbsp;=&nbsp;4096,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Rate&nbsp;=&nbsp;CLOCKRATE&nbsp;*&nbsp;ENVELOPE_FREQ_SCALE&nbsp;/&nbsp;WAVE_VALUES
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;};
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(freq&nbsp;==&nbsp;0)&nbsp;return&nbsp;MaxPeriodValue;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;CLAMP(Rate&nbsp;/&nbsp;freq&nbsp;-&nbsp;1,&nbsp;MinPeriodValue,&nbsp;MaxPeriodValue);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;inline&nbsp;s32&nbsp;getAmp(s32&nbsp;volume,&nbsp;s32&nbsp;amp)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;amp&nbsp;*&nbsp;volume&nbsp;/&nbsp;MAX_VOLUME&nbsp;/&nbsp;(TIC_SOUND_CHANNELS&nbsp;+&nbsp;1);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;runPcm(blip_buffer_t*&nbsp;blip,&nbsp;const&nbsp;tic_pcm*&nbsp;pcm,&nbsp;tic_sound_register_data*&nbsp;data)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;enum{Period&nbsp;=&nbsp;ENDTIME&nbsp;/&nbsp;TIC_PCM_SIZE};
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(data-&gt;time&nbsp;=&nbsp;0;&nbsp;data-&gt;time&nbsp;&lt;&nbsp;ENDTIME;&nbsp;data-&gt;time&nbsp;+=&nbsp;Period,&nbsp;data-&gt;phase&nbsp;=&nbsp;(data-&gt;phase&nbsp;+&nbsp;1)&nbsp;%&nbsp;TIC_PCM_SIZE)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;update_amp(blip,&nbsp;data,&nbsp;getAmp(MAX_VOLUME,&nbsp;pcm-&gt;data[data-&gt;phase]&nbsp;*&nbsp;SHRT_MAX&nbsp;/&nbsp;UCHAR_MAX));
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;runEnvelope(blip_buffer_t*&nbsp;blip,&nbsp;const&nbsp;tic_sound_register*&nbsp;reg,&nbsp;tic_sound_register_data*&nbsp;data,&nbsp;u8&nbsp;stereo_volume)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;period&nbsp;=&nbsp;freq2period(tic_sound_register_get_freq(reg)&nbsp;*&nbsp;ENVELOPE_FREQ_SCALE);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(;&nbsp;data-&gt;time&nbsp;&lt;&nbsp;ENDTIME;&nbsp;data-&gt;time&nbsp;+=&nbsp;period,&nbsp;data-&gt;phase&nbsp;=&nbsp;(data-&gt;phase&nbsp;+&nbsp;1)&nbsp;%&nbsp;WAVE_VALUES)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;update_amp(blip,&nbsp;data,&nbsp;getAmp(reg-&gt;volume,&nbsp;tic_tool_peek4(reg-&gt;waveform.data,&nbsp;data-&gt;phase)&nbsp;*&nbsp;SHRT_MAX&nbsp;/&nbsp;MAX_VOLUME&nbsp;*&nbsp;stereo_volume&nbsp;/&nbsp;MAX_VOLUME));
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;runNoise(blip_buffer_t*&nbsp;blip,&nbsp;const&nbsp;tic_sound_register*&nbsp;reg,&nbsp;tic_sound_register_data*&nbsp;data,&nbsp;u8&nbsp;stereo_volume)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;phase&nbsp;is&nbsp;noise&nbsp;LFSR,&nbsp;which&nbsp;must&nbsp;never&nbsp;be&nbsp;zero
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(data-&gt;phase&nbsp;==&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data-&gt;phase&nbsp;=&nbsp;1;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;period&nbsp;=&nbsp;freq2period(tic_sound_register_get_freq(reg));
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;fb&nbsp;=&nbsp;*reg-&gt;waveform.data&nbsp;?&nbsp;0x14&nbsp;:&nbsp;0x12000;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(;&nbsp;data-&gt;time&nbsp;&lt;&nbsp;ENDTIME;&nbsp;data-&gt;time&nbsp;+=&nbsp;period,&nbsp;data-&gt;phase&nbsp;=&nbsp;((data-&gt;phase&nbsp;&&nbsp;1)&nbsp;*&nbsp;fb)&nbsp;^&nbsp;(data-&gt;phase&nbsp;&gt;&gt;&nbsp;1))
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;update_amp(blip,&nbsp;data,&nbsp;getAmp(reg-&gt;volume,&nbsp;(data-&gt;phase&nbsp;&&nbsp;1)&nbsp;?&nbsp;stereo_volume&nbsp;*&nbsp;SHRT_MAX&nbsp;/&nbsp;MAX_VOLUME&nbsp;:&nbsp;0));
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;s32&nbsp;calcLoopPos(const&nbsp;tic_sound_loop*&nbsp;loop,&nbsp;s32&nbsp;pos)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;offset&nbsp;=&nbsp;0;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(loop-&gt;size&nbsp;&gt;&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;pos;&nbsp;i++)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(offset&nbsp;&lt;&nbsp;(loop-&gt;start&nbsp;+&nbsp;loop-&gt;size&nbsp;-&nbsp;1))
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;offset++;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;offset&nbsp;=&nbsp;loop-&gt;start;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;offset&nbsp;=&nbsp;pos&nbsp;&gt;=&nbsp;SFX_TICKS&nbsp;?&nbsp;SFX_TICKS&nbsp;-&nbsp;1&nbsp;:&nbsp;pos;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;offset;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;resetSfxPos(tic_channel_data*&nbsp;channel)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;memset(channel-&gt;pos-&gt;data,&nbsp;-1,&nbsp;sizeof(tic_sfx_pos));
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;tick&nbsp;=&nbsp;-1;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;sfx(tic_mem*&nbsp;memory,&nbsp;s32&nbsp;index,&nbsp;s32&nbsp;note,&nbsp;s32&nbsp;pitch,&nbsp;tic_channel_data*&nbsp;channel,&nbsp;tic_sound_register*&nbsp;reg,&nbsp;s32&nbsp;channelIndex)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(channel-&gt;duration&nbsp;&gt;&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;duration--;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(index&nbsp;&lt;&nbsp;0&nbsp;||&nbsp;channel-&gt;duration&nbsp;==&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;resetSfxPos(channel);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;tic_sample*&nbsp;effect&nbsp;=&nbsp;&memory-&gt;ram-&gt;sfx.samples.data[index];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;pos&nbsp;=&nbsp;tic_tool_sfx_pos(channel-&gt;speed,&nbsp;++channel-&gt;tick);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;sizeof(tic_sfx_pos);&nbsp;i++)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*(channel-&gt;pos-&gt;data&nbsp;+&nbsp;i)&nbsp;=&nbsp;calcLoopPos(effect-&gt;loops&nbsp;+&nbsp;i,&nbsp;pos);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;u8&nbsp;volume&nbsp;=&nbsp;MAX_VOLUME&nbsp;-&nbsp;effect-&gt;data[channel-&gt;pos-&gt;volume].volume;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(volume&nbsp;&gt;&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s8&nbsp;arp&nbsp;=&nbsp;effect-&gt;data[channel-&gt;pos-&gt;chord].chord&nbsp;*&nbsp;(effect-&gt;reverse&nbsp;?&nbsp;-1&nbsp;:&nbsp;1);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(arp)&nbsp;note&nbsp;+=&nbsp;arp;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;note&nbsp;=&nbsp;CLAMP(note,&nbsp;0,&nbsp;COUNT_OF(NoteFreqs)&nbsp;-&nbsp;1);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_sound_register_set_freq(reg,&nbsp;NoteFreqs[note]&nbsp;+&nbsp;effect-&gt;data[channel-&gt;pos-&gt;pitch].pitch&nbsp;*&nbsp;(effect-&gt;pitch16x&nbsp;?&nbsp;16&nbsp;:&nbsp;1)&nbsp;+&nbsp;pitch);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;reg-&gt;volume&nbsp;=&nbsp;volume;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;u8&nbsp;wave&nbsp;=&nbsp;effect-&gt;data[channel-&gt;pos-&gt;wave].wave;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;tic_waveform*&nbsp;waveform&nbsp;=&nbsp;&memory-&gt;ram-&gt;sfx.waveforms.items[wave];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;memcpy(reg-&gt;waveform.data,&nbsp;waveform-&gt;data,&nbsp;sizeof(tic_waveform));
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_tool_poke4(&memory-&gt;ram-&gt;stereo.data,&nbsp;channelIndex&nbsp;*&nbsp;2,&nbsp;channel-&gt;volume.left&nbsp;*&nbsp;!effect-&gt;stereo_left);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_tool_poke4(&memory-&gt;ram-&gt;stereo.data,&nbsp;channelIndex&nbsp;*&nbsp;2&nbsp;+&nbsp;1,&nbsp;channel-&gt;volume.right&nbsp;*&nbsp;!effect-&gt;stereo_right);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;setChannelData(tic_mem*&nbsp;memory,&nbsp;s32&nbsp;index,&nbsp;s32&nbsp;note,&nbsp;s32&nbsp;octave,&nbsp;s32&nbsp;duration,&nbsp;tic_channel_data*&nbsp;channel,&nbsp;s32&nbsp;volumeLeft,&nbsp;s32&nbsp;volumeRight,&nbsp;s32&nbsp;speed)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;volume.left&nbsp;=&nbsp;volumeLeft;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;volume.right&nbsp;=&nbsp;volumeRight;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(index&nbsp;&gt;=&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;{&nbsp;s8&nbsp;speed&nbsp;:&nbsp;SFX_SPEED_BITS;&nbsp;}&nbsp;temp&nbsp;=&nbsp;{&nbsp;speed&nbsp;};
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;speed&nbsp;=&nbsp;speed&nbsp;==&nbsp;temp.speed&nbsp;?&nbsp;speed&nbsp;:&nbsp;memory-&gt;ram-&gt;sfx.samples.data[index].speed;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;note&nbsp;=&nbsp;note&nbsp;+&nbsp;octave&nbsp;*&nbsp;NOTES;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;duration&nbsp;=&nbsp;duration;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;index&nbsp;=&nbsp;index;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;resetSfxPos(channel);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;setMusicChannelData(tic_mem*&nbsp;memory,&nbsp;s32&nbsp;index,&nbsp;s32&nbsp;note,&nbsp;s32&nbsp;octave,&nbsp;s32&nbsp;left,&nbsp;s32&nbsp;right,&nbsp;s32&nbsp;channel)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;setChannelData(memory,&nbsp;index,&nbsp;note,&nbsp;octave,&nbsp;-1,&nbsp;&core-&gt;state.music.channels[channel],&nbsp;left,&nbsp;right,&nbsp;SFX_DEF_SPEED);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;resetMusicChannels(tic_mem*&nbsp;memory)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;c&nbsp;=&nbsp;0;&nbsp;c&nbsp;&lt;&nbsp;TIC_SOUND_CHANNELS;&nbsp;c++)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setMusicChannelData(memory,&nbsp;-1,&nbsp;0,&nbsp;0,&nbsp;0,&nbsp;0,&nbsp;c);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;memset(core-&gt;state.music.commands,&nbsp;0,&nbsp;sizeof&nbsp;core-&gt;state.music.commands);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;memset(&core-&gt;state.music.jump,&nbsp;0,&nbsp;sizeof(tic_jump_command));
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;stopMusic(tic_mem*&nbsp;memory)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_api_music(memory,&nbsp;-1,&nbsp;0,&nbsp;0,&nbsp;false,&nbsp;false,&nbsp;-1,&nbsp;-1);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;processMusic(tic_mem*&nbsp;memory)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_music_state*&nbsp;music_state&nbsp;=&nbsp;&memory-&gt;ram-&gt;music_state;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(music_state-&gt;flag.music_status&nbsp;==&nbsp;tic_music_stop)&nbsp;return;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;tic_track*&nbsp;track&nbsp;=&nbsp;&memory-&gt;ram-&gt;music.tracks.data[music_state-&gt;music.track];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;row&nbsp;=&nbsp;tick2row(core,&nbsp;track,&nbsp;core-&gt;state.music.ticks);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_jump_command*&nbsp;jumpCmd&nbsp;=&nbsp;&core-&gt;state.music.jump;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(row&nbsp;!=&nbsp;music_state-&gt;music.row
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&&&nbsp;jumpCmd-&gt;active)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;music_state-&gt;music.frame&nbsp;=&nbsp;jumpCmd-&gt;frame;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;row&nbsp;=&nbsp;jumpCmd-&gt;beat&nbsp;*&nbsp;NOTES_PER_BEAT;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.ticks&nbsp;=&nbsp;row2tick(core,&nbsp;track,&nbsp;row);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;memset(jumpCmd,&nbsp;0,&nbsp;sizeof(tic_jump_command));
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;rows&nbsp;=&nbsp;MUSIC_PATTERN_ROWS&nbsp;-&nbsp;track-&gt;rows;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(row&nbsp;&gt;=&nbsp;rows)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;row&nbsp;=&nbsp;0;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.ticks&nbsp;=&nbsp;0;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;If&nbsp;music&nbsp;is&nbsp;in&nbsp;sustain&nbsp;mode,&nbsp;we&nbsp;only&nbsp;reset&nbsp;the&nbsp;channels&nbsp;if&nbsp;the&nbsp;music&nbsp;stopped.
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;Otherwise,&nbsp;we&nbsp;reset&nbsp;it&nbsp;on&nbsp;every&nbsp;new&nbsp;frame.
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(music_state-&gt;flag.music_status&nbsp;==&nbsp;tic_music_stop&nbsp;||&nbsp;!music_state-&gt;flag.music_sustain)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;resetMusicChannels(memory);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;c&nbsp;=&nbsp;0;&nbsp;c&nbsp;&lt;&nbsp;TIC_SOUND_CHANNELS;&nbsp;c++)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setMusicChannelData(memory,&nbsp;-1,&nbsp;0,&nbsp;0,&nbsp;MAX_VOLUME,&nbsp;MAX_VOLUME,&nbsp;c);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(music_state-&gt;flag.music_status&nbsp;==&nbsp;tic_music_play)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;music_state-&gt;music.frame++;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(music_state-&gt;music.frame&nbsp;&gt;=&nbsp;MUSIC_FRAMES)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(music_state-&gt;flag.music_loop)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;music_state-&gt;music.frame&nbsp;=&nbsp;0;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stopMusic(memory);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;val&nbsp;=&nbsp;0;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;c&nbsp;=&nbsp;0;&nbsp;c&nbsp;&lt;&nbsp;TIC_SOUND_CHANNELS;&nbsp;c++)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val&nbsp;+=&nbsp;tic_tool_get_pattern_id(track,&nbsp;music_state-&gt;music.frame,&nbsp;c);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;empty&nbsp;frame&nbsp;detected
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(!val)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(music_state-&gt;flag.music_loop)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;music_state-&gt;music.frame&nbsp;=&nbsp;0;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stopMusic(memory);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;if&nbsp;(music_state-&gt;flag.music_status&nbsp;==&nbsp;tic_music_play_frame)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(!music_state-&gt;flag.music_loop)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stopMusic(memory);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(row&nbsp;!=&nbsp;music_state-&gt;music.row)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;music_state-&gt;music.row&nbsp;=&nbsp;row;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;c&nbsp;=&nbsp;0;&nbsp;c&nbsp;&lt;&nbsp;TIC_SOUND_CHANNELS;&nbsp;c++)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;patternId&nbsp;=&nbsp;tic_tool_get_pattern_id(track,&nbsp;music_state-&gt;music.frame,&nbsp;c);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(!patternId)&nbsp;continue;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;tic_track_pattern*&nbsp;pattern&nbsp;=&nbsp;&memory-&gt;ram-&gt;music.patterns.data[patternId&nbsp;-&nbsp;PATTERN_START];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;tic_track_row*&nbsp;trackRow&nbsp;=&nbsp;&pattern-&gt;rows[music_state-&gt;music.row];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_channel_data*&nbsp;channel&nbsp;=&nbsp;&core-&gt;state.music.channels[c];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_command_data*&nbsp;cmdData&nbsp;=&nbsp;&core-&gt;state.music.commands[c];
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(trackRow-&gt;command&nbsp;==&nbsp;tic_music_cmd_delay)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;delay.row&nbsp;=&nbsp;trackRow;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;delay.ticks&nbsp;=&nbsp;param2val(trackRow);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;trackRow&nbsp;=&nbsp;NULL;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(cmdData-&gt;delay.row&nbsp;&&&nbsp;cmdData-&gt;delay.ticks&nbsp;==&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;trackRow&nbsp;=&nbsp;cmdData-&gt;delay.row;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;delay.row&nbsp;=&nbsp;NULL;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(trackRow)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;reset&nbsp;commands&nbsp;data
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(trackRow-&gt;note)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;slide.tick&nbsp;=&nbsp;0;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;slide.note&nbsp;=&nbsp;channel-&gt;note;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(trackRow-&gt;note&nbsp;==&nbsp;NoteStop)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setMusicChannelData(memory,&nbsp;-1,&nbsp;0,&nbsp;0,&nbsp;channel-&gt;volume.left,&nbsp;channel-&gt;volume.right,&nbsp;c);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;if&nbsp;(trackRow-&gt;note&nbsp;&gt;=&nbsp;NoteStart)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setMusicChannelData(memory,&nbsp;tic_tool_get_track_row_sfx(trackRow),&nbsp;trackRow-&gt;note&nbsp;-&nbsp;NoteStart,&nbsp;trackRow-&gt;octave,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;volume.left,&nbsp;channel-&gt;volume.right,&nbsp;c);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch&nbsp;(trackRow-&gt;command)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;tic_music_cmd_volume:
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;volume.left&nbsp;=&nbsp;trackRow-&gt;param1;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;channel-&gt;volume.right&nbsp;=&nbsp;trackRow-&gt;param2;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;tic_music_cmd_chord:
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;chord.tick&nbsp;=&nbsp;0;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;chord.note1&nbsp;=&nbsp;trackRow-&gt;param1;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;chord.note2&nbsp;=&nbsp;trackRow-&gt;param2;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;tic_music_cmd_jump:
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.jump.active&nbsp;=&nbsp;true;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.jump.frame&nbsp;=&nbsp;trackRow-&gt;param1;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.jump.beat&nbsp;=&nbsp;trackRow-&gt;param2;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;tic_music_cmd_vibrato:
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;vibrato.tick&nbsp;=&nbsp;0;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;vibrato.period&nbsp;=&nbsp;trackRow-&gt;param1;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;vibrato.depth&nbsp;=&nbsp;trackRow-&gt;param2;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;tic_music_cmd_slide:
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;slide.duration&nbsp;=&nbsp;param2val(trackRow);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;tic_music_cmd_pitch:
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;finepitch.value&nbsp;=&nbsp;param2val(trackRow)&nbsp;-&nbsp;PITCH_DELTA;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;break;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;TIC_SOUND_CHANNELS;&nbsp;++i)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_channel_data*&nbsp;channel&nbsp;=&nbsp;&core-&gt;state.music.channels[i];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_command_data*&nbsp;cmdData&nbsp;=&nbsp;&core-&gt;state.music.commands[i];
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(channel-&gt;index&nbsp;&gt;=&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;note&nbsp;=&nbsp;channel-&gt;note;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;pitch&nbsp;=&nbsp;0;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;process&nbsp;chord&nbsp;command
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;chord[]&nbsp;=
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;chord.note1,
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;chord.note2
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;};
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;note&nbsp;+=&nbsp;chord[cmdData-&gt;chord.tick&nbsp;%&nbsp;(cmdData-&gt;chord.note2&nbsp;==&nbsp;0&nbsp;?&nbsp;2&nbsp;:&nbsp;3)];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;process&nbsp;vibrato&nbsp;command
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(cmdData-&gt;vibrato.period&nbsp;&&&nbsp;cmdData-&gt;vibrato.depth)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;static&nbsp;const&nbsp;s32&nbsp;VibData[]&nbsp;=&nbsp;{&nbsp;0x0,&nbsp;0x31f1,&nbsp;0x61f8,&nbsp;0x8e3a,&nbsp;0xb505,&nbsp;0xd4db,&nbsp;0xec83,&nbsp;0xfb15,&nbsp;0x10000,&nbsp;0xfb15,&nbsp;0xec83,&nbsp;0xd4db,&nbsp;0xb505,&nbsp;0x8e3a,&nbsp;0x61f8,&nbsp;0x31f1,&nbsp;0x0,&nbsp;0xffffce0f,&nbsp;0xffff9e08,&nbsp;0xffff71c6,&nbsp;0xffff4afb,&nbsp;0xffff2b25,&nbsp;0xffff137d,&nbsp;0xffff04eb,&nbsp;0xffff0000,&nbsp;0xffff04eb,&nbsp;0xffff137d,&nbsp;0xffff2b25,&nbsp;0xffff4afb,&nbsp;0xffff71c6,&nbsp;0xffff9e08,&nbsp;0xffffce0f&nbsp;};
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;static_assert(COUNT_OF(VibData)&nbsp;==&nbsp;32,&nbsp;"VibData");
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s32&nbsp;p&nbsp;=&nbsp;cmdData-&gt;vibrato.period&nbsp;&lt;&lt;&nbsp;1;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pitch&nbsp;+=&nbsp;(VibData[(cmdData-&gt;vibrato.tick&nbsp;%&nbsp;p)&nbsp;*&nbsp;COUNT_OF(VibData)&nbsp;/&nbsp;p]&nbsp;*&nbsp;cmdData-&gt;vibrato.depth)&nbsp;&gt;&gt;&nbsp;16;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;process&nbsp;slide&nbsp;command
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(cmdData-&gt;slide.tick&nbsp;&lt;&nbsp;cmdData-&gt;slide.duration)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pitch&nbsp;+=&nbsp;(NoteFreqs[channel-&gt;note]&nbsp;-&nbsp;NoteFreqs[note&nbsp;=&nbsp;cmdData-&gt;slide.note])&nbsp;*&nbsp;cmdData-&gt;slide.tick&nbsp;/&nbsp;cmdData-&gt;slide.duration;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pitch&nbsp;+=&nbsp;cmdData-&gt;finepitch.value;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sfx(memory,&nbsp;channel-&gt;index,&nbsp;note,&nbsp;pitch,&nbsp;channel,&nbsp;&memory-&gt;ram-&gt;registers[i],&nbsp;i);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;++cmdData-&gt;chord.tick;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;++cmdData-&gt;vibrato.tick;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;++cmdData-&gt;slide.tick;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(cmdData-&gt;delay.ticks)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmdData-&gt;delay.ticks--;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.ticks++;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;setSfxChannelData(tic_mem*&nbsp;memory,&nbsp;s32&nbsp;index,&nbsp;s32&nbsp;note,&nbsp;s32&nbsp;octave,&nbsp;s32&nbsp;duration,&nbsp;s32&nbsp;channel,&nbsp;s32&nbsp;left,&nbsp;s32&nbsp;right,&nbsp;s32&nbsp;speed)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;setChannelData(memory,&nbsp;index,&nbsp;note,&nbsp;octave,&nbsp;duration,&nbsp;&core-&gt;state.sfx.channels[channel],&nbsp;left,&nbsp;right,&nbsp;speed);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;setMusic(tic_core*&nbsp;core,&nbsp;s32&nbsp;index,&nbsp;s32&nbsp;frame,&nbsp;s32&nbsp;row,&nbsp;bool&nbsp;loop,&nbsp;bool&nbsp;sustain,&nbsp;s32&nbsp;tempo,&nbsp;s32&nbsp;speed)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_mem*&nbsp;memory&nbsp;=&nbsp;(tic_mem*)core;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_ram*&nbsp;ram&nbsp;=&nbsp;memory-&gt;ram;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;ram-&gt;music_state.music.track&nbsp;=&nbsp;index;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(index&nbsp;&lt;&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ram-&gt;music_state.flag.music_status&nbsp;=&nbsp;tic_music_stop;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;resetMusicChannels(memory);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;else
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;c&nbsp;=&nbsp;0;&nbsp;c&nbsp;&lt;&nbsp;TIC_SOUND_CHANNELS;&nbsp;c++)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setMusicChannelData(memory,&nbsp;-1,&nbsp;0,&nbsp;0,&nbsp;MAX_VOLUME,&nbsp;MAX_VOLUME,&nbsp;c);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ram-&gt;music_state.music.row&nbsp;=&nbsp;-1;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ram-&gt;music_state.music.frame&nbsp;=&nbsp;frame&nbsp;&lt;&nbsp;0&nbsp;?&nbsp;0&nbsp;:&nbsp;frame;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ram-&gt;music_state.flag.music_loop&nbsp;=&nbsp;loop;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ram-&gt;music_state.flag.music_sustain&nbsp;=&nbsp;sustain;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ram-&gt;music_state.flag.music_status&nbsp;=&nbsp;tic_music_play;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;tic_track*&nbsp;track&nbsp;=&nbsp;&ram-&gt;music.tracks.data[index];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.tempo&nbsp;=&nbsp;tempo;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.speed&nbsp;=&nbsp;speed;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.music.ticks&nbsp;=&nbsp;row&nbsp;&gt;=&nbsp;0&nbsp;?&nbsp;row2tick(core,&nbsp;track,&nbsp;row)&nbsp;:&nbsp;0;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+void&nbsp;tic_api_music(tic_mem*&nbsp;memory,&nbsp;s32&nbsp;index,&nbsp;s32&nbsp;frame,&nbsp;s32&nbsp;row,&nbsp;bool&nbsp;loop,&nbsp;bool&nbsp;sustain,&nbsp;s32&nbsp;tempo,&nbsp;s32&nbsp;speed)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;setMusic(core,&nbsp;index,&nbsp;frame,&nbsp;row,&nbsp;loop,&nbsp;sustain,&nbsp;tempo,&nbsp;speed);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(index&nbsp;&gt;=&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;memory-&gt;ram-&gt;music_state.flag.music_status&nbsp;=&nbsp;tic_music_play;
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+void&nbsp;tic_api_sfx(tic_mem*&nbsp;memory,&nbsp;s32&nbsp;index,&nbsp;s32&nbsp;note,&nbsp;s32&nbsp;octave,&nbsp;s32&nbsp;duration,&nbsp;s32&nbsp;channel,&nbsp;s32&nbsp;left,&nbsp;s32&nbsp;right,&nbsp;s32&nbsp;speed)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;setSfxChannelData(memory,&nbsp;index,&nbsp;note,&nbsp;octave,&nbsp;duration,&nbsp;channel,&nbsp;left,&nbsp;right,&nbsp;speed);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;inline&nbsp;const&nbsp;struct&nbsp;sound_ring_buf&nbsp;*sound_ringbuf(tic_core*&nbsp;core)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;&core-&gt;state.sound_ringbuf[(core-&gt;state.sound_ringbuf_tail&nbsp;+&nbsp;TIC_SOUND_RINGBUF_LEN&nbsp;-&nbsp;1)&nbsp;%&nbsp;TIC_SOUND_RINGBUF_LEN];
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+static&nbsp;void&nbsp;stereo_synthesize(tic_core*&nbsp;core,&nbsp;struct&nbsp;sound_register_data&nbsp;*regdata,&nbsp;blip_buffer_t*&nbsp;blip,&nbsp;u8&nbsp;stereoRight)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;struct&nbsp;sound_ring_buf&nbsp;*ringbuf&nbsp;=&nbsp;sound_ringbuf(core);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;TIC_SOUND_CHANNELS;&nbsp;++i)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;u8&nbsp;stereo_volume&nbsp;=&nbsp;tic_tool_peek4(&ringbuf-&gt;stereo,&nbsp;stereoRight&nbsp;+&nbsp;i&nbsp;*&nbsp;2);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;tic_sound_register*&nbsp;reg&nbsp;=&nbsp;&ringbuf-&gt;registers[i];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_sound_register_data*&nbsp;data&nbsp;=&nbsp;&regdata-&gt;data[i];
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_tool_noise(&reg-&gt;waveform)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?&nbsp;runNoise(blip,&nbsp;reg,&nbsp;data,&nbsp;stereo_volume)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;runEnvelope(blip,&nbsp;reg,&nbsp;data,&nbsp;stereo_volume);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data-&gt;time&nbsp;-=&nbsp;ENDTIME;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;runPcm(blip,&nbsp;&ringbuf-&gt;pcm,&nbsp;&regdata-&gt;pcm);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;blip_end_frame(blip,&nbsp;ENDTIME);
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+void&nbsp;tic_core_synth_sound(tic_mem*&nbsp;memory)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core&nbsp;*core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic80&nbsp;*product&nbsp;=&nbsp;&core-&gt;memory.product;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;synthesize&nbsp;sound&nbsp;using&nbsp;the&nbsp;register&nbsp;values&nbsp;found&nbsp;from&nbsp;the&nbsp;tail&nbsp;of&nbsp;the&nbsp;ring&nbsp;buffer
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;stereo_synthesize(core,&nbsp;&core-&gt;state.registers.left,&nbsp;core-&gt;blip.left,&nbsp;0);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;stereo_synthesize(core,&nbsp;&core-&gt;state.registers.right,&nbsp;core-&gt;blip.right,&nbsp;1);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;blip_read_samples(core-&gt;blip.left,&nbsp;product-&gt;samples.buffer,&nbsp;core-&gt;samplerate&nbsp;/&nbsp;TIC80_FRAMERATE,&nbsp;TIC80_SAMPLE_CHANNELS);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;blip_read_samples(core-&gt;blip.right,&nbsp;product-&gt;samples.buffer&nbsp;+&nbsp;1,&nbsp;core-&gt;samplerate&nbsp;/&nbsp;TIC80_FRAMERATE,&nbsp;TIC80_SAMPLE_CHANNELS);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;if&nbsp;the&nbsp;head&nbsp;has&nbsp;advanced,&nbsp;we&nbsp;can&nbsp;advance&nbsp;the&nbsp;tail&nbsp;too.&nbsp;Otherwise,&nbsp;we&nbsp;just
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;keep&nbsp;synthesizing&nbsp;audio&nbsp;using&nbsp;the&nbsp;last&nbsp;known&nbsp;register&nbsp;values,&nbsp;so&nbsp;at&nbsp;least&nbsp;we&nbsp;don't&nbsp;get&nbsp;crackles
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(core-&gt;state.sound_ringbuf_tail&nbsp;!=&nbsp;core-&gt;state.sound_ringbuf_head)&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;note:&nbsp;we&nbsp;assume&nbsp;storing&nbsp;a&nbsp;32&nbsp;bit&nbsp;integer&nbsp;is&nbsp;atomic,&nbsp;that&nbsp;should&nbsp;hold&nbsp;on&nbsp;pretty&nbsp;much&nbsp;any&nbsp;modern&nbsp;processor
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;assuming&nbsp;it&nbsp;is&nbsp;aligned&nbsp;in&nbsp;memory&nbsp;(which&nbsp;it&nbsp;should&nbsp;be)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.sound_ringbuf_tail&nbsp;=&nbsp;(core-&gt;state.sound_ringbuf_tail&nbsp;+&nbsp;1)&nbsp;%&nbsp;TIC_SOUND_RINGBUF_LEN;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+void&nbsp;tic_core_sound_tick_start(tic_mem*&nbsp;memory)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;ZEROMEM(memory-&gt;ram-&gt;registers);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;ZEROMEM(memory-&gt;ram-&gt;pcm);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;memory-&gt;ram-&gt;stereo.data&nbsp;=&nbsp;-1;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;processMusic(memory);
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(s32&nbsp;i&nbsp;=&nbsp;0;&nbsp;i&nbsp;&lt;&nbsp;TIC_SOUND_CHANNELS;&nbsp;++i)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tic_channel_data*&nbsp;c&nbsp;=&nbsp;&core-&gt;state.sfx.channels[i];
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(c-&gt;index&nbsp;&gt;=&nbsp;0)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sfx(memory,&nbsp;c-&gt;index,&nbsp;c-&gt;note,&nbsp;0,&nbsp;c,&nbsp;&memory-&gt;ram-&gt;registers[i],&nbsp;i);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+<div>
+<br>
+</div>
+<div>
+void&nbsp;tic_core_sound_tick_end(tic_mem*&nbsp;memory)
+</div>
+<div>
+{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;tic_core*&nbsp;core&nbsp;=&nbsp;(tic_core*)memory;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;instead&nbsp;of&nbsp;synthesizing&nbsp;the&nbsp;sound&nbsp;right&nbsp;away,&nbsp;push&nbsp;the&nbsp;sound&nbsp;registers&nbsp;to&nbsp;the&nbsp;head&nbsp;of&nbsp;a&nbsp;ring&nbsp;buffer
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;sound_ring_buf&nbsp;*ringbuf&nbsp;=&nbsp;&core-&gt;state.sound_ringbuf[core-&gt;state.sound_ringbuf_head];
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;memcpy(&ringbuf-&gt;registers,&nbsp;&memory-&gt;ram-&gt;registers,&nbsp;sizeof&nbsp;ringbuf-&gt;registers);
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;ringbuf-&gt;stereo&nbsp;=&nbsp;memory-&gt;ram-&gt;stereo;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;ringbuf-&gt;pcm&nbsp;=&nbsp;memory-&gt;ram-&gt;pcm;
+</div>
+<div>
+<br>
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(core-&gt;state.sound_ringbuf_head&nbsp;!=&nbsp;(core-&gt;state.sound_ringbuf_tail&nbsp;+&nbsp;TIC_SOUND_RINGBUF_LEN&nbsp;-&nbsp;2)&nbsp;%&nbsp;TIC_SOUND_RINGBUF_LEN)&nbsp;{
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;note:&nbsp;we&nbsp;assume&nbsp;storing&nbsp;a&nbsp;32&nbsp;bit&nbsp;integer&nbsp;is&nbsp;atomic,&nbsp;that&nbsp;should&nbsp;hold&nbsp;on&nbsp;pretty&nbsp;much&nbsp;any&nbsp;modern&nbsp;processor
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;assuming&nbsp;it&nbsp;is&nbsp;aligned&nbsp;in&nbsp;memory&nbsp;(which&nbsp;it&nbsp;should&nbsp;be)
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-&gt;state.sound_ringbuf_head&nbsp;=&nbsp;(core-&gt;state.sound_ringbuf_head&nbsp;+&nbsp;1)&nbsp;%&nbsp;TIC_SOUND_RINGBUF_LEN;
+</div>
+<div>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</div>
+<div>
+}
+</div>
+</div>
+</div></div>
+</body>
+</html>
+</p>

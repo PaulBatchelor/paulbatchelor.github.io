@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/recurse/css/style.css">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
+<body>
+<div id="main">
+<p><title>build LC-75 web scraper</title>
+<h1>build LC-75 web scraper</h1>
+task id: LC75-scraper
+</p>
+<p><a href="#2024_07_09_13_44" id="2024_07_09_13_44">2024-07-09 13:44</a>: Initial work on web scraper for LC75 #LC75-scraper #timelog:01:11:40</p>
+<p><a href="#2024_07_09_14_00" id="2024_07_09_14_00">2024-07-09 14:00</a>: wget doesn't work, curl doesn't work, selenium hangs #LC75-scraper</p>
+<p><a href="#2024_07_09_14_05" id="2024_07_09_14_05">2024-07-09 14:05</a>: trying wget again #LC75-scraper</p>
+<p><a href="#2024_07_09_14_13" id="2024_07_09_14_13">2024-07-09 14:13</a>: I just copy-pasted from the view source in browser #LC75-scraper</p>
+<div class="comment-block">
+<p>It had the data embedded in there from a JSON blob. I was able to extract it in Vim. Currently jq-ing it. 
+</p>
+<p> Here is my big query: 
+<pre><code>jq .props.pageProps.dehydratedState.queries[0].state.data.studyPlanV2Detail.planSubGroups data_pretty.json</pre></code>
+</p>
+</div>
+<p><a href="#2024_07_09_14_34" id="2024_07_09_14_34">2024-07-09 14:34</a>: Picking apart LC75.json data #LC75-scraper</p>
+<div class="comment-block">
+<p>It's an array of items, split up by category (of which there are 22 categories). Each entry is an object with a <code>questionNum</code> field. When you add all the <code>questionNum</code>s together, you get 75. 
+</p>
+<p> The key I want for the URL is <code>titleSlug</code>, and the id is <code>questionFrontendId</code> for the LC (I can use this to reference the problem tersely online). These are objects found in the "questions" objects, aka <code>.[0].questions[0]</code>.
+</p>
+</div>
+<p><a href="#2024_07_09_14_44" id="2024_07_09_14_44">2024-07-09 14:44</a>: Headless print on linux? #LC75-scraper</p>
+<div class="comment-block">
+<p>It's not going to matter.
+</p>
+</div>
+<p><a href="#2024_07_09_14_49" id="2024_07_09_14_49">2024-07-09 14:49</a>: I have hit a security wall #LC75-scraper</p>
+<p><a href="#2024_07_09_14_57" id="2024_07_09_14_57">2024-07-09 14:57</a>: Can use wayback machine with limited success #LC75-scraper</p>
+<div class="comment-block">
+<p>Given a leetcode article, I can find a cached version on wayback machine, which I can then curl to an HTML file. Most of the HTML can be stripped using <code>w3m -dump</code>.
+</p>
+</div>
+<p><a href="#2024_07_09_15_27" id="2024_07_09_15_27">2024-07-09 15:27</a>: Does wayback machine have an API for getting cached pages? #LC75-scraper #timelog:00:15:48</p>
+<div class="comment-block">
+<p>It does! There's a URL you can query and get a JSON response from. It does produce HTML, but, even with w3m it does seem to be kinda messy. Damn.
+</p>
+</div>
+</div>
+</body>
+</html>
